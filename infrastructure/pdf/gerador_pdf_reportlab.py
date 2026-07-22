@@ -7,6 +7,8 @@ em parágrafos/bullets conforme o conteúdo de cada seção.
 from __future__ import annotations
 
 import io
+import re
+from xml.sax.saxutils import escape
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -30,6 +32,9 @@ _ORDEM_SECOES = (
     TipoSecao.IDIOMAS,
 )
 
+_LABEL_PATTERN = re.compile(r"^([^:]+?):\s*(.*)$")
+_COMPANY_ROLE_PATTERN = re.compile(r"^(?P<empresa>[^-–—]+?)\s*[-–—]\s*(?P<cargo>.+)$")
+
 
 def _criar_estilos() -> dict[str, ParagraphStyle]:
     base = getSampleStyleSheet()
@@ -44,6 +49,14 @@ def _criar_estilos() -> dict[str, ParagraphStyle]:
             spaceAfter=4,
         ),
         "corpo": ParagraphStyle("Corpo", parent=base["Normal"], fontSize=10, leading=14),
+        "corpo_bullet": ParagraphStyle(
+            "CorpoBullet",
+            parent=base["Normal"],
+            fontSize=10,
+            leading=14,
+            leftIndent=12,
+            bulletIndent=0,
+        ),
     }
 
 
@@ -93,11 +106,11 @@ class GeradorPdfReportLab(GeradorPdfPort):
             elementos.append(Paragraph(secao.titulo, estilos["titulo_secao"]))
             elementos.append(HRFlowable(width="100%", thickness=0.5, color="#666666"))
             elementos.append(Spacer(1, 4))
-            elementos.extend(self._formatar_conteudo(secao.conteudo, estilos["corpo"]))
+            elementos.extend(self._formatar_conteudo(secao.conteudo, estilos))
         return elementos
-
-    @staticmethod
-    def _formatar_conteudo(conteudo: str, estilo_corpo: ParagraphStyle) -> list:
+ 
+    @classmethod
+    def _formatar_conteudo(cls, conteudo: str, estilos: dict) -> list:
         """Converte o texto em parágrafos, tratando linhas iniciadas com marcador como bullets."""
         elementos = []
         for linha in conteudo.split("\n"):
@@ -106,8 +119,33 @@ class GeradorPdfReportLab(GeradorPdfPort):
                 continue
             if linha_tratada.startswith(("-", "•", "*")):
                 texto = linha_tratada.lstrip("-•* ").strip()
-                elementos.append(Paragraph(f"&bull;&nbsp;&nbsp;{texto}", estilo_corpo))
+                elementos.append(
+                    Paragraph(cls._formatar_texto(texto), estilos["corpo_bullet"], bulletText="•")
+                )
             else:
-                elementos.append(Paragraph(linha_tratada, estilo_corpo))
+                elementos.append(Paragraph(cls._formatar_texto(linha_tratada), estilos["corpo"]))
             elementos.append(Spacer(1, 2))
         return elementos
+ 
+    @classmethod
+    def _formatar_texto(cls, texto: str) -> str:
+        """Aplica ênfase a labels e traz consistência ao texto do PDF."""
+        texto = texto.strip()
+        if not texto:
+            return ""
+ 
+        empresa_cargo = _COMPANY_ROLE_PATTERN.match(texto)
+        if empresa_cargo:
+            empresa = escape(empresa_cargo.group("empresa").strip())
+            cargo = escape(empresa_cargo.group("cargo").strip())
+            return f"<b>{empresa}</b> - <b>{cargo}</b>"
+ 
+        label = _LABEL_PATTERN.match(texto)
+        if label:
+            nome_label = escape(label.group(1).strip())
+            valor = escape(label.group(2).strip())
+            if valor:
+                return f"<b>{nome_label}:</b> {valor}"
+            return f"<b>{nome_label}:</b>"
+ 
+        return escape(texto)

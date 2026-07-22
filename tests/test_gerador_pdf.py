@@ -5,6 +5,7 @@ corretamente a partir de um Curriculo de domínio.
 """
 from domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from infrastructure.pdf.gerador_pdf_reportlab import GeradorPdfReportLab
+from reportlab.lib.styles import ParagraphStyle
 
 
 def test_gera_pdf_valido_com_todas_as_secoes():
@@ -29,3 +30,16 @@ def test_gera_pdf_valido_com_todas_as_secoes():
 
     assert pdf_bytes.startswith(b"%PDF")
     assert len(pdf_bytes) > 500
+
+
+def test_formatar_conteudo_aplica_negrito_em_labels_e_empresas():
+    estilo = ParagraphStyle("Teste", fontSize=10)
+    elementos = GeradorPdfReportLab._formatar_conteudo(
+        "Languages: Python, Go\nStarian - Engenheiro de Software\n- Liderança técnica",
+        {"corpo": estilo, "corpo_bullet": estilo},
+    )
+
+    assert len(elementos) == 6
+    assert "<b>Languages:</b> Python, Go" in elementos[0].text
+    assert "<b>Starian</b> - <b>Engenheiro de Software</b>" in elementos[2].text
+    assert elementos[4].text == "Liderança técnica"

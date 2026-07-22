@@ -37,6 +37,8 @@ seções ajustadas são remontadas e um novo PDF é gerado.
 
 ## Instalação
 
+As instruções abaixo funcionam em ambientes Linux/WSL e macOS, mas no macOS o fluxo mais recomendado está detalhado em `README-macos.md`.
+
 ```bash
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
@@ -46,6 +48,8 @@ pip install -r requirements.txt
 cp .env.example .env
 # edite o .env e cole sua GROQ_API_KEY
 ```
+
+> No macOS, prefira `python3` e o ambiente virtual `.venv` conforme descrito em `README-macos.md`.
 
 ## Executando o MVP
 

@@ -8,6 +8,7 @@ para o idioma solicitado, sem inventar fatos que não constam no original.
 from __future__ import annotations
 
 from application.ports.ajustador_texto_port import AjustadorTextoPort
+from domain.analise_vaga import AnaliseVaga, TipoRequisitoTecnico
 from domain.curriculo import SecaoCurriculo, TipoSecao
 from infrastructure.llm.cliente_groq import ClienteGroq
 
@@ -57,18 +58,36 @@ class AjustadorTextoGroq(AjustadorTextoPort):
         secao: SecaoCurriculo,
         descricao_vaga: str,
         idioma_alvo: str,
+        analise_vaga: AnaliseVaga,
     ) -> SecaoCurriculo:
         instrucao_especifica = _INSTRUCOES_POR_TIPO.get(
             secao.tipo, "Traduza/adapte o idioma, mantendo os fatos originais."
         )
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
 
+        requisitos_explicitos = [
+            requisito.nome for requisito in analise_vaga.requisitos
+            if requisito.tipo == TipoRequisitoTecnico.EXPLICITO
+        ]
+        requisitos_implicitos = [
+            requisito.nome for requisito in analise_vaga.requisitos
+            if requisito.tipo == TipoRequisitoTecnico.IMPLICITO
+        ]
+        ambiguidade = analise_vaga.ambiguidade
+
         prompt_usuario = (
             f"Seção do currículo: {secao.titulo}\n\n"
             f"Conteúdo original:\n{secao.conteudo}\n\n"
             f"Descrição da vaga-alvo:\n{descricao_vaga}\n\n"
+            f"Análise de vaga estruturada:\n"
+            f"- Requisitos explícitos: {', '.join(requisitos_explicitos) or 'nenhum'}\n"
+            f"- Requisitos implícitos: {', '.join(requisitos_implicitos) or 'nenhum'}\n"
+            f"- Trechos ambíguos: {', '.join(ambiguidade) or 'nenhum'}\n\n"
             f"Idioma de saída obrigatório: {nome_idioma}\n\n"
-            f"Instrução específica para esta seção: {instrucao_especifica}"
+            f"Instrução específica para esta seção: {instrucao_especifica}\n\n"
+            "Use apenas as informações da vaga original e da análise estruturada acima. "
+            "Não infira frameworks, ferramentas ou habilidades que não estejam listados "
+            "como requisitos explícitos ou implícitos."
         )
 
         resposta = self._cliente_groq.solicitar_json(

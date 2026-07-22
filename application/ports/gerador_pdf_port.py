@@ -8,5 +8,5 @@ class GeradorPdfPort(ABC):
     """Gera os bytes de um PDF formatado a partir de um Curriculo."""
 
     @abstractmethod
-    def gerar(self, curriculo: Curriculo) -> bytes:
+    def gerar(self, curriculo: Curriculo, idioma_alvo: str) -> bytes:
         raise NotImplementedError

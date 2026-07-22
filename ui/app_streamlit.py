@@ -26,6 +26,7 @@ from infrastructure.extractors.extrator_curriculo_segmentado_ia import (
 )
 from infrastructure.llm.ajustador_texto_groq import AjustadorTextoGroq
 from infrastructure.llm.cliente_groq import ClienteGroq
+from infrastructure.llm.job_description_analyzer_groq import JobDescriptionAnalyzerGroq
 from infrastructure.pdf.gerador_pdf_reportlab import GeradorPdfReportLab
 
 load_dotenv()
@@ -38,9 +39,10 @@ def _montar_caso_de_uso() -> AdaptarCurriculoParaVaga:
     """Composition Root: monta os adapters concretos e injeta nas portas do caso de uso."""
     cliente_groq = ClienteGroq()
     extrator = ExtratorCurriculoSegmentadoPorIA(cliente_groq=cliente_groq)
+    analisador_vaga = JobDescriptionAnalyzerGroq(cliente_groq=cliente_groq)
     ajustador_texto = AjustadorTextoGroq(cliente_groq=cliente_groq)
     gerador_pdf = GeradorPdfReportLab()
-    return AdaptarCurriculoParaVaga(extrator, ajustador_texto, gerador_pdf)
+    return AdaptarCurriculoParaVaga(extrator, analisador_vaga, ajustador_texto, gerador_pdf)
 
 
 def _salvar_no_armazenamento(nome_arquivo: str, pdf_bytes: bytes) -> Path:

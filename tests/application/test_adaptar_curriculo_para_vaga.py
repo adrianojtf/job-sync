@@ -8,10 +8,12 @@ import pytest
 from application.ports.ajustador_texto_port import AjustadorTextoPort
 from application.ports.extrator_curriculo_port import ExtratorCurriculoPort
 from application.ports.gerador_pdf_port import GeradorPdfPort
+from application.ports.job_description_analyzer_port import JobDescriptionAnalyzerPort
 from application.use_cases.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVaga,
     SolicitacaoAdaptacao,
 )
+from domain.analise_vaga import AnaliseVaga, RequisitoTecnico, CategoriaRequisitoTecnico, TipoRequisitoTecnico, OrigemRequisitoTecnico
 from domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 
 
@@ -27,19 +29,37 @@ class ExtratorFake(ExtratorCurriculoPort):
 
 class AjustadorTextoFake(AjustadorTextoPort):
     def __init__(self):
-        self.chamadas: list[tuple[TipoSecao, str, str]] = []
+        self.chamadas: list[tuple[TipoSecao, str, str, AnaliseVaga]] = []
 
-    def ajustar_secao(self, secao: SecaoCurriculo, descricao_vaga: str, idioma_alvo: str) -> SecaoCurriculo:
-        self.chamadas.append((secao.tipo, descricao_vaga, idioma_alvo))
+    def ajustar_secao(
+        self,
+        secao: SecaoCurriculo,
+        descricao_vaga: str,
+        idioma_alvo: str,
+        analise_vaga: AnaliseVaga,
+    ) -> SecaoCurriculo:
+        self.chamadas.append((secao.tipo, descricao_vaga, idioma_alvo, analise_vaga))
         return secao.com_novo_conteudo(f"[AJUSTADO-{idioma_alvo}] {secao.conteudo}")
+
+
+class JobDescriptionAnalyzerFake(JobDescriptionAnalyzerPort):
+    def __init__(self, analise: AnaliseVaga):
+        self.analise = analise
+        self.recebeu_descricao: str | None = None
+
+    def analisar(self, descricao_vaga: str) -> AnaliseVaga:
+        self.recebeu_descricao = descricao_vaga
+        return self.analise
 
 
 class GeradorPdfFake(GeradorPdfPort):
     def __init__(self):
         self.curriculo_recebido: Curriculo | None = None
+        self.idioma_recebido: str | None = None
 
-    def gerar(self, curriculo: Curriculo) -> bytes:
+    def gerar(self, curriculo: Curriculo, idioma_alvo: str) -> bytes:
         self.curriculo_recebido = curriculo
+        self.idioma_recebido = idioma_alvo
         return b"%PDF-FAKE-CONTENT"
 
 
@@ -61,9 +81,17 @@ class TestAdaptarCurriculoParaVaga:
     def test_extrai_ajusta_todas_as_secoes_e_gera_pdf(self):
         curriculo = _curriculo_exemplo()
         extrator = ExtratorFake(curriculo)
+        analisador_vaga = JobDescriptionAnalyzerFake(
+            AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga para Engenheiro de Software Python Sênior")
+        )
         ajustador = AjustadorTextoFake()
         gerador_pdf = GeradorPdfFake()
-        caso_de_uso = AdaptarCurriculoParaVaga(extrator, ajustador, gerador_pdf)
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            extrator,
+            analisador_vaga,
+            ajustador,
+            gerador_pdf,
+        )
 
         solicitacao = SolicitacaoAdaptacao(
             pdf_curriculo=b"conteudo-pdf-original",
@@ -80,15 +108,64 @@ class TestAdaptarCurriculoParaVaga:
         assert all(chamada[1] == "Vaga para Engenheiro de Software Python Sênior" for chamada in ajustador.chamadas)
         assert all(chamada[2] == "pt" for chamada in ajustador.chamadas)
         assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert gerador_pdf.idioma_recebido == "pt"
         assert resultado.nome_arquivo.valor.startswith("AdrianoJoaoTeixeiraFilho-")
         assert resultado.nome_arquivo.valor.endswith("-EngenheiroDeSoftwareSenior-Techcorp.pdf")
+
+    def test_analisa_vaga_e_repassa_analise_para_ajustador_texto(self):
+        curriculo = _curriculo_exemplo()
+        extrator = ExtratorFake(curriculo)
+        analise = AnaliseVaga(
+            requisitos=(
+                RequisitoTecnico(
+                    nome="Python",
+                    categoria=CategoriaRequisitoTecnico.TECNOLOGIA,
+                    tipo=TipoRequisitoTecnico.EXPLICITO,
+                    origem=OrigemRequisitoTecnico.DESCRICAO_VAGA,
+                ),
+            ),
+            ambiguidade=("Desejável conhecimento em Django",),
+            texto_original="Vaga para Engenheiro de Software Python Sênior",
+        )
+        analisador_vaga = JobDescriptionAnalyzerFake(analise)
+        ajustador = AjustadorTextoFake()
+        gerador_pdf = GeradorPdfFake()
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            extrator,
+            analisador_vaga,
+            ajustador,
+            gerador_pdf,
+        )
+
+        solicitacao = SolicitacaoAdaptacao(
+            pdf_curriculo=b"conteudo-pdf-original",
+            descricao_vaga="Vaga para Engenheiro de Software Python Sênior",
+            idioma_alvo="pt",
+            cargo_alvo="Engenheiro de Software Sênior",
+            empresa_alvo="TechCorp",
+        )
+
+        resultado = caso_de_uso.executar(solicitacao)
+
+        assert analisador_vaga.recebeu_descricao == solicitacao.descricao_vaga
+        assert len(ajustador.chamadas) == 4
+        assert all(chamada[3] is analise for chamada in ajustador.chamadas)
+        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
 
     def test_cada_secao_ajustada_e_repassada_ao_gerador_de_pdf(self):
         curriculo = _curriculo_exemplo()
         extrator = ExtratorFake(curriculo)
+        analisador_vaga = JobDescriptionAnalyzerFake(
+            AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
+        )
         ajustador = AjustadorTextoFake()
         gerador_pdf = GeradorPdfFake()
-        caso_de_uso = AdaptarCurriculoParaVaga(extrator, ajustador, gerador_pdf)
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            extrator,
+            analisador_vaga,
+            ajustador,
+            gerador_pdf,
+        )
 
         solicitacao = SolicitacaoAdaptacao(
             pdf_curriculo=b"pdf",
@@ -103,10 +180,19 @@ class TestAdaptarCurriculoParaVaga:
         curriculo_gerado = gerador_pdf.curriculo_recebido
         secao_perfil = curriculo_gerado.obter_secao(TipoSecao.PERFIL)
         assert secao_perfil.conteudo == "[AJUSTADO-en] Engenheiro backend."
+        assert gerador_pdf.idioma_recebido == "en"
 
     def test_idioma_invalido_gera_erro(self):
         extrator = ExtratorFake(_curriculo_exemplo())
-        caso_de_uso = AdaptarCurriculoParaVaga(extrator, AjustadorTextoFake(), GeradorPdfFake())
+        analisador_vaga = JobDescriptionAnalyzerFake(
+            AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+        )
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            extrator,
+            analisador_vaga,
+            AjustadorTextoFake(),
+            GeradorPdfFake(),
+        )
 
         solicitacao = SolicitacaoAdaptacao(
             pdf_curriculo=b"pdf",
@@ -121,7 +207,15 @@ class TestAdaptarCurriculoParaVaga:
 
     def test_descricao_vaga_vazia_gera_erro(self):
         extrator = ExtratorFake(_curriculo_exemplo())
-        caso_de_uso = AdaptarCurriculoParaVaga(extrator, AjustadorTextoFake(), GeradorPdfFake())
+        analisador_vaga = JobDescriptionAnalyzerFake(
+            AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+        )
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            extrator,
+            analisador_vaga,
+            AjustadorTextoFake(),
+            GeradorPdfFake(),
+        )
 
         solicitacao = SolicitacaoAdaptacao(
             pdf_curriculo=b"pdf",

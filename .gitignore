@@ -1,0 +1,39 @@
+# Arquivos gerados
+*.log
+__pycache__/
+build/
+dist/
+*.egg-info/
+
+# Arquivos de configuração
+.env
+config.ini
+
+# Arquivos temporários
+*.pyc
+*.pyo
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Arquivos de depuração
+*.pyd
+*.so
+*.pyc
+*.pyo
+
+# Arquivos do Streamlit
+streamlit_cache/
+streamlit_tmp/
+
+# Arquivos do ambiente virtual
+venv/
+.venv/
+
+# Arquivos de pacotes do pip
+*.egg
+*.whl
+
+# Arquivos do PEP 582
+__pypackages__/

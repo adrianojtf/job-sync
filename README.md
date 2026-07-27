@@ -6,21 +6,38 @@ uma descrição de vaga, e gera uma nova versão do currículo adaptada
 
 ## Arquitetura
 
-O projeto segue **Arquitetura Hexagonal (Ports and Adapters)**, com as
+O projeto segue **Arquitetura Hexagonal (Ports and Adapters)** com **DDD**, com as
 regras de negócio isoladas de qualquer framework ou biblioteca externa:
 
 ```
-domain/            Entidades e Value Objects puros (Curriculo, SecaoCurriculo, NomeArquivo)
-application/        Casos de uso e Portas (interfaces)
-  ports/              Interfaces que a aplicação depende (Dependency Inversion)
-  use_cases/          Orquestração da lógica de negócio
-infrastructure/      Adapters concretos (implementações das portas)
-  extractors/          Leitura de PDF (pdfplumber) + segmentação via IA
-  llm/                 Cliente Groq + ajuste de texto por seção
-  pdf/                 Geração do PDF final (reportlab)
-ui/                  Interface Streamlit (Composition Root)
-storage/             PDFs gerados são salvos aqui
-tests/               Testes unitários (TDD) das camadas domain e application
+src/                 Código fonte da aplicação
+  domain/            Entidades, Value Objects e Ports (interfaces) - DENTRO do hexágono
+    curriculo/       Agregado Curriculo (Curriculo, SecaoCurriculo, TipoSecao)
+    vaga/            Agregado AnaliseVaga (AnaliseVaga, RequisitoTecnico, enums)
+    nome_arquivo/    Value Object NomeArquivo
+    ports/           Interfaces que a aplicação depende (Dependency Inversion)
+
+  application/      Casos de uso e DTOs - DENTRO do hexágono
+    use_cases/       Orquestração da lógica de negócio
+      adaptar_curriculo_para_vaga/
+        use_case.py   Implementação do caso de uso
+        dtos.py       DTOs de input/output
+        validator.py  Validador de input
+
+  infrastructure/   Adapters concretos (implementações das portas) - FORA do hexágono
+    extractors/      Leitura de PDF (pdfplumber) + segmentação via IA
+    llm/             Cliente Groq + ajuste de texto por seção
+    pdf/             Geração do PDF final (reportlab)
+    localizacao/     Catálogo de localização para títulos/idiomas
+
+  ui/               Interface Streamlit (Composition Root)
+  tests/            Testes unitários (TDD) espelhando a estrutura de pacotes
+    domain/          Testes de entidades e value objects
+    application/     Testes de casos de uso
+    infrastructure/   Testes de adapters (opcional)
+
+storage/            PDFs gerados são salvos aqui
+sdd/                Documentos de especificação e templates
 ```
 
 **Fluxo de processamento por seção:** o PDF enviado é lido e segmentado pela

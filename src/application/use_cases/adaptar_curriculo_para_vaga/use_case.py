@@ -58,6 +58,7 @@ class AdaptarCurriculoParaVaga:
             pdf_bytes=pdf_bytes,
             nome_arquivo=nome_arquivo,
             curriculo_adaptado=curriculo_adaptado,
+            analise_vaga=analise_vaga,
         )
 
     def _ajustar_todas_as_secoes(

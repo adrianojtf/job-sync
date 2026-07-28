@@ -57,6 +57,16 @@ streamlit run ui/app_streamlit.py
 
 A interface abrirá em `http://localhost:8501`.
 
+## 5.1. Executar o servidor de captura (extensão de navegador)
+
+A funcionalidade de captura de vagas (extensão Chrome) depende de um segundo processo, rodando em paralelo ao Streamlit, que recebe o texto capturado da página:
+
+```bash
+uvicorn infrastructure.api.servidor_captura:app --port 8502
+```
+
+Esse servidor expõe apenas `http://localhost:8502/api/vagas/capturar`, usado exclusivamente pela extensão — não é necessário abri-lo no navegador.
+
 ## 6. Rodar os testes
 
 ```bash

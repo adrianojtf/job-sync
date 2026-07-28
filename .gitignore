@@ -30,6 +30,7 @@ streamlit_tmp/
 # Arquivos do ambiente virtual
 venv/
 .venv/
+.venv-local/
 
 # Arquivos de pacotes do pip
 *.egg
@@ -37,3 +38,11 @@ venv/
 
 # Arquivos do PEP 582
 __pypackages__/
+
+# Cache de testes
+.pytest_cache/
+
+# Dados locais de execução (banco de dados e PDFs gerados/testados localmente)
+storage/*.db
+storage/*.pdf
+!storage/.gitkeep

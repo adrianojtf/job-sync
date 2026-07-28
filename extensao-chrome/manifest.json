@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "job-sync - Captura de Vagas",
+  "version": "1.0.0",
+  "description": "Captura o texto da página atual (descrição de vaga) e envia para o job-sync.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": ["http://localhost:8502/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Capturar vaga para o job-sync"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

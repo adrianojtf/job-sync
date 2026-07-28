@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>job-sync - Captura de Vagas</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; width: 280px; padding: 12px; }
+    h1 { font-size: 14px; margin: 0 0 10px; }
+    label { font-size: 12px; display: block; margin-bottom: 4px; color: #333; }
+    input[type="text"] { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 6px; }
+    button { width: 100%; padding: 7px; margin-bottom: 6px; cursor: pointer; }
+    #status { font-size: 12px; margin-top: 8px; min-height: 14px; }
+    .sucesso { color: #1a7f37; }
+    .erro { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <h1>job-sync — Captura de Vagas</h1>
+
+  <label for="token">Token de captura</label>
+  <input type="text" id="token" placeholder="Cole aqui o token gerado no job-sync" />
+  <button id="salvarToken">Salvar token</button>
+
+  <button id="capturar">Capturar vaga desta página</button>
+
+  <div id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

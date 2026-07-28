@@ -60,3 +60,18 @@ def test_ajustador_texto_groq_usa_analise_vaga_estruturada_no_prompt() -> None:
     assert "requisitos implícitos: desenvolvimento web" in prompt_text
     assert "trechos ambíguos: desejável conhecimento em bancos de dados relacionais" in prompt_text
     assert "não infira frameworks, ferramentas ou habilidades" in prompt_text
+
+
+def test_ajustador_texto_groq_resposta_estruturada_em_dict_nao_quebra() -> None:
+    """Regressão: o modelo às vezes devolve um objeto em vez de texto puro no campo 'conteudo_ajustado'."""
+    cliente_fake = ClienteGroqFake({"conteudo_ajustado": {"bullet_1": "Python", "bullet_2": "Django"}})
+    ajustador = AjustadorTextoGroq(cliente_groq=cliente_fake)
+
+    analise_vaga = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
+    secao = SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Python, Django")
+
+    secao_ajustada = ajustador.ajustar_secao(
+        secao, descricao_vaga="vaga qualquer", idioma_alvo="pt", analise_vaga=analise_vaga
+    )
+
+    assert "Python" in secao_ajustada.conteudo

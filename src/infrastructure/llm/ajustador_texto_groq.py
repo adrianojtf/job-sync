@@ -94,7 +94,10 @@ class AjustadorTextoGroq(AjustadorTextoPort):
             prompt_sistema=_PROMPT_SISTEMA,
             prompt_usuario=prompt_usuario,
         )
-        novo_conteudo = (resposta.get("conteudo_ajustado") or "").strip()
+        conteudo_bruto = resposta.get("conteudo_ajustado")
+        # O modelo às vezes devolve um objeto/lista estruturado em vez de texto puro,
+        # apesar da instrução no prompt — normaliza pra string em vez de quebrar.
+        novo_conteudo = str(conteudo_bruto).strip() if conteudo_bruto else ""
         if not novo_conteudo:
             raise ValueError(f"O modelo não retornou conteúdo ajustado para a seção '{secao.titulo}'.")
 

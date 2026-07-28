@@ -6,6 +6,7 @@ from datetime import date
 
 from domain.curriculo import Curriculo
 from domain.nome_arquivo import NomeArquivo
+from domain.vaga import AnaliseVaga
 
 
 @dataclass(frozen=True)
@@ -22,8 +23,14 @@ class AdaptarCurriculoParaVagaInputDto:
 
 @dataclass(frozen=True)
 class AdaptarCurriculoParaVagaOutputDto:
-    """Resultado do caso de uso: PDF gerado e nome de arquivo padronizado."""
+    """Resultado do caso de uso: PDF gerado e nome de arquivo padronizado.
+
+    Expõe `analise_vaga` (já calculada internamente) para que outras
+    funcionalidades (ATS Score, carta de apresentação) possam reaproveitá-la
+    sem uma segunda chamada de IA para analisar a mesma vaga.
+    """
 
     pdf_bytes: bytes
     nome_arquivo: NomeArquivo
     curriculo_adaptado: Curriculo
+    analise_vaga: AnaliseVaga

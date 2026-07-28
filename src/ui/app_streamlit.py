@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import sys
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -36,9 +37,11 @@ from application.use_cases.candidatar_na_vaga_externa import (
 )
 from application.use_cases.capturar_vaga import CapturarVaga, CapturarVagaInputDto
 from application.use_cases.criar_candidatura import CriarCandidatura, CriarCandidaturaInputDto
+from application.use_cases.buscar_perfil_estruturado import BuscarPerfilEstruturado
 from application.use_cases.descobrir_vagas_com_match import DescobrirVagasComMatch
 from application.use_cases.entrar_ou_criar_perfil import EntrarOuCriarPerfil
 from application.use_cases.gerar_carta_apresentacao import GerarCartaApresentacao
+from application.use_cases.importar_perfil_de_pdf import ImportarPerfilDePdf, ImportarPerfilDePdfInputDto
 from application.use_cases.listar_candidaturas_por_status import ListarCandidaturasPorStatus
 from application.use_cases.listar_curriculos_salvos import ListarCurriculosSalvos
 from application.use_cases.listar_vagas_capturadas import ListarVagasCapturadas
@@ -52,9 +55,24 @@ from application.use_cases.salvar_curriculo import (
     SalvarCurriculo,
     SalvarCurriculoInputDto,
 )
+from application.use_cases.salvar_perfil_estruturado import (
+    SalvarPerfilEstruturado,
+    SalvarPerfilEstruturadoInputDto,
+)
 from domain.ats_score.calcular_ats_score_service import CalcularAtsScore
 from domain.candidatura import StatusCandidatura
+from domain.curriculo import Curriculo
 from domain.curriculo_salvo import CurriculoSalvo
+from domain.perfil_estruturado import (
+    Certificacao,
+    ExperienciaProfissional,
+    FormacaoAcademica,
+    Idioma,
+    NivelIdioma,
+)
+from domain.perfil_estruturado.montar_curriculo_do_perfil_estruturado_service import (
+    MontarCurriculoDoPerfilEstruturado,
+)
 from domain.vaga_externa import VagaComScore
 from domain.vaga_externa.buscador_vagas_externo_port import BuscadorVagasExternoPort
 from infrastructure.extractors.extrator_curriculo_segmentado_ia import (
@@ -70,10 +88,14 @@ from infrastructure.llm.ajustador_texto_groq import AjustadorTextoGroq
 from infrastructure.llm.cliente_groq import ClienteGroq
 from infrastructure.llm.gerador_carta_apresentacao_groq import GeradorCartaApresentacaoGroq
 from infrastructure.llm.gerador_sugestoes_ats_groq import GeradorSugestoesAtsGroq
+from infrastructure.llm.extrator_perfil_estruturado_groq import ExtratorPerfilEstruturadoGroq
 from infrastructure.llm.job_description_analyzer_groq import JobDescriptionAnalyzerGroq
 from infrastructure.pdf.gerador_pdf_reportlab import GeradorPdfReportLab
 from infrastructure.persistence.candidatura_repository_impl import CandidaturaRepositoryImpl
 from infrastructure.persistence.curriculo_salvo_repository_impl import CurriculoSalvoRepositoryImpl
+from infrastructure.persistence.perfil_estruturado_repository_impl import (
+    PerfilEstruturadoRepositoryImpl,
+)
 from infrastructure.persistence.perfil_repository_impl import PerfilRepositoryImpl
 from infrastructure.persistence.token_captura_repository_impl import TokenCapturaRepositoryImpl
 from infrastructure.persistence.vaga_repository_impl import VagaRepositoryImpl
@@ -97,6 +119,16 @@ _LABEL_STATUS = {
     StatusCandidatura.REJEITADO: "Rejeitado",
 }
 
+_ROTULO_NIVEL_IDIOMA = {
+    NivelIdioma.BASICO: "Básico",
+    NivelIdioma.INTERMEDIARIO: "Intermediário",
+    NivelIdioma.AVANCADO: "Avançado",
+    NivelIdioma.FLUENTE: "Fluente",
+    NivelIdioma.NATIVO: "Nativo",
+}
+_NIVEL_IDIOMA_POR_ROTULO = {rotulo: nivel for nivel, rotulo in _ROTULO_NIVEL_IDIOMA.items()}
+
+_PAGINA_MEU_PERFIL = "Meu Perfil"
 _PAGINA_ADAPTAR_CURRICULO = "Adaptar Currículo"
 _PAGINA_ANALISAR_ATS = "Analisar ATS"
 _PAGINA_VAGAS = "Vagas"
@@ -207,6 +239,16 @@ def _montar_repositorio_token_captura() -> TokenCapturaRepositoryImpl:
     return TokenCapturaRepositoryImpl(caminho_banco=_CAMINHO_BANCO)
 
 
+@st.cache_resource
+def _montar_repositorio_perfil_estruturado() -> PerfilEstruturadoRepositoryImpl:
+    return PerfilEstruturadoRepositoryImpl(caminho_banco=_CAMINHO_BANCO)
+
+
+def _montar_importar_perfil_de_pdf() -> ImportarPerfilDePdf:
+    cliente_groq = ClienteGroq()
+    return ImportarPerfilDePdf(extrator=ExtratorPerfilEstruturadoGroq(cliente_groq=cliente_groq))
+
+
 def _carregar_secrets_para_env() -> None:
     """Repassa st.secrets (produção) para os.environ, usado por ClienteGroq via os.getenv().
 
@@ -225,6 +267,21 @@ def _salvar_no_armazenamento(nome_arquivo: str, pdf_bytes: bytes) -> Path:
     caminho = DIRETORIO_ARMAZENAMENTO / nome_arquivo
     caminho.write_bytes(pdf_bytes)
     return caminho
+
+
+def _obter_curriculo_do_perfil(
+    repositorio_perfil_estruturado: PerfilEstruturadoRepositoryImpl, perfil_identificador: str
+) -> Curriculo | None:
+    """Retorna o Curriculo montado a partir do perfil estruturado, ou None.
+
+    None cobre tanto "perfil não existe" quanto "perfil existe mas está vazio"
+    (sem conteúdo mínimo) — nos dois casos a UI deve cair no fluxo de upload
+    de PDF já existente, como se o perfil não existisse.
+    """
+    perfil = BuscarPerfilEstruturado(repositorio=repositorio_perfil_estruturado).executar(perfil_identificador)
+    if perfil is None:
+        return None
+    return MontarCurriculoDoPerfilEstruturado().executar(perfil)
 
 
 # --- Estilo (inspirado no shadcn/ui, sem sair do Streamlit) -----------------
@@ -273,6 +330,315 @@ def _renderizar_tela_de_entrada(repositorio_perfil: PerfilRepositoryImpl) -> Non
         perfil = use_case.executar(identificador.strip())
         st.session_state["perfil_identificador"] = perfil.identificador
         st.rerun()
+
+
+# --- Página: Meu Perfil (currículo mestre estruturado) ----------------------
+
+def _ids_lista(chave_ids: str) -> list[str]:
+    if chave_ids not in st.session_state:
+        st.session_state[chave_ids] = []
+    return st.session_state[chave_ids]
+
+
+def _carregar_dados_no_estado(dados) -> None:
+    """Popula o session_state a partir de um PerfilEstruturado ou DadosPerfilExtraidos.
+
+    Os dois tipos têm os mesmos nomes de campo (exceto perfil_identificador),
+    então a mesma função funciona para os dois casos (carregar do banco, ou
+    pré-preencher a partir de uma importação de PDF).
+    """
+    st.session_state["perfil_nome_completo"] = dados.nome_completo
+    st.session_state["perfil_email"] = dados.email
+    st.session_state["perfil_linkedin"] = dados.linkedin
+    st.session_state["perfil_resumo"] = dados.resumo_profissional
+    st.session_state["perfil_tecnologias_texto"] = ", ".join(dados.tecnologias)
+
+    ids_exp = [str(uuid.uuid4()) for _ in dados.experiencias]
+    st.session_state["perfil_exp_ids"] = ids_exp
+    for id_linha, exp in zip(ids_exp, dados.experiencias):
+        st.session_state[f"perfil_exp_empresa_{id_linha}"] = exp.empresa
+        st.session_state[f"perfil_exp_cargo_{id_linha}"] = exp.cargo
+        st.session_state[f"perfil_exp_periodo_{id_linha}"] = exp.periodo
+        st.session_state[f"perfil_exp_descricao_{id_linha}"] = exp.descricao
+
+    ids_form = [str(uuid.uuid4()) for _ in dados.formacoes]
+    st.session_state["perfil_form_ids"] = ids_form
+    for id_linha, formacao in zip(ids_form, dados.formacoes):
+        st.session_state[f"perfil_form_instituicao_{id_linha}"] = formacao.instituicao
+        st.session_state[f"perfil_form_curso_{id_linha}"] = formacao.curso
+        st.session_state[f"perfil_form_periodo_{id_linha}"] = formacao.periodo
+
+    ids_cert = [str(uuid.uuid4()) for _ in dados.certificacoes]
+    st.session_state["perfil_cert_ids"] = ids_cert
+    for id_linha, cert in zip(ids_cert, dados.certificacoes):
+        st.session_state[f"perfil_cert_nome_{id_linha}"] = cert.nome
+        st.session_state[f"perfil_cert_instituicao_{id_linha}"] = cert.instituicao
+        st.session_state[f"perfil_cert_ano_{id_linha}"] = cert.ano
+
+    ids_idioma = [str(uuid.uuid4()) for _ in dados.idiomas]
+    st.session_state["perfil_idioma_ids"] = ids_idioma
+    for id_linha, idioma in zip(ids_idioma, dados.idiomas):
+        st.session_state[f"perfil_idioma_nome_{id_linha}"] = idioma.idioma
+        st.session_state[f"perfil_idioma_nivel_{id_linha}"] = _ROTULO_NIVEL_IDIOMA[idioma.nivel]
+
+
+def _renderizar_lista_experiencias() -> None:
+    ids = _ids_lista("perfil_exp_ids")
+    for id_linha in list(ids):
+        with st.container(border=True):
+            col_empresa, col_cargo, col_periodo, col_remover = st.columns([3, 3, 2, 1])
+            with col_empresa:
+                st.text_input("Empresa", key=f"perfil_exp_empresa_{id_linha}")
+            with col_cargo:
+                st.text_input("Cargo", key=f"perfil_exp_cargo_{id_linha}")
+            with col_periodo:
+                st.text_input(
+                    "Período", key=f"perfil_exp_periodo_{id_linha}", placeholder="Ex: 2020 - Atual"
+                )
+            with col_remover:
+                st.write("")
+                if st.button("Remover", key=f"perfil_exp_remover_{id_linha}"):
+                    ids.remove(id_linha)
+                    st.rerun()
+            st.text_area("Descrição", key=f"perfil_exp_descricao_{id_linha}", height=80)
+    if st.button("Adicionar experiência", key="perfil_exp_adicionar"):
+        ids.append(str(uuid.uuid4()))
+        st.rerun()
+
+
+def _coletar_experiencias() -> tuple[ExperienciaProfissional, ...]:
+    experiencias = []
+    for id_linha in _ids_lista("perfil_exp_ids"):
+        empresa = st.session_state.get(f"perfil_exp_empresa_{id_linha}", "").strip()
+        cargo = st.session_state.get(f"perfil_exp_cargo_{id_linha}", "").strip()
+        if not empresa or not cargo:
+            continue
+        experiencias.append(
+            ExperienciaProfissional(
+                empresa=empresa,
+                cargo=cargo,
+                periodo=st.session_state.get(f"perfil_exp_periodo_{id_linha}", "").strip(),
+                descricao=st.session_state.get(f"perfil_exp_descricao_{id_linha}", "").strip(),
+            )
+        )
+    return tuple(experiencias)
+
+
+def _renderizar_lista_formacoes() -> None:
+    ids = _ids_lista("perfil_form_ids")
+    for id_linha in list(ids):
+        with st.container(border=True):
+            col_instituicao, col_curso, col_periodo, col_remover = st.columns([3, 3, 2, 1])
+            with col_instituicao:
+                st.text_input("Instituição", key=f"perfil_form_instituicao_{id_linha}")
+            with col_curso:
+                st.text_input("Curso", key=f"perfil_form_curso_{id_linha}")
+            with col_periodo:
+                st.text_input("Período", key=f"perfil_form_periodo_{id_linha}")
+            with col_remover:
+                st.write("")
+                if st.button("Remover", key=f"perfil_form_remover_{id_linha}"):
+                    ids.remove(id_linha)
+                    st.rerun()
+    if st.button("Adicionar formação", key="perfil_form_adicionar"):
+        ids.append(str(uuid.uuid4()))
+        st.rerun()
+
+
+def _coletar_formacoes() -> tuple[FormacaoAcademica, ...]:
+    formacoes = []
+    for id_linha in _ids_lista("perfil_form_ids"):
+        instituicao = st.session_state.get(f"perfil_form_instituicao_{id_linha}", "").strip()
+        curso = st.session_state.get(f"perfil_form_curso_{id_linha}", "").strip()
+        if not instituicao or not curso:
+            continue
+        formacoes.append(
+            FormacaoAcademica(
+                instituicao=instituicao,
+                curso=curso,
+                periodo=st.session_state.get(f"perfil_form_periodo_{id_linha}", "").strip(),
+            )
+        )
+    return tuple(formacoes)
+
+
+def _renderizar_lista_certificacoes() -> None:
+    ids = _ids_lista("perfil_cert_ids")
+    for id_linha in list(ids):
+        with st.container(border=True):
+            col_nome, col_instituicao, col_ano, col_remover = st.columns([3, 3, 2, 1])
+            with col_nome:
+                st.text_input("Nome", key=f"perfil_cert_nome_{id_linha}")
+            with col_instituicao:
+                st.text_input("Instituição", key=f"perfil_cert_instituicao_{id_linha}")
+            with col_ano:
+                st.text_input("Ano", key=f"perfil_cert_ano_{id_linha}")
+            with col_remover:
+                st.write("")
+                if st.button("Remover", key=f"perfil_cert_remover_{id_linha}"):
+                    ids.remove(id_linha)
+                    st.rerun()
+    if st.button("Adicionar certificação", key="perfil_cert_adicionar"):
+        ids.append(str(uuid.uuid4()))
+        st.rerun()
+
+
+def _coletar_certificacoes() -> tuple[Certificacao, ...]:
+    certificacoes = []
+    for id_linha in _ids_lista("perfil_cert_ids"):
+        nome = st.session_state.get(f"perfil_cert_nome_{id_linha}", "").strip()
+        if not nome:
+            continue
+        certificacoes.append(
+            Certificacao(
+                nome=nome,
+                instituicao=st.session_state.get(f"perfil_cert_instituicao_{id_linha}", "").strip(),
+                ano=st.session_state.get(f"perfil_cert_ano_{id_linha}", "").strip(),
+            )
+        )
+    return tuple(certificacoes)
+
+
+def _renderizar_lista_idiomas() -> None:
+    ids = _ids_lista("perfil_idioma_ids")
+    for id_linha in list(ids):
+        with st.container(border=True):
+            col_idioma, col_nivel, col_remover = st.columns([3, 2, 1])
+            with col_idioma:
+                st.text_input("Idioma", key=f"perfil_idioma_nome_{id_linha}")
+            with col_nivel:
+                st.selectbox(
+                    "Nível",
+                    list(_ROTULO_NIVEL_IDIOMA.values()),
+                    key=f"perfil_idioma_nivel_{id_linha}",
+                )
+            with col_remover:
+                st.write("")
+                if st.button("Remover", key=f"perfil_idioma_remover_{id_linha}"):
+                    ids.remove(id_linha)
+                    st.rerun()
+    if st.button("Adicionar idioma", key="perfil_idioma_adicionar"):
+        ids.append(str(uuid.uuid4()))
+        st.rerun()
+
+
+def _coletar_idiomas() -> tuple[Idioma, ...]:
+    idiomas = []
+    for id_linha in _ids_lista("perfil_idioma_ids"):
+        nome_idioma = st.session_state.get(f"perfil_idioma_nome_{id_linha}", "").strip()
+        if not nome_idioma:
+            continue
+        rotulo_nivel = st.session_state.get(f"perfil_idioma_nivel_{id_linha}", "Intermediário")
+        idiomas.append(
+            Idioma(idioma=nome_idioma, nivel=_NIVEL_IDIOMA_POR_ROTULO.get(rotulo_nivel, NivelIdioma.INTERMEDIARIO))
+        )
+    return tuple(idiomas)
+
+
+def _pagina_meu_perfil(
+    repositorio_perfil_estruturado: PerfilEstruturadoRepositoryImpl,
+    repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl,
+    perfil_identificador: str,
+) -> None:
+    st.title("Meu Perfil")
+    st.caption(
+        "Preencha seu currículo diretamente aqui, como já faz no LinkedIn ou na Gupy — sem "
+        "precisar fazer upload de PDF toda vez que for adaptar seu currículo, analisar ATS "
+        "ou se candidatar a uma vaga descoberta."
+    )
+
+    if "perfil_carregado" not in st.session_state:
+        perfil_existente = BuscarPerfilEstruturado(repositorio=repositorio_perfil_estruturado).executar(
+            perfil_identificador
+        )
+        if perfil_existente is not None:
+            _carregar_dados_no_estado(perfil_existente)
+        st.session_state["perfil_carregado"] = True
+
+    with st.expander("Importar de um PDF (opcional)"):
+        st.caption(
+            "Pré-preenche os campos abaixo a partir de um currículo em PDF — pode ser um "
+            "currículo já salvo na biblioteca, ou um export \"Salvar como PDF\" do seu "
+            "próprio perfil do LinkedIn. Os campos continuam editáveis antes de salvar."
+        )
+        curriculos_salvos = ListarCurriculosSalvos(
+            repositorio_curriculo_salvo=repositorio_curriculo_salvo
+        ).executar(perfil_identificador)
+
+        pdf_para_importar: bytes | None = None
+        if curriculos_salvos:
+            opcoes = {c.nome_referencia: c for c in curriculos_salvos}
+            nome_escolhido = st.selectbox(
+                "Usar um currículo da biblioteca",
+                ["Nenhum — enviar novo PDF abaixo"] + list(opcoes.keys()),
+                key="perfil_import_biblioteca",
+            )
+            if nome_escolhido != "Nenhum — enviar novo PDF abaixo":
+                pdf_para_importar = opcoes[nome_escolhido].pdf_bytes
+
+        if pdf_para_importar is None:
+            arquivo = st.file_uploader("PDF do currículo", type=["pdf"], key="perfil_import_upload")
+            if arquivo is not None:
+                pdf_para_importar = arquivo.read()
+
+        if st.button("Importar e pré-preencher") and pdf_para_importar is not None:
+            try:
+                with st.spinner("Extraindo dados do PDF..."):
+                    dados = _montar_importar_perfil_de_pdf().executar(
+                        ImportarPerfilDePdfInputDto(pdf_curriculo=pdf_para_importar)
+                    )
+                _carregar_dados_no_estado(dados)
+                st.success("Dados importados! Revise os campos abaixo antes de salvar.")
+                st.rerun()
+            except ValueError as erro:
+                st.error(str(erro))
+            except Exception as erro:  # noqa: BLE001 - fronteira de UI
+                st.error(f"Ocorreu um erro inesperado ao importar o PDF: {erro}")
+
+    st.subheader("Dados pessoais")
+    nome_completo = st.text_input("Nome completo", key="perfil_nome_completo")
+    col_email, col_linkedin = st.columns(2)
+    with col_email:
+        email = st.text_input("Email", key="perfil_email")
+    with col_linkedin:
+        linkedin = st.text_input("LinkedIn (URL)", key="perfil_linkedin")
+    resumo_profissional = st.text_area("Resumo profissional", key="perfil_resumo", height=120)
+
+    st.subheader("Experiências profissionais")
+    _renderizar_lista_experiencias()
+
+    st.subheader("Formação acadêmica")
+    _renderizar_lista_formacoes()
+
+    st.subheader("Certificações")
+    _renderizar_lista_certificacoes()
+
+    st.subheader("Idiomas")
+    _renderizar_lista_idiomas()
+
+    st.subheader("Tecnologias")
+    tecnologias_texto = st.text_input("Tecnologias (separadas por vírgula)", key="perfil_tecnologias_texto")
+
+    if st.button("Salvar perfil", type="primary"):
+        try:
+            input_dto = SalvarPerfilEstruturadoInputDto(
+                perfil_identificador=perfil_identificador,
+                nome_completo=nome_completo,
+                email=email,
+                linkedin=linkedin,
+                resumo_profissional=resumo_profissional,
+                experiencias=_coletar_experiencias(),
+                formacoes=_coletar_formacoes(),
+                certificacoes=_coletar_certificacoes(),
+                idiomas=_coletar_idiomas(),
+                tecnologias=tuple(t.strip() for t in tecnologias_texto.split(",") if t.strip()),
+            )
+            SalvarPerfilEstruturado(repositorio=repositorio_perfil_estruturado).executar(input_dto)
+            st.success("Perfil salvo com sucesso!")
+        except ValueError as erro:
+            st.error(str(erro))
+        except Exception as erro:  # noqa: BLE001 - fronteira de UI
+            st.error(f"Ocorreu um erro inesperado ao salvar o perfil: {erro}")
 
 
 # --- Página: Adaptar Currículo -----------------------------------------------
@@ -329,13 +695,17 @@ def _renderizar_biblioteca_curriculos(
     return None, None
 
 
-def _renderizar_formulario(pdf_pre_selecionado: bytes | None) -> tuple[bytes | None, str, str, str, str]:
-    if pdf_pre_selecionado is not None:
-        st.caption("Usando currículo selecionado da biblioteca acima.")
-        conteudo_pdf = pdf_pre_selecionado
-    else:
-        arquivo_pdf = st.file_uploader("Currículo em PDF", type=["pdf"], key="upload_adaptacao")
-        conteudo_pdf = arquivo_pdf.read() if arquivo_pdf is not None else None
+def _renderizar_formulario(
+    pdf_pre_selecionado: bytes | None, pular_upload: bool = False
+) -> tuple[bytes | None, str, str, str, str]:
+    conteudo_pdf: bytes | None = None
+    if not pular_upload:
+        if pdf_pre_selecionado is not None:
+            st.caption("Usando currículo selecionado da biblioteca acima.")
+            conteudo_pdf = pdf_pre_selecionado
+        else:
+            arquivo_pdf = st.file_uploader("Currículo em PDF", type=["pdf"], key="upload_adaptacao")
+            conteudo_pdf = arquivo_pdf.read() if arquivo_pdf is not None else None
 
     descricao_vaga = st.text_area(
         "Descrição da vaga",
@@ -356,9 +726,13 @@ def _renderizar_formulario(pdf_pre_selecionado: bytes | None) -> tuple[bytes | N
 
 
 def _validar_formulario(
-    conteudo_pdf: bytes | None, descricao_vaga: str, cargo_alvo: str, empresa_alvo: str
+    conteudo_pdf: bytes | None,
+    descricao_vaga: str,
+    cargo_alvo: str,
+    empresa_alvo: str,
+    tem_curriculo_do_perfil: bool = False,
 ) -> str | None:
-    if conteudo_pdf is None:
+    if conteudo_pdf is None and not tem_curriculo_do_perfil:
         return "Anexe um arquivo PDF do currículo ou selecione um da biblioteca."
     if not descricao_vaga or not descricao_vaga.strip():
         return "Informe a descrição da vaga."
@@ -370,7 +744,9 @@ def _validar_formulario(
 
 
 def _pagina_adaptar_curriculo(
-    repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl, perfil_identificador: str
+    repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl,
+    repositorio_perfil_estruturado: PerfilEstruturadoRepositoryImpl,
+    perfil_identificador: str,
 ) -> None:
     st.title("Adaptador de Currículo para Vagas")
     st.caption(
@@ -378,14 +754,22 @@ def _pagina_adaptar_curriculo(
         "adaptada, seção por seção, no idioma desejado."
     )
 
-    pdf_biblioteca, _ = _renderizar_biblioteca_curriculos(repositorio_curriculo_salvo, perfil_identificador)
+    curriculo_do_perfil = _obter_curriculo_do_perfil(repositorio_perfil_estruturado, perfil_identificador)
+
+    if curriculo_do_perfil is not None:
+        st.caption("Usando os dados do seu perfil salvo (página 'Meu Perfil').")
+        pdf_biblioteca = None
+    else:
+        pdf_biblioteca, _ = _renderizar_biblioteca_curriculos(repositorio_curriculo_salvo, perfil_identificador)
 
     conteudo_pdf, descricao_vaga, idioma_alvo, cargo_alvo, empresa_alvo = _renderizar_formulario(
-        pdf_biblioteca
+        pdf_biblioteca, pular_upload=curriculo_do_perfil is not None
     )
 
     if st.button("Gerar currículo adaptado", type="primary"):
-        erro_validacao = _validar_formulario(conteudo_pdf, descricao_vaga, cargo_alvo, empresa_alvo)
+        erro_validacao = _validar_formulario(
+            conteudo_pdf, descricao_vaga, cargo_alvo, empresa_alvo, tem_curriculo_do_perfil=curriculo_do_perfil is not None
+        )
         if erro_validacao:
             st.error(erro_validacao)
             return
@@ -395,6 +779,7 @@ def _pagina_adaptar_curriculo(
                 caso_de_uso = _montar_caso_de_uso()
                 input_dto = AdaptarCurriculoParaVagaInputDto(
                     pdf_curriculo=conteudo_pdf,
+                    curriculo_pre_montado=curriculo_do_perfil,
                     descricao_vaga=descricao_vaga,
                     idioma_alvo=idioma_alvo,
                     cargo_alvo=cargo_alvo,
@@ -468,6 +853,7 @@ def _selecionar_descricao_vaga(repositorio_vaga: VagaRepositoryImpl, perfil_iden
 
 def _pagina_analisar_ats(
     repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl,
+    repositorio_perfil_estruturado: PerfilEstruturadoRepositoryImpl,
     repositorio_vaga: VagaRepositoryImpl,
     perfil_identificador: str,
 ) -> None:
@@ -477,19 +863,24 @@ def _pagina_analisar_ats(
         "sem gerar um currículo adaptado (mais rápido e barato que 'Adaptar Currículo')."
     )
 
-    pdf_biblioteca, _ = _renderizar_biblioteca_curriculos(repositorio_curriculo_salvo, perfil_identificador)
+    curriculo_do_perfil = _obter_curriculo_do_perfil(repositorio_perfil_estruturado, perfil_identificador)
+    conteudo_pdf: bytes | None = None
 
-    if pdf_biblioteca is not None:
-        st.caption("Usando currículo selecionado da biblioteca acima.")
-        conteudo_pdf = pdf_biblioteca
+    if curriculo_do_perfil is not None:
+        st.caption("Usando os dados do seu perfil salvo (página 'Meu Perfil').")
     else:
-        arquivo_pdf = st.file_uploader("Currículo em PDF", type=["pdf"], key="upload_ats")
-        conteudo_pdf = arquivo_pdf.read() if arquivo_pdf is not None else None
+        pdf_biblioteca, _ = _renderizar_biblioteca_curriculos(repositorio_curriculo_salvo, perfil_identificador)
+        if pdf_biblioteca is not None:
+            st.caption("Usando currículo selecionado da biblioteca acima.")
+            conteudo_pdf = pdf_biblioteca
+        else:
+            arquivo_pdf = st.file_uploader("Currículo em PDF", type=["pdf"], key="upload_ats")
+            conteudo_pdf = arquivo_pdf.read() if arquivo_pdf is not None else None
 
     descricao_vaga = _selecionar_descricao_vaga(repositorio_vaga, perfil_identificador)
 
     if st.button("Analisar ATS", type="primary"):
-        if conteudo_pdf is None:
+        if conteudo_pdf is None and curriculo_do_perfil is None:
             st.error("Anexe um currículo em PDF ou selecione um da biblioteca.")
             return
         if not descricao_vaga or not descricao_vaga.strip():
@@ -500,7 +891,11 @@ def _pagina_analisar_ats(
             with st.spinner("Analisando aderência do currículo à vaga..."):
                 use_case = _montar_analisar_ats_vaga()
                 resultado = use_case.executar(
-                    AnalisarAtsVagaInputDto(pdf_curriculo=conteudo_pdf, descricao_vaga=descricao_vaga)
+                    AnalisarAtsVagaInputDto(
+                        pdf_curriculo=conteudo_pdf,
+                        curriculo_pre_montado=curriculo_do_perfil,
+                        descricao_vaga=descricao_vaga,
+                    )
                 )
 
             st.metric("ATS Score", f"{resultado.resultado_ats.nota}/100")
@@ -522,7 +917,12 @@ def _pagina_analisar_ats(
 
 # --- Página: Vagas (descoberta externa + candidatura em um clique) ----------
 
-def _renderizar_vaga_descoberta(vaga_com_score: VagaComScore, pdf_curriculo: bytes, idioma_alvo: str) -> None:
+def _renderizar_vaga_descoberta(
+    vaga_com_score: VagaComScore,
+    pdf_curriculo: bytes,
+    idioma_alvo: str,
+    curriculo_do_perfil: Curriculo | None = None,
+) -> None:
     vaga = vaga_com_score.vaga
     resultado_ats = vaga_com_score.resultado_score
     chave = f"{vaga.fonte.name}-{vaga.url}"
@@ -556,6 +956,7 @@ def _renderizar_vaga_descoberta(vaga_com_score: VagaComScore, pdf_curriculo: byt
                     resultado_candidatura = use_case.executar(
                         CandidatarNaVagaExternaInputDto(
                             pdf_curriculo=pdf_curriculo,
+                            curriculo_pre_montado=curriculo_do_perfil,
                             vaga=vaga,
                             idioma_alvo=idioma_alvo,
                             cargo_alvo=vaga.titulo,
@@ -594,7 +995,9 @@ def _renderizar_vaga_descoberta(vaga_com_score: VagaComScore, pdf_curriculo: byt
 
 
 def _pagina_vagas(
-    repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl, perfil_identificador: str
+    repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl,
+    repositorio_perfil_estruturado: PerfilEstruturadoRepositoryImpl,
+    perfil_identificador: str,
 ) -> None:
     st.title("Vagas")
     st.caption(
@@ -653,10 +1056,17 @@ def _pagina_vagas(
     if not vagas_descobertas:
         return
 
+    curriculo_do_perfil = _obter_curriculo_do_perfil(repositorio_perfil_estruturado, perfil_identificador)
+    if curriculo_do_perfil is not None:
+        st.caption("Candidatar-se vai usar os dados do seu perfil salvo (página 'Meu Perfil').")
+
     st.subheader(f"{len(vagas_descobertas)} vagas encontradas")
     for vaga_com_score in vagas_descobertas:
         _renderizar_vaga_descoberta(
-            vaga_com_score, st.session_state["curriculo_vagas_pdf"], idioma_alvo
+            vaga_com_score,
+            st.session_state["curriculo_vagas_pdf"],
+            idioma_alvo,
+            curriculo_do_perfil=curriculo_do_perfil,
         )
 
 
@@ -826,20 +1236,33 @@ def main() -> None:
         st.caption(f"Perfil: **{perfil_identificador}**")
         pagina = st.radio(
             "Navegação",
-            [_PAGINA_ADAPTAR_CURRICULO, _PAGINA_ANALISAR_ATS, _PAGINA_VAGAS, _PAGINA_VAGAS_E_CANDIDATURAS],
+            [
+                _PAGINA_MEU_PERFIL,
+                _PAGINA_ADAPTAR_CURRICULO,
+                _PAGINA_ANALISAR_ATS,
+                _PAGINA_VAGAS,
+                _PAGINA_VAGAS_E_CANDIDATURAS,
+            ],
             label_visibility="collapsed",
         )
         if st.button("Sair"):
-            del st.session_state["perfil_identificador"]
+            for chave in [k for k in st.session_state if k.startswith("perfil_")]:
+                del st.session_state[chave]
             st.rerun()
 
-    if pagina == _PAGINA_ADAPTAR_CURRICULO:
-        _pagina_adaptar_curriculo(repositorio_curriculo_salvo, perfil_identificador)
+    repositorio_perfil_estruturado = _montar_repositorio_perfil_estruturado()
+
+    if pagina == _PAGINA_MEU_PERFIL:
+        _pagina_meu_perfil(repositorio_perfil_estruturado, repositorio_curriculo_salvo, perfil_identificador)
+    elif pagina == _PAGINA_ADAPTAR_CURRICULO:
+        _pagina_adaptar_curriculo(repositorio_curriculo_salvo, repositorio_perfil_estruturado, perfil_identificador)
     elif pagina == _PAGINA_ANALISAR_ATS:
         repositorio_vaga = _montar_repositorio_vaga()
-        _pagina_analisar_ats(repositorio_curriculo_salvo, repositorio_vaga, perfil_identificador)
+        _pagina_analisar_ats(
+            repositorio_curriculo_salvo, repositorio_perfil_estruturado, repositorio_vaga, perfil_identificador
+        )
     elif pagina == _PAGINA_VAGAS:
-        _pagina_vagas(repositorio_curriculo_salvo, perfil_identificador)
+        _pagina_vagas(repositorio_curriculo_salvo, repositorio_perfil_estruturado, perfil_identificador)
     else:
         repositorio_token = _montar_repositorio_token_captura()
         repositorio_vaga = _montar_repositorio_vaga()

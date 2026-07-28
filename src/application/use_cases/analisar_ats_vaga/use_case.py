@@ -37,7 +37,11 @@ class AnalisarAtsVaga:
     def executar(self, input_dto: AnalisarAtsVagaInputDto) -> AnalisarAtsVagaOutputDto:
         AnalisarAtsVagaInputValidator.validar(input_dto)
 
-        curriculo = self._extrator.extrair(input_dto.pdf_curriculo)
+        curriculo = (
+            input_dto.curriculo_pre_montado
+            if input_dto.curriculo_pre_montado is not None
+            else self._extrator.extrair(input_dto.pdf_curriculo)
+        )
         analise_vaga = self._analisador_vaga.analisar(input_dto.descricao_vaga)
         resultado_ats = self._calcular_ats_score.executar(curriculo, analise_vaga)
         sugestoes = self._gerador_sugestoes.gerar(curriculo, analise_vaga, resultado_ats)

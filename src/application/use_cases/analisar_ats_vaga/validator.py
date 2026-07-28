@@ -9,7 +9,7 @@ class AnalisarAtsVagaInputValidator:
     @staticmethod
     def validar(input_dto: AnalisarAtsVagaInputDto) -> None:
         """Valida o DTO de entrada e levanta ValueError se inválido."""
-        if not input_dto.pdf_curriculo:
-            raise ValueError("O PDF do currículo é obrigatório.")
+        if not input_dto.pdf_curriculo and input_dto.curriculo_pre_montado is None:
+            raise ValueError("O PDF do currículo é obrigatório (ou informe curriculo_pre_montado).")
         if not input_dto.descricao_vaga or not input_dto.descricao_vaga.strip():
             raise ValueError("A descrição da vaga é obrigatória.")

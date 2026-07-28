@@ -122,3 +122,20 @@ class TestAnalisarAtsVaga:
 
         with pytest.raises(ValueError, match="PDF"):
             use_case.executar(AnalisarAtsVagaInputDto(pdf_curriculo=b"", descricao_vaga="vaga"))
+
+    def test_curriculo_pre_montado_pula_extracao_via_ia(self):
+        curriculo = _curriculo()
+        extrator = ExtratorFake(curriculo)
+        use_case = AnalisarAtsVaga(
+            extrator=extrator,
+            analisador_vaga=JobDescriptionAnalyzerFake(_analise_com_requisito_faltante()),
+            calcular_ats_score=CalcularAtsScore(),
+            gerador_sugestoes=GerarSugestoesAtsFake(("sugestoes",)),
+        )
+
+        resultado = use_case.executar(
+            AnalisarAtsVagaInputDto(curriculo_pre_montado=curriculo, descricao_vaga="Vaga que exige Kubernetes")
+        )
+
+        assert extrator.recebeu_pdf is None
+        assert resultado.curriculo == curriculo

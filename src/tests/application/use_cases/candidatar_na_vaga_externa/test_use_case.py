@@ -23,8 +23,10 @@ from domain.vaga_externa import FonteVagaExterna, VagaExterna
 class ExtratorFake(ExtratorCurriculoPort):
     def __init__(self, curriculo: Curriculo):
         self._curriculo = curriculo
+        self.chamado = False
 
     def extrair(self, conteudo_pdf: bytes) -> Curriculo:
+        self.chamado = True
         return self._curriculo
 
 
@@ -157,3 +159,22 @@ class TestCandidatarNaVagaExterna:
 
         with pytest.raises(ValueError, match="idioma"):
             use_case.executar(_input_dto(idioma_alvo="   "))
+
+    def test_curriculo_pre_montado_pula_extracao_via_ia(self):
+        curriculo = _curriculo()
+        extrator = ExtratorFake(curriculo)
+        use_case = CandidatarNaVagaExterna(
+            extrator=extrator,
+            analisador_vaga=JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
+            ),
+            ajustador_texto=AjustadorTextoFake(),
+            gerador_pdf=GeradorPdfFake(),
+            calcular_ats_score=CalcularAtsScore(),
+            gerador_carta=GerarCartaApresentacaoFake(),
+        )
+
+        resultado = use_case.executar(_input_dto(pdf_curriculo=None, curriculo_pre_montado=curriculo))
+
+        assert extrator.chamado is False
+        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"

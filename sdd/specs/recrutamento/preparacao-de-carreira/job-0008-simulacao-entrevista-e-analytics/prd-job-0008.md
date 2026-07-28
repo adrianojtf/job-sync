@@ -67,10 +67,13 @@ Jornada principal — analytics:
 
 ## Fora de Escopo
 
-- Entrevista simulada interativa (com respostas do usuário avaliadas pela IA) — esta fase gera apenas o roteiro de perguntas, não conduz uma simulação completa de pergunta-resposta.
 - Comparação de desempenho entre usuários/perfis diferentes.
 - Exportação do dashboard em PDF ou outro formato.
 - Métricas de tempo médio em cada estágio do funil (ex: dias até avançar de Aplicado para Entrevista) — fica para uma iteração futura.
+
+## Roadmap Futuro (fora desta Fase 4)
+
+- **Entrevista simulada interativa**: em vez de só gerar o roteiro de perguntas, conduzir uma simulação completa de pergunta-resposta, com a IA avaliando as respostas do usuário em tempo real (ex: dando feedback sobre completude, clareza, aderência à vaga). Destacado explicitamente pelo usuário como candidato a uma próxima versão, não descartado — mas depende de decisões de UX ainda não exploradas (texto ou voz? avaliação em que critérios? quantas rodadas?), por isso fica fora desta Fase 4, que entrega apenas o roteiro estático de perguntas.
 
 ## Questões em Aberto
 

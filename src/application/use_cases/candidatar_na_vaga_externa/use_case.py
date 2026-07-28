@@ -48,7 +48,11 @@ class CandidatarNaVagaExterna:
     def executar(self, input_dto: CandidatarNaVagaExternaInputDto) -> CandidatarNaVagaExternaOutputDto:
         CandidatarNaVagaExternaInputValidator.validar(input_dto)
 
-        curriculo_original = self._extrator.extrair(input_dto.pdf_curriculo)
+        curriculo_original = (
+            input_dto.curriculo_pre_montado
+            if input_dto.curriculo_pre_montado is not None
+            else self._extrator.extrair(input_dto.pdf_curriculo)
+        )
         analise_vaga = self._analisador_vaga.analisar(input_dto.vaga.descricao)
         curriculo_adaptado = self._ajustar_todas_as_secoes(curriculo_original, input_dto, analise_vaga)
         pdf_bytes = self._gerador_pdf.gerar(curriculo_adaptado, input_dto.idioma_alvo)

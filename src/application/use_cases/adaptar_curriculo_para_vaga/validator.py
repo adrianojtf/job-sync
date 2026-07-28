@@ -20,8 +20,8 @@ class AdaptarCurriculoParaVagaInputValidator:
             )
         if not input_dto.descricao_vaga or not input_dto.descricao_vaga.strip():
             raise ValueError("A descrição da vaga é obrigatória.")
-        if not input_dto.pdf_curriculo:
-            raise ValueError("O PDF do currículo é obrigatório.")
+        if not input_dto.pdf_curriculo and input_dto.curriculo_pre_montado is None:
+            raise ValueError("O PDF do currículo é obrigatório (ou informe curriculo_pre_montado).")
         if not input_dto.cargo_alvo or not input_dto.cargo_alvo.strip():
             raise ValueError("O cargo alvo é obrigatório.")
         if not input_dto.empresa_alvo or not input_dto.empresa_alvo.strip():

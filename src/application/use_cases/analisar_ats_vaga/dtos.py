@@ -10,10 +10,15 @@ from domain.vaga import AnaliseVaga
 
 @dataclass(frozen=True)
 class AnalisarAtsVagaInputDto:
-    """Dados de entrada do caso de uso, vindos da interface (Streamlit)."""
+    """Dados de entrada do caso de uso, vindos da interface (Streamlit).
 
-    pdf_curriculo: bytes
+    Informe `pdf_curriculo` OU `curriculo_pre_montado` — quando este último
+    vier preenchido (perfil estruturado, Fase 5), a extração via IA é pulada.
+    """
+
     descricao_vaga: str
+    pdf_curriculo: bytes | None = None
+    curriculo_pre_montado: Curriculo | None = None
 
 
 @dataclass(frozen=True)

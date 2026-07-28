@@ -234,3 +234,44 @@ class TestAdaptarCurriculoParaVaga:
 
         with pytest.raises(ValueError, match="descrição da vaga"):
             caso_de_uso.executar(input_dto)
+
+    def test_curriculo_pre_montado_pula_extracao_via_ia(self):
+        curriculo = _curriculo_exemplo()
+        extrator = ExtratorFake(curriculo)
+        analisador_vaga = JobDescriptionAnalyzerFake(
+            AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
+        )
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            extrator,
+            analisador_vaga,
+            AjustadorTextoFake(),
+            GeradorPdfFake(),
+        )
+
+        input_dto = AdaptarCurriculoParaVagaInputDto(
+            curriculo_pre_montado=curriculo,
+            descricao_vaga="vaga qualquer",
+            idioma_alvo="pt",
+            cargo_alvo="Cargo",
+            empresa_alvo="Empresa",
+        )
+
+        resultado = caso_de_uso.executar(input_dto)
+
+        assert extrator.recebeu_pdf is None
+        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+
+    def test_sem_pdf_e_sem_curriculo_pre_montado_gera_erro(self):
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")),
+            AjustadorTextoFake(),
+            GeradorPdfFake(),
+        )
+
+        input_dto = AdaptarCurriculoParaVagaInputDto(
+            descricao_vaga="vaga", idioma_alvo="pt", cargo_alvo="Cargo", empresa_alvo="Empresa"
+        )
+
+        with pytest.raises(ValueError, match="PDF"):
+            caso_de_uso.executar(input_dto)

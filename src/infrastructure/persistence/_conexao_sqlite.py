@@ -53,6 +53,19 @@ CREATE TABLE IF NOT EXISTS candidatura (
     data_aplicacao TEXT NOT NULL,
     data_ultima_mudanca_status TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS perfil_estruturado (
+    perfil_identificador TEXT PRIMARY KEY REFERENCES perfil(identificador),
+    nome_completo TEXT NOT NULL,
+    email TEXT NOT NULL,
+    linkedin TEXT NOT NULL DEFAULT '',
+    resumo_profissional TEXT NOT NULL DEFAULT '',
+    experiencias_json TEXT NOT NULL DEFAULT '[]',
+    formacoes_json TEXT NOT NULL DEFAULT '[]',
+    certificacoes_json TEXT NOT NULL DEFAULT '[]',
+    idiomas_json TEXT NOT NULL DEFAULT '[]',
+    tecnologias_json TEXT NOT NULL DEFAULT '[]'
+);
 """
 
 

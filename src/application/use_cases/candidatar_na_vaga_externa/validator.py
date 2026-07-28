@@ -9,8 +9,8 @@ class CandidatarNaVagaExternaInputValidator:
     @staticmethod
     def validar(input_dto: CandidatarNaVagaExternaInputDto) -> None:
         """Valida o DTO de entrada e levanta ValueError se inválido."""
-        if not input_dto.pdf_curriculo:
-            raise ValueError("O PDF do currículo é obrigatório.")
+        if not input_dto.pdf_curriculo and input_dto.curriculo_pre_montado is None:
+            raise ValueError("O PDF do currículo é obrigatório (ou informe curriculo_pre_montado).")
         if not input_dto.idioma_alvo or not input_dto.idioma_alvo.strip():
             raise ValueError("O idioma alvo é obrigatório.")
         if not input_dto.cargo_alvo or not input_dto.cargo_alvo.strip():

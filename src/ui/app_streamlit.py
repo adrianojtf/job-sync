@@ -30,8 +30,13 @@ from application.use_cases.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVagaInputDto,
 )
 from application.use_cases.analisar_ats_vaga import AnalisarAtsVaga, AnalisarAtsVagaInputDto
+from application.use_cases.candidatar_na_vaga_externa import (
+    CandidatarNaVagaExterna,
+    CandidatarNaVagaExternaInputDto,
+)
 from application.use_cases.capturar_vaga import CapturarVaga, CapturarVagaInputDto
 from application.use_cases.criar_candidatura import CriarCandidatura, CriarCandidaturaInputDto
+from application.use_cases.descobrir_vagas_com_match import DescobrirVagasComMatch
 from application.use_cases.entrar_ou_criar_perfil import EntrarOuCriarPerfil
 from application.use_cases.gerar_carta_apresentacao import GerarCartaApresentacao
 from application.use_cases.listar_candidaturas_por_status import ListarCandidaturasPorStatus
@@ -50,9 +55,17 @@ from application.use_cases.salvar_curriculo import (
 from domain.ats_score.calcular_ats_score_service import CalcularAtsScore
 from domain.candidatura import StatusCandidatura
 from domain.curriculo_salvo import CurriculoSalvo
+from domain.vaga_externa import VagaComScore
+from domain.vaga_externa.buscador_vagas_externo_port import BuscadorVagasExternoPort
 from infrastructure.extractors.extrator_curriculo_segmentado_ia import (
     ExtratorCurriculoSegmentadoPorIA,
 )
+from infrastructure.fontes_vagas.buscador_adzuna import BuscadorAdzuna
+from infrastructure.fontes_vagas.buscador_arbeitnow import BuscadorArbeitnow
+from infrastructure.fontes_vagas.buscador_google_custom_search import BuscadorGoogleCustomSearch
+from infrastructure.fontes_vagas.buscador_remoteok import BuscadorRemoteOk
+from infrastructure.fontes_vagas.buscador_wwr import BuscadorWeWorkRemotely
+from infrastructure.fontes_vagas.extrator_texto_pagina import ExtratorTextoPagina
 from infrastructure.llm.ajustador_texto_groq import AjustadorTextoGroq
 from infrastructure.llm.cliente_groq import ClienteGroq
 from infrastructure.llm.gerador_carta_apresentacao_groq import GeradorCartaApresentacaoGroq
@@ -86,6 +99,7 @@ _LABEL_STATUS = {
 
 _PAGINA_ADAPTAR_CURRICULO = "Adaptar Currículo"
 _PAGINA_ANALISAR_ATS = "Analisar ATS"
+_PAGINA_VAGAS = "Vagas"
 _PAGINA_VAGAS_E_CANDIDATURAS = "Vagas & Candidaturas"
 
 
@@ -117,6 +131,54 @@ def _montar_analisar_ats_vaga() -> AnalisarAtsVaga:
         analisador_vaga=analisador_vaga,
         calcular_ats_score=CalcularAtsScore(),
         gerador_sugestoes=gerador_sugestoes,
+    )
+
+
+def _montar_buscadores_vagas_externo() -> tuple[BuscadorVagasExternoPort, ...]:
+    """Monta apenas as fontes cujas credenciais (quando exigidas) estão configuradas no .env."""
+    buscadores: list[BuscadorVagasExternoPort] = [
+        BuscadorRemoteOk(),
+        BuscadorWeWorkRemotely(),
+        BuscadorArbeitnow(),
+    ]
+
+    adzuna_app_id = os.getenv("ADZUNA_APP_ID")
+    adzuna_app_key = os.getenv("ADZUNA_APP_KEY")
+    if adzuna_app_id and adzuna_app_key:
+        buscadores.append(BuscadorAdzuna(app_id=adzuna_app_id, app_key=adzuna_app_key))
+
+    google_api_key = os.getenv("GOOGLE_CSE_API_KEY")
+    google_cse_id = os.getenv("GOOGLE_CSE_ID")
+    if google_api_key and google_cse_id:
+        buscadores.append(
+            BuscadorGoogleCustomSearch(
+                api_key=google_api_key,
+                search_engine_id=google_cse_id,
+                extrator_texto_pagina=ExtratorTextoPagina(),
+            )
+        )
+    return tuple(buscadores)
+
+
+def _montar_descobrir_vagas_com_match() -> DescobrirVagasComMatch:
+    cliente_groq = ClienteGroq()
+    return DescobrirVagasComMatch(
+        buscadores=_montar_buscadores_vagas_externo(),
+        analisador_vaga=JobDescriptionAnalyzerGroq(cliente_groq=cliente_groq),
+        extrator_curriculo=ExtratorCurriculoSegmentadoPorIA(cliente_groq=cliente_groq),
+        calcular_score=CalcularAtsScore(),
+    )
+
+
+def _montar_candidatar_na_vaga_externa() -> CandidatarNaVagaExterna:
+    cliente_groq = ClienteGroq()
+    return CandidatarNaVagaExterna(
+        extrator=ExtratorCurriculoSegmentadoPorIA(cliente_groq=cliente_groq),
+        analisador_vaga=JobDescriptionAnalyzerGroq(cliente_groq=cliente_groq),
+        ajustador_texto=AjustadorTextoGroq(cliente_groq=cliente_groq),
+        gerador_pdf=GeradorPdfReportLab(),
+        calcular_ats_score=CalcularAtsScore(),
+        gerador_carta=GeradorCartaApresentacaoGroq(cliente_groq=cliente_groq),
     )
 
 
@@ -458,6 +520,146 @@ def _pagina_analisar_ats(
             st.error(f"Ocorreu um erro inesperado ao analisar o currículo: {erro}")
 
 
+# --- Página: Vagas (descoberta externa + candidatura em um clique) ----------
+
+def _renderizar_vaga_descoberta(vaga_com_score: VagaComScore, pdf_curriculo: bytes, idioma_alvo: str) -> None:
+    vaga = vaga_com_score.vaga
+    resultado_ats = vaga_com_score.resultado_score
+    chave = f"{vaga.fonte.name}-{vaga.url}"
+
+    with st.container(border=True):
+        col_info, col_score = st.columns([4, 1])
+        with col_info:
+            st.write(f"**{vaga.titulo}**")
+            st.caption(f"{vaga.empresa} · {vaga.fonte.name.replace('_', ' ').title()}")
+            if vaga.data_publicacao is not None:
+                st.caption(f"Publicada em {vaga.data_publicacao.strftime('%d/%m/%Y')}")
+            else:
+                st.caption("Data de publicação desconhecida")
+            if vaga.descricao_incompleta:
+                st.caption("⚠️ Descrição incompleta (apenas trecho disponível desta fonte)")
+        with col_score:
+            st.metric("Match", f"{resultado_ats.nota}/100")
+
+        with st.expander("Ver requisitos"):
+            if resultado_ats.requisitos_faltantes:
+                st.write("Requisitos não encontrados no currículo:")
+                for requisito in resultado_ats.requisitos_faltantes:
+                    st.write(f"- {requisito.nome}")
+            else:
+                st.write("Todos os requisitos explícitos foram encontrados no currículo.")
+
+        if st.button("Candidatar", key=f"candidatar_{chave}"):
+            try:
+                with st.spinner("Adaptando currículo, calculando ATS e gerando carta de apresentação..."):
+                    use_case = _montar_candidatar_na_vaga_externa()
+                    resultado_candidatura = use_case.executar(
+                        CandidatarNaVagaExternaInputDto(
+                            pdf_curriculo=pdf_curriculo,
+                            vaga=vaga,
+                            idioma_alvo=idioma_alvo,
+                            cargo_alvo=vaga.titulo,
+                            empresa_alvo=vaga.empresa,
+                            data_referencia=date.today(),
+                        )
+                    )
+                st.session_state[f"candidatura_{chave}"] = resultado_candidatura
+            except ValueError as erro:
+                st.error(str(erro))
+            except Exception as erro:  # noqa: BLE001 - fronteira de UI: captura e exibe qualquer falha inesperada
+                st.error(f"Ocorreu um erro inesperado ao candidatar: {erro}")
+
+        resultado_candidatura = st.session_state.get(f"candidatura_{chave}")
+        if resultado_candidatura is not None:
+            st.success("Currículo adaptado e carta de apresentação prontos!")
+            st.metric("ATS Score (currículo adaptado)", f"{resultado_candidatura.resultado_ats.nota}/100")
+            st.download_button(
+                "Baixar PDF adaptado",
+                data=resultado_candidatura.pdf_bytes,
+                file_name=resultado_candidatura.nome_arquivo.valor,
+                mime="application/pdf",
+                key=f"download_pdf_{chave}",
+            )
+            nome_arquivo_carta = (
+                f"carta-apresentacao-{resultado_candidatura.nome_arquivo.valor.replace('.pdf', '.txt')}"
+            )
+            st.download_button(
+                "Baixar carta de apresentação",
+                data=resultado_candidatura.carta_apresentacao,
+                file_name=nome_arquivo_carta,
+                mime="text/plain",
+                key=f"download_carta_{chave}",
+            )
+            st.link_button("Abrir vaga original para se candidatar", resultado_candidatura.url_vaga)
+
+
+def _pagina_vagas(
+    repositorio_curriculo_salvo: CurriculoSalvoRepositoryImpl, perfil_identificador: str
+) -> None:
+    st.title("Vagas")
+    st.caption(
+        "Busque vagas em fontes externas (RemoteOK, We Work Remotely, Arbeitnow, Adzuna, "
+        "Google Custom Search) e veja a aderência ao seu currículo salvo. O botão "
+        "'Candidatar' adapta o currículo e gera a carta de apresentação para a vaga em um "
+        "clique, e abre a página original para você aplicar — sem preenchimento automático "
+        "de formulários de terceiros."
+    )
+
+    listar_curriculos_use_case = ListarCurriculosSalvos(repositorio_curriculo_salvo=repositorio_curriculo_salvo)
+    curriculos_salvos = listar_curriculos_use_case.executar(perfil_identificador)
+
+    if not curriculos_salvos:
+        st.warning("Salve um currículo na página 'Adaptar Currículo' para poder buscar vagas com match.")
+        return
+
+    col_termo, col_curriculo, col_idioma, col_periodo = st.columns([3, 2, 2, 2])
+    with col_termo:
+        termo = st.text_input("Termo de busca", placeholder="Ex: engenheiro de software backend")
+    with col_curriculo:
+        nome_curriculo_escolhido = st.selectbox(
+            "Currículo de referência", [c.nome_referencia for c in curriculos_salvos]
+        )
+    with col_idioma:
+        idioma_label = st.selectbox("Idioma da candidatura", ["Português", "Inglês"])
+    with col_periodo:
+        periodo_label = st.selectbox(
+            "Publicada nos últimos", ["Qualquer período", "7 dias", "15 dias", "30 dias"]
+        )
+    idioma_alvo = "pt" if idioma_label == "Português" else "en"
+    dias_maximo = {"Qualquer período": None, "7 dias": 7, "15 dias": 15, "30 dias": 30}[periodo_label]
+
+    if st.button("Buscar vagas", type="primary"):
+        if not termo.strip():
+            st.error("Informe um termo de busca.")
+            return
+
+        curriculo_escolhido = next(
+            c for c in curriculos_salvos if c.nome_referencia == nome_curriculo_escolhido
+        )
+        try:
+            with st.spinner("Buscando vagas nas fontes externas..."):
+                use_case = _montar_descobrir_vagas_com_match()
+                resultado = use_case.executar(termo.strip(), curriculo_escolhido.pdf_bytes, dias_maximo)
+            st.session_state["vagas_descobertas"] = resultado
+            st.session_state["curriculo_vagas_pdf"] = curriculo_escolhido.pdf_bytes
+        except ValueError as erro:
+            st.error(str(erro))
+            return
+        except Exception as erro:  # noqa: BLE001 - fronteira de UI: captura e exibe qualquer falha inesperada
+            st.error(f"Ocorreu um erro inesperado ao buscar vagas: {erro}")
+            return
+
+    vagas_descobertas: tuple[VagaComScore, ...] = st.session_state.get("vagas_descobertas", ())
+    if not vagas_descobertas:
+        return
+
+    st.subheader(f"{len(vagas_descobertas)} vagas encontradas")
+    for vaga_com_score in vagas_descobertas:
+        _renderizar_vaga_descoberta(
+            vaga_com_score, st.session_state["curriculo_vagas_pdf"], idioma_alvo
+        )
+
+
 # --- Página: Vagas & Candidaturas --------------------------------------------
 
 def _renderizar_token_captura(repositorio_token: TokenCapturaRepositoryImpl, perfil_identificador: str) -> None:
@@ -624,7 +826,7 @@ def main() -> None:
         st.caption(f"Perfil: **{perfil_identificador}**")
         pagina = st.radio(
             "Navegação",
-            [_PAGINA_ADAPTAR_CURRICULO, _PAGINA_ANALISAR_ATS, _PAGINA_VAGAS_E_CANDIDATURAS],
+            [_PAGINA_ADAPTAR_CURRICULO, _PAGINA_ANALISAR_ATS, _PAGINA_VAGAS, _PAGINA_VAGAS_E_CANDIDATURAS],
             label_visibility="collapsed",
         )
         if st.button("Sair"):
@@ -636,6 +838,8 @@ def main() -> None:
     elif pagina == _PAGINA_ANALISAR_ATS:
         repositorio_vaga = _montar_repositorio_vaga()
         _pagina_analisar_ats(repositorio_curriculo_salvo, repositorio_vaga, perfil_identificador)
+    elif pagina == _PAGINA_VAGAS:
+        _pagina_vagas(repositorio_curriculo_salvo, perfil_identificador)
     else:
         repositorio_token = _montar_repositorio_token_captura()
         repositorio_vaga = _montar_repositorio_vaga()

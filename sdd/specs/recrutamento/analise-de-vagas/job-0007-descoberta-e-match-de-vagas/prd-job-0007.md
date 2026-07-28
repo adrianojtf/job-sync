@@ -18,8 +18,8 @@ A Google Custom Search é a API oficial do Google (não é scraping de `google.c
 1. Como candidato, eu quero buscar vagas de fontes externas usando um termo de cargo, para descobrir oportunidades que eu não encontraria manualmente.
 2. Como candidato, eu quero que as vagas encontradas venham ordenadas pela aderência ao meu currículo salvo, para focar primeiro nas mais relevantes.
 3. Como candidato, eu quero ver por que uma vaga recebeu determinado score, olhando os requisitos que bateram e os que faltaram.
-4. Como candidato, eu quero transformar uma vaga descoberta diretamente em uma candidatura no Kanban (Fase 2), sem precisar copiar/colar o texto.
-5. Como candidato, eu quero ser avisado quando uma nova vaga com alta aderência aparecer, sem precisar buscar manualmente toda vez.
+4. Como candidato, eu quero clicar em "Candidatar" numa vaga descoberta e já receber meu currículo adaptado para ela, com a análise de ATS feita, sem precisar repetir manualmente o fluxo de adaptação.
+5. Como candidato, eu quero decidir quando buscar vagas — clicando em um botão — em vez de o sistema rodar buscas sozinho em segundo plano sem eu pedir.
 
 ## Funcionalidades Principais
 
@@ -47,7 +47,30 @@ Requisitos funcionais:
 6. O sistema deve calcular um score de match entre cada vaga encontrada e um currículo salvo escolhido pelo usuário, reaproveitando a lógica de cálculo do ATS Score (Fase 1).
 7. O sistema deve ordenar a lista de vagas encontradas por score de match, decrescente.
 8. O sistema deve exibir, para cada vaga, os requisitos técnicos batidos e faltantes que compõem o score.
-9. O sistema deve permitir ao usuário criar uma candidatura (Fase 2) diretamente a partir de uma vaga descoberta, pré-preenchendo a descrição da vaga no fluxo de adaptação.
+
+### 3. Candidatura em um clique
+
+- A funcionalidade tem um item próprio no menu lateral, chamado "Vagas" (separado de "Adaptar Currículo", "Analisar ATS" e "Vagas & Candidaturas" do Kanban da Fase 2).
+- Cada vaga da lista tem um botão "Candidatar". Ao clicar, o sistema roda em sequência: análise de ATS + adaptação completa do currículo (mesma lógica de `AdaptarCurriculoParaVaga`, Fase 0) + geração da carta de apresentação (Fase 1) para aquela vaga específica.
+- Ao final, o sistema abre a URL original da vaga (`VagaExterna.url`) em nova aba, para o usuário aplicar manualmente no site de origem, e disponibiliza o PDF do currículo adaptado e o texto da carta para download/cópia.
+- Não há preenchimento automático (autofill) de formulários em sites de terceiros: cada site de vaga tem uma estrutura de formulário diferente, e automatizar isso de forma genérica seria frágil e exigiria manutenção site a site. A automação se limita a preparar os artefatos (PDF + carta) e abrir a vaga original — o preenchimento do formulário de candidatura em si continua manual.
+
+Requisitos funcionais:
+9. O sistema deve oferecer um botão "Candidatar" em cada vaga descoberta, que executa em um único clique: análise de ATS, adaptação do currículo e geração da carta de apresentação para aquela vaga.
+10. Ao candidatar, o sistema deve abrir a URL original da vaga em nova aba e disponibilizar o PDF adaptado e a carta de apresentação para download.
+11. O sistema não deve tentar preencher automaticamente formulários de candidatura em sites de terceiros — a automação termina na preparação dos artefatos e abertura da vaga original.
+
+### 4. Filtro por período de publicação
+
+- O usuário pode restringir a busca a vagas publicadas nos últimos 7, 15 ou 30 dias, ou não aplicar filtro nenhum ("qualquer período").
+- Cada fonte expõe a data de publicação de forma diferente: **Adzuna** aceita um parâmetro nativo (`max_days_old`) que filtra no próprio servidor da API; **RemoteOK**, **We Work Remotely** e **Arbeitnow** não têm parâmetro de busca por data, mas cada resposta traz um campo de data por vaga, usado para filtrar depois de buscar (client-side); **Google Custom Search** não informa quando a vaga foi publicada (só quando o Google indexou a página, que é uma coisa diferente) — por isso resultados dessa fonte sempre entram como "data desconhecida", sem tentar aproximar com a data de indexação, para não passar uma falsa sensação de precisão.
+- Vagas cuja data de publicação não pôde ser determinada com confiança (sempre o caso do Google Custom Search) continuam aparecendo no resultado filtrado, sinalizadas como "data de publicação desconhecida" — a decisão do produto é não esconder vagas potencialmente relevantes só por falta de metadado confiável.
+
+Requisitos funcionais:
+12. O sistema deve permitir filtrar as vagas buscadas por período de publicação: últimos 7, 15 ou 30 dias, ou sem filtro (qualquer período).
+13. Quando uma fonte suportar filtro de data nativamente (Adzuna), o sistema deve usá-lo na própria chamada à API.
+14. Para fontes sem filtro nativo confiável, o sistema deve filtrar localmente com base na data de publicação retornada por vaga, quando disponível.
+15. Vagas sem data de publicação determinável devem ser exibidas mesmo com o filtro de período ativo, sinalizadas visualmente como data desconhecida — nunca ocultadas silenciosamente.
 
 ## Experiência do Usuário
 
@@ -59,7 +82,7 @@ Jornada principal:
 1. Usuário informa um termo de busca e escolhe um currículo salvo como referência para o match.
 2. Sistema consulta as fontes externas e apresenta a lista consolidada, ordenada por score.
 3. Usuário revisa as vagas com maior score primeiro, abre o detalhe de requisitos batidos/faltantes.
-4. Usuário escolhe uma vaga e segue direto para adaptação de currículo (fluxo já existente) ou cria uma candidatura (Fase 2).
+4. Usuário clica em "Candidatar" na vaga escolhida: o sistema roda a análise de ATS, adapta o currículo e gera a carta de apresentação para aquela vaga, abre a vaga original em nova aba e disponibiliza o PDF adaptado + carta para download.
 
 ## Restrições Técnicas de Alto Nível
 
@@ -74,13 +97,14 @@ Jornada principal:
 - Integração com LinkedIn Jobs, Indeed ou qualquer fonte que exija scraping ou viole termos de uso.
 - Scraping direto de páginas de resultado do Google (`google.com/search`) — apenas a API oficial Google Custom Search é permitida.
 - Alertas por e-mail ou push notification (a "notificação" nesta fase é limitada a exibição dentro da própria aplicação).
-- Filtros avançados de busca (salário, senioridade estruturada) além dos que as próprias APIs externas já suportam nativamente.
+- Filtros avançados de busca (salário, senioridade estruturada) além dos que as próprias APIs externas já suportam nativamente e do filtro por período de publicação (7/15/30 dias) descrito acima.
 - Cache ou histórico de buscas anteriores.
+- Preenchimento automático (autofill) de formulários de candidatura em sites de terceiros — cada site tem uma estrutura própria, e automatizar isso de forma genérica seria frágil; o botão "Candidatar" prepara os artefatos (PDF + carta) e abre a vaga original, mas o preenchimento do formulário continua manual.
+- Busca automática/recorrente em background (scheduler, cron job, ou qualquer execução periódica sem o usuário pedir). A busca é **sempre** iniciada por uma ação explícita do usuário (clique no botão "Buscar vagas") — nunca disparada sozinha pelo sistema. Isso inclui o alerta de "vaga de alta aderência" mencionado originalmente na história de usuário 5: decidido que não haverá busca automática nesta fase nem em iterações futuras próximas, para evitar consumo não controlado de cota de API (Groq, Google Custom Search) sem uma ação consciente do usuário — ver risco de esgotamento de cota descoberto durante a validação da Tarefa 8.0 na TechSpec.
 
 ## Questões em Aberto
 
 - As cinco fontes têm formatos de resposta e campos diferentes (nem todas trazem salário, nível de senioridade) — qual o conjunto mínimo de campos que toda vaga consolidada precisa ter para entrar na lista?
 - Deduplicação por "mesmo título + mesma empresa" pode ter falsos positivos (empresas com nomes ligeiramente diferentes entre fontes) — vale a pena um critério mais tolerante, ou começamos estrito e ajustamos depois?
-- "Alertar quando uma vaga de alta aderência aparecer" (história de usuário 5) depende de busca recorrente automática — isso deve rodar em background nesta fase, ou fica para uma iteração futura, mantendo a busca apenas sob demanda por enquanto?
 - A cota gratuita do Google Custom Search (100 buscas/dia) é compartilhada entre todos os perfis do sistema (mesma chave de API) — isso é aceitável no contexto de uso pessoal/2-4 pessoas, ou cada busca deve consumir a cota de forma consciente (ex: avisar o usuário quantas buscas restam no dia)?
 - Como o Google Custom Search exige configurar um "mecanismo de busca programável" (Programmable Search Engine) restrito a sites específicos ou aberto à web toda — a busca deve ser restrita a uma lista curada de sites de vagas, ou aberta a qualquer resultado?

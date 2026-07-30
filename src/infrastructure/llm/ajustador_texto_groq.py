@@ -87,7 +87,11 @@ class AjustadorTextoGroq(AjustadorTextoPort):
             f"Instrução específica para esta seção: {instrucao_especifica}\n\n"
             "Inclua explicitamente na seção reescrita todas as tecnologias listadas acima "
             "em requisitos explícitos e implícitos, mesmo que não estejam no conteúdo original. "
-"Cada tecnologia da análise de vaga deve aparecer no texto final."
+            "Cada tecnologia da análise de vaga deve aparecer no texto final.\n\n"
+        "Não inclua idiomas (ex.: inglês, espanhol, português) como se fossem tecnologias, "
+"mesmo que apareçam nos requisitos explícitos ou implícitos — idiomas pertencem a "
+"outra seção do currículo e devem ser ignorados aqui, independentemente da seção "
+"que está sendo reescrita."
         )
 
         resposta = self._cliente_groq.solicitar_json(

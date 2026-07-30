@@ -85,9 +85,13 @@ class AjustadorTextoGroq(AjustadorTextoPort):
             f"- Trechos ambíguos: {', '.join(ambiguidade) or 'nenhum'}\n\n"
             f"Idioma de saída obrigatório: {nome_idioma}\n\n"
             f"Instrução específica para esta seção: {instrucao_especifica}\n\n"
-            "Use apenas as informações da vaga original e da análise estruturada acima. "
-            "Não infira frameworks, ferramentas ou habilidades que não estejam listados "
-            "como requisitos explícitos ou implícitos."
+            "Inclua explicitamente na seção reescrita todas as tecnologias listadas acima "
+            "em requisitos explícitos e implícitos, mesmo que não estejam no conteúdo original. "
+            "Cada tecnologia da análise de vaga deve aparecer no texto final.\n\n"
+            "Não inclua idiomas (ex.: inglês, espanhol, português) como se fossem tecnologias, "
+            "mesmo que apareçam nos requisitos explícitos ou implícitos — idiomas pertencem a "
+            "outra seção do currículo e devem ser ignorados aqui, independentemente da seção "
+            "que está sendo reescrita."
         )
 
         resposta = self._cliente_groq.solicitar_json(

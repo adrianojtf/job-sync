@@ -11,7 +11,7 @@ import os
 
 from groq import Groq
 
-MODELO_PADRAO = "openai/gpt-oss-120b"
+MODELO_PADRAO = "llama-3.3-70b-versatile"
 
 
 class ClienteGroq:

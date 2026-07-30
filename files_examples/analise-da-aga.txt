@@ -1,0 +1,137 @@
+{
+  "requisitos": [
+    {
+      "nome": "java",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "kotlin",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "kubernetes",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "kafka",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "terraform",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "graphql",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "azure cloud",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "spring boot",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "docker",
+      "categoria": "TECNOLOGIA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "github",
+      "categoria": "FERRAMENTA",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "api development",
+      "categoria": "HABILIDADE",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "api testing",
+      "categoria": "HABILIDADE",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    },
+    {
+      "nome": "ingles b2",
+      "categoria": "HABILIDADE",
+      "tipo": "EXPLICITO",
+      "origem": "DESCRICAO_VAGA"
+    }
+  ],
+  "ambiguidade": [],
+  "texto_original": {
+    "empresa": "HumanIT",
+    "cargo": "Backend Engineer",
+    "localizacao": "Remote Portugal",
+    "faixa_salarial": {
+      "minimo": "€2,450/month net",
+      "maximo": "€3,250/month net"
+    },
+    "descricao": "Backend Engineer para desenvolvimento de aplicações cloud-native escaláveis e sistemas distribuídos utilizando Java e Kotlin.",
+    "responsabilidades": [
+      "Desenvolver microsserviços backend",
+      "Trabalhar com Java e Kotlin",
+      "Atuar com Kubernetes, Kafka, Terraform, GraphQL e Azure Cloud",
+      "Colaborar em ambiente de engenharia ágil"
+    ],
+    "requisitos": [
+      "Java",
+      "Kotlin",
+      "Spring Boot",
+      "Kubernetes",
+      "Terraform",
+      "Kafka",
+      "Arquiteturas orientadas a eventos",
+      "GraphQL",
+      "Microsserviços",
+      "Azure Cloud",
+      "Desenvolvimento de APIs",
+      "Testes de APIs",
+      "Docker",
+      "GitHub",
+      "Inglês B2"
+    ],
+    "desejaveis": [
+      "Java 17+",
+      "Kotlin Coroutines",
+      "Spring Cloud",
+      "Helm",
+      "Azure Services",
+      "Monitoring Tools",
+      "PostgreSQL",
+      "MongoDB",
+      "Redis",
+      "CI/CD",
+      "gRPC",
+      "Metodologias Ágeis"
+    ],
+    "beneficios": [
+      "15º salário",
+      "Plano de saúde para a família",
+      "Folga no aniversário",
+      "Programa de mobilidade para nômades digitais",
+      "Equilíbrio entre vida pessoal e profissional"
+    ]
+  }
+}

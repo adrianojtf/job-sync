@@ -1,0 +1,54 @@
+Company logo for, HumanIT Digital Consulting.
+HumanIT Digital Consulting
+
+
+Senior Java/Kotlin Developer - Portugal Full Remote 
+
+About the job
+We’re HumanIT! A Portuguese tech consultancy with 155+ professionals working on projects for companies you probably use every day. No corporate BS, just good work with good people.
+
+
+
+The project:
+
+We're looking for a Backend Engineer to join a global software engineering company building scalable cloud-native applications and distributed systems for international clients.
+
+You'll develop backend microservices using Java and Kotlin, working with modern technologies such as Kubernetes, Kafka, Terraform, GraphQL, and Azure Cloud in a collaborative and fast-paced engineering environment.
+
+
+
+Location: Remote Portugal
+
+Compensation: €2,450 – €3,250/month net, depending on experience and seniority
+
+
+
+What they need:
+
+Strong experience with Java and Kotlin
+Experience with Spring Boot
+Knowledge of Kubernetes and Terraform
+Experience with Kafka and event-driven architectures
+Experience with GraphQL and microservices
+Experience with Azure Cloud
+Strong API development and testing practices
+Experience with Docker and GitHub
+B2 English minimum
+
+
+Nice to have: Java 17+, Kotlin Coroutines, Spring Cloud, Helm, Azure services, monitoring tools, PostgreSQL, MongoDB or Redis, CI/CD tools, gRPC, and Agile methodologies.
+
+
+
+Why HumanIT people stay (4.4★ Glassdoor, 89% recommend)
+
+15th month salary
+Health insurance covering your family
+Birthday off
+Mobility program for digital nomads
+Real work-life balance
+
+
+Full benefits → https://www.humanit.pt/careers/#perks
+
+What it's really like → https://www.humanit.pt/careers/#work-at

@@ -32,3 +32,4 @@ globs:
 - Eric Evans
 - Vaughn Vernon
 - Michael C. Feathers
+- Harry Percival & Bob Gregory (Cosmic Python)

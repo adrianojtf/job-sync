@@ -22,13 +22,24 @@ class AjustadorTextoPort(ABC):
     ) -> SecaoCurriculo:
         """Retorna uma nova SecaoCurriculo com o conteúdo reescrito.
 
-        - secao: seção original extraída do currículo (ex.: TECNOLOGIAS, PERFIL).
-        - descricao_vaga: texto livre com a descrição da vaga-alvo.
-        - idioma_alvo: "pt" ou "en".
-        - analise_vaga: análise estruturada da descrição de vaga para orientar o ajuste.
+            Args:
+                secao: seção original extraída do currículo (ex.: TECNOLOGIAS, PERFIL).
+                descricao_vaga: texto livre com a descrição da vaga-alvo.
+                idioma_alvo: "pt" ou "en".
+                analise_vaga: análise estruturada da descrição de vaga para orientar o ajuste.
 
-        A reescrita deve preservar fatos (empresas, datas, tecnologias
-        realmente utilizadas) e apenas priorizar/reformular a ênfase e o
-        idioma — nunca inventar experiência que não exista no currículo original.
+            Regras de reescrita:
+                - Preservar fatos verificáveis: empresas e datas do currículo original
+                não podem ser alteradas.
+                - Priorizar e reformular a ênfase e o idioma conforme a vaga-alvo.
+                - Sempre extrair todas as tecnologias, ferramentas, frameworks e metodologias
+                mencionadas em `analise_vaga` como DESCRICAO_VAGA e incluir cada
+                uma delas na seção de tecnologias reescrita, mesmo que não constem
+                na secao.
+                - Objetivo: maximizar a correspondência de palavras-chave com a vaga
+                para otimizar a leitura por sistemas ATS (Applicant Tracking System).
+
+            Returns:
+                Nova instância de SecaoCurriculo com o conteúdo ajustado.
         """
         raise NotImplementedError

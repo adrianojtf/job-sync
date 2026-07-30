@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import unicodedata
 from typing import Any
+from venv import logger
 
 from domain.vaga.job_description_analyzer_port import JobDescriptionAnalyzerPort
 from domain.vaga import (
@@ -16,6 +17,9 @@ from domain.vaga import (
     TipoRequisitoTecnico,
 )
 from infrastructure.llm.cliente_groq import ClienteGroq
+import logging
+
+logger = logging.getLogger(__name__)
 
 _PROMPT_SISTEMA = """\
 Você é um assistente especializado em extrair requisitos técnicos de descrições de vagas.
@@ -37,10 +41,6 @@ Responda ESTRITAMENTE em JSON com o formato:
 }
 
 Regras:
-- Extraia apenas requisitos explicitamente listados como tecnologias, frameworks,
-  bancos de dados, ferramentas e habilidades técnicas.
-- Marque itens que aparecem apenas como inferência ou sugestão de contexto como
-  "implicito" ou, quando o texto for claramente ambíguo, como "ambiguidade".
 - Não promova automaticamente frameworks relacionados a uma linguagem sem que
   eles sejam mencionados de forma explícita.
 - Não inclua listas vazias ou itens inventados.

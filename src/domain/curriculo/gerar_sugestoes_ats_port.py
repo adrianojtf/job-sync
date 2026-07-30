@@ -1,4 +1,5 @@
 """Porta (Port) para geração de sugestões de melhoria de ATS Score."""
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
@@ -15,9 +16,9 @@ class GerarSugestoesAtsPort(ABC):
     @abstractmethod
     def gerar(
         self,
-        curriculo: Curriculo,
-        analise_vaga: AnaliseVaga,
-        resultado_ats: ResultadoAtsScore,
+        curriculo: "Curriculo",
+        analise_vaga: "AnaliseVaga",
+        resultado_ats: "ResultadoAtsScore",
     ) -> tuple[str, ...]:
         """Gera sugestões acionáveis (uma por tópico) de como aumentar a aderência à vaga.
 

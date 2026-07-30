@@ -8,6 +8,15 @@ reescritos separadamente antes de serem remontados no currículo final.
 """
 from __future__ import annotations
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
 from application.use_cases.adaptar_curriculo_para_vaga.dtos import (
     AdaptarCurriculoParaVagaInputDto,
     AdaptarCurriculoParaVagaOutputDto,
@@ -48,6 +57,7 @@ class AdaptarCurriculoParaVaga:
             else self._extrator.extrair(input_dto.pdf_curriculo)
         )
         analise_vaga = self._analisador_vaga.analisar(input_dto.descricao_vaga)
+        logger.info(f"Análise da vaga: {analise_vaga}")
         curriculo_adaptado = self._ajustar_todas_as_secoes(curriculo_original, input_dto, analise_vaga)
         pdf_bytes = self._gerador_pdf.gerar(curriculo_adaptado, input_dto.idioma_alvo)
 
@@ -73,11 +83,12 @@ class AdaptarCurriculoParaVaga:
     ) -> Curriculo:
         curriculo_atualizado = curriculo
         for secao_original in curriculo.secoes:
-            secao_ajustada = self._ajustador_texto.ajustar_secao(
+            secao_ajustada = self._ajustador_texto.ajustar_secao(                
                 secao=secao_original,
                 descricao_vaga=input_dto.descricao_vaga,
                 idioma_alvo=input_dto.idioma_alvo,
                 analise_vaga=analise_vaga,
             )
+
             curriculo_atualizado = curriculo_atualizado.substituir_secao(secao_ajustada)
         return curriculo_atualizado

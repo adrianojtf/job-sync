@@ -21,7 +21,7 @@ from reportlab.platypus import (
 
 from domain.curriculo import Curriculo, TipoSecao
 from domain.curriculo.gerador_pdf_port import GeradorPdfPort
-from infrastructure.localizacao.catalogo_localizacao import CatalogoLocalizacao
+from jobsync.shared_kernel.domain import CatalogoLocalizacao
 
 _ORDEM_SECOES = (
     TipoSecao.TECNOLOGIAS,

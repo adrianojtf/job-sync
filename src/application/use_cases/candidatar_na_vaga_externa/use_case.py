@@ -21,7 +21,7 @@ from domain.curriculo.ajustador_texto_port import AjustadorTextoPort
 from domain.curriculo.extrator_curriculo_port import ExtratorCurriculoPort
 from domain.curriculo.gerador_pdf_port import GeradorPdfPort
 from domain.curriculo.gerar_carta_apresentacao_port import GerarCartaApresentacaoPort
-from domain.nome_arquivo import NomeArquivo
+from jobsync.shared_kernel.domain import NomeArquivo
 from domain.vaga import AnaliseVaga
 from domain.vaga.job_description_analyzer_port import JobDescriptionAnalyzerPort
 

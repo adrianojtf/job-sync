@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from domain.nome_arquivo import NomeArquivo
+from jobsync.shared_kernel.domain import NomeArquivo
 
 
 class TestNomeArquivo:

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from domain.curriculo import Curriculo
-from domain.nome_arquivo import NomeArquivo
+from jobsync.shared_kernel.domain import NomeArquivo
 from domain.vaga import AnaliseVaga
 
 

@@ -6,7 +6,7 @@ from datetime import date
 
 from domain.ats_score import ResultadoAtsScore
 from domain.curriculo import Curriculo
-from domain.nome_arquivo import NomeArquivo
+from jobsync.shared_kernel.domain import NomeArquivo
 from domain.vaga_externa import VagaExterna
 
 

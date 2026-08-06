@@ -1,4 +1,4 @@
-from infrastructure.localizacao.catalogo_localizacao import CatalogoLocalizacao
+from jobsync.shared_kernel.domain import CatalogoLocalizacao
 
 
 def test_mapeia_secao_para_pt_e_en():

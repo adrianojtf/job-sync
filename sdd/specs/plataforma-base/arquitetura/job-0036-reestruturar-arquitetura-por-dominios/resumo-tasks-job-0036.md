@@ -8,7 +8,7 @@ Refatoração pura de arquitetura: migrar o código de `src/{application,domain,
 
 - [ ] 1.0 Preparar ambiente de migração: criar `src/jobsync/`, ajustar `pytest.ini`, `PYTHONPATH`, adicionar `import-linter` e atualizar `requirements.txt`
 - [x] 2.0 Criar `shared_kernel/domain` com `NomeArquivo` e `CatalogoLocalizacao`; reavaliar `AnaliseVaga`/`ResultadoAtsScore`
-- [ ] 3.0 Migrar domínios folha: `ats_score` e `token_captura`
+- [x] 3.0 Migrar domínios folha: `ats_score` e `token_captura`
 - [ ] 4.0 Migrar domínios com persistência simples: `perfil`, `curriculo_salvo` e `vaga`
 - [ ] 5.0 Migrar domínios de negócio: `candidatura` e `perfil_estruturado`
 - [ ] 6.0 Migrar domínio core: `curriculo` (adaptação, PDF, carta, ATS)

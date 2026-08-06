@@ -1,15 +1,5 @@
-"""Value object para o resultado do cálculo de ATS Score."""
+"""Camada de compatibilidade para o domínio ATS Score."""
 
-from __future__ import annotations
+from jobsync.ats_score.domain.resultado_ats_score import ResultadoAtsScore
 
-from dataclasses import dataclass
-
-from domain.vaga import RequisitoTecnico
-
-
-@dataclass(frozen=True)
-class ResultadoAtsScore:
-    """Nota de aderência (0-100) e requisitos técnicos explícitos não cobertos."""
-
-    nota: int
-    requisitos_faltantes: tuple[RequisitoTecnico, ...]
+__all__ = ["ResultadoAtsScore"]

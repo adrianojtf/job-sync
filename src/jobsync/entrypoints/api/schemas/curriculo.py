@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from jobsync.curriculo import Curriculo
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
@@ -24,6 +24,16 @@ from jobsync.curriculo_salvo.service_layer.salvar_curriculo.dtos import (
 
 class CurriculoSalvarRequest(BaseModel):
     """Payload para salvar um currículo PDF na biblioteca de um perfil."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "perfil_identificador": "matheus",
+                "nome_referencia": "Curriculo.pdf",
+                "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+            }
+        }
+    )
 
     perfil_identificador: str = Field(description="Identificador único do perfil dono do currículo.")
     nome_referencia: str = Field(description="Nome amigável para o currículo salvo.")
@@ -57,6 +67,18 @@ class CurriculoSalvoResponse(BaseModel):
 
 class AdaptarCurriculoRequest(BaseModel):
     """Payload para adaptar um currículo a uma vaga específica."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "descricao_vaga": "Desenvolvedor Python com experiência em FastAPI.",
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro de Software",
+                "empresa_alvo": "TechCorp",
+                "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+            }
+        }
+    )
 
     descricao_vaga: str = Field(description="Texto completo da descrição da vaga.")
     idioma_alvo: str = Field(description="Idioma de destino do currículo adaptado.")
@@ -98,6 +120,15 @@ class AdaptarCurriculoResponse(BaseModel):
 
 class AnalisarAtsRequest(BaseModel):
     """Payload para análise de aderência ATS de um currículo a uma vaga."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "descricao_vaga": "Desenvolvedor Python com experiência em FastAPI.",
+                "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+            }
+        }
+    )
 
     descricao_vaga: str = Field(description="Texto completo da descrição da vaga.")
     pdf_base64: str = Field(description="Conteúdo do PDF do currículo codificado em base64.")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from jobsync.vaga import Vaga
 from jobsync.vaga.service_layer.capturar_vaga.dtos import CapturarVagaInputDto
@@ -12,6 +12,16 @@ from jobsync.vaga.service_layer.capturar_vaga.dtos import CapturarVagaInputDto
 
 class VagaCapturarRequest(BaseModel):
     """Payload para capturar uma vaga a partir de uma descrição."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "perfil_identificador": "matheus",
+                "texto_descricao": "Desenvolvedor Python com experiência em FastAPI.",
+                "url_origem": "https://example.com/vaga",
+            }
+        }
+    )
 
     perfil_identificador: str = Field(description="Identificador único do perfil que capturou a vaga.")
     texto_descricao: str = Field(description="Texto completo da descrição da vaga.")

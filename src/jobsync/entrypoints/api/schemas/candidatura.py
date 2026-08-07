@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from jobsync.candidatura import Candidatura, MudancaStatus, StatusCandidatura
 from jobsync.candidatura.service_layer.criar_candidatura.dtos import (
@@ -15,6 +15,18 @@ from jobsync.candidatura.service_layer.criar_candidatura.dtos import (
 
 class CandidaturaCriarRequest(BaseModel):
     """Payload para criar uma nova candidatura."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "perfil_identificador": "matheus",
+                "vaga_id": "vaga-123",
+                "curriculo_salvo_id": "curriculo-123",
+                "empresa": "TechCorp",
+                "cargo": "Engenheiro de Software",
+            }
+        }
+    )
 
     perfil_identificador: str = Field(description="Identificador do perfil candidato.")
     vaga_id: str = Field(description="Identificador da vaga associada.")
@@ -34,6 +46,14 @@ class CandidaturaCriarRequest(BaseModel):
 
 class CandidaturaSubmeterRequest(BaseModel):
     """Payload para submeter/mover o status de uma candidatura."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "novo_status": "entrevista",
+            }
+        }
+    )
 
     novo_status: str = Field(
         description="Novo status da candidatura (aplicado, entrevista, oferta ou rejeitado).",

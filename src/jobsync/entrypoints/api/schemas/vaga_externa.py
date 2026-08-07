@@ -6,13 +6,23 @@ import base64
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from jobsync.vaga_externa import VagaComScore
 
 
 class DescobrirVagasRequest(BaseModel):
     """Payload para descobrir vagas externas com cálculo de match."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "termo": "python",
+                "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+                "dias_maximo": 30,
+            }
+        }
+    )
 
     termo: str = Field(description="Termo de busca para as fontes externas.")
     pdf_base64: str = Field(description="Conteúdo do PDF do currículo codificado em base64.")

@@ -9,7 +9,7 @@ Criar backend independente para o `job-sync`, isolando o hexágono de domínio e
 - [x] 01 Preparar projeto do backend: estrutura de pastas, `main.py`, `dependencies.py` e exception handler
 - [x] 02 Adaptar/expor repositórios existentes como ports/adapters reutilizáveis pelo backend
 - [x] 03 Mapear casos de uso para services e criar DTOs de request/response
-- [ ] 04 Implementar routers FastAPI v1, exception handler e documentação OpenAPI
+- [x] 04 Implementar routers FastAPI v1, exception handler e documentação OpenAPI
 - [ ] 05 Preparar deploy independente (`Dockerfile`, `.env.example`, instruções de startup)
 
 ## Detalhamento

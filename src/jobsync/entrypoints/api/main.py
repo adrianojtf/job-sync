@@ -11,6 +11,7 @@ from jobsync.entrypoints.api.routers import (
     candidatura_router,
     curriculo_router,
     health,
+    perfil_estruturado_router,
     perfil_router,
     vaga_externa_router,
     vaga_router,
@@ -45,3 +46,4 @@ app.include_router(vaga_router.router, prefix="/v1")
 app.include_router(vaga_externa_router.router, prefix="/v1")
 app.include_router(candidatura_router.router, prefix="/v1")
 app.include_router(perfil_router.router, prefix="/v1")
+app.include_router(perfil_estruturado_router.router, prefix="/v1")

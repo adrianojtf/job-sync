@@ -37,6 +37,9 @@ from jobsync.entrypoints.dependencies import (
 )
 from jobsync.perfil.domain.perfil_repository import PerfilRepository
 from jobsync.perfil.service_layer.entrar_ou_criar_perfil import EntrarOuCriarPerfil
+from jobsync.perfil_estruturado.domain.perfil_estruturado_repository import PerfilEstruturadoRepository
+from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service import BuscarPerfilEstruturado
+from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.service import SalvarPerfilEstruturado
 from jobsync.vaga.adapters.job_description_analyzer_client import (
     JobDescriptionAnalyzerClient,
 )
@@ -70,7 +73,7 @@ RepositorioCurriculoSalvoDep = Annotated[
 ]
 RepositorioPerfilDep = Annotated[PerfilRepository, Depends(obter_repositorio_perfil)]
 RepositorioPerfilEstruturadoDep = Annotated[
-    object, Depends(obter_repositorio_perfil_estruturado)
+    PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
 ]
 RepositorioTokenDep = Annotated[object, Depends(obter_repositorio_token)]
 
@@ -231,4 +234,30 @@ def obter_service_entrar_ou_criar_perfil(
 
 ServiceEntrarOuCriarPerfilDep = Annotated[
     EntrarOuCriarPerfil, Depends(obter_service_entrar_ou_criar_perfil)
+]
+
+
+def obter_service_salvar_perfil_estruturado(
+    repositorio: Annotated[
+        PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
+    ],
+) -> SalvarPerfilEstruturado:
+    return SalvarPerfilEstruturado(repositorio=repositorio)
+
+
+ServiceSalvarPerfilEstruturadoDep = Annotated[
+    SalvarPerfilEstruturado, Depends(obter_service_salvar_perfil_estruturado)
+]
+
+
+def obter_service_buscar_perfil_estruturado(
+    repositorio: Annotated[
+        PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
+    ],
+) -> BuscarPerfilEstruturado:
+    return BuscarPerfilEstruturado(repositorio=repositorio)
+
+
+ServiceBuscarPerfilEstruturadoDep = Annotated[
+    BuscarPerfilEstruturado, Depends(obter_service_buscar_perfil_estruturado)
 ]

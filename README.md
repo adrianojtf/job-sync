@@ -104,6 +104,17 @@ PYTHONPATH=src uvicorn jobsync.entrypoints.servidor_captura:app --port 8502
 Esse servidor expõe `http://localhost:8502/api/vagas/capturar` e é usado
 exclusivamente pela extensão do navegador.
 
+### Servidor backend API (FastAPI)
+
+Para subir o backend independente com documentação OpenAPI em `/docs`:
+
+```bash
+PYTHONPATH=src uvicorn jobsync.entrypoints.api.main:app --reload --port 8000
+```
+
+O backend fica disponível em `http://localhost:8000` e a documentação interativa
+em `http://localhost:8000/docs`.
+
 ## Rodando os testes (TDD)
 
 O `pytest.ini` já configura os caminhos (`pythonpath = . src src/jobsync`), então basta rodar a partir da raiz do projeto:

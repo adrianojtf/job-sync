@@ -142,6 +142,29 @@ Os testes de `domain/` e `service_layer/` são independentes de rede e de
 chave de API (usam dublês de teste / fakes para as portas). Os testes de
 adapters de PDF também não dependem de rede.
 
+## Deploy com Docker
+
+Para executar o backend de forma isolada, sem depender do Streamlit:
+
+```bash
+# 1. Construir a imagem
+docker build -t job-sync-backend .
+
+# 2. Subir o container
+docker run -p 8000:8000 job-sync-backend
+```
+
+O backend estará disponível em `http://localhost:8000`, com documentação
+interativa em `/docs` e health check em `/health`.
+
+Para passar a chave da Groq ou outras variáveis de ambiente:
+
+```bash
+cp .env.example .env
+# edite o .env com seus valores
+docker run --env-file .env -p 8000:8000 job-sync-backend
+```
+
 ## Lint de arquitetura
 
 ```bash

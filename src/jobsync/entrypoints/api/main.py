@@ -1,6 +1,6 @@
 """Aplicação FastAPI do backend job-sync."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from jobsync.entrypoints.api.exceptions import adicionar_handlers_excecao
@@ -28,6 +28,13 @@ app.add_middleware(
 )
 
 adicionar_handlers_excecao(app)
+
+
+@app.get("/health", status_code=status.HTTP_200_OK, summary="Health check")
+def root_health_check() -> dict:
+    """Endpoint de health check sem versionamento para deploy/orquestradores."""
+    return health.health_check()
+
 
 app.include_router(health.router, prefix="/v1")
 app.include_router(curriculo_router.router, prefix="/v1")

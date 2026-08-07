@@ -18,11 +18,11 @@ Mover os adapters de entrada (`streamlit_app.py` e `servidor_captura.py`) para `
 
 ## Subtarefas
 
-- [ ] 8.1 Criar `src/jobsync/entrypoints/`.
-- [ ] 8.2 Mover `streamlit_app.py` e `servidor_captura.py`.
-- [ ] 8.3 Criar raiz de composição com `Depends` / injeção de dependências.
-- [ ] 8.4 Atualizar todos os imports para o novo pacote `jobsync`.
-- [ ] 8.5 Fazer smoke test do Streamlit e do servidor de captura.
+- [x] 8.1 Criar `src/jobsync/entrypoints/`.
+- [x] 8.2 Mover `streamlit_app.py` e `servidor_captura.py`.
+- [x] 8.3 Criar raiz de composição com `Depends` / injeção de dependências.
+- [x] 8.4 Atualizar todos os imports para o novo pacote `jobsync`.
+- [x] 8.5 Fazer smoke test do Streamlit e do servidor de captura.
 
 ## Detalhes de Implementação
 

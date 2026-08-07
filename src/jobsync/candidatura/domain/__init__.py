@@ -1,0 +1,15 @@
+"""Camada de domínio da Candidatura."""
+
+from jobsync.candidatura.domain.candidatura import (
+    Candidatura,
+    MudancaStatus,
+    StatusCandidatura,
+)
+from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
+
+__all__ = [
+    "Candidatura",
+    "CandidaturaRepository",
+    "MudancaStatus",
+    "StatusCandidatura",
+]

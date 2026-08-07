@@ -6,16 +6,25 @@ sem dependência de repositório ou serviço externo.
 """
 from __future__ import annotations
 
-from domain.curriculo import Curriculo
-from domain.vaga import AnaliseVaga, TipoRequisitoTecnico
+from typing import Protocol
+
+from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
 
 from jobsync.ats_score.domain.resultado_ats_score import ResultadoAtsScore
+
+
+class _FonteDeConteudo(Protocol):
+    """Contrato do objeto que fornece o conteúdo textual a ser avaliado."""
+
+    @property
+    def secoes(self) -> tuple[object, ...]:
+        ...
 
 
 class CalcularAtsScore:
     """Calcula a nota de aderência (0-100) e os requisitos explícitos não cobertos."""
 
-    def executar(self, curriculo: Curriculo, analise_vaga: AnaliseVaga) -> ResultadoAtsScore:
+    def executar(self, fonte_conteudo: _FonteDeConteudo, analise_vaga: AnaliseVaga) -> ResultadoAtsScore:
         requisitos_explicitos = [
             requisito
             for requisito in analise_vaga.requisitos
@@ -25,7 +34,7 @@ class CalcularAtsScore:
         if not requisitos_explicitos:
             return ResultadoAtsScore(nota=100, requisitos_faltantes=())
 
-        conteudo_completo = " ".join(secao.conteudo for secao in curriculo.secoes).lower()
+        conteudo_completo = " ".join(secao.conteudo for secao in fonte_conteudo.secoes).lower()
 
         requisitos_faltantes = tuple(
             requisito

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from infrastructure.persistence._conexao_sqlite import criar_conexao
+from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
 
 from jobsync.perfil.domain.perfil import Perfil
 from jobsync.perfil.domain.perfil_repository import PerfilRepository

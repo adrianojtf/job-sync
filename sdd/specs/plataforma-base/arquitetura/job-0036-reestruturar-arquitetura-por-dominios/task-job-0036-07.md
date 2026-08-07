@@ -17,11 +17,11 @@ Migrar os buscadores de vagas externas, extratores de texto, descoberta e candid
 
 ## Subtarefas
 
-- [ ] 7.1 Criar `vaga_externa/domain` com ports para buscadores e extratores.
-- [ ] 7.2 Migrar buscadores de `src/infrastructure/fontes_vagas/` para `adapters/`.
-- [ ] 7.3 Migrar extratores de `src/infrastructure/extractors/` para `adapters/`.
-- [ ] 7.4 Criar services em `service_layer/` para descoberta e candidatura externa.
-- [ ] 7.5 Mover testes para `src/jobsync/tests/vaga_externa/`.
+- [x] 7.1 Criar `vaga_externa/domain` com ports para buscadores e extratores.
+- [x] 7.2 Migrar buscadores de `src/infrastructure/fontes_vagas/` para `adapters/`.
+- [x] 7.3 Migrar extratores de `src/infrastructure/extractors/` para `adapters/`.
+- [x] 7.4 Criar services em `service_layer/` para descoberta e candidatura externa.
+- [x] 7.5 Mover testes para `src/jobsync/tests/vaga_externa/`.
 
 ## Detalhes de Implementação
 
@@ -35,9 +35,9 @@ Ver `techspec.md` → Componente `vaga_externa` e Pontos de Integração. Client
 
 ## Testes da Tarefa
 
-- [ ] `pytest src/jobsync/tests/vaga_externa/`
-- [ ] Testes com mocks de fontes externas.
-- [ ] `import-linter` valida fronteiras.
+- [x] `pytest src/jobsync/tests/vaga_externa/`
+- [x] Testes com mocks de fontes externas.
+- [x] `import-linter` valida fronteiras.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

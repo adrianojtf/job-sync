@@ -1,6 +1,6 @@
 """Testes do value object ResultadoAtsScore."""
 
-from domain.vaga import (
+from jobsync.vaga import (
     CategoriaRequisitoTecnico,
     OrigemRequisitoTecnico,
     RequisitoTecnico,

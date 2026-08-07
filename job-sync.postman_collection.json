@@ -1,0 +1,664 @@
+{
+  "info": {
+    "_postman_id": "job-sync-api-tests",
+    "name": "Job Sync API - Testes Funcionais",
+    "description": "Coleção de testes automatizados para a API Job Sync v1. Execute o backend antes (uvicorn ou Docker). Os endpoints de IA (adaptar/analisar/descobrir) requerem GROQ_API_KEY no servidor.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('status = ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Listar perfis (placeholder)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/perfis",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "perfis"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Resposta paginada', () => { const j = pm.response.json(); pm.expect(j).to.have.property('items'); pm.expect(j).to.have.property('total'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Criar/Obter perfil",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/perfis/{{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "perfis",
+            "{{perfil}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Identificador confere', () => pm.expect(pm.response.json().identificador).to.eql(pm.collectionVariables.get('perfil')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Perfil Estruturado",
+      "item": [
+        {
+          "name": "04 - Salvar perfil estruturado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/perfil-estruturado",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "perfil-estruturado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"nome_completo\": \"Joao da Silva\", \"email\": \"joao.silva@example.com\", \"linkedin\": \"linkedin.com/in/joaodasilva\", \"resumo_profissional\": \"Engenheiro de Software com experiencia em Python, FastAPI e Cloud.\", \"experiencias\": [{\"empresa\": \"Empresa X\", \"cargo\": \"Engenheiro de Software\", \"periodo\": \"2020 - 2022\", \"descricao\": \"Desenvolvimento backend.\"}], \"formacoes\": [{\"instituicao\": \"Universidade Z\", \"curso\": \"Ciencia da Computacao\", \"periodo\": \"2015 - 2019\"}], \"certificacoes\": [{\"nome\": \"AWS Certified\", \"instituicao\": \"AWS\", \"ano\": \"2023\"}], \"idiomas\": [{\"idioma\": \"Portugues\", \"nivel\": \"NATIVO\"}, {\"idioma\": \"Ingles\", \"nivel\": \"AVANCADO\"}], \"tecnologias\": [\"Python\", \"FastAPI\", \"Docker\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Perfil identificador confere', () => pm.expect(pm.response.json().perfil_identificador).to.eql(pm.collectionVariables.get('perfil')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 - Buscar perfil estruturado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/perfil-estruturado/{{perfil}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "perfil-estruturado",
+                "{{perfil}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Perfil identificador confere', () => pm.expect(pm.response.json().perfil_identificador).to.eql(pm.collectionVariables.get('perfil')));",
+                  "pm.test('Nome completo presente', () => pm.expect(pm.response.json().nome_completo).to.eql('Joao da Silva'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 - Atualizar perfil estruturado (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/perfil-estruturado/{{perfil}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "perfil-estruturado",
+                "{{perfil}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"nome_completo\": \"Joao da Silva\", \"email\": \"joao.silva@example.com\", \"linkedin\": \"linkedin.com/in/joaodasilva\", \"resumo_profissional\": \"Engenheiro de Software com experiencia em Python, FastAPI e Cloud.\", \"experiencias\": [{\"empresa\": \"Empresa X\", \"cargo\": \"Engenheiro de Software\", \"periodo\": \"2020 - 2022\", \"descricao\": \"Desenvolvimento backend.\"}], \"formacoes\": [{\"instituicao\": \"Universidade Z\", \"curso\": \"Ciencia da Computacao\", \"periodo\": \"2015 - 2019\"}], \"certificacoes\": [{\"nome\": \"AWS Certified\", \"instituicao\": \"AWS\", \"ano\": \"2023\"}], \"idiomas\": [{\"idioma\": \"Portugues\", \"nivel\": \"NATIVO\"}, {\"idioma\": \"Ingles\", \"nivel\": \"AVANCADO\"}], \"tecnologias\": [\"Python\", \"FastAPI\", \"Docker\", \"AWS\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Perfil identificador confere', () => pm.expect(pm.response.json().perfil_identificador).to.eql(pm.collectionVariables.get('perfil')));",
+                  "pm.test('Tecnologias atualizadas incluem AWS', () => { const t = pm.response.json().tecnologias; pm.expect(t).to.include('AWS'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Salvar curriculo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"nome_referencia\": \"curriculo-postman.pdf\", \"pdf_base64\": \"{{pdf_base64}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Curriculo salvo e id armazenado', () => { const j = pm.response.json(); pm.expect(j).to.have.property('id'); pm.expect(j.perfil_identificador).to.eql(pm.collectionVariables.get('perfil')); pm.collectionVariables.set('curriculo_id', j.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Obter curriculo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos",
+            "{{curriculo_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Id confere', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('curriculo_id')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Capturar vaga",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/vagas",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "vagas"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"texto_descricao\": \"Desenvolvedor Python Senior com FastAPI, Cloud e experiencia em times distribuidos.\", \"url_origem\": \"https://example.com/vaga-python\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Vaga salva e id armazenado', () => { const j = pm.response.json(); pm.expect(j).to.have.property('id'); pm.collectionVariables.set('vaga_id', j.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Listar vagas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/vagas?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "vagas"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Lista contem a vaga criada', () => { const j = pm.response.json(); pm.expect(j.total).to.be.at.least(1); const ids = j.items.map(i => i.id); pm.expect(ids).to.include(pm.collectionVariables.get('vaga_id')); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Criar candidatura",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/candidaturas",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "candidaturas"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"vaga_id\": \"{{vaga_id}}\", \"curriculo_salvo_id\": \"{{curriculo_id}}\", \"empresa\": \"TechCorp\", \"cargo\": \"Engenheiro de Software\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Candidatura criada como aplicado', () => { const j = pm.response.json(); pm.expect(j).to.have.property('id'); pm.expect(j.status).to.eql('aplicado'); pm.collectionVariables.set('candidatura_id', j.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Listar candidaturas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/candidaturas?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "candidaturas"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Listagem contem a candidatura', () => { const j = pm.response.json(); pm.expect(j.total).to.be.at.least(1); const aplicados = j.por_status.aplicado || []; const ids = aplicados.map(i => i.id); pm.expect(ids).to.include(pm.collectionVariables.get('candidatura_id')); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Submeter candidatura",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/candidaturas/{{candidatura_id}}/submissao",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "candidaturas",
+            "{{candidatura_id}}",
+            "submissao"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"novo_status\": \"entrevista\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Status movido para entrevista', () => pm.expect(pm.response.json().status).to.eql('entrevista'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Adaptar curriculo (IA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}/adaptacoes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos",
+            "{{curriculo_id}}",
+            "adaptacoes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI, Cloud e experiencia em times distribuidos.\", \"idioma_alvo\": \"pt\", \"cargo_alvo\": \"Engenheiro de Software\", \"empresa_alvo\": \"TechCorp\", \"pdf_base64\": \"{{pdf_base64}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Campos de adaptacao presentes', () => { const j = pm.response.json(); pm.expect(j).to.have.property('nome_arquivo'); pm.expect(j).to.have.property('pdf_base64'); pm.expect(j).to.have.property('nome_completo'); }); }",
+              "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Analisar ATS (IA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}/analises-ats",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos",
+            "{{curriculo_id}}",
+            "analises-ats"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI, Cloud e experiencia em times distribuidos.\", \"pdf_base64\": \"{{pdf_base64}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Campos de ATS presentes', () => { const j = pm.response.json(); pm.expect(j).to.have.property('nota'); pm.expect(j).to.have.property('requisitos_faltantes'); pm.expect(j).to.have.property('sugestoes'); }); }",
+              "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Descobrir vagas externas (IA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/vagas/descobrir",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "vagas",
+            "descobrir"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"termo\": \"python\", \"pdf_base64\": \"{{pdf_base64}}\", \"dias_maximo\": 30}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Listagem de vagas descobertas', () => { const j = pm.response.json(); pm.expect(j).to.have.property('items'); pm.expect(j).to.have.property('total'); }); }",
+              "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "perfil",
+      "value": "postman-test",
+      "type": "string"
+    },
+    {
+      "key": "pdf_base64",
+      "value": "JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgaHR0cDovL3d3dy5yZXBvcnRsYWIuY29tCjEgMCBvYmoKPDwKL0YxIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GMSAvU3VidHlwZSAvVHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL0NvbnRlbnRzIDcgMCBSIC9NZWRpYUJveCBbIDAgMCA1OTUuMjc1NiA4NDEuODg5OCBdIC9QYXJlbnQgNiAwIFIgL1Jlc291cmNlcyA8PAovRm9udCAxIDAgUiAvUHJvY1NldCBbIC9QREYgL1RleHQgL0ltYWdlQiAvSW1hZ2VDIC9JbWFnZUkgXQo+PiAvUm90YXRlIDAgL1RyYW5zIDw8Cgo+PiAKICAvVHlwZSAvUGFnZQo+PgplbmRvYmoKNCAwIG9iago8PAovUGFnZU1vZGUgL1VzZU5vbmUgL1BhZ2VzIDYgMCBSIC9UeXBlIC9DYXRhbG9nCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9BdXRob3IgKGFub255bW91cykgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MDgwNjIyNDY0OC0wMycwMCcpIC9DcmVhdG9yIChSZXBvcnRMYWIgUERGIExpYnJhcnkgLSB3d3cucmVwb3J0bGFiLmNvbSkgL0tleXdvcmRzICgpIC9Nb2REYXRlIChEOjIwMjYwODA2MjI0NjQ4LTAzJzAwJykgL1Byb2R1Y2VyIChSZXBvcnRMYWIgUERGIExpYnJhcnkgLSB3d3cucmVwb3J0bGFiLmNvbSkgCiAgL1N1YmplY3QgKHVuc3BlY2lmaWVkKSAvVGl0bGUgKHVudGl0bGVkKSAvVHJhcHBlZCAvRmFsc2UKPj4KZW5kb2JqCjYgMCBvYmoKPDwKL0NvdW50IDEgL0tpZHMgWyAzIDAgUiBdIC9UeXBlIC9QYWdlcwo+PgplbmRvYmoKNyAwIG9iago8PAovRmlsdGVyIFsgL0FTQ0lJODVEZWNvZGUgL0ZsYXRlRGVjb2RlIF0gL0xlbmd0aCA1MjEKPj4Kc3RyZWFtCkdhczJGOTVpUT0mOzlOSidtISVVYEtoNGs4VC4/JS1saSQ/NjdWZ3MwISlRYFIjIyIiVWY9aDxeNkdIWDpmTi9MTS0udU5VS01KZDMnPj1JPyMmOzdKYSMzXVArcFNSYVgubV8vUVRoWlckZDQ+Km9sckg3XE9odF5rKl41RWBLVS4kSDRmWT04dS5ESGhER1Y6TCM4cTZWIWdcMiwtXW9qKSVyVjxcKmMuO09MOUI8RydyblVpPktLajFdXy1HLUMxLmcmLGAyUC0lREhrKSM8M0JhP2BmckFTLWtfJTpdTk9CI2dgLHNXQlxuLEEvPEtYR2R1SV5iMDxXNEEkNUdick1KLmQqcjFnKmsnXDEyYFRTW0tWcU5DVGBuQGo0XXRHYWhQaGcvbWxbaFxHcXBkZldrJTVWPlU5TV9FNmooQ21BXnBVWDddWyprTTFdRFl0I1dcJjQ9Il8zLEssS1BRTVRsbCRETytIPWhlIV9gQzsqUmYjdFlTWSdpVDByWEEqMTwsWVE2XVxxQTVyQCVgbml0KiFeajpAaipAL2JwPmUpOC9QOiJQKSMpXSFfW1ZCLD9FY1VNXj9aLT8rLGpzVjNbSTROcS4xOChjJFJaKC5iODYlUkVeSzBBRiNfYiNuLT9MQm5UUD41QC1lMlImVz84Nm46cVtBMTdGR19TbztEJGlgc34+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNzMgMDAwMDAgbiAKMDAwMDAwMDEwNCAwMDAwMCBuIAowMDAwMDAwMjExIDAwMDAwIG4gCjAwMDAwMDA0MTQgMDAwMDAgbiAKMDAwMDAwMDQ4MiAwMDAwMCBuIAowMDAwMDAwNzc4IDAwMDAwIG4gCjAwMDAwMDA4MzcgMDAwMDAgbiAKdHJhaWxlcgo8PAovSUQgCls8ZGUyZmJiMjM2YWNjZGU2NjMwYmUyZjgwNWQzZWYyMGI+PGRlMmZiYjIzNmFjY2RlNjYzMGJlMmY4MDVkM2VmMjBiPl0KJSBSZXBvcnRMYWIgZ2VuZXJhdGVkIFBERiBkb2N1bWVudCAtLSBkaWdlc3QgKGh0dHA6Ly93d3cucmVwb3J0bGFiLmNvbSkKCi9JbmZvIDUgMCBSCi9Sb290IDQgMCBSCi9TaXplIDgKPj4Kc3RhcnR4cmVmCjE0NDgKJSVFT0YK",
+      "type": "string"
+    },
+    {
+      "key": "curriculo_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vaga_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "candidatura_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

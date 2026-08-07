@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from fastapi import APIRouter, HTTPException, status
 
 from jobsync.entrypoints.api.dependencies import (
@@ -29,6 +31,25 @@ def salvar_perfil_estruturado(
 ) -> PerfilEstruturadoResponse:
     """Persiste os dados estruturados do perfil (upsert)."""
     perfil = service.executar(body.to_dto())
+    return PerfilEstruturadoResponse.from_dto(perfil)
+
+
+@router.put(
+    "/perfil-estruturado/{perfil_identificador}",
+    response_model=PerfilEstruturadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Atualizar perfil estruturado",
+    description="Substitui o perfil estruturado vinculado ao identificador informado.",
+)
+def atualizar_perfil_estruturado(
+    perfil_identificador: str,
+    body: PerfilEstruturadoRequest,
+    service: ServiceSalvarPerfilEstruturadoDep,
+) -> PerfilEstruturadoResponse:
+    """Atualiza o perfil estruturado de forma idempotente (PUT)."""
+    input_dto = body.to_dto()
+    input_dto = replace(input_dto, perfil_identificador=perfil_identificador)
+    perfil = service.executar(input_dto)
     return PerfilEstruturadoResponse.from_dto(perfil)
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from infrastructure.persistence._conexao_sqlite import criar_conexao
+from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
 
 from jobsync.token_captura.domain.token_captura import TokenCaptura
 from jobsync.token_captura.domain.token_captura_repository import TokenCapturaRepository

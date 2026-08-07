@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from infrastructure.persistence.perfil_repository_impl import PerfilRepositoryImpl
+from jobsync.perfil.adapters.perfil_repository_impl import PerfilRepositoryImpl
 from jobsync.vaga import Vaga
 from jobsync.vaga.adapters import VagaRepositoryImpl
 

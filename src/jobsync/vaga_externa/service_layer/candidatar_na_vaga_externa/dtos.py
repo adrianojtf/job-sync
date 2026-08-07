@@ -1,0 +1,42 @@
+"""DTOs de input/output para o caso de uso CandidatarNaVagaExterna."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+
+from jobsync.ats_score import ResultadoAtsScore
+from jobsync.curriculo import Curriculo
+from jobsync.shared_kernel.domain import NomeArquivo
+from jobsync.vaga_externa import VagaExterna
+
+
+@dataclass(frozen=True)
+class CandidatarNaVagaExternaInputDto:
+    """Dados de entrada do caso de uso, vindos da interface (Streamlit).
+
+    Informe `pdf_curriculo` OU `curriculo_pre_montado` — quando este último
+    vier preenchido (perfil estruturado), a extração via IA é pulada.
+    """
+
+    vaga: VagaExterna
+    idioma_alvo: str
+    cargo_alvo: str
+    empresa_alvo: str
+    pdf_curriculo: bytes | None = None
+    curriculo_pre_montado: Curriculo | None = None
+    data_referencia: date | None = None
+
+
+@dataclass(frozen=True)
+class CandidatarNaVagaExternaOutputDto:
+    """Resultado do caso de uso: artefatos prontos para a candidatura em um clique.
+
+    `url_vaga` é repassada sem alteração a partir do input — a UI usa esse
+    valor para abrir a vaga original em nova aba (sem autofill de formulário).
+    """
+
+    pdf_bytes: bytes
+    nome_arquivo: NomeArquivo
+    resultado_ats: ResultadoAtsScore
+    carta_apresentacao: str
+    url_vaga: str

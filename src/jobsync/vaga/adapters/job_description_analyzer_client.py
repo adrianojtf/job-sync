@@ -8,7 +8,7 @@ import logging
 import unicodedata
 from typing import Any
 
-from infrastructure.llm.cliente_groq import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
 
 from jobsync.vaga.domain.analise_vaga import (
     AnaliseVaga,

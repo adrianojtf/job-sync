@@ -1,7 +1,7 @@
 """Testes do Domain Service CalcularAtsScore."""
 
-from domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
-from domain.vaga import (
+from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.vaga import (
     AnaliseVaga,
     CategoriaRequisitoTecnico,
     OrigemRequisitoTecnico,

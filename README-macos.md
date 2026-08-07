@@ -11,7 +11,7 @@ As instruções do `README.md` são em grande parte compatíveis com o macOS, ma
 Se o `python3` ainda não estiver disponível, instale-o com:
 
 ```bash
-brew install python@3.11
+brew install python@3.12
 ```
 
 > Se o comando `python3` não estiver no PATH após a instalação, abra um novo terminal ou adicione o diretório do Homebrew ao seu shell.
@@ -52,7 +52,7 @@ GROQ_API_KEY=sua_chave_aqui
 ## 5. Executar o MVP
 
 ```bash
-streamlit run ui/app_streamlit.py
+PYTHONPATH=src streamlit run src/jobsync/entrypoints/streamlit_app.py
 ```
 
 A interface abrirá em `http://localhost:8501`.
@@ -62,7 +62,7 @@ A interface abrirá em `http://localhost:8501`.
 A funcionalidade de captura de vagas (extensão Chrome) depende de um segundo processo, rodando em paralelo ao Streamlit, que recebe o texto capturado da página:
 
 ```bash
-uvicorn infrastructure.api.servidor_captura:app --port 8502
+PYTHONPATH=src uvicorn jobsync.entrypoints.servidor_captura:app --port 8502
 ```
 
 Esse servidor expõe apenas `http://localhost:8502/api/vagas/capturar`, usado exclusivamente pela extensão — não é necessário abri-lo no navegador.
@@ -70,11 +70,23 @@ Esse servidor expõe apenas `http://localhost:8502/api/vagas/capturar`, usado ex
 ## 6. Rodar os testes
 
 ```bash
-pytest tests/ -v
+pytest
+```
+
+ou, explicitando o `PYTHONPATH`:
+
+```bash
+PYTHONPATH=src pytest
 ```
 
 Se o comando `pytest` não for encontrado mesmo com o ambiente ativado, use:
 
 ```bash
-./.venv/bin/pytest tests/ -v
+PYTHONPATH=src ./.venv/bin/pytest
+```
+
+## 7. Lint de arquitetura
+
+```bash
+PYTHONPATH=src lint-imports
 ```

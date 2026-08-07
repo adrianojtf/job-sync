@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from infrastructure.persistence._conexao_sqlite import criar_conexao
+from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
 
 from jobsync.curriculo_salvo.domain.curriculo_salvo import CurriculoSalvo
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import CurriculoSalvoRepository

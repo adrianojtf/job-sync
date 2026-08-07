@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from infrastructure.persistence._conexao_sqlite import criar_conexao
+from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
 
 from jobsync.vaga.domain.vaga import Vaga
 from jobsync.vaga.domain.vaga_repository import VagaRepository

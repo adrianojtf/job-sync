@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 
-from infrastructure.persistence.perfil_repository_impl import PerfilRepositoryImpl
+from jobsync.perfil.adapters.perfil_repository_impl import PerfilRepositoryImpl
 from jobsync.token_captura.adapters import TokenCapturaRepositoryImpl
 
 

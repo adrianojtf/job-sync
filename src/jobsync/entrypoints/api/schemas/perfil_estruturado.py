@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+import base64
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from jobsync.perfil_estruturado.domain.perfil_estruturado import (
     Certificacao,
+    DadosPerfilExtraidos,
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
     NivelIdioma,
     PerfilEstruturado,
+)
+from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.dtos import (
+    ImportarPerfilDePdfInputDto,
 )
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.dtos import (
     SalvarPerfilEstruturadoInputDto,
@@ -117,6 +123,8 @@ class PerfilEstruturadoRequest(BaseModel):
         description="Lista de tecnologias dominadas pelo usuário.",
     )
 
+
+
     def to_dto(self) -> SalvarPerfilEstruturadoInputDto:
         return SalvarPerfilEstruturadoInputDto(
             perfil_identificador=self.perfil_identificador,
@@ -160,6 +168,25 @@ class PerfilEstruturadoRequest(BaseModel):
         )
 
 
+class PerfilImportarPdfRequest(BaseModel):
+    """Payload para importar um rascunho de perfil a partir de um PDF."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+            }
+        }
+    )
+
+    pdf_base64: str = Field(description="Conteúdo do PDF do currículo codificado em base64.")
+
+    def to_dto(self) -> ImportarPerfilDePdfInputDto:
+        return ImportarPerfilDePdfInputDto(
+            pdf_curriculo=base64.b64decode(self.pdf_base64.encode()),
+        )
+
+
 class ExperienciaProfissionalResponse(BaseModel):
     """Representação de uma experiência profissional na resposta da API."""
 
@@ -195,7 +222,10 @@ class IdiomaResponse(BaseModel):
 class PerfilEstruturadoResponse(BaseModel):
     """Representação do perfil estruturado na resposta da API."""
 
-    perfil_identificador: str = Field(description="Identificador único do perfil de login.")
+    perfil_identificador: str | None = Field(
+        default=None,
+        description="Identificador único do perfil de login (None para rascunho importado).",
+    )
     nome_completo: str = Field(description="Nome completo do usuário.")
     email: str = Field(description="Endereço de e-mail do usuário.")
     linkedin: str = Field(description="URL do perfil no LinkedIn.")
@@ -217,9 +247,11 @@ class PerfilEstruturadoResponse(BaseModel):
     )
 
     @classmethod
-    def from_dto(cls, dto: PerfilEstruturado) -> PerfilEstruturadoResponse:
+    def from_dto(
+        cls, dto: PerfilEstruturado | DadosPerfilExtraidos
+    ) -> PerfilEstruturadoResponse:
         return cls(
-            perfil_identificador=dto.perfil_identificador,
+            perfil_identificador=getattr(dto, "perfil_identificador", None),
             nome_completo=dto.nome_completo,
             email=dto.email,
             linkedin=dto.linkedin,

@@ -214,6 +214,51 @@
               }
             }
           ]
+        },
+        {
+          "name": "07 - Importar perfil estruturado de PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/perfil-estruturado/importacoes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "perfil-estruturado",
+                "importacoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pdf_base64\": \"{{pdf_base64}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { pm.test('Rascunho importado', () => { const j = pm.response.json(); pm.expect(j).to.have.property('nome_completo'); pm.expect(j).to.have.property('perfil_identificador'); }); }",
+                  "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -266,7 +311,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}",
+          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}?perfil_identificador={{perfil}}",
           "host": [
             "{{base_url}}"
           ],
@@ -274,6 +319,12 @@
             "v1",
             "curriculos",
             "{{curriculo_id}}"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
           ]
         }
       },
@@ -284,14 +335,166 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "pm.test('Id confere', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('curriculo_id')));"
+              "pm.test('Id confere', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('curriculo_id')));",
+              "pm.test('Perfil confere', () => pm.expect(pm.response.json().perfil_identificador).to.eql(pm.collectionVariables.get('perfil')));"
             ]
           }
         }
       ]
     },
     {
-      "name": "06 - Capturar vaga",
+      "name": "06 - Listar curriculos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Listagem contem curriculo salvo', () => { const j = pm.response.json(); pm.expect(j.total).to.be.at.least(1); const ids = j.items.map(i => i.id); pm.expect(ids).to.include(pm.collectionVariables.get('curriculo_id')); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Obter conteudo curriculo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}/conteudo?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos",
+            "{{curriculo_id}}",
+            "conteudo"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('PDF base64 presente', () => { const j = pm.response.json(); pm.expect(j).to.have.property('pdf_base64'); pm.expect(j.id).to.eql(pm.collectionVariables.get('curriculo_id')); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Remover curriculo",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos/{{curriculo_id}}?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos",
+            "{{curriculo_id}}"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Gerar carta apresentacao",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/cartas-apresentacao",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "cartas-apresentacao"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI, Cloud e experiencia em times distribuidos.\", \"idioma_alvo\": \"pt\", \"cargo_alvo\": \"Engenheiro de Software\", \"empresa_alvo\": \"TechCorp\", \"perfil_identificador\": \"{{perfil}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Carta gerada', () => { const j = pm.response.json(); pm.expect(j).to.have.property('carta'); }); }",
+              "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Capturar vaga",
       "request": {
         "method": "POST",
         "header": [
@@ -334,7 +537,7 @@
       ]
     },
     {
-      "name": "07 - Listar vagas",
+      "name": "11 - Listar vagas",
       "request": {
         "method": "GET",
         "header": [],
@@ -369,7 +572,7 @@
       ]
     },
     {
-      "name": "08 - Criar candidatura",
+      "name": "12 - Criar candidatura",
       "request": {
         "method": "POST",
         "header": [
@@ -412,7 +615,7 @@
       ]
     },
     {
-      "name": "09 - Listar candidaturas",
+      "name": "13 - Listar candidaturas",
       "request": {
         "method": "GET",
         "header": [],
@@ -447,7 +650,7 @@
       ]
     },
     {
-      "name": "10 - Submeter candidatura",
+      "name": "14 - Submeter candidatura",
       "request": {
         "method": "POST",
         "header": [
@@ -492,7 +695,7 @@
       ]
     },
     {
-      "name": "11 - Adaptar curriculo (IA)",
+      "name": "15 - Adaptar curriculo (IA)",
       "request": {
         "method": "POST",
         "header": [
@@ -538,7 +741,7 @@
       ]
     },
     {
-      "name": "12 - Analisar ATS (IA)",
+      "name": "16 - Analisar ATS (IA)",
       "request": {
         "method": "POST",
         "header": [
@@ -584,7 +787,7 @@
       ]
     },
     {
-      "name": "13 - Descobrir vagas externas (IA)",
+      "name": "17 - Descobrir vagas externas (IA)",
       "request": {
         "method": "POST",
         "header": [

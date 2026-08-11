@@ -108,7 +108,25 @@ class TestCurriculoRouter:
         assert "Location" in response.headers
 
     def test_get_curriculo(self, client: TestClient):
-        response = client.get("/v1/curriculos/curriculo-123")
+        curriculo_repo = CurriculoSalvoRepositoryFake()
+        curriculo_repo.salvar(
+            CurriculoSalvo(
+                id="curriculo-123",
+                perfil_identificador="matheus",
+                nome_referencia="Curriculo.pdf",
+                pdf_bytes=PDF_BYTES,
+                data_upload=datetime.now(),
+            )
+        )
+        app.dependency_overrides[obter_repositorio_curriculo_salvo] = (
+            lambda: curriculo_repo
+        )
+
+        response = client.get(
+            "/v1/curriculos/curriculo-123?perfil_identificador=matheus"
+        )
+
+        app.dependency_overrides.pop(obter_repositorio_curriculo_salvo, None)
 
         assert response.status_code == 200
         data = response.json()

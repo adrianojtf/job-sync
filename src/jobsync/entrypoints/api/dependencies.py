@@ -22,10 +22,14 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVaga,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
+from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
+from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
     CurriculoSalvoRepository,
 )
 from jobsync.curriculo_salvo.service_layer.salvar_curriculo import SalvarCurriculo
+from jobsync.curriculo_salvo.service_layer.listar_curriculos_salvos.service import ListarCurriculosSalvos
+from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import RemoverCurriculoSalvo
 from jobsync.entrypoints.dependencies import (
     obter_caminho_banco,
     obter_repositorio_candidatura,
@@ -39,6 +43,8 @@ from jobsync.perfil.domain.perfil_repository import PerfilRepository
 from jobsync.perfil.service_layer.entrar_ou_criar_perfil import EntrarOuCriarPerfil
 from jobsync.perfil_estruturado.domain.perfil_estruturado_repository import PerfilEstruturadoRepository
 from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service import BuscarPerfilEstruturado
+from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.service import ImportarPerfilDePdf
+from jobsync.perfil_estruturado.adapters.extrator_perfil_estruturado_client import ExtratorPerfilEstruturadoClient
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.service import SalvarPerfilEstruturado
 from jobsync.vaga.adapters.job_description_analyzer_client import (
     JobDescriptionAnalyzerClient,
@@ -260,4 +266,48 @@ def obter_service_buscar_perfil_estruturado(
 
 ServiceBuscarPerfilEstruturadoDep = Annotated[
     BuscarPerfilEstruturado, Depends(obter_service_buscar_perfil_estruturado)
+]
+
+
+def obter_service_listar_curriculos_salvos(
+    repositorio: Annotated[
+        CurriculoSalvoRepository, Depends(obter_repositorio_curriculo_salvo)
+    ],
+) -> ListarCurriculosSalvos:
+    return ListarCurriculosSalvos(_repositorio_curriculo_salvo=repositorio)
+
+
+ServiceListarCurriculosSalvosDep = Annotated[
+    ListarCurriculosSalvos, Depends(obter_service_listar_curriculos_salvos)
+]
+
+
+def obter_service_remover_curriculo_salvo(
+    repositorio: Annotated[
+        CurriculoSalvoRepository, Depends(obter_repositorio_curriculo_salvo)
+    ],
+) -> RemoverCurriculoSalvo:
+    return RemoverCurriculoSalvo(_repositorio_curriculo_salvo=repositorio)
+
+
+ServiceRemoverCurriculoSalvoDep = Annotated[
+    RemoverCurriculoSalvo, Depends(obter_service_remover_curriculo_salvo)
+]
+
+
+def obter_service_importar_perfil_de_pdf() -> ImportarPerfilDePdf:
+    return ImportarPerfilDePdf(extrator=ExtratorPerfilEstruturadoClient())
+
+
+ServiceImportarPerfilDePdfDep = Annotated[
+    ImportarPerfilDePdf, Depends(obter_service_importar_perfil_de_pdf)
+]
+
+
+def obter_service_gerar_carta_apresentacao() -> GerarCartaApresentacao:
+    return GerarCartaApresentacao(gerador_carta=GerarCartaApresentacaoClient())
+
+
+ServiceGerarCartaApresentacaoDep = Annotated[
+    GerarCartaApresentacao, Depends(obter_service_gerar_carta_apresentacao)
 ]

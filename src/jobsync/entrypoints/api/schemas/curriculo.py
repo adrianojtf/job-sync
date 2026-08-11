@@ -65,6 +65,36 @@ class CurriculoSalvoResponse(BaseModel):
         )
 
 
+class CurriculosListagemResponse(BaseModel):
+    """Resposta da listagem de currículos salvos de um perfil."""
+
+    items: list[CurriculoSalvoResponse] = Field(description="Currículos salvos.")
+    total: int = Field(description="Total de currículos retornados.")
+
+    @classmethod
+    def from_dto(cls, curriculos: tuple[CurriculoSalvo, ...]) -> CurriculosListagemResponse:
+        return cls(
+            items=[CurriculoSalvoResponse.from_dto(c) for c in curriculos],
+            total=len(curriculos),
+        )
+
+
+class CurriculoSalvoConteudoResponse(BaseModel):
+    """Resposta com o conteúdo PDF de um currículo salvo."""
+
+    id: str = Field(description="Identificador do currículo salvo.")
+    nome_referencia: str = Field(description="Nome de referência do currículo.")
+    pdf_base64: str = Field(description="Conteúdo do PDF codificado em base64.")
+
+    @classmethod
+    def from_dto(cls, dto: CurriculoSalvo) -> CurriculoSalvoConteudoResponse:
+        return cls(
+            id=dto.id,
+            nome_referencia=dto.nome_referencia,
+            pdf_base64=base64.b64encode(dto.pdf_bytes).decode(),
+        )
+
+
 class AdaptarCurriculoRequest(BaseModel):
     """Payload para adaptar um currículo a uma vaga específica."""
 
@@ -84,20 +114,33 @@ class AdaptarCurriculoRequest(BaseModel):
     idioma_alvo: str = Field(description="Idioma de destino do currículo adaptado.")
     cargo_alvo: str = Field(description="Cargo alvo do currículo.")
     empresa_alvo: str = Field(description="Empresa alvo do currículo.")
-    pdf_base64: str = Field(description="Conteúdo do PDF do currículo codificado em base64.")
+    pdf_base64: str | None = Field(
+        default=None,
+        description="Conteúdo do PDF do currículo codificado em base64.",
+    )
+    perfil_identificador: str | None = Field(
+        default=None,
+        description="Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).",
+    )
     data_referencia: date | None = Field(
         default=None,
         description="Data de referência para composição do nome do arquivo.",
     )
 
-    def to_dto(self) -> AdaptarCurriculoParaVagaInputDto:
+    def to_dto(self, curriculo_pre_montado=None) -> AdaptarCurriculoParaVagaInputDto:
+        if curriculo_pre_montado is not None:
+            pdf_curriculo = None
+        elif self.pdf_base64:
+            pdf_curriculo = base64.b64decode(self.pdf_base64.encode())
+        else:
+            raise ValueError("Informe pdf_base64 ou perfil_identificador.")
         return AdaptarCurriculoParaVagaInputDto(
             descricao_vaga=self.descricao_vaga,
             idioma_alvo=self.idioma_alvo,
             cargo_alvo=self.cargo_alvo,
             empresa_alvo=self.empresa_alvo,
-            pdf_curriculo=base64.b64decode(self.pdf_base64.encode()),
-            curriculo_pre_montado=None,
+            pdf_curriculo=pdf_curriculo,
+            curriculo_pre_montado=curriculo_pre_montado,
             data_referencia=self.data_referencia,
         )
 
@@ -131,13 +174,26 @@ class AnalisarAtsRequest(BaseModel):
     )
 
     descricao_vaga: str = Field(description="Texto completo da descrição da vaga.")
-    pdf_base64: str = Field(description="Conteúdo do PDF do currículo codificado em base64.")
+    pdf_base64: str | None = Field(
+        default=None,
+        description="Conteúdo do PDF do currículo codificado em base64.",
+    )
+    perfil_identificador: str | None = Field(
+        default=None,
+        description="Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).",
+    )
 
-    def to_dto(self) -> AnalisarAtsVagaInputDto:
+    def to_dto(self, curriculo_pre_montado=None) -> AnalisarAtsVagaInputDto:
+        if curriculo_pre_montado is not None:
+            pdf_curriculo = None
+        elif self.pdf_base64:
+            pdf_curriculo = base64.b64decode(self.pdf_base64.encode())
+        else:
+            raise ValueError("Informe pdf_base64 ou perfil_identificador.")
         return AnalisarAtsVagaInputDto(
             descricao_vaga=self.descricao_vaga,
-            pdf_curriculo=base64.b64decode(self.pdf_base64.encode()),
-            curriculo_pre_montado=None,
+            pdf_curriculo=pdf_curriculo,
+            curriculo_pre_montado=curriculo_pre_montado,
         )
 
 
@@ -147,6 +203,16 @@ class RequisitoFaltanteResponse(BaseModel):
     nome: str = Field(description="Nome do requisito técnico faltante.")
     categoria: str = Field(description="Categoria do requisito técnico.")
     tipo: str = Field(description="Tipo do requisito técnico (explícito, implícito ou ambíguo).")
+
+
+class GerarCartaApresentacaoRequest(AdaptarCurriculoRequest):
+    """Payload para gerar carta de apresentação."""
+
+
+class CartaApresentacaoResponse(BaseModel):
+    """Texto da carta de apresentação gerada."""
+
+    carta: str = Field(description="Texto da carta de apresentação.")
 
 
 class AnalisarAtsResponse(BaseModel):

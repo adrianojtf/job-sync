@@ -8,11 +8,13 @@ from fastapi import APIRouter, HTTPException, status
 
 from jobsync.entrypoints.api.dependencies import (
     ServiceBuscarPerfilEstruturadoDep,
+    ServiceImportarPerfilDePdfDep,
     ServiceSalvarPerfilEstruturadoDep,
 )
 from jobsync.entrypoints.api.schemas.perfil_estruturado import (
     PerfilEstruturadoRequest,
     PerfilEstruturadoResponse,
+    PerfilImportarPdfRequest,
 )
 
 router = APIRouter(tags=["perfil estruturado"])
@@ -72,3 +74,25 @@ def buscar_perfil_estruturado(
             detail="Perfil estruturado nao encontrado",
         )
     return PerfilEstruturadoResponse.from_dto(perfil)
+
+
+@router.post(
+    "/perfil-estruturado/importacoes",
+    response_model=PerfilEstruturadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Importar perfil estruturado de PDF",
+    description="Extrai um rascunho de perfil estruturado a partir de um PDF.",
+)
+def importar_perfil_estruturado_de_pdf(
+    body: PerfilImportarPdfRequest,
+    service: ServiceImportarPerfilDePdfDep,
+) -> PerfilEstruturadoResponse:
+    """Extrai um rascunho de perfil a partir de um PDF, sem persistir."""
+    try:
+        dados = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return PerfilEstruturadoResponse.from_dto(dados)

@@ -21,7 +21,10 @@ _CAMINHO_BANCO_PADRAO = str(_DIRETORIO_ARMAZENAMENTO / "job_sync.db")
 
 def obter_caminho_banco() -> str:
     """Permite apontar para um banco alternativo (ex: testes) via variável de ambiente."""
-    return os.getenv("JOB_SYNC_DB_PATH", _CAMINHO_BANCO_PADRAO)
+    return os.getenv(
+        "DATABASE_PATH",
+        os.getenv("JOB_SYNC_DB_PATH", _CAMINHO_BANCO_PADRAO),
+    )
 
 
 def obter_repositorio_token(caminho_banco: str | None = None) -> TokenCapturaRepositoryImpl:

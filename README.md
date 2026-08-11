@@ -104,6 +104,17 @@ PYTHONPATH=src uvicorn jobsync.entrypoints.servidor_captura:app --port 8502
 Esse servidor expõe `http://localhost:8502/api/vagas/capturar` e é usado
 exclusivamente pela extensão do navegador.
 
+### Servidor backend API (FastAPI)
+
+Para subir o backend independente com documentação OpenAPI em `/docs`:
+
+```bash
+PYTHONPATH=src uvicorn jobsync.entrypoints.api.main:app --reload --port 8000
+```
+
+O backend fica disponível em `http://localhost:8000` e a documentação interativa
+em `http://localhost:8000/docs`.
+
 ## Rodando os testes (TDD)
 
 O `pytest.ini` já configura os caminhos (`pythonpath = . src src/jobsync`), então basta rodar a partir da raiz do projeto:
@@ -130,6 +141,29 @@ PYTHONPATH=src pytest
 Os testes de `domain/` e `service_layer/` são independentes de rede e de
 chave de API (usam dublês de teste / fakes para as portas). Os testes de
 adapters de PDF também não dependem de rede.
+
+## Deploy com Docker
+
+Para executar o backend de forma isolada, sem depender do Streamlit:
+
+```bash
+# 1. Construir a imagem
+docker build -t job-sync-backend .
+
+# 2. Subir o container
+docker run -p 8000:8000 job-sync-backend
+```
+
+O backend estará disponível em `http://localhost:8000`, com documentação
+interativa em `/docs` e health check em `/health`.
+
+Para passar a chave da Groq ou outras variáveis de ambiente:
+
+```bash
+cp .env.example .env
+# edite o .env com seus valores
+docker run --env-file .env -p 8000:8000 job-sync-backend
+```
 
 ## Lint de arquitetura
 

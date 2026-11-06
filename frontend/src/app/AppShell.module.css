@@ -169,6 +169,12 @@
 .fundoMenu {
   display: none;
 }
+.acoesTopo {
+  margin-left: auto;
+}
+.rotuloCurto {
+  display: none;
+}
 
 @media (max-width: 1000px) {
   .app {
@@ -212,6 +218,16 @@
   }
   .botaoMenu {
     display: inline-block;
+  }
+  .trilha li:first-child,
+  .trilha li + li::before {
+    display: none;
+  }
+  .rotuloLongo {
+    display: none;
+  }
+  .rotuloCurto {
+    display: inline;
   }
   .conteudo {
     padding: 25px 16px 40px;

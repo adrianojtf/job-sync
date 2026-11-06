@@ -1,0 +1,64 @@
+.nota {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.notaValor {
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+.legenda {
+  color: var(--muted);
+  font-size: 12px;
+}
+.subtitulo {
+  font-size: 13px;
+  margin: 16px 0 8px;
+}
+.lista {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+.requisitos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.requisito {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.categoria {
+  color: var(--muted);
+  font-size: 11px;
+}
+.experiencias {
+  display: grid;
+  gap: 14px;
+}
+.experiencia {
+  border: 1px solid var(--line);
+  border-radius: var(--raio-lg);
+  padding: 14px 16px;
+  background: var(--surface-subtle);
+}
+.experienciaTitulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.texto {
+  color: var(--muted);
+  margin: 0;
+}

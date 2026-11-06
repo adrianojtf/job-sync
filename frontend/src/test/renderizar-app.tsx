@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { StrictMode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import type { ApiClient } from "../api/api-client";
 import { HttpApiClient } from "../api/http-api-client";
@@ -21,13 +22,16 @@ export function renderizarApp({ caminho = "/", perfil, apiClient }: Opcoes = {})
   const router = createMemoryRouter(rotas, { initialEntries: [caminho], ...OPCOES_ROUTER });
   const queryClient = criarQueryClient();
   queryClient.setDefaultOptions({ queries: { retry: false } });
+  // StrictMode como em main.tsx: revela efeitos que quebram com a montagem dupla do React.
   render(
-    <AppProviders
-      apiClient={apiClient ?? new HttpApiClient({ baseUrl: API_TESTE })}
-      queryClient={queryClient}
-    >
-      <RouterProvider router={router} future={{ v7_startTransition: true }} />
-    </AppProviders>,
+    <StrictMode>
+      <AppProviders
+        apiClient={apiClient ?? new HttpApiClient({ baseUrl: API_TESTE })}
+        queryClient={queryClient}
+      >
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      </AppProviders>
+    </StrictMode>,
   );
   return { router };
 }

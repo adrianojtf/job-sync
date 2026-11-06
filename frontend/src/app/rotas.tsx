@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
+import { AjustarVagaPage } from "../features/ajustar-vaga/AjustarVagaPage";
+import { AnalisarAtsPage } from "../features/analisar-ats/AnalisarAtsPage";
 import { CurriculosPage } from "../features/curriculos/CurriculosPage";
 import { EntrarPage } from "../features/entrar/EntrarPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
@@ -17,6 +19,8 @@ export interface HandleRota {
 const TELAS: Record<string, ReactElement> = {
   "/perfil": <PerfilPage />,
   "/curriculos": <CurriculosPage />,
+  "/ajustar-vaga": <AjustarVagaPage />,
+  "/analisar-ats": <AnalisarAtsPage />,
 };
 
 export const rotas: RouteObject[] = [

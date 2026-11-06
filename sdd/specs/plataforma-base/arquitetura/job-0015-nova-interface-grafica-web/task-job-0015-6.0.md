@@ -23,11 +23,11 @@ Entregar o fluxo de maior valor do produto: a partir de uma vaga, avaliar a desc
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever os testes do modal (red) e implementá-lo em `features/ajustar-vaga/`.
-- [ ] 6.2 Implementar o hook `useAjustarVaga` e a página de resultado.
-- [ ] 6.3 Implementar os blocos de avaliação da vaga, das experiências, ATS e carta.
-- [ ] 6.4 Implementar o pré-preenchimento via estado de navegação.
-- [ ] 6.5 Implementar `features/analisar-ats/`.
+- [x] 6.1 Escrever os testes do modal (red) e implementá-lo em `features/ajustar-vaga/`.
+- [x] 6.2 Implementar o hook `useAjustarVaga` e a página de resultado.
+- [x] 6.3 Implementar os blocos de avaliação da vaga, das experiências, ATS e carta.
+- [x] 6.4 Implementar o pré-preenchimento via estado de navegação.
+- [x] 6.5 Implementar `features/analisar-ats/`.
 
 ## Detalhes de Implementação
 
@@ -41,10 +41,10 @@ Ver `prd-job-0015.md` → F6 e F7, e `techspec-job-0015.md` → "Interfaces Prin
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: modal bloqueia envio sem título ou descrição e fecha com `Esc`.
-- [ ] Testes de unidade: avaliação mostra score e 4 dimensões; `indisponivel` mostra aviso e permite seguir.
-- [ ] Testes de unidade: gerar dispara o download; ATS lista requisitos faltantes; carta pode ser copiada.
-- [ ] Testes de unidade: Analisar ATS com descrição de vaga salva.
+- [x] Testes de unidade: modal bloqueia envio sem título ou descrição e fecha com `Esc`.
+- [x] Testes de unidade: avaliação mostra score e 4 dimensões; `indisponivel` mostra aviso e permite seguir.
+- [x] Testes de unidade: gerar dispara o download; ATS lista requisitos faltantes; carta pode ser copiada.
+- [x] Testes de unidade: Analisar ATS com descrição de vaga salva.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

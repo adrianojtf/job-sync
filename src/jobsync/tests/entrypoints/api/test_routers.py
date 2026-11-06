@@ -18,8 +18,12 @@ from jobsync.curriculo import (
     AvaliacaoExperiencia,
     Curriculo,
     ExperienciaParaAvaliacao,
+    RascunhoCurriculoAdaptado,
     SecaoCurriculo,
     TipoSecao,
+)
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisadoOutputDto,
 )
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVagaOutputDto,
@@ -46,6 +50,7 @@ from jobsync.entrypoints.api.dependencies import (
     obter_service_adaptar_curriculo,
     obter_service_analisar_ats_vaga,
     obter_service_descobrir_vagas_com_match,
+    obter_service_gerar_pdf_curriculo_revisado,
 )
 from jobsync.entrypoints.api.main import app
 from jobsync.perfil.adapters.perfil_repository_fake import PerfilRepositoryFake
@@ -83,6 +88,40 @@ def _criar_curriculo() -> Curriculo:
             ),
         ),
     )
+
+
+def _criar_rascunho() -> RascunhoCurriculoAdaptado:
+    curriculo = _criar_curriculo()
+    return RascunhoCurriculoAdaptado(
+        nome_completo=curriculo.nome_completo,
+        email=curriculo.email,
+        linkedin=curriculo.linkedin,
+        secoes=curriculo.secoes,
+    )
+
+
+class GerarPdfFake:
+    def __init__(self):
+        self.input_dto = None
+
+    def executar(self, input_dto):
+        self.input_dto = input_dto
+        return GerarPdfCurriculoRevisadoOutputDto(
+            pdf_bytes=b"%PDF-1.4 adapted",
+            nome_arquivo=NomeArquivo.criar(
+                nome_completo=input_dto.rascunho.nome_completo,
+                cargo=input_dto.cargo_alvo,
+                empresa=input_dto.empresa_alvo,
+            ),
+        )
+
+
+@pytest.fixture
+def gerar_pdf_fake() -> Generator[GerarPdfFake, None, None]:
+    fake = GerarPdfFake()
+    app.dependency_overrides[obter_service_gerar_pdf_curriculo_revisado] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(obter_service_gerar_pdf_curriculo_revisado, None)
 
 
 @pytest.fixture
@@ -151,16 +190,13 @@ class TestCurriculoRouter:
         data = response.json()
         assert data["id"] == "curriculo-123"
 
-    def test_post_adaptar_curriculo(self, client: TestClient):
+    def test_post_adaptar_curriculo(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
         class FakeAdaptar:
             def executar(self, input_dto):
                 return AdaptarCurriculoParaVagaOutputDto(
-                    pdf_bytes=b"%PDF-1.4 adapted",
-                    nome_arquivo=NomeArquivo.criar(
-                        nome_completo="Matheus Silva",
-                        cargo="Engenheiro",
-                        empresa="TechCorp",
-                    ),
+                    rascunho=_criar_rascunho(),
                     curriculo_adaptado=_criar_curriculo(),
                     analise_vaga=AnaliseVaga(
                         requisitos=(),
@@ -188,8 +224,46 @@ class TestCurriculoRouter:
         data = response.json()
         assert data["nome_completo"] == "Matheus Silva"
         assert data["pdf_base64"] == base64.b64encode(b"%PDF-1.4 adapted").decode()
+        assert data["nome_arquivo"].endswith("-Engenheiro-Techcorp.pdf")
+        assert gerar_pdf_fake.input_dto.rascunho == _criar_rascunho()
+        assert gerar_pdf_fake.input_dto.idioma_alvo == "pt"
 
-    def test_post_adaptar_curriculo_com_perfil_estruturado(self, client: TestClient):
+    def test_post_adaptar_curriculo_com_download_devolve_pdf_binario(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
+        class FakeAdaptar:
+            def executar(self, input_dto):
+                return AdaptarCurriculoParaVagaOutputDto(
+                    rascunho=_criar_rascunho(),
+                    curriculo_adaptado=_criar_curriculo(),
+                    analise_vaga=AnaliseVaga(
+                        requisitos=(), ambiguidade=(), texto_original="vaga"
+                    ),
+                )
+
+        app.dependency_overrides[obter_service_adaptar_curriculo] = FakeAdaptar
+
+        response = client.post(
+            "/v1/curriculos/curriculo-123/adaptacoes?download=true",
+            json={
+                "descricao_vaga": "Desenvolvedor Python",
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+                "pdf_base64": PDF_BASE64,
+            },
+        )
+
+        del app.dependency_overrides[obter_service_adaptar_curriculo]
+
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.content == b"%PDF-1.4 adapted"
+        assert "-Engenheiro-Techcorp.pdf" in response.headers["content-disposition"]
+
+    def test_post_adaptar_curriculo_com_perfil_estruturado(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
         repositorio = PerfilEstruturadoRepositoryFake()
         repositorio.salvar(
             PerfilEstruturado(
@@ -223,12 +297,7 @@ class TestCurriculoRouter:
                     score=80, nivel="adequado", confianca=0.9
                 )
                 return AdaptarCurriculoParaVagaOutputDto(
-                    pdf_bytes=b"%PDF-1.4 adapted",
-                    nome_arquivo=NomeArquivo.criar(
-                        nome_completo="Matheus Silva",
-                        cargo="Engenheiro",
-                        empresa="TechCorp",
-                    ),
+                    rascunho=_criar_rascunho(),
                     curriculo_adaptado=_criar_curriculo(),
                     analise_vaga=AnaliseVaga(
                         requisitos=(),

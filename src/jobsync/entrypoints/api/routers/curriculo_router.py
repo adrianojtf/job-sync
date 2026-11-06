@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.curriculo import ExperienciaParaAvaliacao
+from jobsync.curriculo import ExperienciaParaAvaliacao, RascunhoCurriculoAdaptado
+from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
+    AdaptarCurriculoParaVagaInputDto,
+)
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisado,
+    GerarPdfCurriculoRevisadoInputDto,
+    GerarPdfCurriculoRevisadoOutputDto,
+)
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import (
     CurriculoSalvoNaoEncontrado,
 )
@@ -19,6 +27,7 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceAvaliarExperienciaDep,
     ServiceBuscarPerfilEstruturadoDep,
     ServiceGerarCartaApresentacaoDep,
+    ServiceGerarPdfCurriculoRevisadoDep,
     ServiceListarCurriculosSalvosDep,
     ServiceRemoverCurriculoSalvoDep,
     ServiceSalvarCurriculoDep,
@@ -240,33 +249,54 @@ def adaptar_curriculo(
     id: str,
     body: AdaptarCurriculoRequest,
     service: ServiceAdaptarCurriculoDep,
+    gerar_pdf: ServiceGerarPdfCurriculoRevisadoDep,
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
     download: bool = False,
 ) -> AdaptarCurriculoResponse | Response:
-    """Adapta o currículo à descrição da vaga informada."""
+    """Adapta o currículo à descrição da vaga e gera o PDF sem revisão (fluxo legado)."""
     perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
     curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
     try:
-        output = service.executar(
-            body.to_dto(
-                curriculo_pre_montado=curriculo_pre_montado,
-                experiencias_profissionais=_experiencias_do_perfil(perfil),
-            )
+        input_dto = body.to_dto(
+            curriculo_pre_montado=curriculo_pre_montado,
+            experiencias_profissionais=_experiencias_do_perfil(perfil),
         )
+        output = service.executar(input_dto)
+        pdf = _gerar_pdf_sem_revisao(gerar_pdf, input_dto, output.rascunho)
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
     if download:
-        return Response(
-            content=output.pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'attachment; filename="{output.nome_arquivo.valor}"'
-            },
+        return _resposta_pdf(pdf)
+    return AdaptarCurriculoResponse.from_dto(output, pdf)
+
+
+def _gerar_pdf_sem_revisao(
+    gerar_pdf: GerarPdfCurriculoRevisado,
+    input_dto: AdaptarCurriculoParaVagaInputDto,
+    rascunho: RascunhoCurriculoAdaptado,
+) -> GerarPdfCurriculoRevisadoOutputDto:
+    return gerar_pdf.executar(
+        GerarPdfCurriculoRevisadoInputDto(
+            rascunho=rascunho,
+            idioma_alvo=input_dto.idioma_alvo,
+            cargo_alvo=input_dto.cargo_alvo,
+            empresa_alvo=input_dto.empresa_alvo,
+            data_referencia=input_dto.data_referencia,
         )
-    return AdaptarCurriculoResponse.from_dto(output)
+    )
+
+
+def _resposta_pdf(pdf: GerarPdfCurriculoRevisadoOutputDto) -> Response:
+    return Response(
+        content=pdf.pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{pdf.nome_arquivo.valor}"'
+        },
+    )
 
 
 @router.post(

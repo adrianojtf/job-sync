@@ -29,6 +29,9 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisado,
+)
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
 from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
@@ -133,7 +136,6 @@ def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
         extrator=ExtratorCurriculoClient(),
         analisador_vaga=JobDescriptionAnalyzerClient(),
         ajustador_texto=AjustadorTextoClient(),
-        gerador_pdf=GeradorPdfClient(),
         avaliador_descricao_vaga=avaliador_vaga,
         ajustador_experiencia=AjustadorExperienciaOpenAIClient(),
         avaliador_experiencia=avaliador_experiencia,
@@ -142,6 +144,16 @@ def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
 
 ServiceAdaptarCurriculoDep = Annotated[
     AdaptarCurriculoParaVaga, Depends(obter_service_adaptar_curriculo)
+]
+
+
+def obter_service_gerar_pdf_curriculo_revisado() -> GerarPdfCurriculoRevisado:
+    """Monta o caso de uso que gera o PDF a partir do rascunho revisado."""
+    return GerarPdfCurriculoRevisado(gerador_pdf=GeradorPdfClient())
+
+
+ServiceGerarPdfCurriculoRevisadoDep = Annotated[
+    GerarPdfCurriculoRevisado, Depends(obter_service_gerar_pdf_curriculo_revisado)
 ]
 
 

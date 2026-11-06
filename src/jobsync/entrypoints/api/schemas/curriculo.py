@@ -22,6 +22,9 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
     AdaptarCurriculoParaVagaOutputDto,
     StatusAvaliacaoAutomatica,
 )
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisadoOutputDto,
+)
 from jobsync.curriculo.service_layer.analisar_ats_vaga.dtos import (
     AnalisarAtsVagaInputDto,
     AnalisarAtsVagaOutputDto,
@@ -291,11 +294,15 @@ class AdaptarCurriculoResponse(BaseModel):
     )
 
     @classmethod
-    def from_dto(cls, dto: AdaptarCurriculoParaVagaOutputDto) -> AdaptarCurriculoResponse:
+    def from_dto(
+        cls,
+        dto: AdaptarCurriculoParaVagaOutputDto,
+        pdf: GerarPdfCurriculoRevisadoOutputDto,
+    ) -> AdaptarCurriculoResponse:
         return cls(
-            nome_arquivo=dto.nome_arquivo.valor,
-            pdf_base64=base64.b64encode(dto.pdf_bytes).decode(),
-            nome_completo=dto.curriculo_adaptado.nome_completo,
+            nome_arquivo=pdf.nome_arquivo.valor,
+            pdf_base64=base64.b64encode(pdf.pdf_bytes).decode(),
+            nome_completo=dto.rascunho.nome_completo,
             avaliacao_vaga=(
                 AvaliacaoDescricaoVagaResponse.from_domain(dto.avaliacao_vaga)
                 if dto.avaliacao_vaga is not None

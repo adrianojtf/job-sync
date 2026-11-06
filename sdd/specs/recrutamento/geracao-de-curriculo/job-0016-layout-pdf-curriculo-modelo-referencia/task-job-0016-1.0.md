@@ -18,11 +18,11 @@ Embarcar a família tipográfica Carlito no repositório e criar a base visual d
 
 ## Subtarefas
 
-- [ ] 1.1 Copiar os TTF da Carlito (pacote `fonts-crosextra-carlito` ou repositório `googlefonts/carlito`) e o `OFL.txt` para `adapters/pdf/fontes/`.
-- [ ] 1.2 Criar o pacote `src/jobsync/curriculo/adapters/pdf/` com `__init__.py`.
-- [ ] 1.3 Escrever os testes de `RegistradorFontesPdf` (red).
-- [ ] 1.4 Implementar `RegistradorFontesPdf` com retorno da família efetiva (Carlito ou Helvetica).
-- [ ] 1.5 Implementar `EstiloCurriculoPdf` com os tokens e a fábrica de `ParagraphStyle`, recebendo a família de fontes.
+- [x] 1.1 Copiar os TTF da Carlito (pacote `fonts-crosextra-carlito` ou repositório `googlefonts/carlito`) e o `OFL.txt` para `adapters/pdf/fontes/`.
+- [x] 1.2 Criar o pacote `src/jobsync/curriculo/adapters/pdf/` com `__init__.py`.
+- [x] 1.3 Escrever os testes de `RegistradorFontesPdf` (red).
+- [x] 1.4 Implementar `RegistradorFontesPdf` com retorno da família efetiva (Carlito ou Helvetica).
+- [x] 1.5 Implementar `EstiloCurriculoPdf` com os tokens e a fábrica de `ParagraphStyle`, recebendo a família de fontes.
 
 ## Detalhes de Implementação
 
@@ -38,10 +38,10 @@ Consultar em `techspec-job-0016.md`:
 
 ## Testes da Tarefa
 
-- [ ] `TestRegistradorFontesPdf`: registra a família Carlito quando os arquivos existem.
-- [ ] `TestRegistradorFontesPdf`: retorna Helvetica quando o diretório não existe (usar `tmp_path`).
-- [ ] `TestRegistradorFontesPdf`: segunda chamada não falha e retorna a mesma família.
-- [ ] `TestEstiloCurriculoPdf`: estilo do tópico tem `leftIndent=36` e `bulletIndent=18`.
+- [x] `TestRegistradorFontesPdf`: registra a família Carlito quando os arquivos existem.
+- [x] `TestRegistradorFontesPdf`: retorna Helvetica quando o diretório não existe (usar `tmp_path`).
+- [x] `TestRegistradorFontesPdf`: segunda chamada não falha e retorna a mesma família.
+- [x] `TestEstiloCurriculoPdf`: estilo do tópico tem `leftIndent=36` e `bulletIndent=18`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

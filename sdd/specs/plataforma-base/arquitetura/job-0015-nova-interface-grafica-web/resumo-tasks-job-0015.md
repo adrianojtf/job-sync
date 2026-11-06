@@ -2,7 +2,7 @@
 
 ## Tarefas
 
-- [ ] 1.0 Backend: CORS configurável e endpoint de token de captura
+- [x] 1.0 Backend: CORS configurável e endpoint de token de captura
 - [ ] 2.0 Backend: endpoint "Candidatar" em vaga externa
 - [ ] 3.0 Fundação do frontend: projeto, testes, tipos do OpenAPI e ApiClient
 - [ ] 4.0 Design system do protótipo, AppShell, rotas e tela Entrar (T1)

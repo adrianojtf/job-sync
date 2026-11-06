@@ -22,6 +22,10 @@ from jobsync.entrypoints.api.schemas.perfil import (
     PerfisListagemResponse,
     PerfilResponse,
 )
+from jobsync.entrypoints.api.schemas.token_captura import (
+    TokenCapturaCriarRequest,
+    TokenCapturaResponse,
+)
 from jobsync.entrypoints.api.schemas.vaga import (
     AvaliacaoDescricaoVagaResponse,
     AvaliarDescricaoVagaRequest,
@@ -56,6 +60,8 @@ __all__ = [
     "PerfisListagemResponse",
     "PerfilResponse",
     "ProblemaResponse",
+    "TokenCapturaCriarRequest",
+    "TokenCapturaResponse",
     "VagaCapturarRequest",
     "VagaDescobertaResponse",
     "VagaResponse",

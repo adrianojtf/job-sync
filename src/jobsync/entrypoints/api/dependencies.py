@@ -61,6 +61,8 @@ from jobsync.vaga.adapters.avaliador_descricao_vaga_jev_client import (
 )
 from jobsync.vaga.domain.vaga_repository import VagaRepository
 from jobsync.shared_kernel.adapters.cliente_jev_client import ClienteJev
+from jobsync.token_captura.domain.token_captura_repository import TokenCapturaRepository
+from jobsync.token_captura.service_layer.criar_token_captura import CriarTokenCaptura
 from jobsync.vaga.service_layer.capturar_vaga import CapturarVaga
 from jobsync.vaga.service_layer.avaliar_descricao_vaga import AvaliarDescricaoVaga
 from jobsync.vaga.service_layer.listar_vagas_capturadas import ListarVagasCapturadas
@@ -93,7 +95,7 @@ RepositorioPerfilDep = Annotated[PerfilRepository, Depends(obter_repositorio_per
 RepositorioPerfilEstruturadoDep = Annotated[
     PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
 ]
-RepositorioTokenDep = Annotated[object, Depends(obter_repositorio_token)]
+RepositorioTokenDep = Annotated[TokenCapturaRepository, Depends(obter_repositorio_token)]
 
 
 def obter_service_salvar_curriculo(
@@ -362,4 +364,15 @@ def obter_service_gerar_carta_apresentacao() -> GerarCartaApresentacao:
 
 ServiceGerarCartaApresentacaoDep = Annotated[
     GerarCartaApresentacao, Depends(obter_service_gerar_carta_apresentacao)
+]
+
+
+def obter_service_criar_token_captura(
+    repositorio: RepositorioTokenDep,
+) -> CriarTokenCaptura:
+    return CriarTokenCaptura(_repositorio=repositorio)
+
+
+ServiceCriarTokenCapturaDep = Annotated[
+    CriarTokenCaptura, Depends(obter_service_criar_token_captura)
 ]

@@ -20,12 +20,12 @@ Fechar duas lacunas do backend que a nova UI precisa: gerar o token da extensão
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes do router (red): 201 com token e 422 sem `perfil_identificador`.
-- [ ] 1.2 Criar `schemas/token_captura.py` com `TokenCapturaCriarRequest` e `TokenCapturaResponse`.
-- [ ] 1.3 Adicionar `ServiceCriarTokenCapturaDep` em `api/dependencies.py`.
-- [ ] 1.4 Criar `routers/token_captura_router.py` e registrar em `main.py` com prefixo `/v1`.
-- [ ] 1.5 Ler `CORS_ORIGINS` em `main.py` e ajustar `allow_credentials`.
-- [ ] 1.6 Adicionar a requisição na `job-sync.postman_collection.json`.
+- [x] 1.1 Escrever os testes do router (red): 201 com token e 422 sem `perfil_identificador`.
+- [x] 1.2 Criar `schemas/token_captura.py` com `TokenCapturaCriarRequest` e `TokenCapturaResponse`.
+- [x] 1.3 Adicionar `ServiceCriarTokenCapturaDep` em `api/dependencies.py`.
+- [x] 1.4 Criar `routers/token_captura_router.py` e registrar em `main.py` com prefixo `/v1`.
+- [x] 1.5 Ler `CORS_ORIGINS` em `main.py` e ajustar `allow_credentials`.
+- [x] 1.6 Adicionar a requisição na `job-sync.postman_collection.json`.
 
 ## Detalhes de Implementação
 
@@ -39,9 +39,9 @@ Ver `techspec-job-0015.md` → "Endpoints de API → Novos (backend)", e a linha
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `TestTokenCapturaRouter` (201, 422), com fake in-memory do repositório.
-- [ ] Teste de CORS: origem permitida recebe o header e origem não listada não recebe.
-- [ ] `pytest` e `lint-imports` passam.
+- [x] Testes de unidade: `TestTokenCapturaRouter` (201, 422), com fake in-memory do repositório.
+- [x] Teste de CORS: origem permitida recebe o header e origem não listada não recebe.
+- [x] `pytest` e `lint-imports` passam.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

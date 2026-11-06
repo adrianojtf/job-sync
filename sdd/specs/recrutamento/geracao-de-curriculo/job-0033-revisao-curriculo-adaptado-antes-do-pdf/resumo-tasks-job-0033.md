@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 Agregado RascunhoCurriculoAdaptado
-- [ ] 2.0 Caso de uso GerarPdfCurriculoRevisado
+- [x] 2.0 Caso de uso GerarPdfCurriculoRevisado
 - [ ] 3.0 Refatorar AdaptarCurriculoParaVaga para devolver o rascunho
 - [ ] 4.0 Endpoints de rascunho e de PDF revisado
 - [ ] 5.0 Extrair componentes do formulário de "Meu perfil"

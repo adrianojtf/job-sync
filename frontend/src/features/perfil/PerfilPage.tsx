@@ -11,6 +11,8 @@ import {
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
+import { SugestaoCampo } from "../../shared/formulario-curriculo/SugestaoCampo";
+import { useSugestoes } from "../../shared/formulario-curriculo/use-sugestoes";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
@@ -70,6 +72,8 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
     null,
   );
   const { isDirty } = form.formState;
+  // Sem vaga-alvo aqui: a IA só melhora a escrita do texto (JOB-0034).
+  const sugestoes = useSugestoes();
 
   const enviar = form.handleSubmit((valores) =>
     salvar.mutate(formularioParaEntrada(valores, perfil), {
@@ -102,7 +106,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
       )}
 
       <form onSubmit={enviar} noValidate className={estilos.secoes}>
-        <PainelDadosPessoais form={form} />
+        <PainelDadosPessoais form={form} sugerirResumo={sugestoes.secao("PERFIL", "Perfil")} />
 
         <ListaItensCurriculo
           form={form}
@@ -112,6 +116,14 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           rotuloItem="Experiência"
           itemVazio={EXPERIENCIA_VAZIA}
           campos={CAMPOS_EXPERIENCIA}
+          complementoItem={(indice) => (
+            <SugestaoCampo
+              form={form}
+              campo={`experiencias.${indice}.descricao`}
+              rotuloBloco={`experiência ${indice + 1}`}
+              sugerir={sugestoes.experiencia(() => form.getValues(`experiencias.${indice}`))}
+            />
+          )}
           acoesItem={(indice) => (
             <Button
               aria-label={`Avaliar experiência ${indice + 1}`}

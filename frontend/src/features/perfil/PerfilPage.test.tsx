@@ -282,4 +282,100 @@ describe("PerfilPage", () => {
 
     expect(await within(dialogo).findByText("O avaliador está indisponível.")).toBeInTheDocument();
   });
+
+  describe("sugestões de IA", () => {
+    function servirSugestoes() {
+      const pedidos: { rota: string; corpo: Record<string, unknown> }[] = [];
+      servidorApi.use(
+        http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
+          pedidos.push({ rota: "secao", corpo: (await request.json()) as Record<string, unknown> });
+          return HttpResponse.json({ conteudo_sugerido: "Resumo mais claro." });
+        }),
+        http.post(`${API_TESTE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
+          pedidos.push({
+            rota: "experiencia",
+            corpo: (await request.json()) as Record<string, unknown>,
+          });
+          return HttpResponse.json({ descricao_sugerida: "Desenvolvi APIs REST em Java." });
+        }),
+      );
+      return pedidos;
+    }
+
+    it("oferece sugestão no resumo e em cada experiência, mas não em formação ou tecnologias", async () => {
+      servirPerfil(PERFIL);
+      renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+      await screen.findByRole("button", { name: "Sugestões de IA para resumo" });
+
+      expect(
+        screen.getByRole("button", { name: "Sugestões de IA para experiência 1" }),
+      ).toBeVisible();
+      expect(screen.getAllByRole("button", { name: /^Sugestões de IA/ })).toHaveLength(2);
+    });
+
+    it("pede a melhoria do resumo sem contexto de vaga e só o altera ao aplicar, sem salvar", async () => {
+      const { envios } = servirPerfil(PERFIL);
+      const pedidos = servirSugestoes();
+      renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+      await userEvent.type(await screen.findByLabelText("Resumo profissional"), " Com APIs.");
+
+      await userEvent.click(screen.getByRole("button", { name: "Sugestões de IA para resumo" }));
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Aplicar sugestão em resumo" }),
+      );
+
+      expect(pedidos[0]).toEqual({
+        rota: "secao",
+        corpo: { secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Backend. Com APIs." } },
+      });
+      expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo mais claro.");
+      expect(screen.getByText("Alterações não salvas")).toBeInTheDocument();
+      expect(envios).toHaveLength(0);
+    });
+
+    it("pede a melhoria de uma experiência preservando seus dados e aplica só a descrição", async () => {
+      const { envios } = servirPerfil(PERFIL);
+      const pedidos = servirSugestoes();
+      renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Sugestões de IA para experiência 1" }),
+      );
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Aplicar sugestão em experiência 1" }),
+      );
+
+      expect(pedidos[0]).toEqual({
+        rota: "experiencia",
+        corpo: {
+          experiencia: {
+            empresa: "Neoway",
+            cargo: "Dev Java",
+            periodo: "2020-2024",
+            descricao: "APIs em Java.",
+          },
+        },
+      });
+      expect(screen.getByLabelText("Descrição")).toHaveValue("Desenvolvi APIs REST em Java.");
+      expect(screen.getByLabelText("Cargo")).toHaveValue("Dev Java");
+      expect(envios).toHaveLength(0);
+    });
+
+    it("descartar a sugestão não altera o campo", async () => {
+      servirPerfil(PERFIL);
+      servirSugestoes();
+      renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Sugestões de IA para resumo" }),
+      );
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Descartar sugestão de resumo" }),
+      );
+
+      expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Backend.");
+      expect(screen.queryByText("Alterações não salvas")).not.toBeInTheDocument();
+    });
+  });
 });

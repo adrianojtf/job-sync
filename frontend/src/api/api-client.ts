@@ -14,12 +14,15 @@ import type {
   CriarCandidaturaEntrada,
   CurriculoAdaptado,
   CurriculoConteudo,
+  CurriculoRevisado,
   CurriculoSalvo,
   DescobrirVagasEntrada,
   GerarCartaEntrada,
+  GerarPdfCurriculoRevisadoEntrada,
   Perfil,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
+  RascunhoAdaptado,
   SalvarCurriculoEntrada,
   StatusCandidatura,
   TokenCaptura,
@@ -45,6 +48,13 @@ export interface ApiClient {
 
   avaliarVaga(descricaoVaga: string): Promise<AvaliacaoDescricaoVaga>;
   adaptarCurriculo(curriculoId: string, dados: AdaptarCurriculoEntrada): Promise<CurriculoAdaptado>;
+  /** Adapta via IA e devolve o rascunho para revisão, sem gerar PDF (JOB-0033). */
+  gerarRascunhoAdaptado(
+    curriculoId: string,
+    dados: AdaptarCurriculoEntrada,
+  ): Promise<RascunhoAdaptado>;
+  /** Gera o PDF a partir do rascunho revisado e confirmado pelo usuário. */
+  gerarPdfCurriculoRevisado(dados: GerarPdfCurriculoRevisadoEntrada): Promise<CurriculoRevisado>;
   analisarAts(curriculoId: string, dados: AnalisarAtsEntrada): Promise<AnaliseAts>;
   gerarCarta(dados: GerarCartaEntrada): Promise<CartaApresentacao>;
 

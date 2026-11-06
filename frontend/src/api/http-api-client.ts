@@ -16,12 +16,15 @@ import type {
   CriarCandidaturaEntrada,
   CurriculoAdaptado,
   CurriculoConteudo,
+  CurriculoRevisado,
   CurriculoSalvo,
   DescobrirVagasEntrada,
   GerarCartaEntrada,
+  GerarPdfCurriculoRevisadoEntrada,
   Perfil,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
+  RascunhoAdaptado,
   Problema,
   SalvarCurriculoEntrada,
   StatusCandidatura,
@@ -157,6 +160,20 @@ export class HttpApiClient implements ApiClient {
       corpo: dados,
       ia: true,
     });
+  }
+
+  gerarRascunhoAdaptado(
+    curriculoId: string,
+    dados: AdaptarCurriculoEntrada,
+  ): Promise<RascunhoAdaptado> {
+    return this.requisitar("POST", caminho`/v1/curriculos/${curriculoId}/rascunhos-adaptados`, {
+      corpo: dados,
+      ia: true,
+    });
+  }
+
+  gerarPdfCurriculoRevisado(dados: GerarPdfCurriculoRevisadoEntrada): Promise<CurriculoRevisado> {
+    return this.requisitar("POST", "/v1/curriculos-revisados", { corpo: dados });
   }
 
   analisarAts(curriculoId: string, dados: AnalisarAtsEntrada): Promise<AnaliseAts> {

@@ -210,6 +210,50 @@ describe("HttpApiClient", () => {
     expect(avaliacao.score).toBe(80);
   });
 
+  it("gera o rascunho adaptado pela rota de IA, sem PDF", async () => {
+    let caminho = "";
+    servidorApi.use(
+      http.post(`${BASE}/v1/curriculos/:id/rascunhos-adaptados`, ({ request }) => {
+        caminho = new URL(request.url).pathname;
+        return HttpResponse.json({
+          rascunho: { nome_completo: "Ana", secoes: [], experiencias: null },
+        });
+      }),
+    );
+
+    const resposta = await criarCliente().gerarRascunhoAdaptado("perfil-estruturado", {
+      descricao_vaga: "Vaga",
+      idioma_alvo: "pt",
+      cargo_alvo: "Dev",
+      empresa_alvo: "TechCorp",
+      perfil_identificador: "ana",
+    });
+
+    expect(caminho).toBe("/v1/curriculos/perfil-estruturado/rascunhos-adaptados");
+    expect(resposta.rascunho.nome_completo).toBe("Ana");
+  });
+
+  it("envia o rascunho revisado para gerar o PDF", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/curriculos-revisados`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ nome_arquivo: "Ana.pdf", pdf_base64: "JVBERg==" });
+      }),
+    );
+    const dados = {
+      rascunho: { nome_completo: "Ana Editada", secoes: [], experiencias: null },
+      idioma_alvo: "pt",
+      cargo_alvo: "Dev",
+      empresa_alvo: "TechCorp",
+    };
+
+    const resposta = await criarCliente().gerarPdfCurriculoRevisado(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.nome_arquivo).toBe("Ana.pdf");
+  });
+
   it("move a candidatura enviando o novo status", async () => {
     let corpoRecebido: unknown;
     servidorApi.use(

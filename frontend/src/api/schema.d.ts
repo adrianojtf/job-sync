@@ -172,6 +172,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/curriculos/{id}/rascunhos-adaptados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gerar rascunho do currículo adaptado
+         * @description Adapta o currículo à vaga via IA e devolve o conteúdo organizado por seção para revisão. Não gera PDF nem persiste o rascunho.
+         */
+        post: operations["gerar_rascunho_adaptado_v1_curriculos__id__rascunhos_adaptados_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculos-revisados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gerar PDF do currículo revisado
+         * @description Gera o PDF a partir do rascunho revisado e confirmado pelo usuário, sem nova chamada à IA. Use ?download=true para receber o PDF em binário.
+         */
+        post: operations["gerar_pdf_curriculo_revisado_v1_curriculos_revisados_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/curriculos/{id}/analises-ats": {
         parameters: {
             query?: never;
@@ -498,9 +538,21 @@ export interface components {
         };
         /**
          * AdaptarCurriculoResponse
-         * @description Resultado da adaptação de um currículo para uma vaga.
+         * @description Resultado da adaptação de um currículo para uma vaga, já com o PDF (fluxo legado).
          */
         AdaptarCurriculoResponse: {
+            /** @description Avaliação automática da vaga; nula se o Jev estiver indisponível. */
+            avaliacao_vaga?: components["schemas"]["AvaliacaoDescricaoVagaResponse"] | null;
+            /**
+             * Status Avaliacao Vaga
+             * @description Status da avaliação automática da descrição de vaga.
+             */
+            status_avaliacao_vaga?: ("avaliada" | "indisponivel") | null;
+            /**
+             * Avaliacoes Experiencias
+             * @description Avaliação Jev de cada experiência de um perfil estruturado.
+             */
+            avaliacoes_experiencias?: components["schemas"]["AvaliacaoExperienciaAdaptadaResponse"][];
             /**
              * Nome Arquivo
              * @description Nome padronizado do PDF gerado.
@@ -516,18 +568,6 @@ export interface components {
              * @description Nome completo do candidato extraído do currículo.
              */
             nome_completo: string;
-            /** @description Avaliação automática da vaga; nula se o Jev estiver indisponível. */
-            avaliacao_vaga?: components["schemas"]["AvaliacaoDescricaoVagaResponse"] | null;
-            /**
-             * Status Avaliacao Vaga
-             * @description Status da avaliação automática da descrição de vaga.
-             */
-            status_avaliacao_vaga?: ("avaliada" | "indisponivel") | null;
-            /**
-             * Avaliacoes Experiencias
-             * @description Avaliação Jev de cada experiência de um perfil estruturado.
-             */
-            avaliacoes_experiencias?: components["schemas"]["AvaliacaoExperienciaAdaptadaResponse"][];
         };
         /**
          * AnalisarAtsRequest
@@ -981,6 +1021,22 @@ export interface components {
             ano: string;
         };
         /**
+         * CurriculoRevisadoResponse
+         * @description PDF gerado a partir do rascunho revisado.
+         */
+        CurriculoRevisadoResponse: {
+            /**
+             * Nome Arquivo
+             * @description Nome padronizado do PDF gerado.
+             */
+            nome_arquivo: string;
+            /**
+             * Pdf Base64
+             * @description PDF do currículo revisado codificado em base64.
+             */
+            pdf_base64: string;
+        };
+        /**
          * CurriculoSalvarRequest
          * @description Payload para salvar um currículo PDF na biblioteca de um perfil.
          * @example {
@@ -1220,6 +1276,36 @@ export interface components {
             descricao: string;
         };
         /**
+         * ExperienciaRascunhoSchema
+         * @description Experiência estruturada do rascunho (fonte: perfil estruturado).
+         */
+        ExperienciaRascunhoSchema: {
+            /**
+             * Cargo
+             * @description Cargo da experiência.
+             * @default
+             */
+            cargo?: string;
+            /**
+             * Empresa
+             * @description Empresa da experiência.
+             * @default
+             */
+            empresa?: string;
+            /**
+             * Periodo
+             * @description Período da experiência.
+             * @default
+             */
+            periodo?: string;
+            /**
+             * Descricao
+             * @description Descrição adaptada, editável na revisão.
+             * @default
+             */
+            descricao?: string;
+        };
+        /**
          * FormacaoAcademicaRequest
          * @description Uma formação acadêmica para criação/edição do perfil.
          */
@@ -1303,6 +1389,34 @@ export interface components {
              * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).
              */
             perfil_identificador?: string | null;
+            /**
+             * Data Referencia
+             * @description Data de referência para composição do nome do arquivo.
+             */
+            data_referencia?: string | null;
+        };
+        /**
+         * GerarPdfCurriculoRevisadoRequest
+         * @description Payload para gerar o PDF a partir do rascunho revisado e confirmado.
+         */
+        GerarPdfCurriculoRevisadoRequest: {
+            /** @description Rascunho no estado em que o usuário confirmou. */
+            rascunho: components["schemas"]["RascunhoCurriculoAdaptadoSchema"];
+            /**
+             * Idioma Alvo
+             * @description Idioma de destino do currículo.
+             */
+            idioma_alvo: string;
+            /**
+             * Cargo Alvo
+             * @description Cargo alvo (usado no nome do arquivo).
+             */
+            cargo_alvo: string;
+            /**
+             * Empresa Alvo
+             * @description Empresa alvo (usada no nome do arquivo).
+             */
+            empresa_alvo: string;
             /**
              * Data Referencia
              * @description Data de referência para composição do nome do arquivo.
@@ -1599,6 +1713,86 @@ export interface components {
             instance: string;
         };
         /**
+         * RascunhoAdaptadoResponse
+         * @description Rascunho adaptado pela IA, ainda sem PDF, para revisão do usuário.
+         */
+        RascunhoAdaptadoResponse: {
+            /** @description Avaliação automática da vaga; nula se o Jev estiver indisponível. */
+            avaliacao_vaga?: components["schemas"]["AvaliacaoDescricaoVagaResponse"] | null;
+            /**
+             * Status Avaliacao Vaga
+             * @description Status da avaliação automática da descrição de vaga.
+             */
+            status_avaliacao_vaga?: ("avaliada" | "indisponivel") | null;
+            /**
+             * Avaliacoes Experiencias
+             * @description Avaliação Jev de cada experiência de um perfil estruturado.
+             */
+            avaliacoes_experiencias?: components["schemas"]["AvaliacaoExperienciaAdaptadaResponse"][];
+            /** @description Conteúdo adaptado, organizado por seção, para revisão. */
+            rascunho: components["schemas"]["RascunhoCurriculoAdaptadoSchema"];
+        };
+        /**
+         * RascunhoCurriculoAdaptadoSchema
+         * @description Rascunho do currículo adaptado, revisado pelo usuário antes do PDF.
+         * @example {
+         *       "email": "ana@ex.com",
+         *       "experiencias": [
+         *         {
+         *           "cargo": "Dev Backend",
+         *           "descricao": "Desenvolvi APIs em Python.",
+         *           "empresa": "TechCorp",
+         *           "periodo": "2022 - Atual"
+         *         }
+         *       ],
+         *       "linkedin": "https://linkedin.com/in/ana",
+         *       "nome_completo": "Ana Souza",
+         *       "secoes": [
+         *         {
+         *           "conteudo": "Engenheira backend.",
+         *           "tipo": "PERFIL",
+         *           "titulo": "Perfil"
+         *         }
+         *       ],
+         *       "titulo_experiencias": "Experiências"
+         *     }
+         */
+        RascunhoCurriculoAdaptadoSchema: {
+            /**
+             * Nome Completo
+             * @description Nome completo do candidato.
+             */
+            nome_completo: string;
+            /**
+             * Email
+             * @description E-mail do candidato.
+             * @default
+             */
+            email?: string;
+            /**
+             * Linkedin
+             * @description LinkedIn do candidato.
+             * @default
+             */
+            linkedin?: string;
+            /**
+             * Secoes
+             * @description Seções de texto do currículo.
+             */
+            secoes?: components["schemas"]["SecaoRascunhoSchema"][];
+            /**
+             * Experiencias
+             * @description Experiências estruturadas; nulo quando a fonte é um PDF (as experiências vêm na seção EXPERIENCIAS).
+             */
+            experiencias?: components["schemas"]["ExperienciaRascunhoSchema"][] | null;
+            /**
+             * Titulo Experiencias
+             * @description Título da seção de experiências estruturadas.
+             * @default Experiências
+             */
+            titulo_experiencias?: string;
+        };
+        /**
          * RequisitoFaltanteExternoResponse
          * @description Requisito técnico não coberto pelo currículo para a vaga externa.
          */
@@ -1650,6 +1844,28 @@ export interface components {
              * @description Confiança do Jev nesta avaliação, entre 0 e 1.
              */
             confianca: number;
+        };
+        /**
+         * SecaoRascunhoSchema
+         * @description Seção de texto do rascunho; conteúdo vazio remove a seção do PDF.
+         */
+        SecaoRascunhoSchema: {
+            /**
+             * Tipo
+             * @description Tipo da seção do currículo.
+             * @enum {string}
+             */
+            tipo: "TECNOLOGIAS" | "PERFIL" | "EXPERIENCIAS" | "FORMACAO" | "CERTIFICACOES" | "IDIOMAS";
+            /**
+             * Titulo
+             * @description Título da seção, vindo da adaptação.
+             */
+            titulo: string;
+            /**
+             * Conteudo
+             * @description Conteúdo da seção, editável na revisão.
+             */
+            conteudo: string;
         };
         /**
          * TokenCapturaCriarRequest
@@ -2194,6 +2410,76 @@ export interface operations {
             };
         };
     };
+    gerar_rascunho_adaptado_v1_curriculos__id__rascunhos_adaptados_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdaptarCurriculoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RascunhoAdaptadoResponse"];
+                };
+            };
+            /** @description Dados da vaga ou fonte do currículo ausentes ou inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    gerar_pdf_curriculo_revisado_v1_curriculos_revisados_post: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GerarPdfCurriculoRevisadoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculoRevisadoResponse"];
+                };
+            };
+            /** @description Rascunho ou dados da vaga inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
     analisar_ats_v1_curriculos__id__analises_ats_post: {
         parameters: {
             query?: never;
@@ -2705,7 +2991,7 @@ export interface operations {
                     "application/json": components["schemas"]["TokenCapturaResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;

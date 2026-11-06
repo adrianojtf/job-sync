@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currículo — Workspace</title>
+<style>
+:root{--bg:#f7f8fa;--surface:#fff;--ink:#182230;--muted:#758092;--line:#e8ebef;--accent:#635bdb;--accent-soft:#f0efff;--green:#16865b;--green-soft:#eaf7f0;--amber:#a66a12;--amber-soft:#fff5e4;--shadow:0 8px 28px rgba(24,34,48,.055)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:grid;grid-template-columns:248px 1fr}.sidebar{background:#fff;border-right:1px solid var(--line);padding:25px 16px;display:flex;flex-direction:column;gap:30px}.brand{display:flex;align-items:center;gap:10px;padding:0 10px;font-weight:750;font-size:17px;letter-spacing:-.5px}.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800}.workspace{margin:0 8px;padding:12px;background:#fafbfc;border:1px solid var(--line);border-radius:12px}.workspace small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}.workspace strong{font-size:13px}.nav-label{font-size:10px;font-weight:700;letter-spacing:1.1px;color:#a0a8b4;padding:0 12px;margin-bottom:8px}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;color:#647084;text-align:left;padding:10px 12px;border-radius:9px;display:flex;align-items:center;gap:11px}.nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:650}.ico{width:17px;text-align:center;font-size:16px}.side-bottom{margin-top:auto}.profile{display:flex;align-items:center;gap:10px;padding:13px 8px 0;border-top:1px solid var(--line)}.avatar{width:34px;height:34px;border-radius:50%;background:#e9e7ff;color:#5149bd;display:grid;place-items:center;font-weight:700}.profile small{display:block;color:var(--muted);font-size:11px}.main{min-width:0}.topbar{height:70px;background:rgba(255,255,255,.82);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 42px;position:sticky;top:0;z-index:5;backdrop-filter:blur(12px)}.crumb{color:var(--muted)}.crumb b{color:var(--ink);font-weight:600}.top-actions{display:flex;align-items:center;gap:18px}.icon-btn{border:0;background:transparent;color:#667085;font-size:18px}.content{max-width:1240px;margin:0 auto;padding:38px 42px 60px}.welcome{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px}.eyebrow{color:var(--accent);font-size:11px;font-weight:750;letter-spacing:1.2px;text-transform:uppercase}.welcome h1{font-size:29px;letter-spacing:-1.1px;margin:6px 0 5px}.welcome p{margin:0;color:var(--muted)}.primary{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:650;box-shadow:0 4px 10px #635bdb25}.primary:hover{background:#5149c5}.secondary{background:#fff;border:1px solid var(--line);color:#344054;border-radius:9px;padding:10px 14px;font-weight:600}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:26px}.stat{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:17px 18px;box-shadow:var(--shadow)}.stat-head{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.stat-icon{width:28px;height:28px;border-radius:8px;background:#f4f3ff;color:var(--accent);display:grid;place-items:center}.stat strong{display:block;font-size:25px;letter-spacing:-.8px;margin:8px 0 1px}.stat-foot{font-size:11px;color:var(--muted)}.positive{color:var(--green);font-weight:650}.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:18px}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);min-width:0}.panel-head{display:flex;align-items:center;justify-content:space-between;padding:19px 21px;border-bottom:1px solid var(--line)}.panel-head h2{font-size:15px;margin:0;letter-spacing:-.2px}.panel-head p{font-size:11px;color:var(--muted);margin:3px 0 0}.text-btn{border:0;background:transparent;color:var(--accent);font-weight:650;font-size:12px}.jobs{padding:5px 20px}.job{display:flex;align-items:center;gap:13px;padding:15px 0;border-bottom:1px solid #f0f1f3}.job:last-child{border:0}.company{width:39px;height:39px;border-radius:11px;display:grid;place-items:center;font-weight:750;font-size:13px;flex-shrink:0}.c1{background:#eaf1ff;color:#3868b4}.c2{background:#eaf7f0;color:#16865b}.c3{background:#fff2e9;color:#c16b36}.job-info{min-width:0;flex:1}.job-info strong{display:block;font-size:13px}.job-info span{color:var(--muted);font-size:11px}.job-meta{text-align:right;min-width:100px}.status{display:inline-block;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:700}.ready{background:var(--green-soft);color:var(--green)}.progress{background:var(--amber-soft);color:var(--amber)}.job-meta small{display:block;color:var(--muted);font-size:10px;margin-top:5px}.job-actions{border:0;background:transparent;color:#98a1ae;font-size:18px;padding:5px}.right-col{display:grid;align-content:start;gap:18px}.resume-card{padding:20px}.resume-top{display:flex;justify-content:space-between;align-items:center}.resume-top h2{font-size:15px;margin:0}.resume-top span{font-size:11px;color:var(--green);font-weight:700}.resume-preview{margin:17px 0 14px;padding:17px;border:1px solid var(--line);border-radius:10px;background:#fcfcfd}.resume-name{font-size:14px;font-weight:750}.resume-role{font-size:10px;color:var(--muted);margin:2px 0 13px}.fake-line{height:5px;background:#eceef2;border-radius:5px;margin:6px 0;width:90%}.fake-line.short{width:62%}.fake-line.mid{width:76%}.resume-bottom{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.progressbar{height:6px;background:#edf0f3;border-radius:8px;margin:10px 0 5px;overflow:hidden}.progressbar span{display:block;height:100%;width:82%;background:var(--accent);border-radius:8px}.tip{padding:18px 19px;background:#f6f5ff;border:1px solid #e8e6ff;border-radius:13px}.tip-label{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.8px}.tip h3{font-size:14px;margin:7px 0 5px}.tip p{font-size:11px;color:#687087;margin:0 0 12px}.tip button{border:0;background:transparent;color:var(--accent);padding:0;font-size:11px;font-weight:700}.activity{margin-top:18px;padding:18px 21px}.activity h2{font-size:14px;margin:0 0 13px}.activity-row{display:flex;align-items:center;gap:10px;color:#596579;font-size:11px;margin:10px 0}.dot{width:7px;height:7px;border-radius:50%;background:#8d86ed}.activity-row time{margin-left:auto;color:#a0a8b4}.overlay{display:none;position:fixed;inset:0;background:#17203366;z-index:20;align-items:center;justify-content:center;padding:20px}.overlay.show{display:flex}.modal{background:#fff;width:min(520px,100%);border-radius:16px;padding:25px;box-shadow:0 20px 70px #10182835}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal h2{font-size:19px;margin:0}.close{border:0;background:transparent;font-size:22px;color:#98a1ae}.modal p{color:var(--muted);font-size:12px;margin:7px 0 20px}.field{display:grid;gap:6px;margin:13px 0}.field label{font-size:11px;font-weight:700;color:#475467}.field input,.field textarea{border:1px solid #dfe3e8;border-radius:8px;padding:11px 12px;outline:none;width:100%;color:var(--ink)}.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px #635bdb18}.field textarea{min-height:95px;resize:vertical}.modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.toast{position:fixed;bottom:22px;right:22px;background:#182230;color:white;padding:12px 16px;border-radius:10px;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:30}.toast.show{opacity:1;transform:translateY(0)}.mobile-menu{display:none}
+@media(max-width:1000px){.app{grid-template-columns:215px 1fr}.content{padding:28px 24px}.topbar{padding:0 24px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.right-col{grid-template-columns:1fr 1fr}.activity{grid-column:1/-1}}
+@media(max-width:700px){.app{display:block}.sidebar{display:none}.topbar{height:60px;padding:0 17px}.mobile-menu{display:inline-block}.content{padding:25px 16px 40px}.welcome{align-items:flex-start;gap:15px;flex-direction:column}.welcome h1{font-size:25px}.stats{gap:9px}.stat{padding:13px}.stat strong{font-size:22px}.layout{display:block}.right-col{display:grid;grid-template-columns:1fr;margin-top:15px}.panel{margin-bottom:15px}.job{gap:9px}.job-meta{min-width:80px}.job-info strong{font-size:12px}.job-actions{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">cv</div> carreira<span style="color:var(--accent)">.</span></div>
+  <div class="workspace"><small>WORKSPACE</small><strong>Meu espaço pessoal⌄</strong></div>
+  <div><div class="nav-label">MENU PRINCIPAL</div><nav class="nav">
+    <button class="active" data-page="Visão geral"><span class="ico">▦</span> Visão geral</button>
+    <button data-page="Meus currículos"><span class="ico">▤</span> Meus currículos</button>
+    <button data-page="Vagas salvas"><span class="ico">☆</span> Vagas salvas</button>
+    <button data-page="Candidaturas"><span class="ico">◷</span> Candidaturas</button>
+  </nav></div>
+  <div><div class="nav-label">PREFERÊNCIAS</div><nav class="nav">
+    <button data-page="Meu perfil"><span class="ico">◎</span> Meu perfil</button>
+    <button data-page="Configurações"><span class="ico">⚙</span> Configurações</button>
+  </nav></div>
+  <div class="side-bottom"><div class="profile"><div class="avatar">AT</div><div><strong style="font-size:12px">Adriano Teixeira</strong><small>Plano gratuito</small></div><span style="margin-left:auto;color:#98a1ae">···</span></div></div>
+</aside>
+<main class="main">
+  <header class="topbar"><div class="crumb"><button class="icon-btn mobile-menu" aria-label="Menu">☰</button> Workspace <span style="margin:0 8px;color:#c1c7d0">/</span> <b id="crumb">Visão geral</b></div><div class="top-actions"><button class="icon-btn" title="Ajuda">?</button><button class="icon-btn" title="Notificações">♧</button><div class="avatar" style="width:31px;height:31px;font-size:11px">AT</div></div></header>
+  <div class="content">
+    <section class="welcome"><div><div class="eyebrow">QUINTA-FEIRA, 06 DE NOVEMBRO</div><h1>Bom dia, Adriano</h1><p>Organize seus currículos e prepare a próxima candidatura.</p></div><button class="primary" id="newJob">＋ Ajustar para uma vaga</button></section>
+    <section class="stats">
+      <div class="stat"><div class="stat-head">Currículos criados <span class="stat-icon">▤</span></div><strong>04</strong><div class="stat-foot">1 currículo principal</div></div>
+      <div class="stat"><div class="stat-head">Vagas acompanhadas <span class="stat-icon">☆</span></div><strong>12</strong><div class="stat-foot"><span class="positive">+3</span> nesta semana</div></div>
+      <div class="stat"><div class="stat-head">Candidaturas enviadas <span class="stat-icon">↗</span></div><strong>08</strong><div class="stat-foot">3 aguardando retorno</div></div>
+      <div class="stat"><div class="stat-head">Compatibilidade média <span class="stat-icon">◉</span></div><strong>86%</strong><div class="stat-foot"><span class="positive">+8%</span> com ajustes por vaga</div></div>
+    </section>
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Suas vagas recentes</h2><p>Currículos personalizados e oportunidades em andamento</p></div><button class="text-btn" id="allJobs">Ver todas →</button></div>
+        <div class="jobs" id="jobs">
+          <div class="job"><div class="company c1">N</div><div class="job-info"><strong>Senior Java Backend Developer</strong><span>Neoway · Remoto · Publicada há 2 dias</span></div><div class="job-meta"><span class="status ready">Currículo pronto</span><small>Compatibilidade: 94%</small></div><button class="job-actions" aria-label="Mais opções">···</button></div>
+          <div class="job"><div class="company c2">T</div><div class="job-info"><strong>Software Engineer — Platform</strong><span>Thoughtworks · Híbrido · Publicada há 4 dias</span></div><div class="job-meta"><span class="status progress">Em revisão</span><small>Compatibilidade: 82%</small></div><button class="job-actions" aria-label="Mais opções">···</button></div>
+          <div class="job"><div class="company c3">O</div><div class="job-info"><strong>Backend Engineer (Java / AWS)</strong><span>Olist · Remoto · Publicada há 1 semana</span></div><div class="job-meta"><span class="status ready">Currículo pronto</span><small>Compatibilidade: 89%</small></div><button class="job-actions" aria-label="Mais opções">···</button></div>
+        </div>
+      </div>
+      <div class="right-col">
+        <div class="panel resume-card"><div class="resume-top"><h2>Currículo principal</h2><span>● Atualizado</span></div>
+          <div class="resume-preview"><div class="resume-name">Adriano Teixeira</div><div class="resume-role">Senior Backend Developer · Java</div><div class="fake-line"></div><div class="fake-line mid"></div><div class="fake-line short"></div><div style="height:8px"></div><div class="fake-line"></div><div class="fake-line mid"></div><div class="fake-line short"></div></div>
+          <div class="resume-bottom"><span>Perfil do currículo</span><b>82%</b></div><div class="progressbar"><span></span></div><button class="secondary" style="width:100%;margin-top:12px" id="editResume">Editar currículo</button>
+        </div>
+        <div class="tip"><div class="tip-label">DICA DE CARREIRA</div><h3>Adapte, não reinvente.</h3><p>Use seu currículo principal como base. Ajuste resumo, competências e experiências para destacar o que cada vaga pede.</p><button id="tipAction">Entenda como funciona →</button></div>
+      </div>
+    </section>
+    <section class="panel activity"><h2>Atividade recente</h2><div class="activity-row"><span class="dot"></span> Você ajustou o currículo para <b>Senior Java Backend Developer</b><time>Há 2 horas</time></div><div class="activity-row"><span class="dot" style="background:#20a477"></span> Nova versão do currículo principal salva <time>Ontem</time></div><div class="activity-row"><span class="dot" style="background:#e5a23b"></span> Vaga adicionada à sua lista de acompanhamento <time>Há 2 dias</time></div></section>
+  </div>
+</main>
+</div>
+<div class="overlay" id="modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><h2 id="modalTitle">Ajustar currículo para uma vaga</h2><button class="close" id="closeModal" aria-label="Fechar">×</button></div><p>Adicione os dados da oportunidade. Você poderá revisar cada sugestão antes de aplicar qualquer alteração.</p>
+  <div class="field"><label for="role">Título da vaga</label><input id="role" placeholder="Ex.: Senior Java Backend Developer"></div>
+  <div class="field"><label for="company">Empresa</label><input id="companyName" placeholder="Ex.: Empresa ou organização"></div>
+  <div class="field"><label for="description">Descrição da vaga</label><textarea id="description" placeholder="Cole aqui a descrição completa da oportunidade..."></textarea></div>
+  <div class="modal-footer"><button class="secondary" id="cancel">Cancelar</button><button class="primary" id="analyze">Analisar vaga →</button></div>
+</div></div>
+<div class="toast" id="toast">Ação registrada.</div>
+<script>
+const modal=document.getElementById('modal'),toast=document.getElementById('toast');
+function notify(message){toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2600)}
+function openModal(){modal.classList.add('show');document.getElementById('role').focus()}
+function closeModal(){modal.classList.remove('show')}
+document.getElementById('newJob').onclick=openModal;
+document.getElementById('closeModal').onclick=closeModal;
+document.getElementById('cancel').onclick=closeModal;
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+document.getElementById('analyze').onclick=()=>{const role=document.getElementById('role').value.trim();const desc=document.getElementById('description').value.trim();if(!role||!desc){notify('Informe o título e a descrição da vaga.');return}closeModal();notify('Vaga adicionada para análise. Próxima etapa: comparar requisitos.');};
+document.getElementById('editResume').onclick=()=>notify('Editor de currículo: protótipo de navegação.');
+document.getElementById('tipAction').onclick=()=>notify('Fluxo sugerido: importar currículo → analisar vaga → revisar sugestões → exportar.');
+document.getElementById('allJobs').onclick=()=>notify('Visualização de todas as vagas.');
+document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('crumb').textContent=btn.dataset.page;notify('Seção: '+btn.dataset.page)}));
+document.querySelectorAll('.job-actions').forEach(btn=>btn.addEventListener('click',()=>notify('Ações da vaga: abrir, editar ou arquivar.')));
+</script>
+</body>
+</html>

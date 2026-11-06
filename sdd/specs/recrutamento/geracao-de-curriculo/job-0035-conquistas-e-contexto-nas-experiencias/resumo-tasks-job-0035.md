@@ -5,7 +5,7 @@
 - [x] 1.0 ExperienciaAdaptada e refatoração do rascunho
 - [x] 2.0 Porta de ajuste, adapter e adaptação
 - [x] 3.0 Gerador de PDF e prompt da fonte PDF
-- [ ] 4.0 Casos de uso de sugestão
+- [x] 4.0 Casos de uso de sugestão
 - [ ] 5.0 API
 - [ ] 6.0 Cliente de API e tipos
 - [ ] 7.0 SugestaoIA genérico e formulário

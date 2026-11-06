@@ -25,6 +25,7 @@ from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia import SugerirAjusteExperiencia
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada import SugerirAjusteExperienciaAdaptada
 from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import SugerirAjusteSecaoCurriculo
 from jobsync.entrypoints.api import dependencies
 from jobsync.entrypoints.api.main import app
@@ -204,7 +205,10 @@ app.dependency_overrides.update(
             ajustador_texto=AjustadorTextoSugestaoE2E(), melhorador=MelhoradorTextoE2E()
         ),
         dependencies.obter_service_sugerir_ajuste_experiencia: lambda: SugerirAjusteExperiencia(
-            ajustador_experiencia=AjustadorExperienciaSugestaoE2E(), melhorador=MelhoradorTextoE2E()
+            melhorador=MelhoradorTextoE2E()
+        ),
+        dependencies.obter_service_sugerir_ajuste_experiencia_adaptada: lambda: SugerirAjusteExperienciaAdaptada(
+            ajustador_experiencia=AjustadorExperienciaSugestaoE2E()
         ),
         dependencies.obter_service_analisar_ats_vaga: lambda: AnalisarAtsVaga(
             extrator=ExtratorCurriculoE2E(),

@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.curriculo import ExperienciaParaAvaliacao, RascunhoCurriculoAdaptado, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import (
+    ExperienciaAdaptada,
+    ExperienciaParaAvaliacao,
+    RascunhoCurriculoAdaptado,
+    SecaoCurriculo,
+    TipoSecao,
+)
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVagaInputDto,
 )
@@ -31,6 +37,7 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceListarCurriculosSalvosDep,
     ServiceRemoverCurriculoSalvoDep,
     ServiceSalvarCurriculoDep,
+    ServiceSugerirAjusteExperienciaAdaptadaDep,
     ServiceSugerirAjusteExperienciaDep,
     ServiceSugerirAjusteSecaoCurriculoDep,
 )
@@ -441,18 +448,36 @@ def sugerir_ajuste_secao(
 )
 def sugerir_ajuste_experiencia(
     body: SugerirAjusteExperienciaRequest,
-    service: ServiceSugerirAjusteExperienciaDep,
+    service_perfil: ServiceSugerirAjusteExperienciaDep,
+    service_vaga: ServiceSugerirAjusteExperienciaAdaptadaDep,
 ) -> SugerirAjusteExperienciaResponse:
-    """Devolve a descrição sugerida para a experiência informada."""
+    """Devolve a descrição sugerida para a experiência informada.
+
+    Sem contexto de vaga, só melhora a escrita. Com contexto, refina conquistas e contexto da
+    experiência; enquanto a API não troca a descrição por esses campos, as conquistas vêm das
+    linhas da descrição e o resultado volta achatado em texto.
+    """
     try:
-        contexto = body.contexto_vaga.to_domain() if body.contexto_vaga else None
-        sugerida = service.executar(body.experiencia.to_domain(), contexto)
+        experiencia = body.experiencia.to_domain()
+        if body.contexto_vaga is None:
+            descricao = service_perfil.executar(experiencia).descricao
+        else:
+            sugerida = service_vaga.executar(
+                ExperienciaAdaptada(
+                    cargo=experiencia.cargo,
+                    empresa=experiencia.empresa,
+                    periodo=experiencia.periodo,
+                    conquistas=ExperienciaAdaptada.conquistas_de_descricao(experiencia.descricao),
+                ),
+                body.contexto_vaga.to_domain(),
+            )
+            descricao = sugerida.como_descricao()
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return SugerirAjusteExperienciaResponse(descricao_sugerida=sugerida.descricao)
+    return SugerirAjusteExperienciaResponse(descricao_sugerida=descricao)
 
 
 @router.post(

@@ -418,7 +418,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                         cargo=experiencia.cargo,
                         empresa=experiencia.empresa,
                         periodo=experiencia.periodo,
-                        descricao="\n".join(experiencia.conquistas),
+                        descricao=experiencia.como_descricao(),
                     )
                     for experiencia in rascunho.experiencias
                 ]

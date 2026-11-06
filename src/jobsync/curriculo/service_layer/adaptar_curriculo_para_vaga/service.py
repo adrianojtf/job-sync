@@ -163,21 +163,13 @@ class AdaptarCurriculoParaVaga:
             return ()
 
         return tuple(
-            ExperienciaAdaptada.de_descricao(
-                cargo=original.cargo,
-                empresa=original.empresa,
-                periodo=original.periodo,
-                descricao=ajustada.descricao,
+            ajustador.ajustar(
+                experiencia=original,
+                descricao_vaga=input_dto.descricao_vaga,
+                idioma_alvo=input_dto.idioma_alvo,
+                analise_vaga=analise_vaga,
             )
             for original in experiencias
-            for ajustada in (
-                ajustador.ajustar(
-                    experiencia=original,
-                    descricao_vaga=input_dto.descricao_vaga,
-                    idioma_alvo=input_dto.idioma_alvo,
-                    analise_vaga=analise_vaga,
-                ),
-            )
         )
 
     def _avaliar_experiencias(

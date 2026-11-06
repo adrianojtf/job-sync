@@ -14,6 +14,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
 )
 from jobsync.curriculo import (
     AvaliacaoExperiencia,
+    ExperienciaAdaptada,
     Curriculo,
     ExperienciaParaAvaliacao,
     SecaoCurriculo,
@@ -106,16 +107,26 @@ class AjustadorExperienciaFake(AjustadorExperienciaPort):
         descricao_vaga: str,
         idioma_alvo: str,
         analise_vaga: AnaliseVaga,
-    ) -> ExperienciaParaAvaliacao:
+    ) -> ExperienciaAdaptada:
         self.recebidas.append(experiencia)
         if self._eventos is not None:
             self._eventos.append("ajustar_experiencia")
-        return ExperienciaParaAvaliacao(
-            descricao=f"[AJUSTADA] {experiencia.descricao}",
+        return ExperienciaAdaptada(
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
+            conquistas=(f"[AJUSTADA] {experiencia.descricao}",),
+            contexto=f"Contexto de {experiencia.empresa}.",
         )
+
+    def refinar(
+        self,
+        experiencia: ExperienciaAdaptada,
+        descricao_vaga: str,
+        idioma_alvo: str,
+        analise_vaga: AnaliseVaga,
+    ) -> ExperienciaAdaptada:
+        return experiencia
 
 
 class AvaliadorExperienciaFake(AvaliadorExperienciaPort):
@@ -489,10 +500,10 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
         ]
         assert ajustador_experiencia.recebidas == list(_experiencias_exemplo())
         assert len(avaliador_experiencia.recebidas) == 2
-        assert all(
-            experiencia.descricao.startswith("- [AJUSTADA]")
-            for experiencia in avaliador_experiencia.recebidas
-        )
+        assert [experiencia.descricao for experiencia in avaliador_experiencia.recebidas] == [
+            "- [AJUSTADA] Desenvolvi APIs em Python.\nContexto de Starian.",
+            "- [AJUSTADA] Mantive serviços em Go.\nContexto de TechCorp.",
+        ]
 
         assert len(resultado.avaliacoes_experiencias) == 2
         original = _experiencias_exemplo()
@@ -509,15 +520,30 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
             secao.tipo for secao in resultado.rascunho.secoes
         ]
         assert [
-            (experiencia.cargo, experiencia.empresa)
+            (experiencia.cargo, experiencia.empresa, experiencia.conquistas, experiencia.contexto)
             for experiencia in resultado.rascunho.experiencias
-        ] == [("Engenheira de Software", "Starian"), ("Desenvolvedora Backend", "TechCorp")]
+        ] == [
+            (
+                "Engenheira de Software",
+                "Starian",
+                ("[AJUSTADA] Desenvolvi APIs em Python.",),
+                "Contexto de Starian.",
+            ),
+            (
+                "Desenvolvedora Backend",
+                "TechCorp",
+                ("[AJUSTADA] Mantive serviços em Go.",),
+                "Contexto de TechCorp.",
+            ),
+        ]
         secao = resultado.rascunho.para_curriculo("pt").obter_secao(TipoSecao.EXPERIENCIAS)
         assert secao.titulo == "Experiências"
         assert "Engenheira de Software — Starian (2021-2024)" in secao.conteudo
         assert "Desenvolvedora Backend — TechCorp (2019-2021)" in secao.conteudo
         assert "[AJUSTADA] Desenvolvi APIs em Python." in secao.conteudo
         assert "[AJUSTADA] Mantive serviços em Go." in secao.conteudo
+        assert "\nContexto: Contexto de Starian." in secao.conteudo
+        assert "\nContexto: Contexto de TechCorp." in secao.conteudo
 
     def test_jev_indisponivel_nas_experiencias_marca_cada_resultado(self):
         avaliador_experiencia = AvaliadorExperienciaFake(

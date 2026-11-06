@@ -120,22 +120,35 @@ class TestExperienciaAdaptadaRevisada:
             )
 
 
-class TestExperienciaAdaptadaDeDescricao:
+class TestExperienciaAdaptadaConquistasDeDescricao:
     def test_cada_linha_da_descricao_vira_uma_conquista_sem_marcadores(self):
-        experiencia = ExperienciaAdaptada.de_descricao(
-            cargo="Dev",
-            empresa="TechCorp",
-            periodo="2024",
-            descricao="- Criei APIs.\n• Reduzi custos.\n\n  Mantive serviços.  ",
+        conquistas = ExperienciaAdaptada.conquistas_de_descricao(
+            "- Criei APIs.\n• Reduzi custos.\n\n  Mantive serviços.  "
         )
 
-        assert experiencia.conquistas == ("Criei APIs.", "Reduzi custos.", "Mantive serviços.")
-        assert experiencia.contexto == ""
+        assert conquistas == ("Criei APIs.", "Reduzi custos.", "Mantive serviços.")
 
     def test_descricao_vazia_resulta_sem_conquistas(self):
-        experiencia = ExperienciaAdaptada.de_descricao("Dev", "TechCorp", "", "  ")
+        assert ExperienciaAdaptada.conquistas_de_descricao("  ") == ()
 
-        assert experiencia.conquistas == ()
+
+class TestExperienciaAdaptadaComoDescricao:
+    def test_conquistas_por_linha_sem_marcadores_seguidas_do_contexto(self):
+        descricao = _experiencia().como_descricao()
+
+        assert descricao == (
+            "Developed a VoIP billing system.\n"
+            "Accelerated processing by 95%.\n"
+            "Worked on the communications platform."
+        )
+
+    def test_sem_contexto_traz_so_as_conquistas(self):
+        assert _experiencia(contexto="").como_descricao() == (
+            "Developed a VoIP billing system.\nAccelerated processing by 95%."
+        )
+
+    def test_sem_conquistas_e_sem_contexto_devolve_texto_vazio(self):
+        assert _experiencia(conquistas=(), contexto="").como_descricao() == ""
 
 
 class TestRotulosExperiencia:

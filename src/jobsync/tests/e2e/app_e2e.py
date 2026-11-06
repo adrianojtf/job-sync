@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 from jobsync.ats_score import CalcularAtsScore, ResultadoAtsScore
-from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
@@ -74,10 +74,24 @@ class AjustadorTextoE2E(AjustadorTextoPort):
         return secao
 
 
+def _adaptada(experiencia: ExperienciaParaAvaliacao | ExperienciaAdaptada, texto: str) -> ExperienciaAdaptada:
+    return ExperienciaAdaptada(
+        cargo=experiencia.cargo,
+        empresa=experiencia.empresa,
+        periodo=experiencia.periodo,
+        conquistas=(texto,) if texto.strip() else (),
+    )
+
+
 class AjustadorExperienciaE2E(AjustadorExperienciaPort):
     def ajustar(
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
-    ) -> ExperienciaParaAvaliacao:
+    ) -> ExperienciaAdaptada:
+        return _adaptada(experiencia, experiencia.descricao)
+
+    def refinar(
+        self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+    ) -> ExperienciaAdaptada:
         return experiencia
 
 
@@ -91,13 +105,13 @@ class AjustadorTextoSugestaoE2E(AjustadorTextoPort):
 class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
     def ajustar(
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
-    ) -> ExperienciaParaAvaliacao:
-        return ExperienciaParaAvaliacao(
-            cargo=experiencia.cargo,
-            empresa=experiencia.empresa,
-            periodo=experiencia.periodo,
-            descricao=f"Sugestão com vaga: {experiencia.descricao}",
-        )
+    ) -> ExperienciaAdaptada:
+        return _adaptada(experiencia, f"Sugestão com vaga: {experiencia.descricao}")
+
+    def refinar(
+        self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+    ) -> ExperienciaAdaptada:
+        return _adaptada(experiencia, f"Sugestão com vaga: {experiencia.como_descricao()}")
 
 
 class MelhoradorTextoE2E(MelhoradorTextoCurriculoPort):

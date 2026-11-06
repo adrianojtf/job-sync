@@ -65,6 +65,27 @@ class TestRascunhoCurriculoAdaptadoSchema:
         assert schema.experiencias[0].descricao == "Criei APIs.\nReduzi custos."
         assert schema.to_domain() == rascunho
 
+    def test_descricao_da_experiencia_nao_perde_o_contexto_gerado_pela_ia(self):
+        rascunho = RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(),
+            experiencias=(
+                ExperienciaAdaptada(
+                    cargo="Dev",
+                    empresa="TechCorp",
+                    periodo="",
+                    conquistas=("Criei APIs.",),
+                    contexto="Empresa de pagamentos.",
+                ),
+            ),
+        )
+
+        schema = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho)
+
+        assert schema.experiencias[0].descricao == "Criei APIs.\nEmpresa de pagamentos."
+
     def test_rascunho_de_fonte_pdf_tem_experiencias_nulas(self):
         rascunho = RascunhoCurriculoAdaptado(
             nome_completo="Ana Souza",

@@ -52,9 +52,10 @@ class SugerirAjusteExperiencia:
     ) -> ExperienciaParaAvaliacao:
         if contexto is None:
             return self._melhorador.melhorar_experiencia(experiencia)
-        return self._ajustador_experiencia.ajustar(
+        adaptada = self._ajustador_experiencia.ajustar(
             experiencia=experiencia,
             descricao_vaga=contexto.descricao_vaga,
             idioma_alvo=contexto.idioma_alvo,
             analise_vaga=contexto.analise_vaga,
         )
+        return replace(experiencia, descricao=adaptada.como_descricao())

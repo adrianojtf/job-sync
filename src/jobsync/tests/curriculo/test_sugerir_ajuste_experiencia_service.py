@@ -5,6 +5,7 @@ import pytest
 
 from jobsync.curriculo import (
     AjustadorExperienciaPort,
+    ExperienciaAdaptada,
     ContextoVaga,
     ExperienciaParaAvaliacao,
     MelhoradorTextoCurriculoPort,
@@ -28,6 +29,12 @@ def _experiencia(descricao: str = "Descrição editada.") -> ExperienciaParaAval
     )
 
 
+def _adaptada(conquista: str, contexto: str = "") -> ExperienciaAdaptada:
+    return ExperienciaAdaptada(
+        cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=(conquista,), contexto=contexto
+    )
+
+
 def _caso_de_uso() -> tuple[SugerirAjusteExperiencia, Mock, Mock]:
     ajustador = Mock(spec=AjustadorExperienciaPort)
     melhorador = Mock(spec=MelhoradorTextoCurriculoPort)
@@ -38,7 +45,7 @@ class TestSugerirAjusteExperiencia:
     def test_com_contexto_ajusta_a_descricao_recebida_para_a_vaga(self):
         caso_de_uso, ajustador, melhorador = _caso_de_uso()
         contexto = _contexto()
-        ajustador.ajustar.return_value = _experiencia("Sugestão da IA.")
+        ajustador.ajustar.return_value = _adaptada("Sugestão da IA.")
 
         resultado = caso_de_uso.executar(_experiencia(), contexto)
 
@@ -50,6 +57,20 @@ class TestSugerirAjusteExperiencia:
         )
         melhorador.melhorar_experiencia.assert_not_called()
         assert resultado.descricao == "Sugestão da IA."
+
+    def test_com_contexto_a_descricao_sugerida_inclui_conquistas_e_contexto_da_ia(self):
+        caso_de_uso, ajustador, _ = _caso_de_uso()
+        ajustador.ajustar.return_value = ExperienciaAdaptada(
+            cargo="Dev",
+            empresa="TechCorp",
+            periodo="2024",
+            conquistas=("Criei APIs.", "Reduzi custos."),
+            contexto="Empresa de pagamentos.",
+        )
+
+        resultado = caso_de_uso.executar(_experiencia(), _contexto())
+
+        assert resultado.descricao == "Criei APIs.\nReduzi custos.\nEmpresa de pagamentos."
 
     def test_sem_contexto_melhora_a_escrita_sem_vaga(self):
         caso_de_uso, ajustador, melhorador = _caso_de_uso()
@@ -63,8 +84,8 @@ class TestSugerirAjusteExperiencia:
 
     def test_preserva_cargo_empresa_e_periodo_do_input(self):
         caso_de_uso, ajustador, _ = _caso_de_uso()
-        ajustador.ajustar.return_value = ExperienciaParaAvaliacao(
-            cargo="Outro", empresa="Outra", periodo="1999", descricao="Sugestão."
+        ajustador.ajustar.return_value = ExperienciaAdaptada(
+            cargo="Outro", empresa="Outra", periodo="1999", conquistas=("Sugestão.",)
         )
 
         resultado = caso_de_uso.executar(_experiencia(), _contexto())

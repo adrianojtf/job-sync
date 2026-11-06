@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 ExperienciaAdaptada e refatoração do rascunho
-- [ ] 2.0 Porta de ajuste, adapter e adaptação
+- [x] 2.0 Porta de ajuste, adapter e adaptação
 - [ ] 3.0 Gerador de PDF e prompt da fonte PDF
 - [ ] 4.0 Casos de uso de sugestão
 - [ ] 5.0 API

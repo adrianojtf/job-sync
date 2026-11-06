@@ -67,18 +67,12 @@ class ExperienciaAdaptada:
             if (texto := _MARCADORES.sub("", linha.strip()).strip())
         )
 
-    @classmethod
-    def de_descricao(cls, cargo: str, empresa: str, periodo: str, descricao: str) -> ExperienciaAdaptada:
-        """Ponte para a descrição em texto livre, sem contexto.
-
-        Mantém o fluxo atual até a IA e a API passarem a produzir conquistas e contexto.
-        """
-        return cls(
-            cargo=cargo,
-            empresa=empresa,
-            periodo=periodo,
-            conquistas=cls.conquistas_de_descricao(descricao),
-        )
+    def como_descricao(self) -> str:
+        """Ponte para a descrição em texto livre: conquistas por linha, sem marcadores, e o contexto."""
+        linhas = list(self.conquistas)
+        if _preenchido(self.contexto):
+            linhas.append(self.contexto.strip())
+        return "\n".join(linhas)
 
     def para_texto(self, rotulo_contexto: str) -> str:
         """Texto da experiência no formato que o gerador de PDF reconhece."""

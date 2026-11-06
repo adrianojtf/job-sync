@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from jobsync.curriculo import (
     AvaliacaoExperiencia,
+    ContextoVaga,
     Curriculo,
     ExperienciaParaAvaliacao,
     RascunhoCurriculoAdaptado,
@@ -40,7 +41,7 @@ from jobsync.curriculo_salvo.service_layer.salvar_curriculo.dtos import (
 from jobsync.entrypoints.api.schemas.avaliacao import (
     ResultadoDimensaoAvaliacaoResponse,
 )
-from jobsync.entrypoints.api.schemas.vaga import AvaliacaoDescricaoVagaResponse
+from jobsync.entrypoints.api.schemas.vaga import AnaliseVagaSchema, AvaliacaoDescricaoVagaResponse
 
 
 class CurriculoSalvarRequest(BaseModel):
@@ -457,11 +458,18 @@ class RascunhoAdaptadoResponse(AvaliacoesAdaptacaoResponse):
     rascunho: RascunhoCurriculoAdaptadoSchema = Field(
         description="Conteúdo adaptado, organizado por seção, para revisão."
     )
+    analise_vaga: AnaliseVagaSchema = Field(
+        description=(
+            "Análise da vaga usada na adaptação; o cliente a reenvia nos pedidos de "
+            "sugestão para evitar uma nova análise por IA."
+        )
+    )
 
     @classmethod
     def from_dto(cls, dto: AdaptarCurriculoParaVagaOutputDto) -> RascunhoAdaptadoResponse:
         return cls(
             rascunho=RascunhoCurriculoAdaptadoSchema.from_domain(dto.rascunho),
+            analise_vaga=AnaliseVagaSchema.from_domain(dto.analise_vaga),
             **cls._campos_de_avaliacao(dto),
         )
 
@@ -668,3 +676,63 @@ class AvaliarExperienciaRequest(BaseModel):
             experiencia=self.experiencia.to_domain(),
             descricao_vaga=self.descricao_vaga,
         )
+
+
+class ContextoVagaSchema(BaseModel):
+    """Contexto da vaga-alvo; presente na revisão do currículo adaptado, ausente em Meu perfil."""
+
+    descricao_vaga: str = Field(description="Texto completo da descrição da vaga.")
+    idioma_alvo: str = Field(description="Idioma de destino do currículo (pt ou en).")
+    analise_vaga: AnaliseVagaSchema = Field(
+        description="Análise da vaga devolvida junto com o rascunho."
+    )
+
+    def to_domain(self) -> ContextoVaga:
+        """Converte para o domínio; levanta ValueError se o contexto for inválido."""
+        return ContextoVaga(
+            descricao_vaga=self.descricao_vaga,
+            idioma_alvo=self.idioma_alvo,
+            analise_vaga=self.analise_vaga.to_domain(),
+        )
+
+
+class SugerirAjusteSecaoRequest(BaseModel):
+    """Pedido de sugestão de IA para uma seção de texto, a partir do texto atual do campo."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "secao": {"tipo": "PERFIL", "titulo": "Perfil", "conteudo": "Engenheira backend."}
+            }
+        }
+    )
+
+    secao: SecaoRascunhoSchema = Field(description="Seção com o texto atual, incluindo edições.")
+    contexto_vaga: ContextoVagaSchema | None = Field(
+        default=None,
+        description="Contexto da vaga; sem ele, a IA apenas melhora a escrita.",
+    )
+
+
+class SugerirAjusteSecaoResponse(BaseModel):
+    """Texto sugerido para a seção; nada é alterado ou persistido."""
+
+    conteudo_sugerido: str = Field(description="Nova versão do conteúdo da seção.")
+
+
+class SugerirAjusteExperienciaRequest(BaseModel):
+    """Pedido de sugestão de IA para uma experiência, a partir da descrição atual."""
+
+    experiencia: ExperienciaParaAvaliacaoRequest = Field(
+        description="Experiência com a descrição atual, incluindo edições."
+    )
+    contexto_vaga: ContextoVagaSchema | None = Field(
+        default=None,
+        description="Contexto da vaga; sem ele, a IA apenas melhora a escrita.",
+    )
+
+
+class SugerirAjusteExperienciaResponse(BaseModel):
+    """Descrição sugerida; cargo, empresa e período não são alterados."""
+
+    descricao_sugerida: str = Field(description="Nova versão da descrição da experiência.")

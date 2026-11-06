@@ -396,6 +396,11 @@ class TestCurriculoRouter:
         assert response.status_code == 200
         data = response.json()
         assert "pdf_base64" not in data
+        assert data["analise_vaga"] == {
+            "requisitos": [],
+            "ambiguidade": [],
+            "texto_original": "vaga",
+        }
         assert data["rascunho"]["nome_completo"] == "Matheus Silva"
         assert data["rascunho"]["secoes"] == [
             {"tipo": "TECNOLOGIAS", "titulo": "Tecnologias", "conteudo": "Python"}

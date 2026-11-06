@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.curriculo import ExperienciaParaAvaliacao, RascunhoCurriculoAdaptado
+from jobsync.curriculo import ExperienciaParaAvaliacao, RascunhoCurriculoAdaptado, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVagaInputDto,
 )
@@ -31,6 +31,8 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceListarCurriculosSalvosDep,
     ServiceRemoverCurriculoSalvoDep,
     ServiceSalvarCurriculoDep,
+    ServiceSugerirAjusteExperienciaDep,
+    ServiceSugerirAjusteSecaoCurriculoDep,
 )
 from jobsync.entrypoints.api.schemas.curriculo import (
     AdaptarCurriculoRequest,
@@ -48,6 +50,10 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     GerarCartaApresentacaoRequest,
     GerarPdfCurriculoRevisadoRequest,
     RascunhoAdaptadoResponse,
+    SugerirAjusteExperienciaRequest,
+    SugerirAjusteExperienciaResponse,
+    SugerirAjusteSecaoRequest,
+    SugerirAjusteSecaoResponse,
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
@@ -374,6 +380,79 @@ def gerar_pdf_curriculo_revisado(
     if download:
         return _resposta_pdf(pdf)
     return CurriculoRevisadoResponse.from_dto(pdf)
+
+
+_RESPOSTAS_SUGESTAO = {
+    status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        "model": ProblemaResponse,
+        "description": "Texto, seção ou contexto da vaga ausentes ou inválidos.",
+    },
+    status.HTTP_502_BAD_GATEWAY: {
+        "model": ProblemaResponse,
+        "description": "O provedor de IA está indisponível.",
+    },
+}
+
+
+@router.post(
+    "/secoes-curriculo/sugestoes",
+    response_model=SugerirAjusteSecaoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sugerir ajuste de uma seção",
+    description=(
+        "Sugere, via IA, uma nova versão do texto de uma seção (perfil, tecnologias ou "
+        "experiências). Com contexto de vaga adapta o texto à vaga; sem ele, melhora a "
+        "escrita. Nada é persistido nem alterado."
+    ),
+    responses=_RESPOSTAS_SUGESTAO,
+)
+def sugerir_ajuste_secao(
+    body: SugerirAjusteSecaoRequest,
+    service: ServiceSugerirAjusteSecaoCurriculoDep,
+) -> SugerirAjusteSecaoResponse:
+    """Devolve o texto sugerido para a seção informada."""
+    try:
+        secao = SecaoCurriculo(
+            tipo=TipoSecao[body.secao.tipo],
+            titulo=body.secao.titulo,
+            conteudo=body.secao.conteudo,
+        )
+        contexto = body.contexto_vaga.to_domain() if body.contexto_vaga else None
+        sugerida = service.executar(secao, contexto)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return SugerirAjusteSecaoResponse(conteudo_sugerido=sugerida.conteudo)
+
+
+@router.post(
+    "/experiencias-profissionais/sugestoes",
+    response_model=SugerirAjusteExperienciaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sugerir ajuste de uma experiência",
+    description=(
+        "Sugere, via IA, uma nova descrição para uma experiência profissional. Com contexto "
+        "de vaga adapta o texto à vaga; sem ele, melhora a escrita. Cargo, empresa e "
+        "período não são alterados, e nada é persistido."
+    ),
+    responses=_RESPOSTAS_SUGESTAO,
+)
+def sugerir_ajuste_experiencia(
+    body: SugerirAjusteExperienciaRequest,
+    service: ServiceSugerirAjusteExperienciaDep,
+) -> SugerirAjusteExperienciaResponse:
+    """Devolve a descrição sugerida para a experiência informada."""
+    try:
+        contexto = body.contexto_vaga.to_domain() if body.contexto_vaga else None
+        sugerida = service.executar(body.experiencia.to_domain(), contexto)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return SugerirAjusteExperienciaResponse(descricao_sugerida=sugerida.descricao)
 
 
 @router.post(

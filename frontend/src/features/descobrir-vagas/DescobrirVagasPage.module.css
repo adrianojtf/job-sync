@@ -1,0 +1,127 @@
+.grade {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, minmax(0, 1fr));
+  column-gap: 14px;
+  align-items: start;
+}
+.acoes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.nota {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+  max-width: 560px;
+}
+.lista {
+  display: grid;
+  gap: 14px;
+}
+.vaga {
+  border: 1px solid var(--line);
+  border-radius: var(--raio-lg);
+  padding: 16px;
+  background: var(--surface);
+}
+.topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.titulo {
+  margin: 0;
+  font-size: 15px;
+}
+.meta {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 3px 0 0;
+}
+.compatibilidade {
+  text-align: center;
+  flex-shrink: 0;
+}
+.compatibilidadeValor {
+  display: block;
+  font-size: 24px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+.compatibilidadeRotulo {
+  color: var(--muted);
+  font-size: 11px;
+}
+.requisitos {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+.requisitos summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.listaRequisitos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.listaRequisitos li {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+.acoesVaga {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.link {
+  color: var(--accent);
+  font-weight: 650;
+}
+.candidatura {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+}
+.linhaCandidatura {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.abrirVaga {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--raio-md);
+  padding: 10px 15px;
+  font-weight: 650;
+  text-decoration: none;
+}
+@media (max-width: 1000px) {
+  .grade {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .grade {
+    grid-template-columns: 1fr;
+  }
+}

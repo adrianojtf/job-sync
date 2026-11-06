@@ -9,4 +9,7 @@ const cli = fileURLToPath(
   new URL("../node_modules/openapi-typescript/bin/cli.js", import.meta.url),
 );
 
-execFileSync(process.execPath, [cli, origem, "--output", destino], { stdio: "inherit" });
+// --default-non-nullable=false: campos com valor padrão no backend continuam opcionais nas requisições.
+execFileSync(process.execPath, [cli, origem, "--output", destino, "--default-non-nullable=false"], {
+  stdio: "inherit",
+});

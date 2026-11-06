@@ -10,7 +10,13 @@ const CATEGORIAS: Record<string, string> = {
 };
 
 /** Nota ATS, requisitos não cobertos e sugestões (JOB-0005). */
-export function AnaliseAtsResultado({ analise }: { analise: AnaliseAts }) {
+interface Props {
+  analise: Pick<AnaliseAts, "nota" | "requisitos_faltantes" | "sugestoes">;
+  /** A candidatura em vaga externa não gera sugestões: a seção fica oculta. */
+  mostrarSugestoes?: boolean;
+}
+
+export function AnaliseAtsResultado({ analise, mostrarSugestoes = true }: Props) {
   const requisitos = analise.requisitos_faltantes ?? [];
   const sugestoes = analise.sugestoes ?? [];
   return (
@@ -38,15 +44,19 @@ export function AnaliseAtsResultado({ analise }: { analise: AnaliseAts }) {
         </ul>
       )}
 
-      <h3 className={estilos.subtitulo}>Sugestões</h3>
-      {sugestoes.length === 0 ? (
-        <p className={estilos.texto}>Nenhuma sugestão adicional.</p>
-      ) : (
-        <ul className={estilos.lista}>
-          {sugestoes.map((sugestao) => (
-            <li key={sugestao}>{sugestao}</li>
-          ))}
-        </ul>
+      {mostrarSugestoes && (
+        <>
+          <h3 className={estilos.subtitulo}>Sugestões</h3>
+          {sugestoes.length === 0 ? (
+            <p className={estilos.texto}>Nenhuma sugestão adicional.</p>
+          ) : (
+            <ul className={estilos.lista}>
+              {sugestoes.map((sugestao) => (
+                <li key={sugestao}>{sugestao}</li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

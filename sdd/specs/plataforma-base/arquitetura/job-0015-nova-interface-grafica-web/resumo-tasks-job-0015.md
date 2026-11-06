@@ -9,7 +9,7 @@
 - [x] 5.0 Telas Meu perfil (T3) e Meus currículos (T4)
 - [x] 6.0 Telas Ajustar para uma vaga (T5) e Analisar ATS (T6)
 - [x] 7.0 Telas Vagas salvas (T7) e Candidaturas/Kanban (T9)
-- [ ] 8.0 Telas Descobrir vagas (T8) e Configurações (T10)
+- [x] 8.0 Telas Descobrir vagas (T8) e Configurações (T10)
 - [ ] 9.0 Tela Visão geral (T2)
 - [ ] 10.0 Entrega: Docker/Nginx, README, E2E, acessibilidade e checagem de contrato
 
@@ -24,7 +24,7 @@
 | 5.0 | Meu perfil + Meus currículos | high | 4.0 | Formulário adiciona/remove itens e envia payload; importar PDF pré-preenche; limite de 10 currículos |
 | 6.0 | Ajustar para uma vaga + Analisar ATS | high | 5.0 | Validação do modal; dimensões da avaliação; download do PDF; aviso de avaliação indisponível |
 | 7.0 | Vagas salvas + Kanban | medium | 6.0 | Criar candidatura remove a vaga da lista; mover cartão invalida a listagem |
-| 8.0 | Descobrir vagas + Configurações | medium | 1.0, 2.0, 6.0 | Resultados ordenados por nota; "Candidatar" abre a URL original; token gerado e copiável |
+| 8.0 | Descobrir vagas + Configurações | medium | 1.0, 2.0, 6.0 | Resultados ordenados por nota; "Candidatar" oferece o link da vaga original; token gerado e copiável |
 | 9.0 | Visão geral | medium | 5.0, 7.0 | `montarResumo` e `calcularCompletude` (funções puras); estado vazio de primeiro acesso |
 | 10.0 | Entrega | medium | 1.0 a 9.0 | Build Docker; E2E dos 2 fluxos; axe sem violações graves; diff de `schema.d.ts` no CI |
 

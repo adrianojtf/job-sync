@@ -13,17 +13,17 @@ Entregar a busca de vagas em fontes externas com nota de compatibilidade e a aç
 - Filtros: termo, currículo de referência (biblioteca), idioma e período (7, 15, 30 dias ou qualquer) (RF9.1).
 - Busca: obter o PDF com `GET /v1/curriculos/{id}/conteudo` e chamar `POST /v1/vagas/descobrir`.
 - Resultados ordenados por nota, com fonte, data, requisitos faltantes e link original (RF9.2).
-- "Candidatar": `POST /v1/vagas/descobertas/candidaturas`, mostrar PDF, nota e carta, e abrir `url_vaga` em nova aba (`noopener`), sem preencher formulários de terceiros (RF9.3).
+- "Candidatar": `POST /v1/vagas/descobertas/candidaturas`, mostrar PDF, nota e carta, e oferecer o link para abrir `url_vaga` em nova aba (`noopener`), sem preencher formulários de terceiros (RF9.3). Decisão: a aba abre pelo clique do usuário, porque navegadores bloqueiam `window.open` feito depois de uma chamada assíncrona longa.
 - Sem currículos na biblioteca: estado vazio com link para Meus currículos.
 - Configurações: gerar token via `POST /v1/tokens-captura`, botão copiar e instruções da extensão (RF11.1).
 </requirements>
 
 ## Subtarefas
 
-- [ ] 8.1 Escrever os testes (red) e implementar os filtros e a busca em `features/descobrir-vagas/`.
-- [ ] 8.2 Implementar a lista de resultados e o detalhe dos requisitos.
-- [ ] 8.3 Implementar "Candidatar", reaproveitando os blocos de resultado da tarefa 6.0.
-- [ ] 8.4 Escrever os testes (red) e implementar `features/configuracoes/`.
+- [x] 8.1 Escrever os testes (red) e implementar os filtros e a busca em `features/descobrir-vagas/`.
+- [x] 8.2 Implementar a lista de resultados e o detalhe dos requisitos.
+- [x] 8.3 Implementar "Candidatar", reaproveitando os blocos de resultado da tarefa 6.0.
+- [x] 8.4 Escrever os testes (red) e implementar `features/configuracoes/`.
 
 ## Detalhes de Implementação
 
@@ -32,15 +32,15 @@ Ver `prd-job-0015.md` → F9 e F11, e `techspec-job-0015.md` → "Decisões Prin
 ## Critérios de Sucesso
 
 - A busca devolve vagas ordenadas da maior para a menor nota.
-- "Candidatar" gera os artefatos e abre a vaga original em nova aba.
+- "Candidatar" gera os artefatos e oferece o link que abre a vaga original em nova aba.
 - O token gerado funciona na extensão Chrome sem mudanças nela.
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: busca sem termo mostra erro; resultados aparecem ordenados por nota.
-- [ ] Testes de unidade: "Candidatar" chama o endpoint novo e abre a URL (mock de `window.open`).
-- [ ] Testes de unidade: estado vazio sem currículos.
-- [ ] Testes de unidade: gerar token exibe o valor e copiar usa a área de transferência.
+- [x] Testes de unidade: busca sem termo mostra erro; resultados aparecem ordenados por nota.
+- [x] Testes de unidade: "Candidatar" chama o endpoint novo e mostra o link da vaga original (`target="_blank"`, `rel="noopener"`).
+- [x] Testes de unidade: estado vazio sem currículos.
+- [x] Testes de unidade: gerar token exibe o valor e copiar usa a área de transferência.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

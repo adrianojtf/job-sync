@@ -58,7 +58,10 @@ class VagaDescobertaResponse(BaseModel):
     empresa: str = Field(description="Empresa que publicou a vaga.")
     descricao: str = Field(description="Descrição da vaga externa.")
     url: str = Field(description="URL para a vaga na fonte externa.")
-    fonte: str = Field(description="Nome da fonte externa de origem.")
+    fonte: str = Field(
+        description="Nome da fonte externa de origem.",
+        json_schema_extra={"enum": [fonte.name for fonte in FonteVagaExterna]},
+    )
     data_publicacao: date | None = Field(
         default=None,
         description="Data de publicação da vaga, quando disponível.",

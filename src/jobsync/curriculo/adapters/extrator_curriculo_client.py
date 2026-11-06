@@ -9,7 +9,7 @@ from __future__ import annotations
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
 from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from jobsync.shared_kernel.adapters.extrator_texto_pdfplumber_client import ExtratorTextoPdfPlumber
-from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 _MAPA_CHAVE_PARA_TIPO_SECAO: dict[str, TipoSecao] = {
     "tecnologias": TipoSecao.TECNOLOGIAS,
@@ -62,14 +62,14 @@ class ExtratorCurriculoClient(ExtratorCurriculoPort):
     def __init__(
         self,
         extrator_texto: ExtratorTextoPdfPlumber | None = None,
-        cliente_groq: ClienteGroq | None = None,
+        cliente_openai: ClienteOpenAI | None = None,
     ) -> None:
         self._extrator_texto = extrator_texto or ExtratorTextoPdfPlumber()
-        self._cliente_groq = cliente_groq or ClienteGroq()
+        self._cliente_openai = cliente_openai or ClienteOpenAI()
 
     def extrair(self, conteudo_pdf: bytes) -> Curriculo:
         texto_bruto = self._extrator_texto.extrair_texto(conteudo_pdf)
-        dados_segmentados = self._cliente_groq.solicitar_json(
+        dados_segmentados = self._cliente_openai.solicitar_json(
             prompt_sistema=_PROMPT_SISTEMA,
             prompt_usuario=f"Texto do currículo a segmentar:\n\n{texto_bruto}",
         )

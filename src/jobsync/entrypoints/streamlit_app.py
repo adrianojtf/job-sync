@@ -88,6 +88,7 @@ from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClie
 from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
 from jobsync.curriculo.adapters.gerar_sugestoes_ats_client import GerarSugestoesAtsClient
 from jobsync.perfil_estruturado.adapters.extrator_perfil_estruturado_client import ExtratorPerfilEstruturadoClient
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 from jobsync.vaga.adapters.job_description_analyzer_client import JobDescriptionAnalyzerClient
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.candidatura.adapters import CandidaturaRepositoryImpl
@@ -138,23 +139,25 @@ _PAGINA_VAGAS_E_CANDIDATURAS = "Vagas & Candidaturas"
 
 def _montar_caso_de_uso() -> AdaptarCurriculoParaVaga:
     """Monta os adapters concretos e injeta nas portas do caso de uso de adaptação."""
-    extrator = ExtratorCurriculoClient()
-    analisador_vaga = JobDescriptionAnalyzerClient()
-    ajustador_texto = AjustadorTextoClient()
+    cliente_openai = ClienteOpenAI()
+    extrator = ExtratorCurriculoClient(cliente_openai=cliente_openai)
+    analisador_vaga = JobDescriptionAnalyzerClient(cliente_openai=cliente_openai)
+    ajustador_texto = AjustadorTextoClient(cliente_openai=cliente_openai)
     gerador_pdf = GeradorPdfClient()
     return AdaptarCurriculoParaVaga(extrator, analisador_vaga, ajustador_texto, gerador_pdf)
 
 
 def _montar_gerador_carta_apresentacao() -> GerarCartaApresentacao:
-    gerador_carta_groq = GerarCartaApresentacaoClient()
-    return GerarCartaApresentacao(gerador_carta=gerador_carta_groq)
+    gerador_carta = GerarCartaApresentacaoClient(cliente_openai=ClienteOpenAI())
+    return GerarCartaApresentacao(gerador_carta=gerador_carta)
 
 
 def _montar_analisar_ats_vaga() -> AnalisarAtsVaga:
     """Monta o caso de uso de diagnóstico de ATS (sem adaptar seções — mais rápido e barato)."""
-    extrator = ExtratorCurriculoClient()
-    analisador_vaga = JobDescriptionAnalyzerClient()
-    gerador_sugestoes = GerarSugestoesAtsClient()
+    cliente_openai = ClienteOpenAI()
+    extrator = ExtratorCurriculoClient(cliente_openai=cliente_openai)
+    analisador_vaga = JobDescriptionAnalyzerClient(cliente_openai=cliente_openai)
+    gerador_sugestoes = GerarSugestoesAtsClient(cliente_openai=cliente_openai)
     return AnalisarAtsVaga(
         extrator=extrator,
         analisador_vaga=analisador_vaga,
@@ -190,22 +193,24 @@ def _montar_buscadores_vagas_externo() -> tuple[BuscadorVagasExternoPort, ...]:
 
 
 def _montar_descobrir_vagas_com_match() -> DescobrirVagasComMatch:
+    cliente_openai = ClienteOpenAI()
     return DescobrirVagasComMatch(
         buscadores=_montar_buscadores_vagas_externo(),
-        analisador_vaga=JobDescriptionAnalyzerClient(),
-        extrator_curriculo=ExtratorCurriculoClient(),
+        analisador_vaga=JobDescriptionAnalyzerClient(cliente_openai=cliente_openai),
+        extrator_curriculo=ExtratorCurriculoClient(cliente_openai=cliente_openai),
         calcular_score=CalcularAtsScore(),
     )
 
 
 def _montar_candidatar_na_vaga_externa() -> CandidatarNaVagaExterna:
+    cliente_openai = ClienteOpenAI()
     return CandidatarNaVagaExterna(
-        extrator=ExtratorCurriculoClient(),
-        analisador_vaga=JobDescriptionAnalyzerClient(),
-        ajustador_texto=AjustadorTextoClient(),
+        extrator=ExtratorCurriculoClient(cliente_openai=cliente_openai),
+        analisador_vaga=JobDescriptionAnalyzerClient(cliente_openai=cliente_openai),
+        ajustador_texto=AjustadorTextoClient(cliente_openai=cliente_openai),
         gerador_pdf=GeradorPdfClient(),
         calcular_ats_score=CalcularAtsScore(),
-        gerador_carta=GerarCartaApresentacaoClient(),
+        gerador_carta=GerarCartaApresentacaoClient(cliente_openai=cliente_openai),
     )
 
 
@@ -240,11 +245,13 @@ def _montar_repositorio_perfil_estruturado() -> PerfilEstruturadoRepositoryImpl:
 
 
 def _montar_importar_perfil_de_pdf() -> ImportarPerfilDePdf:
-    return ImportarPerfilDePdf(extrator=ExtratorPerfilEstruturadoClient())
+    return ImportarPerfilDePdf(
+        extrator=ExtratorPerfilEstruturadoClient(cliente_openai=ClienteOpenAI())
+    )
 
 
 def _carregar_secrets_para_env() -> None:
-    """Repassa st.secrets (produção) para os.environ, usado pelos adapters Groq via os.getenv().
+    """Repassa st.secrets (produção) para os.environ, usado pelos adapters de IA via os.getenv().
 
     Precisa ser chamada DEPOIS de st.set_page_config() — acessar st.secrets
     antes conta como "primeiro comando Streamlit" e quebra a exigência de

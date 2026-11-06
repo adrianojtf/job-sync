@@ -1,6 +1,6 @@
-"""Adapter para análise de descrição de vaga usando o modelo Groq.
+"""Adapter para análise de descrição de vaga usando GPT-6 Luna.
 
-O adapter consome ClienteGroq e retorna o modelo de domínio AnaliseVaga.
+O adapter consome ClienteOpenAI e retorna o modelo de domínio AnaliseVaga.
 """
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import logging
 import unicodedata
 from typing import Any
 
-from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 from jobsync.vaga.domain.analise_vaga import (
     AnaliseVaga,
@@ -50,10 +50,10 @@ eles sejam mencionados de forma explícita.
 
 
 class JobDescriptionAnalyzerClient(JobDescriptionAnalyzerPort):
-    """Implementação do adaptador de análise de vaga usando Groq."""
+    """Implementação do adaptador de análise de vaga usando GPT-6 Luna."""
 
-    def __init__(self, cliente_groq: ClienteGroq | None = None) -> None:
-        self._cliente_groq = cliente_groq or ClienteGroq()
+    def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
+        self._cliente_openai = cliente_openai or ClienteOpenAI()
 
     def analisar(self, descricao_vaga: str) -> AnaliseVaga:
         if not descricao_vaga or not descricao_vaga.strip():
@@ -61,13 +61,13 @@ class JobDescriptionAnalyzerClient(JobDescriptionAnalyzerPort):
 
         prompt_usuario = self._construir_prompt_usuario(descricao_vaga)
         try:
-            resposta = self._cliente_groq.solicitar_json(
+            resposta = self._cliente_openai.solicitar_json(
                 prompt_sistema=_PROMPT_SISTEMA,
                 prompt_usuario=prompt_usuario,
             )
         except ValueError as erro:
             raise ValueError(
-                f"Falha ao parsear a resposta do Groq para análise de vaga: {erro}"
+                f"Falha ao parsear a resposta da OpenAI para análise de vaga: {erro}"
             ) from erro
 
         return self._montar_analise(descricao_vaga, resposta)

@@ -6,19 +6,25 @@ from jobsync.entrypoints.api.schemas.candidatura import (
     CandidaturasListagemResponse,
     CandidaturaSubmeterRequest,
 )
+from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.entrypoints.api.schemas.curriculo import (
     AdaptarCurriculoRequest,
     AdaptarCurriculoResponse,
+    AvaliacaoExperienciaResponse,
+    AvaliarExperienciaRequest,
     AnalisarAtsRequest,
     AnalisarAtsResponse,
     CurriculoSalvarRequest,
     CurriculoSalvoResponse,
+    ExperienciaParaAvaliacaoRequest,
 )
 from jobsync.entrypoints.api.schemas.perfil import (
     PerfisListagemResponse,
     PerfilResponse,
 )
 from jobsync.entrypoints.api.schemas.vaga import (
+    AvaliacaoDescricaoVagaResponse,
+    AvaliarDescricaoVagaRequest,
     VagaCapturarRequest,
     VagaResponse,
     VagasListagemResponse,
@@ -34,6 +40,10 @@ __all__ = [
     "AdaptarCurriculoResponse",
     "AnalisarAtsRequest",
     "AnalisarAtsResponse",
+    "AvaliacaoDescricaoVagaResponse",
+    "AvaliacaoExperienciaResponse",
+    "AvaliarDescricaoVagaRequest",
+    "AvaliarExperienciaRequest",
     "CandidaturaCriarRequest",
     "CandidaturaResponse",
     "CandidaturasListagemResponse",
@@ -42,8 +52,10 @@ __all__ = [
     "CurriculoSalvoResponse",
     "DescobrirVagasRequest",
     "DescobrirVagasResponse",
+    "ExperienciaParaAvaliacaoRequest",
     "PerfisListagemResponse",
     "PerfilResponse",
+    "ProblemaResponse",
     "VagaCapturarRequest",
     "VagaDescobertaResponse",
     "VagaResponse",

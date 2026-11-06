@@ -9,17 +9,31 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVaga,
     AdaptarCurriculoParaVagaInputDto,
 )
-from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
+    StatusAvaliacaoAutomatica,
+)
+from jobsync.curriculo import (
+    AvaliacaoExperiencia,
+    Curriculo,
+    ExperienciaParaAvaliacao,
+    SecaoCurriculo,
+    TipoSecao,
+)
+from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
+from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
 from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
+from jobsync.shared_kernel.domain.score_avaliacao import ResultadoDimensaoAvaliacao
 from jobsync.vaga import (
     AnaliseVaga,
+    AvaliacaoDescricaoVaga,
     CategoriaRequisitoTecnico,
     OrigemRequisitoTecnico,
     RequisitoTecnico,
     TipoRequisitoTecnico,
 )
+from jobsync.vaga.domain.avaliador_descricao_vaga_port import AvaliadorDescricaoVagaPort
 from jobsync.vaga.domain.job_description_analyzer_port import JobDescriptionAnalyzerPort
 
 
@@ -34,8 +48,9 @@ class ExtratorFake(ExtratorCurriculoPort):
 
 
 class AjustadorTextoFake(AjustadorTextoPort):
-    def __init__(self):
+    def __init__(self, eventos: list[str] | None = None):
         self.chamadas: list[tuple[TipoSecao, str, str, AnaliseVaga]] = []
+        self._eventos = eventos
 
     def ajustar_secao(
         self,
@@ -45,6 +60,8 @@ class AjustadorTextoFake(AjustadorTextoPort):
         analise_vaga: AnaliseVaga,
     ) -> SecaoCurriculo:
         self.chamadas.append((secao.tipo, descricao_vaga, idioma_alvo, analise_vaga))
+        if self._eventos is not None:
+            self._eventos.append("ajustar_secao")
         return secao.com_novo_conteudo(f"[AJUSTADO-{idioma_alvo}] {secao.conteudo}")
 
 
@@ -67,6 +84,75 @@ class GeradorPdfFake(GeradorPdfPort):
         self.curriculo_recebido = curriculo
         self.idioma_recebido = idioma_alvo
         return b"%PDF-FAKE-CONTENT"
+
+
+class AvaliadorDescricaoVagaFake(AvaliadorDescricaoVagaPort):
+    def __init__(
+        self,
+        avaliacao: AvaliacaoDescricaoVaga,
+        erro: Exception | None = None,
+        eventos: list[str] | None = None,
+    ):
+        self._avaliacao = avaliacao
+        self._erro = erro
+        self._eventos = eventos
+        self.chamadas: list[str] = []
+
+    def avaliar(self, descricao_vaga: str) -> AvaliacaoDescricaoVaga:
+        self.chamadas.append(descricao_vaga)
+        if self._eventos is not None:
+            self._eventos.append("avaliar_vaga")
+        if self._erro is not None:
+            raise self._erro
+        return self._avaliacao
+
+
+class AjustadorExperienciaFake(AjustadorExperienciaPort):
+    def __init__(self, eventos: list[str] | None = None):
+        self.recebidas: list[ExperienciaParaAvaliacao] = []
+        self._eventos = eventos
+
+    def ajustar(
+        self,
+        experiencia: ExperienciaParaAvaliacao,
+        descricao_vaga: str,
+        idioma_alvo: str,
+        analise_vaga: AnaliseVaga,
+    ) -> ExperienciaParaAvaliacao:
+        self.recebidas.append(experiencia)
+        if self._eventos is not None:
+            self._eventos.append("ajustar_experiencia")
+        return ExperienciaParaAvaliacao(
+            descricao=f"[AJUSTADA] {experiencia.descricao}",
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+        )
+
+
+class AvaliadorExperienciaFake(AvaliadorExperienciaPort):
+    def __init__(
+        self,
+        avaliacao: AvaliacaoExperiencia,
+        erro: Exception | None = None,
+        eventos: list[str] | None = None,
+    ):
+        self._avaliacao = avaliacao
+        self._erro = erro
+        self._eventos = eventos
+        self.recebidas: list[ExperienciaParaAvaliacao] = []
+
+    def avaliar(
+        self,
+        experiencia: ExperienciaParaAvaliacao,
+        descricao_vaga: str,
+    ) -> AvaliacaoExperiencia:
+        self.recebidas.append(experiencia)
+        if self._eventos is not None:
+            self._eventos.append("avaliar_experiencia")
+        if self._erro is not None:
+            raise self._erro
+        return self._avaliacao
 
 
 def _curriculo_exemplo() -> Curriculo:
@@ -275,3 +361,239 @@ class TestAdaptarCurriculoParaVaga:
 
         with pytest.raises(ValueError, match="PDF"):
             caso_de_uso.executar(input_dto)
+
+
+def _dimensao(score: int) -> ResultadoDimensaoAvaliacao:
+    return ResultadoDimensaoAvaliacao(score=score, nivel="adequado", confianca=0.8)
+
+
+def _avaliacao_vaga(score: int = 80) -> AvaliacaoDescricaoVaga:
+    return AvaliacaoDescricaoVaga(
+        completude=_dimensao(score),
+        clareza=_dimensao(score),
+        relevancia=_dimensao(score),
+        inclusao=_dimensao(score),
+    )
+
+
+def _avaliacao_experiencia(score: int = 75) -> AvaliacaoExperiencia:
+    return AvaliacaoExperiencia(
+        clareza_escrita=_dimensao(score),
+        qualidade_detalhe=_dimensao(score),
+        aderencia_vaga=_dimensao(score),
+        consistencia_textual=_dimensao(score),
+    )
+
+
+def _experiencias_exemplo() -> tuple[ExperienciaParaAvaliacao, ...]:
+    return (
+        ExperienciaParaAvaliacao(
+            cargo="Engenheira de Software",
+            empresa="Starian",
+            periodo="2021-2024",
+            descricao="Desenvolvi APIs em Python.",
+        ),
+        ExperienciaParaAvaliacao(
+            cargo="Desenvolvedora Backend",
+            empresa="TechCorp",
+            periodo="2019-2021",
+            descricao="Mantive serviços em Go.",
+        ),
+    )
+
+
+def _input_estruturado() -> AdaptarCurriculoParaVagaInputDto:
+    return AdaptarCurriculoParaVagaInputDto(
+        curriculo_pre_montado=_curriculo_exemplo(),
+        experiencias_profissionais=_experiencias_exemplo(),
+        descricao_vaga="Vaga para Engenheiro de Software Python Sênior",
+        idioma_alvo="pt",
+        cargo_alvo="Engenheiro de Software Sênior",
+        empresa_alvo="TechCorp",
+    )
+
+
+class TestAdaptarCurriculoParaVagaComAvaliacoes:
+    def test_avalia_descricao_da_vaga_antes_da_adaptacao(self):
+        eventos: list[str] = []
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+            ),
+            AjustadorTextoFake(eventos=eventos),
+            GeradorPdfFake(),
+            avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(
+                _avaliacao_vaga(), eventos=eventos
+            ),
+        )
+        input_dto = AdaptarCurriculoParaVagaInputDto(
+            pdf_curriculo=b"pdf",
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            cargo_alvo="Cargo",
+            empresa_alvo="Empresa",
+        )
+
+        resultado = caso_de_uso.executar(input_dto)
+
+        assert eventos[0] == "avaliar_vaga"
+        assert eventos[1:] == ["ajustar_secao"] * 4
+        assert resultado.status_avaliacao_vaga == StatusAvaliacaoAutomatica.AVALIADA
+        assert resultado.avaliacao_vaga.score == 80
+
+    def test_score_baixo_da_vaga_nao_bloqueia_adaptacao(self):
+        ajustador = AjustadorTextoFake()
+        gerador_pdf = GeradorPdfFake()
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+            ),
+            ajustador,
+            gerador_pdf,
+            avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga(20)),
+        )
+        input_dto = AdaptarCurriculoParaVagaInputDto(
+            pdf_curriculo=b"pdf",
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            cargo_alvo="Cargo",
+            empresa_alvo="Empresa",
+        )
+
+        resultado = caso_de_uso.executar(input_dto)
+
+        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.avaliacao_vaga.score == 20
+        assert len(ajustador.chamadas) == 4
+
+    def test_jev_indisponivel_na_vaga_prossegue_parcialmente(self):
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+            ),
+            AjustadorTextoFake(),
+            GeradorPdfFake(),
+            avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(
+                _avaliacao_vaga(), erro=RuntimeError("Jev indisponível")
+            ),
+        )
+        input_dto = AdaptarCurriculoParaVagaInputDto(
+            pdf_curriculo=b"pdf",
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            cargo_alvo="Cargo",
+            empresa_alvo="Empresa",
+        )
+
+        resultado = caso_de_uso.executar(input_dto)
+
+        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.avaliacao_vaga is None
+        assert resultado.status_avaliacao_vaga == StatusAvaliacaoAutomatica.INDISPONIVEL
+
+    def test_experiencias_sao_adaptadas_e_avaliadas_individualmente(self):
+        ajustador_texto = AjustadorTextoFake()
+        ajustador_experiencia = AjustadorExperienciaFake()
+        avaliador_experiencia = AvaliadorExperienciaFake(_avaliacao_experiencia())
+        gerador_pdf = GeradorPdfFake()
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+            ),
+            ajustador_texto,
+            gerador_pdf,
+            avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga()),
+            ajustador_experiencia=ajustador_experiencia,
+            avaliador_experiencia=avaliador_experiencia,
+        )
+
+        resultado = caso_de_uso.executar(_input_estruturado())
+
+        assert TipoSecao.EXPERIENCIAS not in [
+            chamada[0] for chamada in ajustador_texto.chamadas
+        ]
+        assert ajustador_experiencia.recebidas == list(_experiencias_exemplo())
+        assert len(avaliador_experiencia.recebidas) == 2
+        assert all(
+            experiencia.descricao.startswith("[AJUSTADA]")
+            for experiencia in avaliador_experiencia.recebidas
+        )
+
+        assert len(resultado.avaliacoes_experiencias) == 2
+        original = _experiencias_exemplo()
+        for resultado_experiencia, esperada in zip(
+            resultado.avaliacoes_experiencias, original
+        ):
+            assert resultado_experiencia.status == StatusAvaliacaoAutomatica.AVALIADA
+            assert resultado_experiencia.avaliacao.score == 75
+            assert resultado_experiencia.experiencia.cargo == esperada.cargo
+            assert resultado_experiencia.experiencia.empresa == esperada.empresa
+            assert resultado_experiencia.experiencia.periodo == esperada.periodo
+
+        secao = gerador_pdf.curriculo_recebido.obter_secao(TipoSecao.EXPERIENCIAS)
+        assert secao.titulo == "Experiências"
+        assert "Engenheira de Software — Starian (2021-2024)" in secao.conteudo
+        assert "Desenvolvedora Backend — TechCorp (2019-2021)" in secao.conteudo
+        assert "[AJUSTADA] Desenvolvi APIs em Python." in secao.conteudo
+        assert "[AJUSTADA] Mantive serviços em Go." in secao.conteudo
+
+    def test_jev_indisponivel_nas_experiencias_marca_cada_resultado(self):
+        avaliador_experiencia = AvaliadorExperienciaFake(
+            _avaliacao_experiencia(), erro=RuntimeError("Jev indisponível")
+        )
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+            ),
+            AjustadorTextoFake(),
+            GeradorPdfFake(),
+            avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga()),
+            ajustador_experiencia=AjustadorExperienciaFake(),
+            avaliador_experiencia=avaliador_experiencia,
+        )
+
+        resultado = caso_de_uso.executar(_input_estruturado())
+
+        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert len(resultado.avaliacoes_experiencias) == 2
+        assert all(
+            item.status == StatusAvaliacaoAutomatica.INDISPONIVEL
+            for item in resultado.avaliacoes_experiencias
+        )
+        assert all(
+            item.avaliacao is None for item in resultado.avaliacoes_experiencias
+        )
+
+    def test_fluxo_pdf_avalia_vaga_mas_nao_experiencias(self):
+        avaliador_experiencia = AvaliadorExperienciaFake(_avaliacao_experiencia())
+        ajustador_texto = AjustadorTextoFake()
+        caso_de_uso = AdaptarCurriculoParaVaga(
+            ExtratorFake(_curriculo_exemplo()),
+            JobDescriptionAnalyzerFake(
+                AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
+            ),
+            ajustador_texto,
+            GeradorPdfFake(),
+            avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga()),
+            ajustador_experiencia=AjustadorExperienciaFake(),
+            avaliador_experiencia=avaliador_experiencia,
+        )
+        input_dto = AdaptarCurriculoParaVagaInputDto(
+            pdf_curriculo=b"pdf",
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            cargo_alvo="Cargo",
+            empresa_alvo="Empresa",
+        )
+
+        resultado = caso_de_uso.executar(input_dto)
+
+        assert resultado.status_avaliacao_vaga == StatusAvaliacaoAutomatica.AVALIADA
+        assert resultado.avaliacoes_experiencias == ()
+        assert avaliador_experiencia.recebidas == []
+        assert len(ajustador_texto.chamadas) == 4

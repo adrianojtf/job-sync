@@ -5,16 +5,49 @@ from __future__ import annotations
 from fastapi import APIRouter, Request, Response, status
 
 from jobsync.entrypoints.api.dependencies import (
+    ServiceAvaliarDescricaoVagaDep,
     ServiceCapturarVagaDep,
     ServiceListarVagasCapturadasDep,
 )
+from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.entrypoints.api.schemas.vaga import (
+    AvaliacaoDescricaoVagaResponse,
+    AvaliarDescricaoVagaRequest,
     VagaCapturarRequest,
     VagaResponse,
     VagasListagemResponse,
 )
 
 router = APIRouter(tags=["vagas"])
+
+
+@router.post(
+    "/vagas/avaliacoes",
+    response_model=AvaliacaoDescricaoVagaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Avaliar descrição de vaga",
+    description=(
+        "Avalia completude, clareza, relevância e linguagem inclusiva. "
+        "A operação não persiste o texto nem bloqueia outros fluxos."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Texto da descrição ausente ou inválido.",
+        },
+        status.HTTP_502_BAD_GATEWAY: {
+            "model": ProblemaResponse,
+            "description": "O provedor de avaliação está indisponível.",
+        },
+    },
+)
+def avaliar_descricao_vaga(
+    body: AvaliarDescricaoVagaRequest,
+    service: ServiceAvaliarDescricaoVagaDep,
+) -> AvaliacaoDescricaoVagaResponse:
+    """Retorna score e categorias estruturadas para uma descrição de vaga."""
+    avaliacao = service.executar(body.to_dto())
+    return AvaliacaoDescricaoVagaResponse.from_domain(avaliacao)
 
 
 @router.get(

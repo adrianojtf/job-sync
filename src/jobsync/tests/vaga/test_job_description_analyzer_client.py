@@ -8,7 +8,7 @@ from jobsync.vaga import (
 from jobsync.vaga.adapters import JobDescriptionAnalyzerClient
 
 
-class ClienteGroqFake:
+class ClienteOpenAIFake:
     def __init__(self, resposta):
         self.resposta = resposta
         self.prompt_usuario: str | None = None
@@ -25,7 +25,7 @@ def test_job_description_analyzer_client_extrai_requisitos_explicitos_e_implicit
         "Vaga para desenvolvedor backend com Python e experiência em desenvolvimento web. "
         "Desejável conhecimento em bancos de dados relacionais e interesse em metodologias ágeis."
     )
-    cliente_fake = ClienteGroqFake(
+    cliente_fake = ClienteOpenAIFake(
         resposta={
             "requisitos": [
                 {
@@ -46,7 +46,7 @@ def test_job_description_analyzer_client_extrai_requisitos_explicitos_e_implicit
             ],
         }
     )
-    analisador = JobDescriptionAnalyzerClient(cliente_groq=cliente_fake)
+    analisador = JobDescriptionAnalyzerClient(cliente_openai=cliente_fake)
 
     analise = analisador.analisar(descricao_vaga)
 
@@ -71,12 +71,12 @@ def test_job_description_analyzer_client_extrai_requisitos_explicitos_e_implicit
 
 
 def test_job_description_analyzer_client_relanca_excecao_clara_quando_resposta_json_invalida() -> None:
-    cliente_fake = ClienteGroqFake(ValueError("Resposta do modelo não é um JSON válido"))
-    analisador = JobDescriptionAnalyzerClient(cliente_groq=cliente_fake)
+    cliente_fake = ClienteOpenAIFake(ValueError("Resposta do modelo não é um JSON válido"))
+    analisador = JobDescriptionAnalyzerClient(cliente_openai=cliente_fake)
 
     try:
         analisador.analisar("Vaga para desenvolvedor Python.")
         assert False, "Esperava ValueError para resposta JSON inválida"
     except ValueError as erro:
-        assert "Falha ao parsear a resposta do Groq" in str(erro)
+        assert "Falha ao parsear a resposta da OpenAI" in str(erro)
         assert "Resposta do modelo não é um JSON válido" in str(erro)

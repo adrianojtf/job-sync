@@ -20,10 +20,10 @@ from jobsync.vaga_externa.domain.vaga_externa import VagaComScore, VagaExterna
 logger = logging.getLogger(__name__)
 
 LIMITE_VAGAS_ANALISADAS = 20
-"""Cada vaga analisada custa uma chamada à API Groq (JobDescriptionAnalyzerPort).
+"""Cada vaga analisada custa uma chamada à API OpenAI (JobDescriptionAnalyzerPort).
 
 Fontes como RemoteOK e Arbeitnow podem devolver 100+ resultados por termo —
-sem limite, uma única busca esgota a cota diária de tokens da conta Groq.
+sem limite, uma única busca esgota a cota diária de tokens da conta OpenAI.
 """
 
 

@@ -4,13 +4,23 @@ from __future__ import annotations
 
 import base64
 from datetime import date, datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from jobsync.curriculo import Curriculo
+from jobsync.curriculo import (
+    AvaliacaoExperiencia,
+    Curriculo,
+    ExperienciaParaAvaliacao,
+)
+from jobsync.curriculo.service_layer.avaliar_experiencia.dtos import (
+    AvaliarExperienciaInputDto,
+)
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
+    AvaliacaoExperienciaAdaptadaDto,
     AdaptarCurriculoParaVagaInputDto,
     AdaptarCurriculoParaVagaOutputDto,
+    StatusAvaliacaoAutomatica,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga.dtos import (
     AnalisarAtsVagaInputDto,
@@ -20,6 +30,10 @@ from jobsync.curriculo_salvo import CurriculoSalvo
 from jobsync.curriculo_salvo.service_layer.salvar_curriculo.dtos import (
     SalvarCurriculoInputDto,
 )
+from jobsync.entrypoints.api.schemas.avaliacao import (
+    ResultadoDimensaoAvaliacaoResponse,
+)
+from jobsync.entrypoints.api.schemas.vaga import AvaliacaoDescricaoVagaResponse
 
 
 class CurriculoSalvarRequest(BaseModel):
@@ -127,7 +141,11 @@ class AdaptarCurriculoRequest(BaseModel):
         description="Data de referência para composição do nome do arquivo.",
     )
 
-    def to_dto(self, curriculo_pre_montado=None) -> AdaptarCurriculoParaVagaInputDto:
+    def to_dto(
+        self,
+        curriculo_pre_montado=None,
+        experiencias_profissionais: tuple[ExperienciaParaAvaliacao, ...] | None = None,
+    ) -> AdaptarCurriculoParaVagaInputDto:
         if curriculo_pre_montado is not None:
             pdf_curriculo = None
         elif self.pdf_base64:
@@ -142,6 +160,114 @@ class AdaptarCurriculoRequest(BaseModel):
             pdf_curriculo=pdf_curriculo,
             curriculo_pre_montado=curriculo_pre_montado,
             data_referencia=self.data_referencia,
+            experiencias_profissionais=experiencias_profissionais,
+        )
+
+
+class AvaliacaoExperienciaResponse(BaseModel):
+    """Score geral e resultados categóricos de uma experiência."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "score": 74,
+                "clareza_escrita": {"score": 80, "nivel": "clara", "confianca": 0.84},
+                "qualidade_detalhe": {"score": 75, "nivel": "detalhada", "confianca": 0.79},
+                "aderencia_vaga": {"score": 70, "nivel": "boa aderencia", "confianca": 0.81},
+                "consistencia_textual": {
+                    "score": 70,
+                    "nivel": "consistente",
+                    "confianca": 0.73,
+                },
+            }
+        }
+    )
+
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Média aritmética das quatro dimensões, normalizada de 0 a 100.",
+        examples=[74],
+    )
+    clareza_escrita: ResultadoDimensaoAvaliacaoResponse = Field(
+        description="Avaliação da clareza, organização e legibilidade."
+    )
+    qualidade_detalhe: ResultadoDimensaoAvaliacaoResponse = Field(
+        description="Avaliação do nível de detalhe das responsabilidades e resultados descritos."
+    )
+    aderencia_vaga: ResultadoDimensaoAvaliacaoResponse = Field(
+        description="Avaliação da relevância para a vaga-alvo."
+    )
+    consistencia_textual: ResultadoDimensaoAvaliacaoResponse = Field(
+        description="Avaliação da coerência e sustentação das afirmações pelo próprio texto."
+    )
+
+    @classmethod
+    def from_domain(
+        cls,
+        avaliacao: AvaliacaoExperiencia,
+    ) -> "AvaliacaoExperienciaResponse":
+        return cls(
+            score=avaliacao.score,
+            clareza_escrita=ResultadoDimensaoAvaliacaoResponse.from_domain(
+                avaliacao.clareza_escrita
+            ),
+            qualidade_detalhe=ResultadoDimensaoAvaliacaoResponse.from_domain(
+                avaliacao.qualidade_detalhe
+            ),
+            aderencia_vaga=ResultadoDimensaoAvaliacaoResponse.from_domain(
+                avaliacao.aderencia_vaga
+            ),
+            consistencia_textual=ResultadoDimensaoAvaliacaoResponse.from_domain(
+                avaliacao.consistencia_textual
+            ),
+        )
+
+
+class ExperienciaParaAvaliacaoResponse(BaseModel):
+    """Experiência adaptada associada a um resultado Jev."""
+
+    cargo: str = Field(description="Cargo original da experiência.")
+    empresa: str = Field(description="Empresa original da experiência.")
+    periodo: str = Field(description="Período original da experiência.")
+    descricao: str = Field(description="Descrição da experiência após adaptação.")
+
+    @classmethod
+    def from_domain(cls, dto: ExperienciaParaAvaliacao) -> "ExperienciaParaAvaliacaoResponse":
+        return cls(
+            cargo=dto.cargo,
+            empresa=dto.empresa,
+            periodo=dto.periodo,
+            descricao=dto.descricao,
+        )
+
+
+class AvaliacaoExperienciaAdaptadaResponse(BaseModel):
+    """Status e resultado opcional de avaliação de uma experiência adaptada."""
+
+    experiencia: ExperienciaParaAvaliacaoResponse = Field(
+        description="Experiência individual à qual o resultado se refere."
+    )
+    status: Literal["avaliada", "indisponivel"] = Field(
+        description="Indica se a avaliação Jev foi concluída.",
+        examples=["avaliada"],
+    )
+    avaliacao: AvaliacaoExperienciaResponse | None = Field(
+        description="Resultado Jev; nulo quando o provedor esteve indisponível.",
+    )
+
+    @classmethod
+    def from_dto(
+        cls, dto: AvaliacaoExperienciaAdaptadaDto
+    ) -> "AvaliacaoExperienciaAdaptadaResponse":
+        return cls(
+            experiencia=ExperienciaParaAvaliacaoResponse.from_domain(dto.experiencia),
+            status=dto.status.value,
+            avaliacao=(
+                AvaliacaoExperienciaResponse.from_domain(dto.avaliacao)
+                if dto.avaliacao is not None
+                else None
+            ),
         )
 
 
@@ -151,6 +277,18 @@ class AdaptarCurriculoResponse(BaseModel):
     nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
     pdf_base64: str = Field(description="PDF do currículo adaptado codificado em base64.")
     nome_completo: str = Field(description="Nome completo do candidato extraído do currículo.")
+    avaliacao_vaga: AvaliacaoDescricaoVagaResponse | None = Field(
+        default=None,
+        description="Avaliação automática da vaga; nula se o Jev estiver indisponível.",
+    )
+    status_avaliacao_vaga: Literal["avaliada", "indisponivel"] | None = Field(
+        default=None,
+        description="Status da avaliação automática da descrição de vaga.",
+    )
+    avaliacoes_experiencias: list[AvaliacaoExperienciaAdaptadaResponse] = Field(
+        default_factory=list,
+        description="Avaliação Jev de cada experiência de um perfil estruturado.",
+    )
 
     @classmethod
     def from_dto(cls, dto: AdaptarCurriculoParaVagaOutputDto) -> AdaptarCurriculoResponse:
@@ -158,6 +296,20 @@ class AdaptarCurriculoResponse(BaseModel):
             nome_arquivo=dto.nome_arquivo.valor,
             pdf_base64=base64.b64encode(dto.pdf_bytes).decode(),
             nome_completo=dto.curriculo_adaptado.nome_completo,
+            avaliacao_vaga=(
+                AvaliacaoDescricaoVagaResponse.from_domain(dto.avaliacao_vaga)
+                if dto.avaliacao_vaga is not None
+                else None
+            ),
+            status_avaliacao_vaga=(
+                dto.status_avaliacao_vaga.value
+                if dto.status_avaliacao_vaga is not None
+                else None
+            ),
+            avaliacoes_experiencias=[
+                AvaliacaoExperienciaAdaptadaResponse.from_dto(resultado)
+                for resultado in dto.avaliacoes_experiencias
+            ],
         )
 
 
@@ -243,4 +395,84 @@ class AnalisarAtsResponse(BaseModel):
                 for req in dto.resultado_ats.requisitos_faltantes
             ],
             sugestoes=list(dto.sugestoes),
+        )
+
+
+class ExperienciaParaAvaliacaoRequest(BaseModel):
+    """Dados de uma experiência profissional para avaliação sob demanda."""
+
+    cargo: str = Field(
+        default="",
+        description="Cargo associado à experiência, quando disponível.",
+        examples=["Pessoa desenvolvedora backend"],
+    )
+    empresa: str = Field(
+        default="",
+        description="Empresa associada à experiência, quando disponível.",
+        examples=["TechCorp"],
+    )
+    periodo: str = Field(
+        default="",
+        description="Período da experiência, quando disponível.",
+        examples=["2022-2025"],
+    )
+    descricao: str = Field(
+        min_length=1,
+        description="Texto individual da experiência profissional.",
+        examples=["Desenvolvi APIs internas e reduzi o tempo de processamento."],
+    )
+
+    @field_validator("descricao")
+    @classmethod
+    def validar_descricao_nao_vazia(cls, valor: str) -> str:
+        if not valor.strip():
+            raise ValueError("O texto da experiência profissional é obrigatório.")
+        return valor
+
+    def to_domain(self) -> ExperienciaParaAvaliacao:
+        return ExperienciaParaAvaliacao(
+            descricao=self.descricao,
+            cargo=self.cargo,
+            empresa=self.empresa,
+            periodo=self.periodo,
+        )
+
+
+class AvaliarExperienciaRequest(BaseModel):
+    """Payload para avaliar uma experiência em relação a uma vaga-alvo."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "experiencia": {
+                    "cargo": "Pessoa desenvolvedora backend",
+                    "empresa": "TechCorp",
+                    "periodo": "2022-2025",
+                    "descricao": "Desenvolvi APIs internas e reduzi o tempo de processamento.",
+                },
+                "descricao_vaga": "Vaga para pessoa desenvolvedora Python com FastAPI.",
+            }
+        }
+    )
+
+    experiencia: ExperienciaParaAvaliacaoRequest = Field(
+        description="Experiência profissional individual a ser avaliada."
+    )
+    descricao_vaga: str = Field(
+        min_length=1,
+        description="Descrição da vaga usada como contexto para avaliar aderência.",
+        examples=["Vaga para pessoa desenvolvedora Python com FastAPI."],
+    )
+
+    @field_validator("descricao_vaga")
+    @classmethod
+    def validar_vaga_nao_vazia(cls, valor: str) -> str:
+        if not valor.strip():
+            raise ValueError("A descrição da vaga-alvo é obrigatória.")
+        return valor
+
+    def to_dto(self) -> AvaliarExperienciaInputDto:
+        return AvaliarExperienciaInputDto(
+            experiencia=self.experiencia.to_domain(),
+            descricao_vaga=self.descricao_vaga,
         )

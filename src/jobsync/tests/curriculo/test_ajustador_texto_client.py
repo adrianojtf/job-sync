@@ -12,7 +12,7 @@ from jobsync.curriculo import SecaoCurriculo, TipoSecao
 from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClient
 
 
-class ClienteGroqFake:
+class ClienteOpenAIFake:
     def __init__(self, resposta):
         self.resposta = resposta
         self.prompt_usuario: str | None = None
@@ -22,9 +22,9 @@ class ClienteGroqFake:
         return self.resposta
 
 
-def test_ajustador_texto_groq_usa_analise_vaga_estruturada_no_prompt() -> None:
-    cliente_fake = ClienteGroqFake({"conteudo_ajustado": "Conteúdo ajustado"})
-    ajustador = AjustadorTextoClient(cliente_groq=cliente_fake)
+def test_ajustador_texto_openai_usa_analise_vaga_estruturada_no_prompt() -> None:
+    cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": "Conteúdo ajustado"})
+    ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
 
     analise_vaga = AnaliseVaga(
         requisitos=(
@@ -62,10 +62,10 @@ def test_ajustador_texto_groq_usa_analise_vaga_estruturada_no_prompt() -> None:
     assert "não infira frameworks, ferramentas ou habilidades" in prompt_text
 
 
-def test_ajustador_texto_groq_resposta_estruturada_em_dict_nao_quebra() -> None:
+def test_ajustador_texto_openai_resposta_estruturada_em_dict_nao_quebra() -> None:
     """Regressão: o modelo às vezes devolve um objeto em vez de texto puro no campo 'conteudo_ajustado'."""
-    cliente_fake = ClienteGroqFake({"conteudo_ajustado": {"bullet_1": "Python", "bullet_2": "Django"}})
-    ajustador = AjustadorTextoClient(cliente_groq=cliente_fake)
+    cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": {"bullet_1": "Python", "bullet_2": "Django"}})
+    ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
 
     analise_vaga = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
     secao = SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Python, Django")

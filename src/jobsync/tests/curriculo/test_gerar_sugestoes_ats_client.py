@@ -14,7 +14,7 @@ from jobsync.vaga import (
 from jobsync.curriculo.adapters.gerar_sugestoes_ats_client import GerarSugestoesAtsClient
 
 
-class ClienteGroqFake:
+class ClienteOpenAIFake:
     def __init__(self, resposta):
         self.resposta = resposta
         self.prompt_usuario: str | None = None
@@ -44,10 +44,10 @@ def _requisito(nome: str) -> RequisitoTecnico:
     )
 
 
-class TestGeradorSugestoesAtsGroq:
+class TestGerarSugestoesAtsClient:
     def test_sem_requisitos_faltantes_nao_chama_a_ia(self):
-        cliente_fake = ClienteGroqFake({"sugestoes": ["não deveria ser usado"]})
-        gerador = GerarSugestoesAtsClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"sugestoes": ["não deveria ser usado"]})
+        gerador = GerarSugestoesAtsClient(cliente_openai=cliente_fake)
         analise = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
         resultado_ats = ResultadoAtsScore(nota=100, requisitos_faltantes=())
 
@@ -58,7 +58,7 @@ class TestGeradorSugestoesAtsGroq:
         assert "Nenhuma mudança necessária" in sugestoes[0]
 
     def test_com_requisitos_faltantes_retorna_um_topico_por_item_da_lista(self):
-        cliente_fake = ClienteGroqFake(
+        cliente_fake = ClienteOpenAIFake(
             {
                 "sugestoes": [
                     "Kubernetes: adicione na seção de Tecnologias.",
@@ -66,7 +66,7 @@ class TestGeradorSugestoesAtsGroq:
                 ]
             }
         )
-        gerador = GerarSugestoesAtsClient(cliente_groq=cliente_fake)
+        gerador = GerarSugestoesAtsClient(cliente_openai=cliente_fake)
         analise = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga que exige Kubernetes e AWS")
         resultado_ats = ResultadoAtsScore(
             nota=50, requisitos_faltantes=(_requisito("Kubernetes"), _requisito("AWS"))
@@ -82,8 +82,8 @@ class TestGeradorSugestoesAtsGroq:
         assert "docker" in cliente_fake.prompt_usuario.lower()
 
     def test_resposta_vazia_do_modelo_gera_erro(self):
-        cliente_fake = ClienteGroqFake({"sugestoes": []})
-        gerador = GerarSugestoesAtsClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"sugestoes": []})
+        gerador = GerarSugestoesAtsClient(cliente_openai=cliente_fake)
         analise = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
         resultado_ats = ResultadoAtsScore(nota=50, requisitos_faltantes=(_requisito("Kubernetes"),))
 
@@ -92,8 +92,8 @@ class TestGeradorSugestoesAtsGroq:
 
     def test_resposta_como_texto_unico_e_aceita_como_um_topico(self):
         """Tolerância: se o modelo devolver uma string única em vez de lista, vira um tópico só."""
-        cliente_fake = ClienteGroqFake({"sugestoes": "Adicione Kubernetes na seção de Tecnologias."})
-        gerador = GerarSugestoesAtsClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"sugestoes": "Adicione Kubernetes na seção de Tecnologias."})
+        gerador = GerarSugestoesAtsClient(cliente_openai=cliente_fake)
         analise = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
         resultado_ats = ResultadoAtsScore(nota=50, requisitos_faltantes=(_requisito("Kubernetes"),))
 
@@ -103,10 +103,10 @@ class TestGeradorSugestoesAtsGroq:
 
     def test_resposta_estruturada_em_dict_nao_quebra(self):
         """Regressão: o modelo às vezes devolve um objeto em vez de lista no campo 'sugestoes'."""
-        cliente_fake = ClienteGroqFake(
+        cliente_fake = ClienteOpenAIFake(
             {"sugestoes": {"Kubernetes": "Considere mencionar experiência com orquestração de containers."}}
         )
-        gerador = GerarSugestoesAtsClient(cliente_groq=cliente_fake)
+        gerador = GerarSugestoesAtsClient(cliente_openai=cliente_fake)
         analise = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
         resultado_ats = ResultadoAtsScore(nota=50, requisitos_faltantes=(_requisito("Kubernetes"),))
 

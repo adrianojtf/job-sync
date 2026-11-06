@@ -3,10 +3,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from enum import Enum
 
-from jobsync.curriculo import Curriculo
+from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaParaAvaliacao
 from jobsync.shared_kernel.domain import NomeArquivo
-from jobsync.vaga import AnaliseVaga
+from jobsync.vaga import AnaliseVaga, AvaliacaoDescricaoVaga
+
+
+class StatusAvaliacaoAutomatica(str, Enum):
+    AVALIADA = "avaliada"
+    INDISPONIVEL = "indisponivel"
+
+
+@dataclass(frozen=True)
+class AvaliacaoExperienciaAdaptadaDto:
+    experiencia: ExperienciaParaAvaliacao
+    status: StatusAvaliacaoAutomatica
+    avaliacao: AvaliacaoExperiencia | None
 
 
 @dataclass(frozen=True)
@@ -24,6 +37,7 @@ class AdaptarCurriculoParaVagaInputDto:
     pdf_curriculo: bytes | None = None
     curriculo_pre_montado: Curriculo | None = None
     data_referencia: date | None = None
+    experiencias_profissionais: tuple[ExperienciaParaAvaliacao, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -39,3 +53,6 @@ class AdaptarCurriculoParaVagaOutputDto:
     nome_arquivo: NomeArquivo
     curriculo_adaptado: Curriculo
     analise_vaga: AnaliseVaga
+    avaliacao_vaga: AvaliacaoDescricaoVaga | None = None
+    status_avaliacao_vaga: StatusAvaliacaoAutomatica | None = None
+    avaliacoes_experiencias: tuple[AvaliacaoExperienciaAdaptadaDto, ...] = ()

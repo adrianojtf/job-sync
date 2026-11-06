@@ -2,8 +2,12 @@
 
 from jobsync.curriculo.domain import (
     AjustadorTextoPort,
+    AjustadorExperienciaPort,
+    AvaliacaoExperiencia,
+    AvaliadorExperienciaPort,
     Curriculo,
     ExtratorCurriculoPort,
+    ExperienciaParaAvaliacao,
     GeradorPdfPort,
     GerarCartaApresentacaoPort,
     GerarSugestoesAtsPort,
@@ -13,8 +17,12 @@ from jobsync.curriculo.domain import (
 
 __all__ = [
     "AjustadorTextoPort",
+    "AjustadorExperienciaPort",
+    "AvaliacaoExperiencia",
+    "AvaliadorExperienciaPort",
     "Curriculo",
     "ExtratorCurriculoPort",
+    "ExperienciaParaAvaliacao",
     "GeradorPdfPort",
     "GerarCartaApresentacaoPort",
     "GerarSugestoesAtsPort",

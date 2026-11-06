@@ -1,6 +1,6 @@
 """Adapter (implementa GerarCartaApresentacaoPort) que gera a carta de apresentação via IA.
 
-Reaproveita o mesmo padrão de prompt estruturado já usado em AjustadorTextoGroq:
+Reaproveita o mesmo padrão de prompt estruturado já usado em AjustadorTextoClient:
 inclui a análise de vaga (requisitos explícitos/implícitos) e o currículo,
 sem jamais inventar fatos que não constem no currículo original.
 """
@@ -9,7 +9,7 @@ from __future__ import annotations
 from jobsync.curriculo import Curriculo
 from jobsync.curriculo.domain.gerar_carta_apresentacao_port import GerarCartaApresentacaoPort
 from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
-from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 _NOME_IDIOMA = {"pt": "português do Brasil", "en": "inglês (formato americano)"}
 
@@ -24,10 +24,10 @@ Responda ESTRITAMENTE em JSON no formato:
 
 
 class GerarCartaApresentacaoClient(GerarCartaApresentacaoPort):
-    """Gera o texto da carta de apresentação usando o modelo Groq."""
+    """Gera o texto da carta de apresentação usando GPT-6 Luna."""
 
-    def __init__(self, cliente_groq: ClienteGroq | None = None) -> None:
-        self._cliente_groq = cliente_groq or ClienteGroq()
+    def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
+        self._cliente_openai = cliente_openai or ClienteOpenAI()
 
     def gerar(self, curriculo: Curriculo, analise_vaga: AnaliseVaga, idioma_alvo: str) -> str:
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
@@ -61,7 +61,7 @@ class GerarCartaApresentacaoClient(GerarCartaApresentacaoPort):
             "tecnologias ou resultados que não estejam listados."
         )
 
-        resposta = self._cliente_groq.solicitar_json(
+        resposta = self._cliente_openai.solicitar_json(
             prompt_sistema=_PROMPT_SISTEMA,
             prompt_usuario=prompt_usuario,
         )

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.curriculo import Curriculo
+from jobsync.curriculo import Curriculo, ExperienciaParaAvaliacao
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import (
     CurriculoSalvoNaoEncontrado,
 )
@@ -12,6 +12,7 @@ from jobsync.curriculo_salvo.service_layer.salvar_curriculo import SalvarCurricu
 from jobsync.entrypoints.api.dependencies import (
     ServiceAdaptarCurriculoDep,
     ServiceAnalisarAtsVagaDep,
+    ServiceAvaliarExperienciaDep,
     ServiceBuscarPerfilEstruturadoDep,
     ServiceGerarCartaApresentacaoDep,
     ServiceListarCurriculosSalvosDep,
@@ -21,6 +22,8 @@ from jobsync.entrypoints.api.dependencies import (
 from jobsync.entrypoints.api.schemas.curriculo import (
     AdaptarCurriculoRequest,
     AdaptarCurriculoResponse,
+    AvaliacaoExperienciaResponse,
+    AvaliarExperienciaRequest,
     AnalisarAtsRequest,
     AnalisarAtsResponse,
     CartaApresentacaoResponse,
@@ -30,6 +33,8 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     CurriculosListagemResponse,
     GerarCartaApresentacaoRequest,
 )
+from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
+from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
 from jobsync.perfil_estruturado.domain.montar_curriculo_do_perfil_estruturado_service import (
     MontarCurriculoDoPerfilEstruturado,
 )
@@ -38,6 +43,35 @@ from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service 
 )
 
 router = APIRouter(tags=["currículos"])
+
+
+@router.post(
+    "/experiencias-profissionais/avaliacoes",
+    response_model=AvaliacaoExperienciaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Avaliar experiência profissional",
+    description=(
+        "Avalia uma experiência em relação a uma vaga-alvo. "
+        "O texto e o resultado não são persistidos nem alterados."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Experiência ou descrição da vaga ausente ou inválida.",
+        },
+        status.HTTP_502_BAD_GATEWAY: {
+            "model": ProblemaResponse,
+            "description": "O provedor de avaliação está indisponível.",
+        },
+    },
+)
+def avaliar_experiencia(
+    body: AvaliarExperienciaRequest,
+    service: ServiceAvaliarExperienciaDep,
+) -> AvaliacaoExperienciaResponse:
+    """Retorna score e categorias estruturadas para uma experiência profissional."""
+    avaliacao = service.executar(body.to_dto())
+    return AvaliacaoExperienciaResponse.from_domain(avaliacao)
 
 
 @router.post(
@@ -60,10 +94,10 @@ def salvar_curriculo(
     return CurriculoSalvoResponse.from_dto(salvo)
 
 
-def _curriculo_pre_montado(
+def _perfil_estruturado(
     perfil_identificador: str | None,
     buscar_perfil: BuscarPerfilEstruturado,
-) -> Curriculo | None:
+) -> PerfilEstruturado | None:
     if not perfil_identificador:
         return None
     perfil = buscar_perfil.executar(perfil_identificador)
@@ -72,6 +106,12 @@ def _curriculo_pre_montado(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Perfil estruturado não encontrado.",
         )
+    return perfil
+
+
+def _curriculo_pre_montado(perfil: PerfilEstruturado | None) -> Curriculo | None:
+    if perfil is None:
+        return None
     curriculo = MontarCurriculoDoPerfilEstruturado().executar(perfil)
     if curriculo is None:
         raise HTTPException(
@@ -79,6 +119,22 @@ def _curriculo_pre_montado(
             detail="Perfil estruturado não possui conteúdo suficiente.",
         )
     return curriculo
+
+
+def _experiencias_do_perfil(
+    perfil: PerfilEstruturado | None,
+) -> tuple[ExperienciaParaAvaliacao, ...] | None:
+    if perfil is None or not perfil.experiencias:
+        return None
+    return tuple(
+        ExperienciaParaAvaliacao(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            descricao=experiencia.descricao,
+        )
+        for experiencia in perfil.experiencias
+    )
 
 
 @router.get(
@@ -179,9 +235,8 @@ def gerar_carta_apresentacao(
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
 ) -> CartaApresentacaoResponse:
     """Gera uma carta de apresentação personalizada para a vaga."""
-    curriculo_pre_montado = _curriculo_pre_montado(
-        body.perfil_identificador, buscar_perfil
-    )
+    perfil = _perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = _curriculo_pre_montado(perfil)
     try:
         output = adaptar.executar(
             body.to_dto(curriculo_pre_montado=curriculo_pre_montado)
@@ -212,12 +267,14 @@ def adaptar_curriculo(
     download: bool = False,
 ) -> AdaptarCurriculoResponse | Response:
     """Adapta o currículo à descrição da vaga informada."""
-    curriculo_pre_montado = _curriculo_pre_montado(
-        body.perfil_identificador, buscar_perfil
-    )
+    perfil = _perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = _curriculo_pre_montado(perfil)
     try:
         output = service.executar(
-            body.to_dto(curriculo_pre_montado=curriculo_pre_montado)
+            body.to_dto(
+                curriculo_pre_montado=curriculo_pre_montado,
+                experiencias_profissionais=_experiencias_do_perfil(perfil),
+            )
         )
     except ValueError as erro:
         raise HTTPException(
@@ -249,9 +306,8 @@ def analisar_ats(
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
 ) -> AnalisarAtsResponse:
     """Retorna nota, requisitos faltantes e sugestões de melhoria ATS."""
-    curriculo_pre_montado = _curriculo_pre_montado(
-        body.perfil_identificador, buscar_perfil
-    )
+    perfil = _perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = _curriculo_pre_montado(perfil)
     try:
         output = service.executar(
             body.to_dto(curriculo_pre_montado=curriculo_pre_montado)

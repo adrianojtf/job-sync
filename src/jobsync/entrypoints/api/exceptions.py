@@ -9,6 +9,13 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import JSONResponse
 
+from jobsync.vaga.service_layer.avaliar_descricao_vaga.exceptions import (
+    AvaliacaoDescricaoVagaIndisponivel,
+)
+from jobsync.curriculo.service_layer.avaliar_experiencia.exceptions import (
+    AvaliacaoExperienciaIndisponivel,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +40,30 @@ def _problem_response(
 
 def adicionar_handlers_excecao(app: FastAPI) -> None:
     """Registra handlers globais de exceção no app FastAPI."""
+
+    @app.exception_handler(AvaliacaoDescricaoVagaIndisponivel)
+    async def _avaliacao_descricao_vaga_indisponivel_handler(
+        request: Request, exc: AvaliacaoDescricaoVagaIndisponivel
+    ) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            title="Avaliação de vaga indisponível",
+            detail=str(exc),
+            type_slug="avaliacao-vaga-indisponivel",
+        )
+
+    @app.exception_handler(AvaliacaoExperienciaIndisponivel)
+    async def _avaliacao_experiencia_indisponivel_handler(
+        request: Request, exc: AvaliacaoExperienciaIndisponivel
+    ) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            title="Avaliação de experiência indisponível",
+            detail=str(exc),
+            type_slug="avaliacao-experiencia-indisponivel",
+        )
 
     @app.exception_handler(HTTPException)
     async def _http_exception_handler(

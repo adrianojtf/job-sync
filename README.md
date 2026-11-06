@@ -19,7 +19,7 @@ src/                        Código fonte da aplicação
 
     shared_kernel/          Conceitos transversais compartilhados entre domínios
       domain/               Value Objects compartilhados (ex: NomeArquivo, CatalogoLocalizacao)
-      adapters/             Mecanismos técnicos compartilhados (ex: ClienteGroq, conexão SQLite)
+      adapters/             Mecanismos técnicos compartilhados (ex: ClienteOpenAI, ClienteJev, conexão SQLite)
 
     entrypoints/            Adapters de entrada da aplicação
       streamlit_app.py      Interface web (Streamlit)
@@ -45,7 +45,8 @@ seções ajustadas são remontadas e um novo PDF é gerado.
 ## Pré-requisitos
 
 - Python 3.10+
-- Uma chave gratuita da Groq: https://console.groq.com/keys
+- Uma chave da OpenAI: https://platform.openai.com/api-keys
+- Uma chave da TypeSafe AI (Jev) para as avaliações: https://docs.typesafe.ai/
 
 ## Instalação
 
@@ -66,7 +67,7 @@ pip install -r requirements.txt
 
 # 4. Copiar o arquivo de variáveis de ambiente
 cp .env.example .env
-# Edite o .env e substitua pela sua chave da Groq
+# Edite o .env e substitua pelas suas chaves da OpenAI e da TypeSafe AI
 ```
 
 > No macOS, veja também `README-macos.md` para instruções específicas.
@@ -77,10 +78,16 @@ Após copiar `.env.example` para `.env`, o arquivo mínimo fica assim:
 
 ```env
 # .env
-GROQ_API_KEY=sua_chave_aqui
+OPENAI_API_KEY=sua_chave_aqui
+OPENAI_MODEL=gpt-6-luna
+TYPESAFE_API_KEY=sua_chave_aqui
+TYPESAFE_MODEL=jev-1.14.0
 ```
 
-O valor é carregado em tempo de execução por `python-dotenv`; certifique-se de que o arquivo esteja na raiz do projeto e que a chave tenha sido gerada em <https://console.groq.com/keys>.
+Os valores são carregados em tempo de execução por `python-dotenv`; certifique-se de que o arquivo esteja na raiz do projeto.
+
+- `OPENAI_API_KEY` / `OPENAI_MODEL`: provedor de geração de texto (extração, adaptação de seções, carta de apresentação e sugestões ATS). O modelo padrão é `gpt-6-luna`.
+- `TYPESAFE_API_KEY` / `TYPESAFE_MODEL`: provedor de avaliações estruturadas (Jev). Sem essa chave, as avaliações automáticas ficam indisponíveis, mas a adaptação do currículo continua funcionando.
 
 ## Executando o MVP
 
@@ -114,6 +121,29 @@ PYTHONPATH=src uvicorn jobsync.entrypoints.api.main:app --reload --port 8000
 
 O backend fica disponível em `http://localhost:8000` e a documentação interativa
 em `http://localhost:8000/docs`.
+
+#### Endpoints de avaliação (Jev)
+
+Além dos recursos existentes, a API expõe avaliações estruturadas via Jev, com
+score geral de 0 a 100 e resultados por dimensão (score, nível e confiança):
+
+- `POST /v1/vagas/avaliacoes` — avalia a descrição da vaga nas dimensões
+  completude, clareza, relevância e inclusão. O texto não é persistido.
+- `POST /v1/experiencias-profissionais/avaliacoes` — avalia uma experiência
+  individual em relação a uma vaga-alvo nas dimensões clareza de escrita,
+  qualidade/detalhe, aderência à vaga e consistência textual. O texto não é
+  persistido nem alterado.
+
+`POST /v1/curriculos/{id}/adaptacoes` também executa a avaliação da vaga antes
+de adaptar e devolve os resultados em campos aditivos (`avaliacao_vaga`,
+`status_avaliacao_vaga`, `avaliacoes_experiencias`). Quando a entrada vem de um
+perfil estruturado, cada experiência é adaptada e avaliada individualmente;
+para entrada somente em PDF, não há avaliação automática individual das
+experiências. Um score baixo nunca bloqueia a adaptação e, se o Jev estiver
+indisponível, o fluxo prossegue e sinaliza as avaliações como `indisponivel`.
+
+Limitações: a dimensão `consistencia_textual` mede apenas coerência e
+sustentação interna do texto — não é verificação factual externa.
 
 ## Rodando os testes (TDD)
 
@@ -157,7 +187,7 @@ docker run -p 8000:8000 job-sync-backend
 O backend estará disponível em `http://localhost:8000`, com documentação
 interativa em `/docs` e health check em `/health`.
 
-Para passar a chave da Groq ou outras variáveis de ambiente:
+Para passar as chaves da OpenAI/TypeSafe ou outras variáveis de ambiente:
 
 ```bash
 cp .env.example .env
@@ -184,8 +214,8 @@ para download pela interface.
 
 ## Limitações conhecidas do MVP
 
-- Depende da API gratuita da Groq (requer internet e chave de API); não é
-  totalmente offline.
+- Depende das APIs da OpenAI e da TypeSafe AI (requer internet e chaves de
+  API); não é totalmente offline.
 - A segmentação de seções depende da qualidade da extração de texto do
   PDF original — currículos com layout muito incomum ou PDFs escaneados
   (imagem sem OCR) podem não ser segmentados corretamente.

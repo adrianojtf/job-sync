@@ -10,7 +10,7 @@
 - [x] 6.0 Componente SugestaoIA
 - [x] 7.0 Integração das sugestões na revisão
 - [x] 8.0 Integração das sugestões em Meu perfil
-- [ ] 9.0 E2E, acessibilidade e suíte completa
+- [x] 9.0 E2E, acessibilidade e suíte completa
 
 ## Dependências
 

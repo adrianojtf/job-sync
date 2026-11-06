@@ -66,6 +66,28 @@ test.describe("telas autenticadas", () => {
     expect(await violacoesGraves(page)).toEqual([]);
   });
 
+  test("revisão com a sugestão de IA aberta sem violações graves", async ({ page }) => {
+    await entrar(page, perfil);
+    await page.goto("/ajustar-vaga");
+    await page.getByLabel("Título da vaga").fill("Senior Python Engineer");
+    await page.getByLabel("Empresa").fill("Globex");
+    await page.getByLabel("Descrição da vaga").fill("Python, FastAPI e Kafka.");
+    await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+    await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
+    await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toBeVisible();
+
+    expect(await violacoesGraves(page)).toEqual([]);
+  });
+
+  test("Meu perfil com botões de sugestão sem violações graves", async ({ page }) => {
+    await entrar(page, perfil);
+    await page.goto("/perfil");
+    await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
+    await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toBeVisible();
+
+    expect(await violacoesGraves(page)).toEqual([]);
+  });
+
   test("modal Ajustar para uma vaga sem violações graves", async ({ page }) => {
     await entrar(page, perfil);
     await page.getByRole("button", { name: "Ajustar para uma vaga" }).click();

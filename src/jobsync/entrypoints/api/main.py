@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, status
 
 load_dotenv()
-from fastapi.middleware.cors import CORSMiddleware
-
+from jobsync.entrypoints.api.cors import configurar_cors, obter_origens_cors
 from jobsync.entrypoints.api.exceptions import adicionar_handlers_excecao
 from jobsync.entrypoints.api.routers import (
     candidatura_router,
@@ -13,6 +12,7 @@ from jobsync.entrypoints.api.routers import (
     health,
     perfil_estruturado_router,
     perfil_router,
+    token_captura_router,
     vaga_externa_router,
     vaga_router,
 )
@@ -23,13 +23,7 @@ app = FastAPI(
     description="API do hexágono de domínio do job-sync",
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+configurar_cors(app, obter_origens_cors())
 
 adicionar_handlers_excecao(app)
 
@@ -47,3 +41,4 @@ app.include_router(vaga_externa_router.router, prefix="/v1")
 app.include_router(candidatura_router.router, prefix="/v1")
 app.include_router(perfil_router.router, prefix="/v1")
 app.include_router(perfil_estruturado_router.router, prefix="/v1")
+app.include_router(token_captura_router.router, prefix="/v1")

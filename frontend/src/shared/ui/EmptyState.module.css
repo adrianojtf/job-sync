@@ -1,0 +1,14 @@
+.vazio {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--muted);
+}
+.titulo {
+  color: var(--ink);
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+.descricao {
+  margin: 0 auto 16px;
+  max-width: 420px;
+}

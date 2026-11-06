@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.curriculo import Curriculo, ExperienciaParaAvaliacao
+from jobsync.curriculo import ExperienciaParaAvaliacao
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import (
     CurriculoSalvoNaoEncontrado,
 )
 from jobsync.curriculo_salvo.service_layer.salvar_curriculo import SalvarCurriculo
+from jobsync.entrypoints.api.curriculo_pre_montado import (
+    buscar_perfil_estruturado,
+    montar_curriculo_pre_montado,
+)
 from jobsync.entrypoints.api.dependencies import (
     ServiceAdaptarCurriculoDep,
     ServiceAnalisarAtsVagaDep,
@@ -35,12 +39,6 @@ from jobsync.entrypoints.api.schemas.curriculo import (
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
-from jobsync.perfil_estruturado.domain.montar_curriculo_do_perfil_estruturado_service import (
-    MontarCurriculoDoPerfilEstruturado,
-)
-from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service import (
-    BuscarPerfilEstruturado,
-)
 
 router = APIRouter(tags=["currículos"])
 
@@ -88,37 +86,16 @@ def salvar_curriculo(
     request: Request,
 ) -> CurriculoSalvoResponse:
     """Salva um novo currículo na biblioteca do perfil informado."""
-    salvo = service.executar(body.to_dto())
+    try:
+        salvo = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
     location = f"{request.url.path}/{salvo.id}"
     response.headers["Location"] = location
     return CurriculoSalvoResponse.from_dto(salvo)
-
-
-def _perfil_estruturado(
-    perfil_identificador: str | None,
-    buscar_perfil: BuscarPerfilEstruturado,
-) -> PerfilEstruturado | None:
-    if not perfil_identificador:
-        return None
-    perfil = buscar_perfil.executar(perfil_identificador)
-    if perfil is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Perfil estruturado não encontrado.",
-        )
-    return perfil
-
-
-def _curriculo_pre_montado(perfil: PerfilEstruturado | None) -> Curriculo | None:
-    if perfil is None:
-        return None
-    curriculo = MontarCurriculoDoPerfilEstruturado().executar(perfil)
-    if curriculo is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Perfil estruturado não possui conteúdo suficiente.",
-        )
-    return curriculo
 
 
 def _experiencias_do_perfil(
@@ -235,8 +212,8 @@ def gerar_carta_apresentacao(
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
 ) -> CartaApresentacaoResponse:
     """Gera uma carta de apresentação personalizada para a vaga."""
-    perfil = _perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = _curriculo_pre_montado(perfil)
+    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
     try:
         output = adaptar.executar(
             body.to_dto(curriculo_pre_montado=curriculo_pre_montado)
@@ -267,8 +244,8 @@ def adaptar_curriculo(
     download: bool = False,
 ) -> AdaptarCurriculoResponse | Response:
     """Adapta o currículo à descrição da vaga informada."""
-    perfil = _perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = _curriculo_pre_montado(perfil)
+    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
     try:
         output = service.executar(
             body.to_dto(
@@ -306,8 +283,8 @@ def analisar_ats(
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
 ) -> AnalisarAtsResponse:
     """Retorna nota, requisitos faltantes e sugestões de melhoria ATS."""
-    perfil = _perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = _curriculo_pre_montado(perfil)
+    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
     try:
         output = service.executar(
             body.to_dto(curriculo_pre_montado=curriculo_pre_montado)

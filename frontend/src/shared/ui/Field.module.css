@@ -1,0 +1,39 @@
+.campo {
+  display: grid;
+  gap: 6px;
+  margin: 13px 0;
+}
+.rotulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.entrada {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--raio-sm);
+  padding: 11px 12px;
+  outline: none;
+  width: 100%;
+  background: var(--surface);
+}
+.entrada:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.entrada[aria-invalid="true"] {
+  border-color: var(--red);
+}
+textarea.entrada {
+  min-height: 95px;
+  resize: vertical;
+}
+.ajuda {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+.erro {
+  font-size: 12px;
+  color: var(--red);
+  margin: 0;
+}

@@ -1,0 +1,90 @@
+/*
+ * Tokens do design system, extraídos de sdd/prototipos/carreira_saas_prototipo.html.
+ * Ajustes de contraste (WCAG AA, texto pequeno >= 4,5:1): --muted, --green e --amber
+ * ficaram um pouco mais escuros que no protótipo.
+ */
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-subtle: #fafbfc;
+  --ink: #182230;
+  --ink-soft: #344054;
+  --muted: #667085;
+  --line: #e8ebef;
+  --line-strong: #dfe3e8;
+  --accent: #635bdb;
+  --accent-hover: #5149c5;
+  --accent-soft: #f0efff;
+  --accent-ring: #635bdb2e;
+  --green: #127a52;
+  --green-soft: #eaf7f0;
+  --amber: #8a5a0f;
+  --amber-soft: #fff5e4;
+  --red: #b42318;
+  --red-soft: #fef3f2;
+  --overlay: #17203366;
+  --shadow: 0 8px 28px rgba(24, 34, 48, 0.055);
+  --shadow-modal: 0 20px 70px #10182835;
+
+  --raio-sm: 8px;
+  --raio-md: 9px;
+  --raio-lg: 13px;
+  --raio-xl: 16px;
+
+  --fonte:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sidebar-largura: 248px;
+  --topbar-altura: 70px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.5 var(--fonte);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

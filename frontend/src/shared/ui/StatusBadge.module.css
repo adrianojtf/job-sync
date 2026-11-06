@@ -1,0 +1,27 @@
+.selo {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.sucesso {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.alerta {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.erro {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.destaque {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.neutro {
+  background: var(--bg);
+  color: var(--ink-soft);
+}

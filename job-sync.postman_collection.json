@@ -830,6 +830,84 @@
           }
         }
       ]
+    },
+    {
+      "name": "18 - Gerar token de captura",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"perfil_identificador\": \"{{perfil}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/tokens-captura",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "tokens-captura"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Token gerado para o perfil', () => { const j = pm.response.json(); pm.expect(j.token).to.be.a('string').and.not.empty; pm.expect(j.perfil_identificador).to.eql(pm.collectionVariables.get('perfil')); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 - Candidatar em vaga externa (IA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vaga\": {\n    \"titulo\": \"Backend Engineer\",\n    \"empresa\": \"Olist\",\n    \"descricao\": \"Vaga para Python, FastAPI e Kafka.\",\n    \"url\": \"https://example.com/vaga/1\",\n    \"fonte\": \"REMOTEOK\"\n  },\n  \"idioma_alvo\": \"pt\",\n  \"pdf_base64\": \"{{pdf_base64}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/v1/vagas/descobertas/candidaturas",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "vagas",
+            "descobertas",
+            "candidaturas"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Artefatos da candidatura', () => { const j = pm.response.json(); pm.expect(j.pdf_base64).to.be.a('string').and.not.empty; pm.expect(j.carta).to.be.a('string'); pm.expect(j.nota).to.be.within(0, 100); pm.expect(j.url_vaga).to.eql('https://example.com/vaga/1'); });"
+            ]
+          }
+        }
+      ]
     }
   ],
   "variable": [

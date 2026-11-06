@@ -38,7 +38,7 @@ test("primeiro acesso: entrar, ver a Visão geral vazia e salvar o currículo me
   ).toHaveAttribute("aria-valuenow", "43");
 });
 
-test("ajustar para uma vaga, baixar o PDF, criar a candidatura e mover no Kanban", async ({
+test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover no Kanban", async ({
   page,
 }) => {
   const perfil = novoPerfil("e2e-fluxo");
@@ -83,6 +83,12 @@ test("ajustar para uma vaga, baixar o PDF, criar a candidatura e mover no Kanban
     "85",
   );
   await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeHidden();
+  const revisada = page.getByRole("group", { name: "Experiência 1" });
+  await expect(revisada.getByLabel("Descrição")).toHaveValue("APIs em Python e FastAPI.");
+  await revisada.getByLabel("Descrição").fill("APIs em Python, FastAPI e Kafka.");
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Baixar PDF" }).click(),

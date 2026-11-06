@@ -138,7 +138,6 @@ def _adaptar() -> AdaptarCurriculoParaVaga:
         extrator=ExtratorCurriculoE2E(),
         analisador_vaga=AnalisadorVagaE2E(),
         ajustador_texto=AjustadorTextoE2E(),
-        gerador_pdf=GeradorPdfClient(),
         avaliador_descricao_vaga=AvaliadorDescricaoVagaE2E(),
         ajustador_experiencia=AjustadorExperienciaE2E(),
         avaliador_experiencia=AvaliadorExperienciaE2E(),

@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from jobsync.candidatura import Candidatura, MudancaStatus, StatusCandidatura
+from jobsync.candidatura import Candidatura, CandidaturaNaoEncontrada, MudancaStatus, StatusCandidatura
 from jobsync.candidatura.adapters import CandidaturaRepositoryImpl
 from jobsync.perfil.adapters.perfil_repository_impl import PerfilRepositoryImpl
 
@@ -69,3 +69,7 @@ class TestCandidaturaRepositoryImpl:
 
         assert repositorio.listar_por_perfil("matheus") == (candidatura_matheus,)
         assert repositorio.listar_por_perfil("outra-pessoa") == (candidatura_outra,)
+
+    def test_atualizar_status_de_candidatura_inexistente_levanta_nao_encontrada(self, repositorio):
+        with pytest.raises(CandidaturaNaoEncontrada):
+            repositorio.atualizar_status("nao-existe", StatusCandidatura.ENTREVISTA)

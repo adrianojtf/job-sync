@@ -905,8 +905,9 @@ export interface components {
             /**
              * Novo Status
              * @description Novo status da candidatura (aplicado, entrevista, oferta ou rejeitado).
+             * @enum {string}
              */
-            novo_status: string;
+            novo_status: "aplicado" | "entrevista" | "oferta" | "rejeitado";
         };
         /**
          * CandidaturasListagemResponse

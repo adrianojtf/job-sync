@@ -6,7 +6,10 @@ from datetime import datetime
 from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
 
 from jobsync.candidatura.domain.candidatura import Candidatura, MudancaStatus, StatusCandidatura
-from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
+from jobsync.candidatura.domain.candidatura_repository import (
+    CandidaturaNaoEncontrada,
+    CandidaturaRepository,
+)
 
 
 class CandidaturaRepositoryImpl(CandidaturaRepository):
@@ -59,11 +62,13 @@ class CandidaturaRepositoryImpl(CandidaturaRepository):
 
     def atualizar_status(self, candidatura_id: str, novo_status: StatusCandidatura) -> Candidatura:
         agora = datetime.now()
-        self._conexao.execute(
+        cursor_atualizacao = self._conexao.execute(
             "UPDATE candidatura SET status = ?, data_ultima_mudanca_status = ? WHERE id = ?",
             (novo_status.name, agora.isoformat(), candidatura_id),
         )
         self._conexao.commit()
+        if cursor_atualizacao.rowcount == 0:
+            raise CandidaturaNaoEncontrada(candidatura_id)
 
         cursor = self._conexao.execute(
             """

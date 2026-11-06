@@ -10,7 +10,10 @@ from jobsync.candidatura.domain.candidatura import (
     MudancaStatus,
     StatusCandidatura,
 )
-from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
+from jobsync.candidatura.domain.candidatura_repository import (
+    CandidaturaNaoEncontrada,
+    CandidaturaRepository,
+)
 
 
 class CandidaturaRepositoryFake(CandidaturaRepository):
@@ -35,7 +38,7 @@ class CandidaturaRepositoryFake(CandidaturaRepository):
     ) -> Candidatura:
         candidatura = self._candidaturas.get(candidatura_id)
         if candidatura is None:
-            raise ValueError("Candidatura não encontrada.")
+            raise CandidaturaNaoEncontrada(candidatura_id)
 
         nova_mudanca = MudancaStatus(novo_status, datetime.now())
         nova_candidatura = replace(

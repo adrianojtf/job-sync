@@ -5,6 +5,14 @@ from abc import ABC, abstractmethod
 from jobsync.candidatura.domain.candidatura import Candidatura, StatusCandidatura
 
 
+class CandidaturaNaoEncontrada(LookupError):
+    """A candidatura informada não existe."""
+
+    def __init__(self, candidatura_id: str) -> None:
+        super().__init__(f"Candidatura não encontrada: {candidatura_id}")
+        self.candidatura_id = candidatura_id
+
+
 class CandidaturaRepository(ABC):
     """Interface de domínio para gerenciar candidaturas."""
 
@@ -20,5 +28,8 @@ class CandidaturaRepository(ABC):
 
     @abstractmethod
     def atualizar_status(self, candidatura_id: str, novo_status: StatusCandidatura) -> Candidatura:
-        """Atualiza o status de uma candidatura e retorna a candidatura atualizada."""
+        """Atualiza o status de uma candidatura e retorna a candidatura atualizada.
+
+        Levanta CandidaturaNaoEncontrada se o id não existir.
+        """
         raise NotImplementedError

@@ -30,8 +30,10 @@ src/                        Código fonte da aplicação
       <dominio>/            Testes do domínio correspondente
       shared_kernel/        Testes dos conceitos transversais
       test_arquitetura.py   Validação dos contratos do import-linter
+      e2e/app_e2e.py        API real com dublês de IA, usada pelos testes E2E da UI
 
 storage/                    PDFs gerados e banco SQLite são salvos aqui
+frontend/                   Nova interface web (React + Vite + TypeScript), cliente da API /v1
 sdd/                        Documentos de especificação e templates
 ```
 
@@ -145,6 +147,41 @@ indisponível, o fluxo prossegue e sinaliza as avaliações como `indisponivel`.
 Limitações: a dimensão `consistencia_textual` mede apenas coerência e
 sustentação interna do texto — não é verificação factual externa.
 
+## Frontend (nova interface web)
+
+A nova UI fica em `frontend/` (JOB-0015). É uma SPA em React 18 + Vite + TypeScript que consome
+apenas a API `/v1`. O Streamlit continua disponível enquanto a transição acontece.
+
+Pré-requisitos: Node.js 20.19+ (ou 22.13+) e o backend rodando na porta 8000.
+
+```bash
+cd frontend
+npm ci
+npm run dev        # http://localhost:5173 (proxy de /v1 para http://localhost:8000)
+```
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento. `VITE_API_PROXY` muda o destino do proxy `/v1`. |
+| `npm test` | Testes de unidade e de componentes (Vitest + Testing Library + MSW). |
+| `npm run lint` | ESLint e Prettier. |
+| `npm run build` | Checagem de tipos e build de produção em `dist/`. |
+| `npm run gerar-tipos` | Regenera `src/api/schema.d.ts` a partir do OpenAPI do backend (`OPENAPI_URL`, padrão `http://localhost:8000/openapi.json`). |
+| `npm run e2e` | Fluxos ponta a ponta e acessibilidade (Playwright + axe). Sobe sozinho a API de teste e a UI. |
+
+**Contrato da API:** sempre que um schema do backend mudar, rode `npm run gerar-tipos` com o
+backend atualizado e faça commit do `schema.d.ts`. O CI falha se o arquivo estiver desatualizado.
+
+**Testes E2E:** usam a API real (SQLite, casos de uso e geração de PDF) com dublês apenas nas
+portas de IA (`src/jobsync/tests/e2e/app_e2e.py`), então não precisam de chaves. Na primeira vez,
+instale o navegador com `npx playwright install chromium`. O Python usado é `python3`, ou o
+definido em `E2E_PYTHON` (ex.: `E2E_PYTHON=venv/bin/python npm run e2e`), com as dependências de
+`requirements.txt` instaladas.
+
+**Variáveis:** `VITE_API_BASE_URL` (opcional) aponta a UI para outra origem da API. Vazio, a UI usa
+a mesma origem: o proxy do Vite em desenvolvimento e o Nginx no container. Se a UI e a API
+estiverem em origens diferentes, inclua a origem da UI em `CORS_ORIGINS` no `.env` do backend.
+
 ## Rodando os testes (TDD)
 
 O `pytest.ini` já configura os caminhos (`pythonpath = . src src/jobsync`), então basta rodar a partir da raiz do projeto:
@@ -194,6 +231,19 @@ cp .env.example .env
 # edite o .env com seus valores
 docker run --env-file .env -p 8000:8000 job-sync-backend
 ```
+
+### Backend e frontend juntos (docker compose)
+
+```bash
+cp .env.example .env   # opcional: chaves da OpenAI e da TypeSafe
+docker compose up --build
+```
+
+A UI fica em `http://localhost:8080` e a API em `http://localhost:8000`. No container do
+frontend, o Nginx serve os arquivos estáticos, devolve o `index.html` nas rotas da SPA e encaminha
+`/v1` para o backend (`API_UPSTREAM`, padrão `http://backend:8000`), com timeout de 180 s para as
+chamadas de IA e limite de 10 MB por requisição (PDFs de até 5 MB em base64). Os dados ficam em
+`./storage`.
 
 ## Lint de arquitetura
 

@@ -2,9 +2,14 @@ import type { ReactElement } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import { AjustarVagaPage } from "../features/ajustar-vaga/AjustarVagaPage";
 import { AnalisarAtsPage } from "../features/analisar-ats/AnalisarAtsPage";
+import { CandidaturasPage } from "../features/candidaturas/CandidaturasPage";
+import { ConfiguracoesPage } from "../features/configuracoes/ConfiguracoesPage";
 import { CurriculosPage } from "../features/curriculos/CurriculosPage";
+import { DescobrirVagasPage } from "../features/descobrir-vagas/DescobrirVagasPage";
 import { EntrarPage } from "../features/entrar/EntrarPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
+import { VagasSalvasPage } from "../features/vagas-salvas/VagasSalvasPage";
+import { VisaoGeralPage } from "../features/visao-geral/VisaoGeralPage";
 import { AppShell } from "./AppShell";
 import { EmConstrucao } from "./EmConstrucao";
 import { ErroDeRota } from "./ErroDeRota";
@@ -17,10 +22,15 @@ export interface HandleRota {
 
 /** Telas já entregues; as demais mostram EmConstrucao até a tarefa correspondente. */
 const TELAS: Record<string, ReactElement> = {
+  "/": <VisaoGeralPage />,
   "/perfil": <PerfilPage />,
   "/curriculos": <CurriculosPage />,
   "/ajustar-vaga": <AjustarVagaPage />,
   "/analisar-ats": <AnalisarAtsPage />,
+  "/vagas-salvas": <VagasSalvasPage />,
+  "/candidaturas": <CandidaturasPage />,
+  "/descobrir-vagas": <DescobrirVagasPage />,
+  "/configuracoes": <ConfiguracoesPage />,
 };
 
 export const rotas: RouteObject[] = [

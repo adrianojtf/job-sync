@@ -23,10 +23,10 @@ Entregar o painel inicial do protótipo, que resume a busca do candidato em uma 
 
 ## Subtarefas
 
-- [ ] 9.1 Escrever os testes (red) e implementar `montarResumo` e `calcularCompletude`.
-- [ ] 9.2 Implementar os indicadores com `StatCard`.
-- [ ] 9.3 Implementar "Vagas recentes", o card do currículo e o card de dica.
-- [ ] 9.4 Implementar "Atividade recente" e o estado vazio.
+- [x] 9.1 Escrever os testes (red) e implementar `montarResumo` e `calcularCompletude`.
+- [x] 9.2 Implementar os indicadores com `StatCard`.
+- [x] 9.3 Implementar "Vagas recentes", o card do currículo e o card de dica.
+- [x] 9.4 Implementar "Atividade recente" e o estado vazio.
 
 ## Detalhes de Implementação
 
@@ -40,9 +40,9 @@ Ver `prd-job-0015.md` → F3 e `techspec-job-0015.md` → "Modelos de Dados" (`R
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `montarResumo` com listas vazias e com dados; atividades ordenadas da mais recente para a mais antiga.
-- [ ] Testes de unidade: `calcularCompletude` com 0, parcial e 7 seções.
-- [ ] Testes de unidade: o botão principal abre o modal de Ajustar para uma vaga.
+- [x] Testes de unidade: `montarResumo` com listas vazias e com dados; atividades ordenadas da mais recente para a mais antiga.
+- [x] Testes de unidade: `calcularCompletude` com 0, parcial e 7 seções.
+- [x] Testes de unidade: o botão principal abre o modal de Ajustar para uma vaga.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -10,7 +10,7 @@ interface Props {
 
 export function StatCard({ rotulo, valor, icone, rodape }: Props) {
   return (
-    <div className={estilos.cartao}>
+    <div className={estilos.cartao} role="group" aria-label={rotulo}>
       <div className={estilos.cabecalho}>
         <span>{rotulo}</span>
         {icone && (

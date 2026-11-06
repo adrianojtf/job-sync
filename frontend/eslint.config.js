@@ -23,6 +23,11 @@ export default tseslint.config(
     },
   },
   {
+    // Helpers de teste não participam do Fast Refresh.
+    files: ["src/test/**", "**/*.test.{ts,tsx}"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
     files: ["scripts/**/*.mjs"],
     languageOptions: { globals: globals.node },
   },

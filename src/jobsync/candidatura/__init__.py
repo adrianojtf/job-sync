@@ -5,10 +5,14 @@ from jobsync.candidatura.domain.candidatura import (
     MudancaStatus,
     StatusCandidatura,
 )
-from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
+from jobsync.candidatura.domain.candidatura_repository import (
+    CandidaturaNaoEncontrada,
+    CandidaturaRepository,
+)
 
 __all__ = [
     "Candidatura",
+    "CandidaturaNaoEncontrada",
     "CandidaturaRepository",
     "MudancaStatus",
     "StatusCandidatura",

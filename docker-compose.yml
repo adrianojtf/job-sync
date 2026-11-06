@@ -1,0 +1,22 @@
+# Sobe backend (API) e frontend (UI) juntos: http://localhost:8080
+services:
+  backend:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_PATH: /app/storage/job_sync.db
+    volumes:
+      - ./storage:/app/storage
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_UPSTREAM: http://backend:8000
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

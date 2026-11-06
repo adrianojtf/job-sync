@@ -8,7 +8,9 @@ import { criarQueryClient } from "../app/query-client";
 import { OPCOES_ROUTER, rotas } from "../app/rotas";
 import { CHAVE_SESSAO } from "../shared/sessao/sessao-context";
 
-export const API_TESTE = "http://api.test";
+import { API_TESTE } from "./servidor-api";
+
+export { API_TESTE };
 
 interface Opcoes {
   caminho?: string;

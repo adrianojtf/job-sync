@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from jobsync.candidatura import Candidatura, MudancaStatus, StatusCandidatura
 from jobsync.candidatura.service_layer.criar_candidatura.dtos import (
@@ -57,7 +57,16 @@ class CandidaturaSubmeterRequest(BaseModel):
 
     novo_status: str = Field(
         description="Novo status da candidatura (aplicado, entrevista, oferta ou rejeitado).",
+        json_schema_extra={"enum": [status.name.lower() for status in StatusCandidatura]},
     )
+
+    @field_validator("novo_status")
+    @classmethod
+    def validar_novo_status(cls, valor: str) -> str:
+        if valor.upper() not in StatusCandidatura.__members__:
+            aceitos = ", ".join(status.name.lower() for status in StatusCandidatura)
+            raise ValueError(f"O status deve ser um destes: {aceitos}.")
+        return valor
 
     def to_dto(self) -> dict[str, Any]:
         return {

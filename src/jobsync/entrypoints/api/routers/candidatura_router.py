@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.candidatura import StatusCandidatura
+from jobsync.candidatura import CandidaturaNaoEncontrada, StatusCandidatura
 from jobsync.entrypoints.api.dependencies import (
     ServiceCriarCandidaturaDep,
     ServiceListarCandidaturasDep,
@@ -50,7 +50,13 @@ def criar_candidatura(
     request: Request,
 ) -> CandidaturaResponse:
     """Cria uma candidatura com status inicial APLICADO."""
-    candidatura = service.executar(body.to_dto())
+    try:
+        candidatura = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
     response.headers["Location"] = f"{request.url.path}/{candidatura.id}"
     return CandidaturaResponse.from_dto(candidatura)
 
@@ -69,5 +75,11 @@ def submeter_candidatura(
 ) -> CandidaturaResponse:
     """Move a candidatura para o novo status informado."""
     novo_status = body.to_dto()["novo_status"]
-    candidatura = service.executar(id, novo_status)
+    try:
+        candidatura = service.executar(id, novo_status)
+    except CandidaturaNaoEncontrada:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidatura não encontrada.",
+        )
     return CandidaturaResponse.from_dto(candidatura)

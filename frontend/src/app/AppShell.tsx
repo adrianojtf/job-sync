@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useMatches, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 import { AjustarVagaModal } from "../features/ajustar-vaga/AjustarVagaModal";
 import { useSessao } from "../shared/sessao/use-sessao";
 import { Button } from "../shared/ui/Button";
@@ -26,6 +26,8 @@ export function AppShell() {
   const titulo = useTituloAtual();
   const [menuAberto, setMenuAberto] = useState(false);
   const [ajustandoVaga, setAjustandoVaga] = useState(false);
+  // A Visão geral já tem este botão no cabeçalho (protótipo); evita dois controles iguais.
+  const mostrarAcaoTopo = useLocation().pathname !== "/";
 
   useEffect(() => {
     document.title = `${titulo} · ${NOME_PRODUTO}`;
@@ -133,21 +135,23 @@ export function AppShell() {
               </li>
             </ol>
           </nav>
-          <div className={estilos.acoesTopo}>
-            <Button
-              variante="primary"
-              aria-label="Ajustar para uma vaga"
-              onClick={() => setAjustandoVaga(true)}
-            >
-              <span aria-hidden="true">＋</span>
-              <span className={estilos.rotuloLongo} aria-hidden="true">
-                Ajustar para uma vaga
-              </span>
-              <span className={estilos.rotuloCurto} aria-hidden="true">
-                Vaga
-              </span>
-            </Button>
-          </div>
+          {mostrarAcaoTopo && (
+            <div className={estilos.acoesTopo}>
+              <Button
+                variante="primary"
+                aria-label="Ajustar para uma vaga"
+                onClick={() => setAjustandoVaga(true)}
+              >
+                <span aria-hidden="true">＋</span>
+                <span className={estilos.rotuloLongo} aria-hidden="true">
+                  Ajustar para uma vaga
+                </span>
+                <span className={estilos.rotuloCurto} aria-hidden="true">
+                  Vaga
+                </span>
+              </Button>
+            </div>
+          )}
         </header>
 
         <main id="conteudo" className={estilos.conteudo} tabIndex={-1}>

@@ -4,16 +4,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { AdaptarCurriculoEntrada, CurriculoAdaptado } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { base64ParaBlob, baixarArquivo } from "../../shared/arquivos/arquivos";
-import { paraSlug } from "../../shared/formatacao";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
 import { Panel } from "../../shared/ui/Panel";
 import { ScoreDimensions } from "../../shared/ui/ScoreDimensions";
-import { useToast } from "../../shared/ui/use-toast";
 import estilos from "./AjustarVagaPage.module.css";
 import { AnaliseAtsResultado } from "./AnaliseAtsResultado";
 import { AvaliacaoVagaResultado } from "./AvaliacaoVagaResultado";
+import { CartaGerada } from "./CartaGerada";
 import { useFontesCurriculo } from "./fonte-curriculo";
 import type { EstadoAjustarVaga } from "./navegacao";
 import resultados from "./Resultados.module.css";
@@ -44,7 +43,6 @@ export function AjustarVagaPage() {
 }
 
 function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
-  const { notificar } = useToast();
   const fontes = useFontesCurriculo();
   const { avaliar, adaptar, ats, carta } = useAjustarVaga();
   const form = useForm<Formulario>({
@@ -123,23 +121,6 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const gerarCarta = async () => {
     if (!(await form.trigger(["cargo", "empresa", "descricao"]))) return;
     carta.mutate((await montarEntrada()).dados);
-  };
-
-  const copiarCarta = async (texto: string) => {
-    try {
-      await navigator.clipboard.writeText(texto);
-      notificar("Carta copiada.", "sucesso");
-    } catch {
-      notificar("Não foi possível copiar. Selecione o texto e copie manualmente.", "erro");
-    }
-  };
-
-  const baixarCarta = (texto: string) => {
-    const { cargo, empresa } = form.getValues();
-    const nome = ["carta-apresentacao", paraSlug(cargo), paraSlug(empresa)]
-      .filter(Boolean)
-      .join("-");
-    baixarArquivo(new Blob([texto], { type: "text/plain;charset=utf-8" }), `${nome}.txt`);
   };
 
   const semFonte = !fontes.carregando && fontes.opcoes.length === 0;
@@ -280,7 +261,11 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
           >
             {carta.isError && <Aviso tom="erro">{carta.error.message}</Aviso>}
             {carta.data ? (
-              <CartaGerada texto={carta.data.carta} aoCopiar={copiarCarta} aoBaixar={baixarCarta} />
+              <CartaGerada
+                texto={carta.data.carta}
+                cargo={form.getValues("cargo")}
+                empresa={form.getValues("empresa")}
+              />
             ) : (
               !carta.isError && (
                 <p className={resultados.texto}>Gere uma carta personalizada para esta vaga.</p>
@@ -336,28 +321,6 @@ function CurriculoGerado({ resultado }: { resultado: CurriculoAdaptado }) {
           </div>
         </section>
       )}
-    </div>
-  );
-}
-
-interface PropsCarta {
-  texto: string;
-  aoCopiar: (texto: string) => void;
-  aoBaixar: (texto: string) => void;
-}
-
-function CartaGerada({ texto, aoCopiar, aoBaixar }: PropsCarta) {
-  const id = useId();
-  return (
-    <div>
-      <label htmlFor={id} className="sr-only">
-        Texto da carta
-      </label>
-      <textarea id={id} className={estilos.carta} readOnly value={texto} />
-      <div className={estilos.acoes}>
-        <Button onClick={() => aoCopiar(texto)}>Copiar carta</Button>
-        <Button onClick={() => aoBaixar(texto)}>Baixar carta</Button>
-      </div>
     </div>
   );
 }

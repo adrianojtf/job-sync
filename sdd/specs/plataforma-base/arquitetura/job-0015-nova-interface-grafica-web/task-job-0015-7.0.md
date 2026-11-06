@@ -22,11 +22,11 @@ Entregar a gestão do funil: vagas capturadas pela extensão ou coladas, a conve
 
 ## Subtarefas
 
-- [ ] 7.1 Escrever os testes (red) e implementar a listagem e o registro manual em `features/vagas-salvas/`.
-- [ ] 7.2 Implementar o detalhe, a avaliação e os atalhos.
-- [ ] 7.3 Implementar o modal de criar candidatura.
-- [ ] 7.4 Escrever os testes (red) e implementar o Kanban em `features/candidaturas/`.
-- [ ] 7.5 Implementar o detalhe da candidatura com histórico.
+- [x] 7.1 Escrever os testes (red) e implementar a listagem e o registro manual em `features/vagas-salvas/`.
+- [x] 7.2 Implementar o detalhe, a avaliação e os atalhos.
+- [x] 7.3 Implementar o modal de criar candidatura.
+- [x] 7.4 Escrever os testes (red) e implementar o Kanban em `features/candidaturas/`.
+- [x] 7.5 Implementar o detalhe da candidatura com histórico.
 
 ## Detalhes de Implementação
 
@@ -40,10 +40,10 @@ Ver `prd-job-0015.md` → F8 e F10, e `techspec-job-0015.md` → "Modelos de Dad
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: registrar vaga colada adiciona item à lista.
-- [ ] Testes de unidade: criar candidatura remove a vaga e invalida as duas queries.
-- [ ] Testes de unidade: Kanban mostra 4 colunas com contagem; mover chama a API e atualiza a coluna.
-- [ ] Testes de unidade: detalhe lista o histórico em ordem.
+- [x] Testes de unidade: registrar vaga colada adiciona item à lista.
+- [x] Testes de unidade: criar candidatura remove a vaga e invalida as duas queries.
+- [x] Testes de unidade: Kanban mostra 4 colunas com contagem; mover chama a API e atualiza a coluna.
+- [x] Testes de unidade: detalhe lista o histórico em ordem.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

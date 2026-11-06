@@ -1,0 +1,249 @@
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 26px;
+}
+.positivo {
+  color: var(--green);
+  font-weight: 650;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(270px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+.colunaDireita {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+.boasVindas {
+  background: #f6f5ff;
+  border: 1px solid #e8e6ff;
+  border-radius: var(--raio-lg);
+  padding: 18px 20px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.boasVindas h2 {
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+.boasVindas p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+.botaoLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--raio-md);
+  padding: 10px 15px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.botaoPrimario {
+  background: var(--accent);
+  color: #fff;
+}
+.botaoSecundario {
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  width: 100%;
+  margin-top: 12px;
+}
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f1f3;
+}
+.item:last-child {
+  border-bottom: 0;
+}
+.letra {
+  width: 39px;
+  height: 39px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-weight: 750;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.letraCandidatura {
+  background: #eaf1ff;
+  color: #2f5fa8;
+}
+.letraVaga {
+  background: #fff2e9;
+  color: #9a4f22;
+}
+.info {
+  min-width: 0;
+  flex: 1;
+}
+.titulo {
+  display: block;
+  font-weight: 650;
+  color: var(--ink);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.titulo:hover {
+  text-decoration: underline;
+}
+.meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+.vazio {
+  color: var(--muted);
+  margin: 4px 0;
+}
+.previa {
+  margin: 0 0 14px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fcfcfd;
+}
+.previaNome {
+  font-size: 14px;
+  font-weight: 750;
+}
+.previaCargo {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 13px;
+}
+.linhaFalsa {
+  height: 5px;
+  background: #eceef2;
+  border-radius: 5px;
+  margin: 6px 0;
+  width: 90%;
+}
+.linhaMedia {
+  width: 76%;
+}
+.linhaCurta {
+  width: 62%;
+}
+.completude {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+.barra {
+  height: 6px;
+  background: #edf0f3;
+  border-radius: 8px;
+  margin: 8px 0 4px;
+  overflow: hidden;
+}
+.barraValor {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 8px;
+}
+.dica {
+  padding: 18px 19px;
+  background: #f6f5ff;
+  border: 1px solid #e8e6ff;
+  border-radius: var(--raio-lg);
+}
+.dicaRotulo {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.dica h2 {
+  font-size: 14px;
+  margin: 7px 0 5px;
+}
+.dica p,
+.dica ol {
+  font-size: 12px;
+  color: #4f566b;
+  margin: 0 0 8px;
+}
+.dica ol {
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+}
+.atividade {
+  margin-top: 18px;
+}
+.evento {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 10px 0;
+}
+.ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pontoCandidatura {
+  background: #8d86ed;
+}
+.pontoCurriculo {
+  background: #20a477;
+}
+.pontoVaga {
+  background: #e5a23b;
+}
+.evento time {
+  margin-left: auto;
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 12px;
+}
+@media (max-width: 1000px) {
+  .indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .colunaDireita {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 700px) {
+  .indicadores {
+    gap: 9px;
+  }
+  .colunaDireita {
+    grid-template-columns: 1fr;
+  }
+  .evento {
+    flex-wrap: wrap;
+  }
+}

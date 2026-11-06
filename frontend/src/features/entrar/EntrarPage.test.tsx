@@ -45,7 +45,7 @@ describe("EntrarPage", () => {
     await userEvent.type(await screen.findByLabelText("Identificador"), "ana{Enter}");
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Visão geral" }),
+      await screen.findByRole("heading", { level: 1, name: /^(Bom dia|Boa tarde|Boa noite), / }),
     ).toBeInTheDocument();
   });
 

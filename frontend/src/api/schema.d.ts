@@ -905,8 +905,9 @@ export interface components {
             /**
              * Novo Status
              * @description Novo status da candidatura (aplicado, entrevista, oferta ou rejeitado).
+             * @enum {string}
              */
-            novo_status: string;
+            novo_status: "aplicado" | "entrevista" | "oferta" | "rejeitado";
         };
         /**
          * CandidaturasListagemResponse
@@ -1121,19 +1122,19 @@ export interface components {
              * @description Cargo associado à experiência, quando disponível.
              * @default
              */
-            cargo: string;
+            cargo?: string;
             /**
              * Empresa
              * @description Empresa associada à experiência, quando disponível.
              * @default
              */
-            empresa: string;
+            empresa?: string;
             /**
              * Periodo
              * @description Período da experiência, quando disponível.
              * @default
              */
-            periodo: string;
+            periodo?: string;
             /**
              * Descricao
              * @description Texto individual da experiência profissional.
@@ -1746,7 +1747,7 @@ export interface components {
              * @description Indica que a fonte só forneceu um trecho da descrição.
              * @default false
              */
-            descricao_incompleta: boolean;
+            descricao_incompleta?: boolean;
             /**
              * Data Publicacao
              * @description Data de publicação da vaga, quando disponível.
@@ -1781,8 +1782,9 @@ export interface components {
             /**
              * Fonte
              * @description Nome da fonte externa de origem.
+             * @enum {string}
              */
-            fonte: string;
+            fonte: "REMOTEOK" | "WE_WORK_REMOTELY" | "ARBEITNOW" | "ADZUNA" | "GOOGLE_CUSTOM_SEARCH";
             /**
              * Data Publicacao
              * @description Data de publicação da vaga, quando disponível.

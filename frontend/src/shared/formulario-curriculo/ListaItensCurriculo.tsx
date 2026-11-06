@@ -2,43 +2,34 @@ import type { ReactNode } from "react";
 import {
   get,
   useFieldArray,
-  type FieldArrayPath,
+  type ArrayPath,
+  type FieldArray,
+  type FieldValues,
   type Path,
   type UseFormReturn,
 } from "react-hook-form";
-import { Button } from "../../shared/ui/Button";
-import { Field } from "../../shared/ui/Field";
-import { Panel } from "../../shared/ui/Panel";
-import type { FormularioPerfil } from "./formulario-perfil";
-import estilos from "./PerfilPage.module.css";
+import { Button } from "../ui/Button";
+import { Field } from "../ui/Field";
+import { Panel } from "../ui/Panel";
+import type { CampoItem } from "./campos-curriculo";
+import estilos from "./FormularioCurriculo.module.css";
 
-type NomeLista = Extract<
-  FieldArrayPath<FormularioPerfil>,
-  "experiencias" | "formacoes" | "certificacoes" | "idiomas"
->;
-
-export interface CampoItem {
-  chave: string;
-  rotulo: string;
-  obrigatorio?: string;
-  tipoCampo?: "textarea" | "select";
-  opcoes?: { valor: string; rotulo: string }[];
-  larguraTotal?: boolean;
-}
-
-interface Props<N extends NomeLista> {
-  form: UseFormReturn<FormularioPerfil>;
+interface Props<T extends FieldValues, N extends ArrayPath<T>> {
+  form: UseFormReturn<T>;
   nome: N;
   titulo: string;
   subtitulo?: string;
   rotuloItem: string;
-  itemVazio: FormularioPerfil[N][number];
+  itemVazio: FieldArray<T, N>;
   campos: CampoItem[];
   acoesItem?: (indice: number) => ReactNode;
 }
 
-/** Lista editável de itens do perfil (experiências, formações, certificações, idiomas) — RF4.1. */
-export function ListaItensPerfil<N extends NomeLista>({
+/**
+ * Lista editável de itens de um formulário de currículo (experiências, formações, certificações,
+ * idiomas) — RF4.1. Usada no cadastro (Meu perfil) e na revisão do currículo adaptado.
+ */
+export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T>>({
   form,
   nome,
   titulo,
@@ -47,7 +38,7 @@ export function ListaItensPerfil<N extends NomeLista>({
   itemVazio,
   campos,
   acoesItem,
-}: Props<N>) {
+}: Props<T, N>) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: nome });
   const rotuloMinusculo = rotuloItem.toLowerCase();
 
@@ -56,7 +47,7 @@ export function ListaItensPerfil<N extends NomeLista>({
       titulo={titulo}
       subtitulo={subtitulo}
       acoes={
-        <Button variante="text" onClick={() => append(itemVazio as never)}>
+        <Button variante="text" onClick={() => append(itemVazio)}>
           Adicionar {rotuloMinusculo}
         </Button>
       }
@@ -69,7 +60,7 @@ export function ListaItensPerfil<N extends NomeLista>({
           </legend>
           <div className={estilos.grade}>
             {campos.map((campo) => {
-              const caminho = `${nome}.${indice}.${campo.chave}` as Path<FormularioPerfil>;
+              const caminho = `${nome}.${indice}.${campo.chave}` as Path<T>;
               const erro = get(form.formState.errors, caminho)?.message as string | undefined;
               const registro = form.register(caminho, {
                 validate: campo.obrigatorio

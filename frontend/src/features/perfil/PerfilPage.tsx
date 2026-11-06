@@ -3,6 +3,14 @@ import { useForm } from "react-hook-form";
 import type { PerfilEstruturado } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
+import {
+  CAMPOS_EXPERIENCIA,
+  EXPERIENCIA_VAZIA,
+  type ExperienciaFormulario,
+} from "../../shared/formulario-curriculo/campos-curriculo";
+import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
+import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
+import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
@@ -11,18 +19,14 @@ import { useToast } from "../../shared/ui/use-toast";
 import { AvaliarExperienciaModal } from "./AvaliarExperienciaModal";
 import {
   CERTIFICACAO_VAZIA,
-  EXPERIENCIA_VAZIA,
   FORMACAO_VAZIA,
   formularioParaEntrada,
   IDIOMA_VAZIO,
   NIVEIS_IDIOMA,
   perfilParaFormulario,
-  type ExperienciaFormulario,
   type FormularioPerfil,
 } from "./formulario-perfil";
 import { ImportarPerfilModal } from "./ImportarPerfilModal";
-import { ListaItensPerfil } from "./ListaItensPerfil";
-import estilos from "./PerfilPage.module.css";
 import { usePerfilEstruturado, useSalvarPerfilEstruturado } from "./use-perfil-estruturado";
 
 const TITULO = "Meu perfil";
@@ -65,7 +69,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
   const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaFormulario | null>(
     null,
   );
-  const { errors, isDirty } = form.formState;
+  const { isDirty } = form.formState;
 
   const enviar = form.handleSubmit((valores) =>
     salvar.mutate(formularioParaEntrada(valores, perfil), {
@@ -98,56 +102,16 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
       )}
 
       <form onSubmit={enviar} noValidate className={estilos.secoes}>
-        <Panel titulo="Dados pessoais">
-          <div className={estilos.grade}>
-            <Field
-              rotulo="Nome completo"
-              autoComplete="name"
-              erro={errors.nome_completo?.message}
-              {...form.register("nome_completo", {
-                validate: (v) => v.trim() !== "" || "Informe o nome completo.",
-              })}
-            />
-            <Field
-              rotulo="E-mail"
-              type="email"
-              autoComplete="email"
-              erro={errors.email?.message}
-              {...form.register("email", {
-                validate: (v) => v.trim() !== "" || "Informe o e-mail.",
-              })}
-            />
-            <div className={estilos.larguraTotal}>
-              <Field
-                rotulo="LinkedIn"
-                type="url"
-                placeholder="https://linkedin.com/in/…"
-                {...form.register("linkedin")}
-              />
-            </div>
-            <div className={estilos.larguraTotal}>
-              <Field
-                tipoCampo="textarea"
-                rotulo="Resumo profissional"
-                {...form.register("resumo_profissional")}
-              />
-            </div>
-          </div>
-        </Panel>
+        <PainelDadosPessoais form={form} />
 
-        <ListaItensPerfil
+        <ListaItensCurriculo
           form={form}
           nome="experiencias"
           titulo="Experiências profissionais"
           subtitulo="Da mais recente para a mais antiga"
           rotuloItem="Experiência"
           itemVazio={EXPERIENCIA_VAZIA}
-          campos={[
-            { chave: "empresa", rotulo: "Empresa", obrigatorio: "Informe a empresa." },
-            { chave: "cargo", rotulo: "Cargo", obrigatorio: "Informe o cargo." },
-            { chave: "periodo", rotulo: "Período", larguraTotal: true },
-            { chave: "descricao", rotulo: "Descrição", tipoCampo: "textarea", larguraTotal: true },
-          ]}
+          campos={CAMPOS_EXPERIENCIA}
           acoesItem={(indice) => (
             <Button
               aria-label={`Avaliar experiência ${indice + 1}`}
@@ -158,7 +122,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           )}
         />
 
-        <ListaItensPerfil
+        <ListaItensCurriculo
           form={form}
           nome="formacoes"
           titulo="Formação acadêmica"
@@ -171,7 +135,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           ]}
         />
 
-        <ListaItensPerfil
+        <ListaItensCurriculo
           form={form}
           nome="certificacoes"
           titulo="Certificações"
@@ -184,7 +148,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           ]}
         />
 
-        <ListaItensPerfil
+        <ListaItensCurriculo
           form={form}
           nome="idiomas"
           titulo="Idiomas"

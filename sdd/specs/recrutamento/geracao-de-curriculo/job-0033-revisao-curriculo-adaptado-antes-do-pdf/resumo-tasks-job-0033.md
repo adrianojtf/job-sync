@@ -6,7 +6,7 @@
 - [x] 2.0 Caso de uso GerarPdfCurriculoRevisado
 - [x] 3.0 Refatorar AdaptarCurriculoParaVaga para devolver o rascunho
 - [x] 4.0 Endpoints de rascunho e de PDF revisado
-- [ ] 5.0 Extrair componentes do formulário de "Meu perfil"
+- [x] 5.0 Extrair componentes do formulário de "Meu perfil"
 - [ ] 6.0 Cliente de API e tipos do frontend
 - [ ] 7.0 Tela RevisaoCurriculoAdaptado
 - [ ] 8.0 Integrar a revisão em AjustarVagaPage

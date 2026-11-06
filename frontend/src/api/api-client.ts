@@ -24,6 +24,10 @@ import type {
   RascunhoAdaptado,
   SalvarCurriculoEntrada,
   StatusCandidatura,
+  SugerirAjusteExperienciaEntrada,
+  SugerirAjusteSecaoEntrada,
+  SugestaoExperiencia,
+  SugestaoSecao,
   TokenCaptura,
   Vaga,
   VagaDescoberta,
@@ -39,6 +43,10 @@ export interface ApiClient {
   atualizarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   importarPerfilDePdf(pdfBase64: string): Promise<PerfilEstruturado>;
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia>;
+  /** Sugere, via IA, um novo texto para uma seção (JOB-0034). Nada é alterado no servidor. */
+  sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao>;
+  /** Sugere, via IA, uma nova descrição para uma experiência (JOB-0034). */
+  sugerirAjusteExperiencia(dados: SugerirAjusteExperienciaEntrada): Promise<SugestaoExperiencia>;
 
   listarCurriculos(perfil: string): Promise<CurriculoSalvo[]>;
   salvarCurriculo(dados: SalvarCurriculoEntrada): Promise<CurriculoSalvo>;

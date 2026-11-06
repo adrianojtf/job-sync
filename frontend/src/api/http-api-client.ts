@@ -27,6 +27,10 @@ import type {
   Problema,
   SalvarCurriculoEntrada,
   StatusCandidatura,
+  SugerirAjusteExperienciaEntrada,
+  SugerirAjusteSecaoEntrada,
+  SugestaoExperiencia,
+  SugestaoSecao,
   TokenCaptura,
   Vaga,
   VagaDescoberta,
@@ -116,6 +120,17 @@ export class HttpApiClient implements ApiClient {
 
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia> {
     return this.requisitar("POST", "/v1/experiencias-profissionais/avaliacoes", {
+      corpo: dados,
+      ia: true,
+    });
+  }
+
+  sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao> {
+    return this.requisitar("POST", "/v1/secoes-curriculo/sugestoes", { corpo: dados, ia: true });
+  }
+
+  sugerirAjusteExperiencia(dados: SugerirAjusteExperienciaEntrada): Promise<SugestaoExperiencia> {
+    return this.requisitar("POST", "/v1/experiencias-profissionais/sugestoes", {
       corpo: dados,
       ia: true,
     });

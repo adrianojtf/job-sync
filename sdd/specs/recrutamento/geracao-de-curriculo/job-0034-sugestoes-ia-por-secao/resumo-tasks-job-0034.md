@@ -6,7 +6,7 @@
 - [x] 2.0 Porta MelhoradorTextoCurriculoPort e adapter OpenAI
 - [x] 3.0 Casos de uso SugerirAjusteSecaoCurriculo e SugerirAjusteExperiencia
 - [x] 4.0 Endpoints de sugestão e análise da vaga no rascunho
-- [ ] 5.0 Cliente de API e tipos do frontend
+- [x] 5.0 Cliente de API e tipos do frontend
 - [ ] 6.0 Componente SugestaoIA
 - [ ] 7.0 Integração das sugestões na revisão
 - [ ] 8.0 Integração das sugestões em Meu perfil

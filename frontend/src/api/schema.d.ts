@@ -212,6 +212,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/secoes-curriculo/sugestoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sugerir ajuste de uma seção
+         * @description Sugere, via IA, uma nova versão do texto de uma seção (perfil, tecnologias ou experiências). Com contexto de vaga adapta o texto à vaga; sem ele, melhora a escrita. Nada é persistido nem alterado.
+         */
+        post: operations["sugerir_ajuste_secao_v1_secoes_curriculo_sugestoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/experiencias-profissionais/sugestoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sugerir ajuste de uma experiência
+         * @description Sugere, via IA, uma nova descrição para uma experiência profissional. Com contexto de vaga adapta o texto à vaga; sem ele, melhora a escrita. Cargo, empresa e período não são alterados, e nada é persistido.
+         */
+        post: operations["sugerir_ajuste_experiencia_v1_experiencias_profissionais_sugestoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/curriculos/{id}/analises-ats": {
         parameters: {
             query?: never;
@@ -621,6 +661,27 @@ export interface components {
             sugestoes?: string[];
         };
         /**
+         * AnaliseVagaSchema
+         * @description Análise estruturada de uma vaga, devolvida ao cliente e reenviada nos pedidos de sugestão.
+         */
+        AnaliseVagaSchema: {
+            /**
+             * Requisitos
+             * @description Requisitos técnicos da vaga.
+             */
+            requisitos: components["schemas"]["RequisitoTecnicoSchema"][];
+            /**
+             * Ambiguidade
+             * @description Pontos ambíguos encontrados na descrição.
+             */
+            ambiguidade?: string[];
+            /**
+             * Texto Original
+             * @description Descrição original da vaga.
+             */
+            texto_original: string;
+        };
+        /**
          * AvaliacaoDescricaoVagaResponse
          * @description Score geral e resultados categóricos da descrição de vaga.
          * @example {
@@ -1019,6 +1080,24 @@ export interface components {
              * @description Ano de obtenção da certificação.
              */
             ano: string;
+        };
+        /**
+         * ContextoVagaSchema
+         * @description Contexto da vaga-alvo; presente na revisão do currículo adaptado, ausente em Meu perfil.
+         */
+        ContextoVagaSchema: {
+            /**
+             * Descricao Vaga
+             * @description Texto completo da descrição da vaga.
+             */
+            descricao_vaga: string;
+            /**
+             * Idioma Alvo
+             * @description Idioma de destino do currículo (pt ou en).
+             */
+            idioma_alvo: string;
+            /** @description Análise da vaga devolvida junto com o rascunho. */
+            analise_vaga: components["schemas"]["AnaliseVagaSchema"];
         };
         /**
          * CurriculoRevisadoResponse
@@ -1731,6 +1810,8 @@ export interface components {
             avaliacoes_experiencias?: components["schemas"]["AvaliacaoExperienciaAdaptadaResponse"][];
             /** @description Conteúdo adaptado, organizado por seção, para revisão. */
             rascunho: components["schemas"]["RascunhoCurriculoAdaptadoSchema"];
+            /** @description Análise da vaga usada na adaptação; o cliente a reenvia nos pedidos de sugestão para evitar uma nova análise por IA. */
+            analise_vaga: components["schemas"]["AnaliseVagaSchema"];
         };
         /**
          * RascunhoCurriculoAdaptadoSchema
@@ -1825,6 +1906,36 @@ export interface components {
             tipo: string;
         };
         /**
+         * RequisitoTecnicoSchema
+         * @description Requisito técnico extraído de uma vaga.
+         */
+        RequisitoTecnicoSchema: {
+            /**
+             * Nome
+             * @description Nome do requisito técnico.
+             */
+            nome: string;
+            /**
+             * Categoria
+             * @description Categoria do requisito técnico.
+             * @enum {string}
+             */
+            categoria: "TECNOLOGIA" | "FERRAMENTA" | "HABILIDADE" | "METODOLOGIA" | "OUTRA";
+            /**
+             * Tipo
+             * @description Natureza do requisito técnico.
+             * @enum {string}
+             */
+            tipo: "EXPLICITO" | "IMPLICITO" | "AMBIGUO";
+            /**
+             * Origem
+             * @description Origem do requisito, para rastreabilidade.
+             * @default DESCONHECIDA
+             * @enum {string}
+             */
+            origem?: "DESCRICAO_VAGA" | "INTERPRETACAO" | "DESCONHECIDA";
+        };
+        /**
          * ResultadoDimensaoAvaliacaoResponse
          * @description Score, nível categórico e confiança de uma dimensão.
          */
@@ -1866,6 +1977,55 @@ export interface components {
              * @description Conteúdo da seção, editável na revisão.
              */
             conteudo: string;
+        };
+        /**
+         * SugerirAjusteExperienciaRequest
+         * @description Pedido de sugestão de IA para uma experiência, a partir da descrição atual.
+         */
+        SugerirAjusteExperienciaRequest: {
+            /** @description Experiência com a descrição atual, incluindo edições. */
+            experiencia: components["schemas"]["ExperienciaParaAvaliacaoRequest"];
+            /** @description Contexto da vaga; sem ele, a IA apenas melhora a escrita. */
+            contexto_vaga?: components["schemas"]["ContextoVagaSchema"] | null;
+        };
+        /**
+         * SugerirAjusteExperienciaResponse
+         * @description Descrição sugerida; cargo, empresa e período não são alterados.
+         */
+        SugerirAjusteExperienciaResponse: {
+            /**
+             * Descricao Sugerida
+             * @description Nova versão da descrição da experiência.
+             */
+            descricao_sugerida: string;
+        };
+        /**
+         * SugerirAjusteSecaoRequest
+         * @description Pedido de sugestão de IA para uma seção de texto, a partir do texto atual do campo.
+         * @example {
+         *       "secao": {
+         *         "conteudo": "Engenheira backend.",
+         *         "tipo": "PERFIL",
+         *         "titulo": "Perfil"
+         *       }
+         *     }
+         */
+        SugerirAjusteSecaoRequest: {
+            /** @description Seção com o texto atual, incluindo edições. */
+            secao: components["schemas"]["SecaoRascunhoSchema"];
+            /** @description Contexto da vaga; sem ele, a IA apenas melhora a escrita. */
+            contexto_vaga?: components["schemas"]["ContextoVagaSchema"] | null;
+        };
+        /**
+         * SugerirAjusteSecaoResponse
+         * @description Texto sugerido para a seção; nada é alterado ou persistido.
+         */
+        SugerirAjusteSecaoResponse: {
+            /**
+             * Conteudo Sugerido
+             * @description Nova versão do conteúdo da seção.
+             */
+            conteudo_sugerido: string;
         };
         /**
          * TokenCapturaCriarRequest
@@ -2471,6 +2631,90 @@ export interface operations {
             };
             /** @description Rascunho ou dados da vaga inválidos. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    sugerir_ajuste_secao_v1_secoes_curriculo_sugestoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SugerirAjusteSecaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SugerirAjusteSecaoResponse"];
+                };
+            };
+            /** @description Texto, seção ou contexto da vaga ausentes ou inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description O provedor de IA está indisponível. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    sugerir_ajuste_experiencia_v1_experiencias_profissionais_sugestoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SugerirAjusteExperienciaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SugerirAjusteExperienciaResponse"];
+                };
+            };
+            /** @description Texto, seção ou contexto da vaga ausentes ou inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description O provedor de IA está indisponível. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

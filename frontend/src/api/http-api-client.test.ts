@@ -254,6 +254,58 @@ describe("HttpApiClient", () => {
     expect(resposta.nome_arquivo).toBe("Ana.pdf");
   });
 
+  it("pede sugestão de seção pela rota de IA e devolve o texto sugerido", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ conteudo_sugerido: "Texto novo." });
+      }),
+    );
+    const dados = { secao: { tipo: "PERFIL" as const, titulo: "Perfil", conteudo: "Texto." } };
+
+    const resposta = await criarCliente().sugerirAjusteSecao(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.conteudo_sugerido).toBe("Texto novo.");
+  });
+
+  it("pede sugestão de experiência e devolve a descrição sugerida", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ descricao_sugerida: "Descrição nova." });
+      }),
+    );
+    const dados = {
+      experiencia: { cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "Antiga." },
+    };
+
+    const resposta = await criarCliente().sugerirAjusteExperiencia(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.descricao_sugerida).toBe("Descrição nova.");
+  });
+
+  it("usa o timeout longo nas sugestões de IA", async () => {
+    servidorApi.use(
+      http.post(`${BASE}/v1/secoes-curriculo/sugestoes`, async () => {
+        await delay(60);
+        return HttpResponse.json({ conteudo_sugerido: "ok" });
+      }),
+    );
+
+    const resposta = await criarCliente({
+      timeoutPadraoMs: 20,
+      timeoutIaMs: 500,
+    }).sugerirAjusteSecao({
+      secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Texto." },
+    });
+
+    expect(resposta.conteudo_sugerido).toBe("ok");
+  });
+
   it("move a candidatura enviando o novo status", async () => {
     let corpoRecebido: unknown;
     servidorApi.use(

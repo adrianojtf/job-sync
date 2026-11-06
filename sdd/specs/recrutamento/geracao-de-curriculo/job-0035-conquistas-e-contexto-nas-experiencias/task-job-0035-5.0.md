@@ -7,9 +7,9 @@
 Expor o novo formato e a nova sugestão na API.
 
 <requirements>
-- `ExperienciaRascunhoSchema` com `conquistas` e `contexto`.
+- `ExperienciaRascunhoSchema` ganha `conquistas` e `contexto`. O campo `descricao` fica como legado (devolvido e aceito só quando `conquistas` e `contexto` não vêm), para o frontend atual continuar funcionando até a task 8.0.
 - `POST /v1/experiencias-adaptadas/sugestoes` (200, 422, 502) com `contexto_vaga` obrigatório.
-- `/experiencias-profissionais/sugestoes` perde `contexto_vaga`.
+- `/experiencias-profissionais/sugestoes` mantém `contexto_vaga` (legado, documentado) e a ponte da task 4.0, até a task 8.0.
 - `para_curriculo` recebe o idioma nos fluxos de PDF; injeção e Postman.
 - Complexidade: medium. Dependências: 3.0, 4.0.
 </requirements>

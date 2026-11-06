@@ -6,7 +6,7 @@
 - [x] 2.0 Porta de ajuste, adapter e adaptação
 - [x] 3.0 Gerador de PDF e prompt da fonte PDF
 - [x] 4.0 Casos de uso de sugestão
-- [ ] 5.0 API
+- [x] 5.0 API
 - [ ] 6.0 Cliente de API e tipos
 - [ ] 7.0 SugestaoIA genérico e formulário
 - [ ] 8.0 Tela de revisão
@@ -19,6 +19,7 @@
 
 ## Decisões adotadas
 
+- Contratos: a task 5.0 só soma os campos novos (`conquistas`, `contexto` e o endpoint `/experiencias-adaptadas/sugestoes`). Os legados (`descricao` e `contexto_vaga`) saem na task 8.0, depois que o frontend migrar, para o frontend, os tipos gerados e o E2E ficarem verdes a cada task.
 - Faixa de conquistas: de 2 a 6 no prompt; o domínio exige ao menos uma.
 - `contexto_vaga` removido de `/experiencias-profissionais/sugestoes`.
 - Fonte PDF incluída por convenção de texto (task 3.0).

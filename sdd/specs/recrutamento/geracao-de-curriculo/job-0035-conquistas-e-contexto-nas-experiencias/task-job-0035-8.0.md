@@ -11,6 +11,7 @@ Campos novos na revisão, aviso de números estimados e sugestão por experiênc
 - Aviso de números estimados, só com experiências estruturadas.
 - `SugestaoExperienciaAdaptada`: aplica conquistas e contexto de uma vez.
 - "Avaliar" usa o texto composto.
+- Remover os legados do backend, agora sem consumidores: `descricao` de `ExperienciaRascunhoSchema` (e `como_descricao`/`conquistas_de_descricao` se ficarem sem uso), `contexto_vaga` e a ponte de `/experiencias-profissionais/sugestoes`, e o campo `descricao` do rascunho nos testes. Regenerar o `schema.d.ts` com Python 3.12.
 - Complexidade: high. Dependências: 7.0.
 </requirements>
 

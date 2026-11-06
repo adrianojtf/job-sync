@@ -35,6 +35,11 @@ class ExperienciaAdaptada:
         if not all(_preenchido(conquista) for conquista in self.conquistas):
             raise ValueError("Cada conquista da experiência precisa de texto.")
 
+    @property
+    def tem_conteudo(self) -> bool:
+        """Indica se há ao menos uma conquista ou um contexto para trabalhar."""
+        return bool(self.conquistas) or _preenchido(self.contexto)
+
     @classmethod
     def revisada(
         cls,

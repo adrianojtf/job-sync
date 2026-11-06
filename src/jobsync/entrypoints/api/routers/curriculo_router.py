@@ -57,6 +57,8 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     GerarCartaApresentacaoRequest,
     GerarPdfCurriculoRevisadoRequest,
     RascunhoAdaptadoResponse,
+    SugerirAjusteExperienciaAdaptadaRequest,
+    SugerirAjusteExperienciaAdaptadaResponse,
     SugerirAjusteExperienciaRequest,
     SugerirAjusteExperienciaResponse,
     SugerirAjusteSecaoRequest,
@@ -478,6 +480,35 @@ def sugerir_ajuste_experiencia(
             detail=str(erro),
         )
     return SugerirAjusteExperienciaResponse(descricao_sugerida=descricao)
+
+
+@router.post(
+    "/experiencias-adaptadas/sugestoes",
+    response_model=SugerirAjusteExperienciaAdaptadaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sugerir ajuste de uma experiência adaptada",
+    description=(
+        "Sugere, via IA, conquistas e contexto novos para uma experiência do currículo adaptado, "
+        "partindo dos textos atuais e orientado pela vaga. Cargo, empresa e período não são "
+        "alterados, e nada é persistido."
+    ),
+    responses=_RESPOSTAS_SUGESTAO,
+)
+def sugerir_ajuste_experiencia_adaptada(
+    body: SugerirAjusteExperienciaAdaptadaRequest,
+    service: ServiceSugerirAjusteExperienciaAdaptadaDep,
+) -> SugerirAjusteExperienciaAdaptadaResponse:
+    """Devolve conquistas e contexto sugeridos para a experiência informada."""
+    try:
+        sugerida = service.executar(body.experiencia.to_domain(), body.contexto_vaga.to_domain())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return SugerirAjusteExperienciaAdaptadaResponse(
+        conquistas=list(sugerida.conquistas), contexto=sugerida.contexto
+    )
 
 
 @router.post(

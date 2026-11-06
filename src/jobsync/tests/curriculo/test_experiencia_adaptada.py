@@ -88,6 +88,15 @@ class TestExperienciaAdaptada:
         )
 
 
+class TestExperienciaAdaptadaTemConteudo:
+    def test_com_conquistas_ou_contexto_tem_conteudo(self):
+        assert _experiencia(conquistas=("Criei APIs.",), contexto="").tem_conteudo
+        assert _experiencia(conquistas=(), contexto="Empresa de pagamentos.").tem_conteudo
+
+    def test_sem_conquistas_e_com_contexto_em_branco_nao_tem_conteudo(self):
+        assert not _experiencia(conquistas=(), contexto="  ").tem_conteudo
+
+
 class TestExperienciaAdaptadaRevisada:
     def test_apara_os_campos_e_descarta_conquistas_em_branco(self):
         experiencia = ExperienciaAdaptada.revisada(

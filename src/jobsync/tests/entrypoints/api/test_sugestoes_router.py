@@ -247,3 +247,119 @@ class TestSugestaoDeExperienciaRouter:
         )
 
         assert response.status_code == 502
+
+
+def _corpo_experiencia_adaptada(**extras) -> dict:
+    return {
+        "experiencia": {
+            "cargo": "Dev",
+            "empresa": "TechCorp",
+            "periodo": "2024",
+            "conquistas": ["Criei APIs.", "Reduzi custos."],
+            "contexto": "Empresa de pagamentos.",
+        },
+        "contexto_vaga": CONTEXTO_VAGA,
+        **extras,
+    }
+
+
+class TestSugestaoDeExperienciaAdaptadaRouter:
+    def test_devolve_conquistas_e_contexto_refinados(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+
+        response = client.post(
+            "/v1/experiencias-adaptadas/sugestoes", json=_corpo_experiencia_adaptada()
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "conquistas": ["Conquista sugerida."],
+            "contexto": "Contexto sugerido.",
+        }
+        experiencia, contexto = adaptada.chamadas[0]
+        assert experiencia == ExperienciaAdaptada(
+            cargo="Dev",
+            empresa="TechCorp",
+            periodo="2024",
+            conquistas=("Criei APIs.", "Reduzi custos."),
+            contexto="Empresa de pagamentos.",
+        )
+        assert contexto.idioma_alvo == "en"
+        assert contexto.analise_vaga.requisitos[0].nome == "Java"
+
+    def test_descarta_conquistas_em_branco_antes_de_chamar_o_servico(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+        corpo = _corpo_experiencia_adaptada()
+        corpo["experiencia"]["conquistas"] = ["Criei APIs.", "  ", ""]
+
+        response = client.post("/v1/experiencias-adaptadas/sugestoes", json=corpo)
+
+        assert response.status_code == 200
+        assert adaptada.chamadas[0][0].conquistas == ("Criei APIs.",)
+
+    def test_o_contexto_da_vaga_e_obrigatorio(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+        corpo = _corpo_experiencia_adaptada()
+        del corpo["contexto_vaga"]
+
+        response = client.post("/v1/experiencias-adaptadas/sugestoes", json=corpo)
+
+        assert response.status_code == 422
+        assert adaptada.chamadas == []
+
+    def test_contexto_da_vaga_com_idioma_invalido_devolve_422(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+
+        response = client.post(
+            "/v1/experiencias-adaptadas/sugestoes",
+            json=_corpo_experiencia_adaptada(contexto_vaga={**CONTEXTO_VAGA, "idioma_alvo": "fr"}),
+        )
+
+        assert response.status_code == 422
+        assert adaptada.chamadas == []
+
+    @pytest.mark.parametrize("campo", ["cargo", "empresa"])
+    def test_cargo_e_empresa_sao_obrigatorios(self, client: TestClient, campo):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+        corpo = _corpo_experiencia_adaptada()
+        corpo["experiencia"][campo] = " "
+
+        response = client.post("/v1/experiencias-adaptadas/sugestoes", json=corpo)
+
+        assert response.status_code == 422
+        assert campo in response.json()["detail"]
+        assert adaptada.chamadas == []
+
+    def test_experiencia_sem_conquistas_e_sem_contexto_devolve_422(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+        corpo = _corpo_experiencia_adaptada()
+        corpo["experiencia"]["conquistas"] = []
+        corpo["experiencia"]["contexto"] = ""
+
+        response = client.post("/v1/experiencias-adaptadas/sugestoes", json=corpo)
+
+        assert response.status_code == 422
+        assert adaptada.chamadas == []
+
+    def test_regra_de_negocio_do_servico_devolve_422(self, client: TestClient):
+        _sobrescrever_servicos_de_experiencia(
+            adaptada=ServicoExperienciaAdaptadaFake(erro=ValueError("O texto excede o limite."))
+        )
+
+        response = client.post(
+            "/v1/experiencias-adaptadas/sugestoes", json=_corpo_experiencia_adaptada()
+        )
+
+        assert response.status_code == 422
+        assert "excede o limite" in response.json()["detail"]
+
+    def test_ia_indisponivel_devolve_502(self, client: TestClient):
+        _sobrescrever_servicos_de_experiencia(
+            adaptada=ServicoExperienciaAdaptadaFake(erro=SugestaoIAIndisponivel())
+        )
+
+        response = client.post(
+            "/v1/experiencias-adaptadas/sugestoes", json=_corpo_experiencia_adaptada()
+        )
+
+        assert response.status_code == 502

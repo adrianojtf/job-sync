@@ -252,6 +252,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/experiencias-adaptadas/sugestoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sugerir ajuste de uma experiência adaptada
+         * @description Sugere, via IA, conquistas e contexto novos para uma experiência do currículo adaptado, partindo dos textos atuais e orientado pela vaga. Cargo, empresa e período não são alterados, e nada é persistido.
+         */
+        post: operations["sugerir_ajuste_experiencia_adaptada_v1_experiencias_adaptadas_sugestoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/curriculos/{id}/analises-ats": {
         parameters: {
             query?: never;
@@ -1248,6 +1268,41 @@ export interface components {
             total: number;
         };
         /**
+         * ExperienciaAdaptadaSchema
+         * @description Experiência adaptada (conquistas e contexto), como a recebem as sugestões de IA.
+         */
+        ExperienciaAdaptadaSchema: {
+            /**
+             * Cargo
+             * @description Cargo da experiência.
+             * @default
+             */
+            cargo?: string;
+            /**
+             * Empresa
+             * @description Empresa da experiência.
+             * @default
+             */
+            empresa?: string;
+            /**
+             * Periodo
+             * @description Período da experiência.
+             * @default
+             */
+            periodo?: string;
+            /**
+             * Conquistas
+             * @description Conquistas da experiência, uma por item.
+             */
+            conquistas?: string[];
+            /**
+             * Contexto
+             * @description Parágrafo de contexto sobre a empresa, a área e o papel.
+             * @default
+             */
+            contexto?: string;
+        };
+        /**
          * ExperienciaParaAvaliacaoRequest
          * @description Dados de uma experiência profissional para avaliação sob demanda.
          */
@@ -1378,11 +1433,21 @@ export interface components {
              */
             periodo?: string;
             /**
-             * Descricao
-             * @description Descrição adaptada, editável na revisão.
+             * Conquistas
+             * @description Conquistas da experiência, uma por item.
+             */
+            conquistas?: string[];
+            /**
+             * Contexto
+             * @description Parágrafo de contexto sobre a empresa, a área e o papel.
              * @default
              */
-            descricao?: string;
+            contexto?: string;
+            /**
+             * Descricao
+             * @description Legado: conquistas e contexto em texto, uma conquista por linha. Só vale na entrada quando `conquistas` e `contexto` não vêm; use esses campos.
+             */
+            descricao?: string | null;
         };
         /**
          * FormacaoAcademicaRequest
@@ -1979,13 +2044,39 @@ export interface components {
             conteudo: string;
         };
         /**
+         * SugerirAjusteExperienciaAdaptadaRequest
+         * @description Pedido de sugestão de IA para as conquistas e o contexto de uma experiência, com a vaga.
+         */
+        SugerirAjusteExperienciaAdaptadaRequest: {
+            /** @description Experiência com as conquistas e o contexto atuais, incluindo edições. */
+            experiencia: components["schemas"]["ExperienciaAdaptadaSchema"];
+            /** @description Vaga que orienta a sugestão: descrição, idioma e análise devolvida com o rascunho. */
+            contexto_vaga: components["schemas"]["ContextoVagaSchema"];
+        };
+        /**
+         * SugerirAjusteExperienciaAdaptadaResponse
+         * @description Conquistas e contexto sugeridos; cargo, empresa e período não são alterados.
+         */
+        SugerirAjusteExperienciaAdaptadaResponse: {
+            /**
+             * Conquistas
+             * @description Conquistas sugeridas, uma por item.
+             */
+            conquistas: string[];
+            /**
+             * Contexto
+             * @description Contexto sugerido.
+             */
+            contexto: string;
+        };
+        /**
          * SugerirAjusteExperienciaRequest
          * @description Pedido de sugestão de IA para uma experiência, a partir da descrição atual.
          */
         SugerirAjusteExperienciaRequest: {
             /** @description Experiência com a descrição atual, incluindo edições. */
             experiencia: components["schemas"]["ExperienciaParaAvaliacaoRequest"];
-            /** @description Contexto da vaga; sem ele, a IA apenas melhora a escrita. */
+            /** @description Contexto da vaga; sem ele, a IA apenas melhora a escrita. Legado para pedidos com vaga: use POST /v1/experiencias-adaptadas/sugestoes, que trabalha com conquistas e contexto. */
             contexto_vaga?: components["schemas"]["ContextoVagaSchema"] | null;
         };
         /**
@@ -2702,6 +2793,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SugerirAjusteExperienciaResponse"];
+                };
+            };
+            /** @description Texto, seção ou contexto da vaga ausentes ou inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description O provedor de IA está indisponível. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    sugerir_ajuste_experiencia_adaptada_v1_experiencias_adaptadas_sugestoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SugerirAjusteExperienciaAdaptadaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SugerirAjusteExperienciaAdaptadaResponse"];
                 };
             };
             /** @description Texto, seção ou contexto da vaga ausentes ou inválidos. */

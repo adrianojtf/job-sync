@@ -86,7 +86,13 @@ def salvar_curriculo(
     request: Request,
 ) -> CurriculoSalvoResponse:
     """Salva um novo currículo na biblioteca do perfil informado."""
-    salvo = service.executar(body.to_dto())
+    try:
+        salvo = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
     location = f"{request.url.path}/{salvo.id}"
     response.headers["Location"] = location
     return CurriculoSalvoResponse.from_dto(salvo)

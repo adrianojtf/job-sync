@@ -32,7 +32,13 @@ def salvar_perfil_estruturado(
     service: ServiceSalvarPerfilEstruturadoDep,
 ) -> PerfilEstruturadoResponse:
     """Persiste os dados estruturados do perfil (upsert)."""
-    perfil = service.executar(body.to_dto())
+    try:
+        perfil = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
     return PerfilEstruturadoResponse.from_dto(perfil)
 
 
@@ -49,9 +55,14 @@ def atualizar_perfil_estruturado(
     service: ServiceSalvarPerfilEstruturadoDep,
 ) -> PerfilEstruturadoResponse:
     """Atualiza o perfil estruturado de forma idempotente (PUT)."""
-    input_dto = body.to_dto()
-    input_dto = replace(input_dto, perfil_identificador=perfil_identificador)
-    perfil = service.executar(input_dto)
+    try:
+        input_dto = replace(body.to_dto(), perfil_identificador=perfil_identificador)
+        perfil = service.executar(input_dto)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
     return PerfilEstruturadoResponse.from_dto(perfil)
 
 

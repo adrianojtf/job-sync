@@ -23,12 +23,12 @@ Criar o projeto `frontend/` (React 18 + TypeScript + Vite) com a infraestrutura 
 
 ## Subtarefas
 
-- [ ] 3.1 Scaffold Vite + React + TS, ESLint, Prettier e scripts `dev`, `build`, `test`, `lint`.
-- [ ] 3.2 Configurar Vitest, Testing Library e MSW (handlers base em `src/test/`).
-- [ ] 3.3 Script `gerar-tipos` e primeira geração de `schema.d.ts`. Reexportar nomes de domínio em `api/tipos.ts`.
-- [ ] 3.4 Escrever os testes do `HttpApiClient` (red) e implementar o adapter.
-- [ ] 3.5 Implementar `ApiClient`, `ApiClientProvider` e `QueryClientProvider`.
-- [ ] 3.6 Implementar e testar os utilitários de arquivo.
+- [x] 3.1 Scaffold Vite + React + TS, ESLint, Prettier e scripts `dev`, `build`, `test`, `lint`.
+- [x] 3.2 Configurar Vitest, Testing Library e MSW (handlers base em `src/test/`).
+- [x] 3.3 Script `gerar-tipos` e primeira geração de `schema.d.ts`. Reexportar nomes de domínio em `api/tipos.ts`.
+- [x] 3.4 Escrever os testes do `HttpApiClient` (red) e implementar o adapter.
+- [x] 3.5 Implementar `ApiClient`, `ApiClientProvider` e `QueryClientProvider`.
+- [x] 3.6 Implementar e testar os utilitários de arquivo.
 
 ## Detalhes de Implementação
 
@@ -43,8 +43,8 @@ Ver `techspec-job-0015.md` → "Visão Geral dos Componentes", "Interfaces Princ
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do `HttpApiClient`: URL base, timeout, 204 sem corpo, 404, 422 e 500 viram `ApiError` com `status`, `title` e `detail`.
-- [ ] Testes de unidade de `base64ParaBlob` e `arquivoParaBase64`.
+- [x] Testes de unidade do `HttpApiClient`: URL base, timeout, 204 sem corpo, 404, 422 e 500 viram `ApiError` com `status`, `title` e `detail`.
+- [x] Testes de unidade de `base64ParaBlob` e `arquivoParaBase64`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -12,14 +12,19 @@ export const API_TESTE = "http://api.test";
 
 interface Opcoes {
   caminho?: string;
+  /** Estado do histórico da entrada inicial (ex.: para simular um recarregamento da página). */
+  estado?: unknown;
   perfil?: string;
   apiClient?: ApiClient;
 }
 
 /** Renderiza a aplicação completa (providers + rotas) em memória, como o usuário a vê. */
-export function renderizarApp({ caminho = "/", perfil, apiClient }: Opcoes = {}) {
+export function renderizarApp({ caminho = "/", estado, perfil, apiClient }: Opcoes = {}) {
   if (perfil) localStorage.setItem(CHAVE_SESSAO, perfil);
-  const router = createMemoryRouter(rotas, { initialEntries: [caminho], ...OPCOES_ROUTER });
+  const router = createMemoryRouter(rotas, {
+    initialEntries: [{ pathname: caminho, state: estado }],
+    ...OPCOES_ROUTER,
+  });
   const queryClient = criarQueryClient();
   queryClient.setDefaultOptions({ queries: { retry: false } });
   // StrictMode como em main.tsx: revela efeitos que quebram com a montagem dupla do React.

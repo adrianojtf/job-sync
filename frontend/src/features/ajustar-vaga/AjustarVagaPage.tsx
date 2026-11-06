@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { AdaptarCurriculoEntrada, CurriculoAdaptado } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { base64ParaBlob, baixarArquivo } from "../../shared/arquivos/arquivos";
@@ -68,8 +68,13 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
     avaliar.mutate(form.getValues("descricao").trim());
   };
 
-  // Agendado e cancelável: no StrictMode a 1ª montagem é desfeita e só a definitiva dispara a análise.
-  // Disparar direto no efeito perdia o resultado, pois a desmontagem desliga o observador da mutação.
+  // Análise automática pedida pelo modal, feita uma única vez:
+  // - agendada e cancelável: no StrictMode a 1ª montagem é desfeita e só a definitiva dispara
+  //   (disparar direto no efeito perdia o resultado, pois a desmontagem desliga o observador);
+  // - depois de disparar, a instrução é consumida no histórico (replace, mesmo `pedido`), então
+  //   recarregar ou voltar para a página não chama a IA de novo e a tela não é remontada.
+  const navegar = useNavigate();
+  const { pathname } = useLocation();
   const analisouAoAbrir = useRef(false);
   const { mutate: avaliarVaga } = avaliar;
   useEffect(() => {
@@ -77,9 +82,11 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
     const agendamento = setTimeout(() => {
       analisouAoAbrir.current = true;
       avaliarVaga((estado.descricao ?? "").trim());
+      const estadoConsumido: EstadoAjustarVaga = { ...estado, analisarAoAbrir: false };
+      navegar(pathname, { replace: true, state: estadoConsumido });
     }, 0);
     return () => clearTimeout(agendamento);
-  }, [estado, avaliarVaga]);
+  }, [estado, avaliarVaga, navegar, pathname]);
 
   const montarEntrada = async (): Promise<{
     curriculoId: string;

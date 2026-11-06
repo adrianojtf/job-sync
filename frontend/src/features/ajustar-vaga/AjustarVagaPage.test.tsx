@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { AVALIACAO_VAGA, CURRICULO_SALVO, dimensao, servirDadosBase } from "../../test/fixtures";
@@ -120,6 +120,55 @@ describe("Ajustar para uma vaga — modal do protótipo", () => {
       "85",
     );
     expect(chamadas.filter((c) => c.rota === "avaliacoes")).toHaveLength(1);
+  });
+});
+
+describe("Ajustar para uma vaga — análise automática só uma vez", () => {
+  it("recarregar a página depois da análise não chama a IA de novo", async () => {
+    servirDadosBase();
+    const chamadas = servirIa();
+    const { router } = renderizarApp({ caminho: "/", perfil: "adriano" });
+    await userEvent.click(await screen.findByRole("button", { name: "Ajustar para uma vaga" }));
+    const modal = screen.getByRole("dialog", { name: "Ajustar currículo para uma vaga" });
+    await userEvent.type(within(modal).getByLabelText("Título da vaga"), "Senior Java");
+    await userEvent.type(within(modal).getByLabelText("Descrição da vaga"), "Java e Kafka.");
+    await userEvent.click(within(modal).getByRole("button", { name: "Analisar vaga" }));
+    await screen.findByRole("meter", { name: "Relevância" });
+    const entradaAtual = router.state.location;
+
+    cleanup();
+    renderizarApp({
+      caminho: entradaAtual.pathname,
+      estado: entradaAtual.state,
+      perfil: "adriano",
+    });
+
+    expect(await screen.findByLabelText("Título da vaga")).toHaveValue("Senior Java");
+    await new Promise((resolver) => setTimeout(resolver, 50));
+    expect(chamadas.filter((chamada) => chamada.rota === "avaliacoes")).toHaveLength(1);
+    expect(screen.queryByRole("meter")).not.toBeInTheDocument();
+  });
+
+  it("consumir a instrução não remonta a tela nem apaga o resultado", async () => {
+    servirDadosBase();
+    servirIa();
+    const { router } = renderizarApp({
+      caminho: "/ajustar-vaga",
+      estado: { cargo: "Backend", descricao: "Vaga.", analisarAoAbrir: true, pedido: 1 },
+      perfil: "adriano",
+    });
+
+    await screen.findByRole("meter", { name: "Relevância" });
+
+    await waitFor(() =>
+      expect(router.state.location.state).toMatchObject({
+        analisarAoAbrir: false,
+        pedido: 1,
+        cargo: "Backend",
+      }),
+    );
+    expect(screen.getByRole("meter", { name: "Relevância" })).toBeInTheDocument();
+    expect(router.state.historyAction).toBe("REPLACE");
   });
 });
 

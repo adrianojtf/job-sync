@@ -22,11 +22,11 @@ Preparar o frontend para rodar de forma independente e proteger a entrega com te
 
 ## Subtarefas
 
-- [ ] 10.1 Criar `frontend/Dockerfile` e `nginx.conf`.
-- [ ] 10.2 Atualizar `README.md` e `.env.example`.
-- [ ] 10.3 Escrever os 2 cenários E2E (backend com LLM fake ou MSW).
-- [ ] 10.4 Adicionar a verificação axe aos E2E.
-- [ ] 10.5 Adicionar a checagem de contrato e os jobs `lint`, `test` e `build` do frontend em `.github/workflows`.
+- [x] 10.1 Criar `frontend/Dockerfile` e `nginx.conf`.
+- [x] 10.2 Atualizar `README.md` e `.env.example`.
+- [x] 10.3 Escrever os 2 cenários E2E (backend com LLM fake ou MSW).
+- [x] 10.4 Adicionar a verificação axe aos E2E.
+- [x] 10.5 Adicionar a checagem de contrato e os jobs `lint`, `test` e `build` do frontend em `.github/workflows`.
 
 ## Detalhes de Implementação
 
@@ -41,10 +41,10 @@ Ver `techspec-job-0015.md` → "Testes de Serviço", "Monitoramento e Observabil
 
 ## Testes da Tarefa
 
-- [ ] E2E Playwright: 2 cenários passando.
-- [ ] axe sem violações graves nas telas principais.
-- [ ] Build Docker do frontend e do backend.
-- [ ] `pytest` (backend) e `npm test` (frontend) passam.
+- [x] E2E Playwright: 2 cenários passando.
+- [x] axe sem violações graves nas telas principais.
+- [x] Build Docker do frontend e do backend.
+- [x] `pytest` (backend) e `npm test` (frontend) passam.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

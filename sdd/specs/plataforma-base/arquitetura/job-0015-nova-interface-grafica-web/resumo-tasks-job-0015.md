@@ -11,7 +11,7 @@
 - [x] 7.0 Telas Vagas salvas (T7) e Candidaturas/Kanban (T9)
 - [x] 8.0 Telas Descobrir vagas (T8) e Configurações (T10)
 - [x] 9.0 Tela Visão geral (T2)
-- [ ] 10.0 Entrega: Docker/Nginx, README, E2E, acessibilidade e checagem de contrato
+- [x] 10.0 Entrega: Docker/Nginx, README, E2E, acessibilidade e checagem de contrato
 
 ## Detalhamento
 

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from jobsync.curriculo import (
-    ExperienciaParaAvaliacao,
+    ExperienciaAdaptada,
     GeradorPdfPort,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
@@ -24,8 +24,8 @@ def _rascunho(nome_completo: str = "Ana Souza") -> RascunhoCurriculoAdaptado:
         linkedin="",
         secoes=(SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo revisado pelo usuário."),),
         experiencias=(
-            ExperienciaParaAvaliacao(
-                cargo="Dev", empresa="TechCorp", periodo="2024", descricao="Texto editado."
+            ExperienciaAdaptada(
+                cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=("Texto editado.",)
             ),
         ),
     )
@@ -51,7 +51,7 @@ class TestGerarPdfCurriculoRevisado:
 
         saida = GerarPdfCurriculoRevisado(gerador_pdf).executar(_input_dto(rascunho=rascunho))
 
-        gerador_pdf.gerar.assert_called_once_with(rascunho.para_curriculo(), "pt")
+        gerador_pdf.gerar.assert_called_once_with(rascunho.para_curriculo("pt"), "pt")
         assert saida.pdf_bytes == b"%PDF-revisado"
 
     def test_nome_do_arquivo_usa_o_nome_revisado(self):

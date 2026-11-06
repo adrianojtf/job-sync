@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 
-from jobsync.curriculo import Curriculo, RascunhoCurriculoAdaptado, TipoSecao
+from jobsync.curriculo import Curriculo, ExperienciaAdaptada, RascunhoCurriculoAdaptado, TipoSecao
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
@@ -71,7 +71,8 @@ class AdaptarCurriculoParaVaga:
         analise_vaga = self._analisador_vaga.analisar(input_dto.descricao_vaga)
         rascunho = self._montar_rascunho(curriculo_original, input_dto, analise_vaga)
         avaliacoes_experiencias = self._avaliar_experiencias(
-            rascunho.experiencias or (), input_dto.descricao_vaga
+            tuple(experiencia.para_avaliacao() for experiencia in rascunho.experiencias or ()),
+            input_dto.descricao_vaga,
         )
         logger.info(
             "Rascunho adaptado gerado (secoes=%d, experiencias=%d, idioma=%s).",
@@ -82,7 +83,7 @@ class AdaptarCurriculoParaVaga:
 
         return AdaptarCurriculoParaVagaOutputDto(
             rascunho=rascunho,
-            curriculo_adaptado=rascunho.para_curriculo(),
+            curriculo_adaptado=rascunho.para_curriculo(input_dto.idioma_alvo),
             analise_vaga=analise_vaga,
             avaliacao_vaga=avaliacao_vaga,
             status_avaliacao_vaga=status_avaliacao_vaga,
@@ -156,17 +157,17 @@ class AdaptarCurriculoParaVaga:
         experiencias: tuple[ExperienciaParaAvaliacao, ...],
         input_dto: AdaptarCurriculoParaVagaInputDto,
         analise_vaga: AnaliseVaga,
-    ) -> tuple[ExperienciaParaAvaliacao, ...]:
+    ) -> tuple[ExperienciaAdaptada, ...]:
         ajustador = self._ajustador_experiencia
         if ajustador is None:
             return ()
 
         return tuple(
-            ExperienciaParaAvaliacao(
-                descricao=ajustada.descricao,
+            ExperienciaAdaptada.de_descricao(
                 cargo=original.cargo,
                 empresa=original.empresa,
                 periodo=original.periodo,
+                descricao=ajustada.descricao,
             )
             for original in experiencias
             for ajustada in (

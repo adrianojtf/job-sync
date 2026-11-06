@@ -2,6 +2,7 @@
 
 from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.curriculo.domain.avaliacao_experiencia import (
     AvaliacaoExperiencia,
     ExperienciaParaAvaliacao,
@@ -21,6 +22,7 @@ from jobsync.curriculo.domain.rascunho_curriculo_adaptado import RascunhoCurricu
 __all__ = [
     "ContextoVaga",
     "Curriculo",
+    "ExperienciaAdaptada",
     "SecaoCurriculo",
     "TipoSecao",
     "AvaliacaoExperiencia",

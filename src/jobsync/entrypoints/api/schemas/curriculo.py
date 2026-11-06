@@ -12,6 +12,7 @@ from jobsync.curriculo import (
     AvaliacaoExperiencia,
     ContextoVaga,
     Curriculo,
+    ExperienciaAdaptada,
     ExperienciaParaAvaliacao,
     RascunhoCurriculoAdaptado,
     TipoSecao,
@@ -417,7 +418,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                         cargo=experiencia.cargo,
                         empresa=experiencia.empresa,
                         periodo=experiencia.periodo,
-                        descricao=experiencia.descricao,
+                        descricao="\n".join(experiencia.conquistas),
                     )
                     for experiencia in rascunho.experiencias
                 ]
@@ -439,11 +440,12 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 None
                 if self.experiencias is None
                 else [
-                    ExperienciaParaAvaliacao(
-                        cargo=experiencia.cargo,
-                        empresa=experiencia.empresa,
-                        periodo=experiencia.periodo,
-                        descricao=experiencia.descricao,
+                    (
+                        experiencia.cargo,
+                        experiencia.empresa,
+                        experiencia.periodo,
+                        ExperienciaAdaptada.conquistas_de_descricao(experiencia.descricao),
+                        "",
                     )
                     for experiencia in self.experiencias
                 ]

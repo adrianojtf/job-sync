@@ -466,7 +466,7 @@ class TestCurriculoRouter:
         assert data["nome_arquivo"].startswith("MatheusEditado-")
         rascunho = gerar_pdf_fake.input_dto.rascunho
         assert rascunho.secoes[0].conteudo == "Resumo editado."
-        assert rascunho.experiencias[0].descricao == "Texto editado."
+        assert rascunho.experiencias[0].conquistas == ("Texto editado.",)
 
     def test_post_curriculo_revisado_com_download_devolve_pdf_binario(
         self, client: TestClient, gerar_pdf_fake: GerarPdfFake

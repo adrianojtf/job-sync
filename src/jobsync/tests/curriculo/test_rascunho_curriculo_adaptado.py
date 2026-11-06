@@ -2,7 +2,7 @@
 import pytest
 
 from jobsync.curriculo import (
-    ExperienciaParaAvaliacao,
+    ExperienciaAdaptada,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
     TipoSecao,
@@ -13,10 +13,11 @@ def _experiencia(
     cargo: str = "Engenheiro de Software",
     empresa: str = "Starian",
     periodo: str = "2022 - Atual",
-    descricao: str = "Desenvolvi APIs em Java.",
-) -> ExperienciaParaAvaliacao:
-    return ExperienciaParaAvaliacao(
-        cargo=cargo, empresa=empresa, periodo=periodo, descricao=descricao
+    conquistas: tuple[str, ...] = ("Desenvolvi APIs em Java.",),
+    contexto: str = "",
+) -> ExperienciaAdaptada:
+    return ExperienciaAdaptada(
+        cargo=cargo, empresa=empresa, periodo=periodo, conquistas=conquistas, contexto=contexto
     )
 
 
@@ -24,116 +25,89 @@ def _secao_perfil() -> SecaoCurriculo:
     return SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Engenheiro backend.")
 
 
+def _rascunho(**sobrescritas) -> RascunhoCurriculoAdaptado:
+    valores = {
+        "nome_completo": "Ana Souza",
+        "email": "ana@ex.com",
+        "linkedin": "",
+        "secoes": (_secao_perfil(),),
+    }
+    valores.update(sobrescritas)
+    return RascunhoCurriculoAdaptado(**valores)
+
+
 class TestRascunhoCurriculoAdaptado:
     def test_nome_completo_vazio_gera_erro(self):
         with pytest.raises(ValueError, match="nome completo"):
-            RascunhoCurriculoAdaptado(
-                nome_completo="  ",
-                email="ana@ex.com",
-                linkedin="",
-                secoes=(_secao_perfil(),),
-            )
+            _rascunho(nome_completo="  ")
 
     def test_rascunho_sem_secoes_e_sem_experiencias_gera_erro(self):
         with pytest.raises(ValueError, match="ao menos uma seção"):
-            RascunhoCurriculoAdaptado(
-                nome_completo="Ana Souza",
-                email="ana@ex.com",
-                linkedin="",
-                secoes=(),
-                experiencias=(),
-            )
+            _rascunho(secoes=(), experiencias=())
 
     def test_secao_de_experiencias_com_experiencias_estruturadas_gera_erro(self):
         with pytest.raises(ValueError, match="experiências"):
-            RascunhoCurriculoAdaptado(
-                nome_completo="Ana Souza",
-                email="ana@ex.com",
-                linkedin="",
+            _rascunho(
                 secoes=(SecaoCurriculo(TipoSecao.EXPERIENCIAS, "Experiências", "texto"),),
                 experiencias=(_experiencia(),),
             )
 
-    def test_experiencia_estruturada_sem_cargo_gera_erro(self):
-        with pytest.raises(ValueError, match="cargo"):
-            RascunhoCurriculoAdaptado(
-                nome_completo="Ana Souza",
-                email="ana@ex.com",
-                linkedin="",
-                secoes=(),
-                experiencias=(_experiencia(cargo=" "),),
-            )
-
-    def test_experiencia_estruturada_sem_empresa_gera_erro(self):
-        with pytest.raises(ValueError, match="empresa"):
-            RascunhoCurriculoAdaptado(
-                nome_completo="Ana Souza",
-                email="ana@ex.com",
-                linkedin="",
-                secoes=(),
-                experiencias=(_experiencia(empresa=""),),
-            )
-
     def test_rascunho_apenas_com_experiencias_e_valido(self):
-        rascunho = RascunhoCurriculoAdaptado(
-            nome_completo="Ana Souza",
-            email="ana@ex.com",
-            linkedin="",
-            secoes=(),
-            experiencias=(_experiencia(),),
-        )
+        rascunho = _rascunho(secoes=(), experiencias=(_experiencia(),))
 
         assert rascunho.experiencias == (_experiencia(),)
 
     def test_para_curriculo_preserva_cabecalho_e_secoes_de_texto(self):
-        rascunho = RascunhoCurriculoAdaptado(
-            nome_completo="Ana Souza",
-            email="ana@ex.com",
-            linkedin="linkedin.com/in/ana",
-            secoes=(_secao_perfil(),),
-        )
+        rascunho = _rascunho(linkedin="linkedin.com/in/ana")
 
-        curriculo = rascunho.para_curriculo()
+        curriculo = rascunho.para_curriculo("pt")
 
         assert curriculo.nome_completo == "Ana Souza"
         assert curriculo.email == "ana@ex.com"
         assert curriculo.linkedin == "linkedin.com/in/ana"
         assert curriculo.secoes == (_secao_perfil(),)
 
-    def test_para_curriculo_monta_secao_de_experiencias_no_formato_do_pdf(self):
-        rascunho = RascunhoCurriculoAdaptado(
-            nome_completo="Ana Souza",
-            email="ana@ex.com",
-            linkedin="",
-            secoes=(_secao_perfil(),),
+    def test_para_curriculo_monta_secao_de_experiencias_com_bullets_e_contexto(self):
+        rascunho = _rascunho(
             experiencias=(
-                _experiencia(),
                 _experiencia(
-                    cargo="Dev", empresa="TechCorp", periodo="", descricao="  Criei testes.  "
+                    conquistas=("Desenvolvi APIs em Java.", "Reduzi o tempo em 30%."),
+                    contexto="Plataforma financeira com milhares de usuários.",
                 ),
+                _experiencia(cargo="Dev", empresa="TechCorp", periodo="", conquistas=("Criei testes.",)),
             ),
             titulo_experiencias="Professional Experience",
         )
 
-        secao = rascunho.para_curriculo().obter_secao(TipoSecao.EXPERIENCIAS)
+        secao = rascunho.para_curriculo("en").obter_secao(TipoSecao.EXPERIENCIAS)
 
         assert secao == SecaoCurriculo(
             TipoSecao.EXPERIENCIAS,
             "Professional Experience",
-            "Engenheiro de Software — Starian (2022 - Atual)\nDesenvolvi APIs em Java."
-            "\n\nDev — TechCorp\nCriei testes.",
+            "Engenheiro de Software — Starian (2022 - Atual)\n"
+            "- Desenvolvi APIs em Java.\n"
+            "- Reduzi o tempo em 30%.\n"
+            "Context: Plataforma financeira com milhares de usuários."
+            "\n\n"
+            "Dev — TechCorp\n"
+            "- Criei testes.",
         )
+
+    def test_para_curriculo_usa_o_rotulo_do_idioma_alvo(self):
+        rascunho = _rascunho(experiencias=(_experiencia(contexto="Empresa de telecom."),))
+
+        secao = rascunho.para_curriculo("pt").obter_secao(TipoSecao.EXPERIENCIAS)
+
+        assert "\nContexto: Empresa de telecom." in secao.conteudo
+
+    def test_para_curriculo_com_idioma_nao_suportado_gera_erro(self):
+        with pytest.raises(ValueError, match="idioma"):
+            _rascunho().para_curriculo("fr")
 
     def test_para_curriculo_sem_experiencias_estruturadas_nao_cria_secao(self):
-        rascunho = RascunhoCurriculoAdaptado(
-            nome_completo="Ana Souza",
-            email="ana@ex.com",
-            linkedin="",
-            secoes=(_secao_perfil(),),
-            experiencias=(),
-        )
+        rascunho = _rascunho(experiencias=())
 
-        curriculo = rascunho.para_curriculo()
+        curriculo = rascunho.para_curriculo("pt")
 
         assert curriculo.obter_secao(TipoSecao.EXPERIENCIAS) is None
 
@@ -152,19 +126,37 @@ class TestRascunhoCurriculoAdaptado:
         assert rascunho.secoes == (_secao_perfil(),)
         assert rascunho.experiencias is None
 
-    def test_revisado_descarta_experiencias_totalmente_em_branco(self):
+    def test_revisado_monta_experiencias_e_descarta_as_totalmente_em_branco(self):
         rascunho = RascunhoCurriculoAdaptado.revisado(
             nome_completo="Ana Souza",
             email="ana@ex.com",
             linkedin="",
             secoes=(),
             experiencias=(
-                _experiencia(),
-                _experiencia(cargo=" ", empresa="", periodo="", descricao=" "),
+                (" Dev ", "TechCorp", "2024", ("  Entrega A. ", ""), " Contexto. "),
+                (" ", "", "", ("", " "), " "),
             ),
         )
 
-        assert rascunho.experiencias == (_experiencia(),)
+        assert rascunho.experiencias == (
+            ExperienciaAdaptada(
+                cargo="Dev",
+                empresa="TechCorp",
+                periodo="2024",
+                conquistas=("Entrega A.",),
+                contexto="Contexto.",
+            ),
+        )
+
+    def test_revisado_com_experiencia_sem_empresa_gera_erro(self):
+        with pytest.raises(ValueError, match="empresa"):
+            RascunhoCurriculoAdaptado.revisado(
+                nome_completo="Ana Souza",
+                email="",
+                linkedin="",
+                secoes=(),
+                experiencias=(("Dev", "", "", ("Entrega A.",), ""),),
+            )
 
     def test_revisado_preserva_titulo_das_experiencias(self):
         rascunho = RascunhoCurriculoAdaptado.revisado(
@@ -172,7 +164,7 @@ class TestRascunhoCurriculoAdaptado:
             email="ana@ex.com",
             linkedin="",
             secoes=(),
-            experiencias=(_experiencia(),),
+            experiencias=(("Dev", "TechCorp", "", ("Entrega A.",), ""),),
             titulo_experiencias="Experience",
         )
 

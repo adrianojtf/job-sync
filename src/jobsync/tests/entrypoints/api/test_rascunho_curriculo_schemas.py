@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from jobsync.curriculo import (
-    ExperienciaParaAvaliacao,
+    ExperienciaAdaptada,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
     TipoSecao,
@@ -27,8 +27,8 @@ def _rascunho_dominio() -> RascunhoCurriculoAdaptado:
         linkedin="linkedin.com/in/ana",
         secoes=(SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo."),),
         experiencias=(
-            ExperienciaParaAvaliacao(
-                cargo="Dev", empresa="TechCorp", periodo="2024", descricao="APIs."
+            ExperienciaAdaptada(
+                cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=("APIs.",)
             ),
         ),
         titulo_experiencias="Experience",
@@ -42,6 +42,27 @@ class TestRascunhoCurriculoAdaptadoSchema:
         schema = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho)
 
         assert schema.secoes[0].tipo == "PERFIL"
+        assert schema.to_domain() == rascunho
+
+    def test_descricao_da_experiencia_mostra_uma_conquista_por_linha_sem_marcadores(self):
+        rascunho = RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(),
+            experiencias=(
+                ExperienciaAdaptada(
+                    cargo="Dev",
+                    empresa="TechCorp",
+                    periodo="",
+                    conquistas=("Criei APIs.", "Reduzi custos."),
+                ),
+            ),
+        )
+
+        schema = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho)
+
+        assert schema.experiencias[0].descricao == "Criei APIs.\nReduzi custos."
         assert schema.to_domain() == rascunho
 
     def test_rascunho_de_fonte_pdf_tem_experiencias_nulas(self):

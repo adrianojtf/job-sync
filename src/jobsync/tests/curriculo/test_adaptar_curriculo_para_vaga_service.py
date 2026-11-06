@@ -189,7 +189,7 @@ class TestAdaptarCurriculoParaVaga:
         assert resultado.rascunho.email == "adriano@example.com"
         assert len(resultado.rascunho.secoes) == 4
         assert resultado.rascunho.experiencias is None
-        assert resultado.curriculo_adaptado == resultado.rascunho.para_curriculo()
+        assert resultado.curriculo_adaptado == resultado.rascunho.para_curriculo("pt")
 
     def test_analisa_vaga_e_repassa_analise_para_ajustador_texto(self):
         curriculo = _curriculo_exemplo()
@@ -253,7 +253,7 @@ class TestAdaptarCurriculoParaVaga:
 
         resultado = caso_de_uso.executar(input_dto)
 
-        secao_perfil = resultado.rascunho.para_curriculo().obter_secao(TipoSecao.PERFIL)
+        secao_perfil = resultado.rascunho.para_curriculo("en").obter_secao(TipoSecao.PERFIL)
         assert secao_perfil.conteudo == "[AJUSTADO-en] Engenheiro backend."
 
     def test_idioma_invalido_gera_erro(self):
@@ -490,7 +490,7 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
         assert ajustador_experiencia.recebidas == list(_experiencias_exemplo())
         assert len(avaliador_experiencia.recebidas) == 2
         assert all(
-            experiencia.descricao.startswith("[AJUSTADA]")
+            experiencia.descricao.startswith("- [AJUSTADA]")
             for experiencia in avaliador_experiencia.recebidas
         )
 
@@ -512,7 +512,7 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
             (experiencia.cargo, experiencia.empresa)
             for experiencia in resultado.rascunho.experiencias
         ] == [("Engenheira de Software", "Starian"), ("Desenvolvedora Backend", "TechCorp")]
-        secao = resultado.rascunho.para_curriculo().obter_secao(TipoSecao.EXPERIENCIAS)
+        secao = resultado.rascunho.para_curriculo("pt").obter_secao(TipoSecao.EXPERIENCIAS)
         assert secao.titulo == "Experiências"
         assert "Engenheira de Software — Starian (2021-2024)" in secao.conteudo
         assert "Desenvolvedora Backend — TechCorp (2019-2021)" in secao.conteudo

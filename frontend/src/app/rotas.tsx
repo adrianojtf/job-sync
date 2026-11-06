@@ -2,9 +2,11 @@ import type { ReactElement } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import { AjustarVagaPage } from "../features/ajustar-vaga/AjustarVagaPage";
 import { AnalisarAtsPage } from "../features/analisar-ats/AnalisarAtsPage";
+import { CandidaturasPage } from "../features/candidaturas/CandidaturasPage";
 import { CurriculosPage } from "../features/curriculos/CurriculosPage";
 import { EntrarPage } from "../features/entrar/EntrarPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
+import { VagasSalvasPage } from "../features/vagas-salvas/VagasSalvasPage";
 import { AppShell } from "./AppShell";
 import { EmConstrucao } from "./EmConstrucao";
 import { ErroDeRota } from "./ErroDeRota";
@@ -21,6 +23,8 @@ const TELAS: Record<string, ReactElement> = {
   "/curriculos": <CurriculosPage />,
   "/ajustar-vaga": <AjustarVagaPage />,
   "/analisar-ats": <AnalisarAtsPage />,
+  "/vagas-salvas": <VagasSalvasPage />,
+  "/candidaturas": <CandidaturasPage />,
 };
 
 export const rotas: RouteObject[] = [

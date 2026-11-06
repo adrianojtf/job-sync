@@ -8,7 +8,7 @@
 - [x] 4.0 Design system do protótipo, AppShell, rotas e tela Entrar (T1)
 - [x] 5.0 Telas Meu perfil (T3) e Meus currículos (T4)
 - [x] 6.0 Telas Ajustar para uma vaga (T5) e Analisar ATS (T6)
-- [ ] 7.0 Telas Vagas salvas (T7) e Candidaturas/Kanban (T9)
+- [x] 7.0 Telas Vagas salvas (T7) e Candidaturas/Kanban (T9)
 - [ ] 8.0 Telas Descobrir vagas (T8) e Configurações (T10)
 - [ ] 9.0 Tela Visão geral (T2)
 - [ ] 10.0 Entrega: Docker/Nginx, README, E2E, acessibilidade e checagem de contrato

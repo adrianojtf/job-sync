@@ -1,4 +1,10 @@
-import { formatarData, paraSlug, primeiraLinha } from "./formatacao";
+import {
+  dominioDaUrl,
+  formatarData,
+  formatarDataHora,
+  paraSlug,
+  primeiraLinha,
+} from "./formatacao";
 
 describe("formatarData", () => {
   it("formata datas ISO da API no padrão brasileiro", () => {
@@ -19,5 +25,22 @@ describe("primeiraLinha", () => {
 describe("paraSlug", () => {
   it("gera um trecho de nome de arquivo sem acentos e espaços", () => {
     expect(paraSlug("Sênior Java / Olist")).toBe("senior-java-olist");
+  });
+});
+
+describe("dominioDaUrl", () => {
+  it("devolve o domínio sem www", () => {
+    expect(dominioDaUrl("https://www.linkedin.com/jobs/view/1")).toBe("linkedin.com");
+  });
+
+  it("devolve vazio para URL ausente ou inválida", () => {
+    expect(dominioDaUrl(null)).toBe("");
+    expect(dominioDaUrl("não é url")).toBe("");
+  });
+});
+
+describe("formatarDataHora", () => {
+  it("formata data e hora no padrão brasileiro", () => {
+    expect(formatarDataHora("2026-11-06T15:30:00")).toBe("06/11/2026 15:30");
   });
 });

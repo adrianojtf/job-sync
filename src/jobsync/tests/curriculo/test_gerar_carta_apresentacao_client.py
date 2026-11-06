@@ -13,7 +13,7 @@ from jobsync.vaga import (
 from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
 
 
-class ClienteGroqFake:
+class ClienteOpenAIFake:
     def __init__(self, resposta):
         self.resposta = resposta
         self.prompt_usuario: str | None = None
@@ -56,10 +56,10 @@ def _analise_vaga() -> AnaliseVaga:
     )
 
 
-class TestGeradorCartaApresentacaoGroq:
+class TestGerarCartaApresentacaoClient:
     def test_prompt_inclui_requisitos_explicitos_e_implicitos(self):
-        cliente_fake = ClienteGroqFake({"carta": "Prezados, ..."})
-        gerador = GerarCartaApresentacaoClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"carta": "Prezados, ..."})
+        gerador = GerarCartaApresentacaoClient(cliente_openai=cliente_fake)
 
         carta = gerador.gerar(_curriculo(), _analise_vaga(), idioma_alvo="pt")
 
@@ -69,8 +69,8 @@ class TestGeradorCartaApresentacaoGroq:
         assert "requisitos implícitos: liderança técnica" in prompt_text
 
     def test_idioma_alvo_reflete_no_prompt(self):
-        cliente_fake = ClienteGroqFake({"carta": "Dear hiring manager, ..."})
-        gerador = GerarCartaApresentacaoClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"carta": "Dear hiring manager, ..."})
+        gerador = GerarCartaApresentacaoClient(cliente_openai=cliente_fake)
 
         gerador.gerar(_curriculo(), _analise_vaga(), idioma_alvo="en")
 
@@ -78,16 +78,16 @@ class TestGeradorCartaApresentacaoGroq:
         assert "inglês (formato americano)" in prompt_text
 
     def test_resposta_vazia_do_modelo_gera_erro(self):
-        cliente_fake = ClienteGroqFake({"carta": "   "})
-        gerador = GerarCartaApresentacaoClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"carta": "   "})
+        gerador = GerarCartaApresentacaoClient(cliente_openai=cliente_fake)
 
         with pytest.raises(ValueError):
             gerador.gerar(_curriculo(), _analise_vaga(), idioma_alvo="pt")
 
     def test_resposta_estruturada_em_dict_nao_quebra(self):
         """Regressão: o modelo às vezes devolve um objeto em vez de texto puro no campo 'carta'."""
-        cliente_fake = ClienteGroqFake({"carta": {"saudacao": "Prezados", "corpo": "..."}})
-        gerador = GerarCartaApresentacaoClient(cliente_groq=cliente_fake)
+        cliente_fake = ClienteOpenAIFake({"carta": {"saudacao": "Prezados", "corpo": "..."}})
+        gerador = GerarCartaApresentacaoClient(cliente_openai=cliente_fake)
 
         carta = gerador.gerar(_curriculo(), _analise_vaga(), idioma_alvo="pt")
 

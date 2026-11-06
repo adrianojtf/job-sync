@@ -14,14 +14,21 @@ from jobsync.candidatura.service_layer.listar_candidaturas_por_status import (
     ListarCandidaturasPorStatus,
 )
 from jobsync.candidatura.service_layer.mover_candidatura import MoverCandidatura
+from jobsync.curriculo.adapters.ajustador_experiencia_openai_client import (
+    AjustadorExperienciaOpenAIClient,
+)
 from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClient
 from jobsync.curriculo.adapters.extrator_curriculo_client import ExtratorCurriculoClient
+from jobsync.curriculo.adapters.avaliador_experiencia_jev_client import (
+    AvaliadorExperienciaJevClient,
+)
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.curriculo.adapters.gerar_sugestoes_ats_client import GerarSugestoesAtsClient
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVaga,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
+from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
 from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
@@ -49,8 +56,13 @@ from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.service 
 from jobsync.vaga.adapters.job_description_analyzer_client import (
     JobDescriptionAnalyzerClient,
 )
+from jobsync.vaga.adapters.avaliador_descricao_vaga_jev_client import (
+    AvaliadorDescricaoVagaJevClient,
+)
 from jobsync.vaga.domain.vaga_repository import VagaRepository
+from jobsync.shared_kernel.adapters.cliente_jev_client import ClienteJev
 from jobsync.vaga.service_layer.capturar_vaga import CapturarVaga
+from jobsync.vaga.service_layer.avaliar_descricao_vaga import AvaliarDescricaoVaga
 from jobsync.vaga.service_layer.listar_vagas_capturadas import ListarVagasCapturadas
 from jobsync.vaga_externa.adapters.buscador_adzuna_client import BuscadorAdzunaClient
 from jobsync.vaga_externa.adapters.buscador_arbeitnow_client import (
@@ -97,13 +109,29 @@ ServiceSalvarCurriculoDep = Annotated[
 ]
 
 
+def _obter_avaliadores_jev():
+    """Instancia os avaliadores Jev, ou `None` se o provedor não estiver configurado."""
+    try:
+        cliente_jev = ClienteJev()
+    except (RuntimeError, ValueError):
+        return None, None
+    return (
+        AvaliadorDescricaoVagaJevClient(cliente_jev=cliente_jev),
+        AvaliadorExperienciaJevClient(cliente_jev=cliente_jev),
+    )
+
+
 def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
     """Monta o caso de uso de adaptação de currículo com adapters concretos."""
+    avaliador_vaga, avaliador_experiencia = _obter_avaliadores_jev()
     return AdaptarCurriculoParaVaga(
         extrator=ExtratorCurriculoClient(),
         analisador_vaga=JobDescriptionAnalyzerClient(),
         ajustador_texto=AjustadorTextoClient(),
         gerador_pdf=GeradorPdfClient(),
+        avaliador_descricao_vaga=avaliador_vaga,
+        ajustador_experiencia=AjustadorExperienciaOpenAIClient(),
+        avaliador_experiencia=avaliador_experiencia,
     )
 
 
@@ -124,6 +152,30 @@ def obter_service_analisar_ats_vaga() -> AnalisarAtsVaga:
 
 ServiceAnalisarAtsVagaDep = Annotated[
     AnalisarAtsVaga, Depends(obter_service_analisar_ats_vaga)
+]
+
+
+def obter_service_avaliar_descricao_vaga() -> AvaliarDescricaoVaga:
+    """Monta o caso de uso de avaliação de descrição usando Jev."""
+    return AvaliarDescricaoVaga(
+        avaliador=AvaliadorDescricaoVagaJevClient(cliente_jev=ClienteJev())
+    )
+
+
+ServiceAvaliarDescricaoVagaDep = Annotated[
+    AvaliarDescricaoVaga, Depends(obter_service_avaliar_descricao_vaga)
+]
+
+
+def obter_service_avaliar_experiencia() -> AvaliarExperiencia:
+    """Monta o caso de uso de avaliação de experiência usando Jev."""
+    return AvaliarExperiencia(
+        avaliador=AvaliadorExperienciaJevClient(cliente_jev=ClienteJev())
+    )
+
+
+ServiceAvaliarExperienciaDep = Annotated[
+    AvaliarExperiencia, Depends(obter_service_avaliar_experiencia)
 ]
 
 

@@ -18,5 +18,14 @@ Decisões de migração:
 
 from jobsync.shared_kernel.domain.catalogo_localizacao import CatalogoLocalizacao
 from jobsync.shared_kernel.domain.nome_arquivo import NomeArquivo
+from jobsync.shared_kernel.domain.score_avaliacao import (
+    ResultadoDimensaoAvaliacao,
+    calcular_score_geral,
+)
 
-__all__ = ["CatalogoLocalizacao", "NomeArquivo"]
+__all__ = [
+    "CatalogoLocalizacao",
+    "NomeArquivo",
+    "ResultadoDimensaoAvaliacao",
+    "calcular_score_geral",
+]

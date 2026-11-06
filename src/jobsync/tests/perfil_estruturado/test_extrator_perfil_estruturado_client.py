@@ -4,7 +4,7 @@ from jobsync.perfil_estruturado import NivelIdioma
 from jobsync.perfil_estruturado.adapters.extrator_perfil_estruturado_client import ExtratorPerfilEstruturadoClient
 
 
-class ClienteGroqFake:
+class ClienteOpenAIFake:
     def __init__(self, resposta):
         self.resposta = resposta
 
@@ -37,7 +37,7 @@ class TestExtratorPerfilEstruturadoClient:
             "tecnologias": ["Python", "Docker"],
         }
         extrator = ExtratorPerfilEstruturadoClient(
-            extrator_texto=ExtratorTextoFake(), cliente_groq=ClienteGroqFake(resposta)
+            extrator_texto=ExtratorTextoFake(), cliente_openai=ClienteOpenAIFake(resposta)
         )
 
         dados = extrator.extrair(b"%PDF-fake")
@@ -53,7 +53,7 @@ class TestExtratorPerfilEstruturadoClient:
     def test_campos_ausentes_nao_quebram_e_viram_valores_vazios(self):
         resposta = {"nome_completo": "Fulano"}
         extrator = ExtratorPerfilEstruturadoClient(
-            extrator_texto=ExtratorTextoFake(), cliente_groq=ClienteGroqFake(resposta)
+            extrator_texto=ExtratorTextoFake(), cliente_openai=ClienteOpenAIFake(resposta)
         )
 
         dados = extrator.extrair(b"%PDF-fake")
@@ -73,7 +73,7 @@ class TestExtratorPerfilEstruturadoClient:
             ]
         }
         extrator = ExtratorPerfilEstruturadoClient(
-            extrator_texto=ExtratorTextoFake(), cliente_groq=ClienteGroqFake(resposta)
+            extrator_texto=ExtratorTextoFake(), cliente_openai=ClienteOpenAIFake(resposta)
         )
 
         dados = extrator.extrair(b"%PDF-fake")
@@ -83,7 +83,7 @@ class TestExtratorPerfilEstruturadoClient:
     def test_nivel_idioma_invalido_usa_intermediario_como_fallback(self):
         resposta = {"idiomas": [{"idioma": "Francês", "nivel": "valor-invalido"}]}
         extrator = ExtratorPerfilEstruturadoClient(
-            extrator_texto=ExtratorTextoFake(), cliente_groq=ClienteGroqFake(resposta)
+            extrator_texto=ExtratorTextoFake(), cliente_openai=ClienteOpenAIFake(resposta)
         )
 
         dados = extrator.extrair(b"%PDF-fake")
@@ -96,7 +96,7 @@ class TestExtratorPerfilEstruturadoClient:
             "tecnologias": [{"objeto": "inesperado"}, "Python"],
         }
         extrator = ExtratorPerfilEstruturadoClient(
-            extrator_texto=ExtratorTextoFake(), cliente_groq=ClienteGroqFake(resposta)
+            extrator_texto=ExtratorTextoFake(), cliente_openai=ClienteOpenAIFake(resposta)
         )
 
         dados = extrator.extrair(b"%PDF-fake")

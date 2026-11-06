@@ -9,7 +9,7 @@ revisável pelo usuário, nunca persistido automaticamente.
 from __future__ import annotations
 
 from jobsync.shared_kernel.adapters.extrator_texto_pdfplumber_client import ExtratorTextoPdfPlumber
-from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 from jobsync.perfil_estruturado.domain.extrator_perfil_estruturado_port import ExtratorPerfilEstruturadoPort
 from jobsync.perfil_estruturado.domain.perfil_estruturado import (
     Certificacao,
@@ -59,14 +59,14 @@ class ExtratorPerfilEstruturadoClient(ExtratorPerfilEstruturadoPort):
     def __init__(
         self,
         extrator_texto: ExtratorTextoPdfPlumber | None = None,
-        cliente_groq: ClienteGroq | None = None,
+        cliente_openai: ClienteOpenAI | None = None,
     ) -> None:
         self._extrator_texto = extrator_texto or ExtratorTextoPdfPlumber()
-        self._cliente_groq = cliente_groq or ClienteGroq()
+        self._cliente_openai = cliente_openai or ClienteOpenAI()
 
     def extrair(self, pdf_bytes: bytes) -> DadosPerfilExtraidos:
         texto_bruto = self._extrator_texto.extrair_texto(pdf_bytes)
-        dados = self._cliente_groq.solicitar_json(
+        dados = self._cliente_openai.solicitar_json(
             prompt_sistema=_PROMPT_SISTEMA,
             prompt_usuario=f"Texto do currículo a extrair:\n\n{texto_bruto}",
         )

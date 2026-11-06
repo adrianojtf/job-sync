@@ -10,7 +10,7 @@ from __future__ import annotations
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
 from jobsync.curriculo import SecaoCurriculo, TipoSecao
-from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 _NOME_IDIOMA = {"pt": "português do Brasil", "en": "inglês (formato americano de currículo)"}
 
@@ -48,10 +48,10 @@ Responda ESTRITAMENTE em JSON no formato:
 
 
 class AjustadorTextoClient(AjustadorTextoPort):
-    """Reescreve o conteúdo de uma seção do currículo usando o modelo Groq."""
+    """Reescreve o conteúdo de uma seção do currículo usando GPT-6 Luna."""
 
-    def __init__(self, cliente_groq: ClienteGroq | None = None) -> None:
-        self._cliente_groq = cliente_groq or ClienteGroq()
+    def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
+        self._cliente_openai = cliente_openai or ClienteOpenAI()
 
     def ajustar_secao(
         self,
@@ -94,7 +94,7 @@ class AjustadorTextoClient(AjustadorTextoPort):
             "que está sendo reescrita. Não infira frameworks, ferramentas ou habilidades que não estejam no conteúdo original."
         )
 
-        resposta = self._cliente_groq.solicitar_json(
+        resposta = self._cliente_openai.solicitar_json(
             prompt_sistema=_PROMPT_SISTEMA,
             prompt_usuario=prompt_usuario,
         )

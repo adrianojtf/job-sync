@@ -14,9 +14,19 @@ from jobsync.ats_score import ResultadoAtsScore
 from jobsync.candidatura.adapters.candidatura_repository_fake import (
     CandidaturaRepositoryFake,
 )
-from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import (
+    AvaliacaoExperiencia,
+    Curriculo,
+    ExperienciaParaAvaliacao,
+    SecaoCurriculo,
+    TipoSecao,
+)
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVagaOutputDto,
+)
+from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
+    AvaliacaoExperienciaAdaptadaDto,
+    StatusAvaliacaoAutomatica,
 )
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.service import (
     AdaptarCurriculoParaVaga,
@@ -31,6 +41,7 @@ from jobsync.entrypoints.api.dependencies import (
     obter_repositorio_candidatura,
     obter_repositorio_curriculo_salvo,
     obter_repositorio_perfil,
+    obter_repositorio_perfil_estruturado,
     obter_repositorio_vaga,
     obter_service_adaptar_curriculo,
     obter_service_analisar_ats_vaga,
@@ -38,8 +49,16 @@ from jobsync.entrypoints.api.dependencies import (
 )
 from jobsync.entrypoints.api.main import app
 from jobsync.perfil.adapters.perfil_repository_fake import PerfilRepositoryFake
+from jobsync.perfil_estruturado.adapters.perfil_estruturado_repository_fake import (
+    PerfilEstruturadoRepositoryFake,
+)
+from jobsync.perfil_estruturado.domain.perfil_estruturado import (
+    ExperienciaProfissional,
+    PerfilEstruturado,
+)
 from jobsync.shared_kernel.domain import NomeArquivo
-from jobsync.vaga import AnaliseVaga
+from jobsync.shared_kernel.domain.score_avaliacao import ResultadoDimensaoAvaliacao
+from jobsync.vaga import AnaliseVaga, AvaliacaoDescricaoVaga
 from jobsync.vaga.adapters.vaga_repository_fake import VagaRepositoryFake
 from jobsync.vaga_externa import FonteVagaExterna, VagaComScore, VagaExterna
 from jobsync.vaga_externa.service_layer.descobrir_vagas_com_match.service import (
@@ -169,6 +188,113 @@ class TestCurriculoRouter:
         data = response.json()
         assert data["nome_completo"] == "Matheus Silva"
         assert data["pdf_base64"] == base64.b64encode(b"%PDF-1.4 adapted").decode()
+
+    def test_post_adaptar_curriculo_com_perfil_estruturado(self, client: TestClient):
+        repositorio = PerfilEstruturadoRepositoryFake()
+        repositorio.salvar(
+            PerfilEstruturado(
+                perfil_identificador="matheus",
+                nome_completo="Matheus Silva",
+                email="matheus@email.com",
+                linkedin="",
+                resumo_profissional="Engenheiro backend.",
+                experiencias=(
+                    ExperienciaProfissional(
+                        empresa="Starian",
+                        cargo="Engenheiro de Software",
+                        periodo="2021-2024",
+                        descricao="Desenvolvi APIs em Python.",
+                    ),
+                ),
+                formacoes=(),
+                certificacoes=(),
+                idiomas=(),
+                tecnologias=("Python",),
+            )
+        )
+
+        class FakeAdaptar:
+            def __init__(self):
+                self.input_dto = None
+
+            def executar(self, input_dto):
+                self.input_dto = input_dto
+                dimensao = ResultadoDimensaoAvaliacao(
+                    score=80, nivel="adequado", confianca=0.9
+                )
+                return AdaptarCurriculoParaVagaOutputDto(
+                    pdf_bytes=b"%PDF-1.4 adapted",
+                    nome_arquivo=NomeArquivo.criar(
+                        nome_completo="Matheus Silva",
+                        cargo="Engenheiro",
+                        empresa="TechCorp",
+                    ),
+                    curriculo_adaptado=_criar_curriculo(),
+                    analise_vaga=AnaliseVaga(
+                        requisitos=(),
+                        ambiguidade=(),
+                        texto_original="vaga",
+                    ),
+                    avaliacao_vaga=AvaliacaoDescricaoVaga(
+                        completude=dimensao,
+                        clareza=dimensao,
+                        relevancia=dimensao,
+                        inclusao=dimensao,
+                    ),
+                    status_avaliacao_vaga=StatusAvaliacaoAutomatica.AVALIADA,
+                    avaliacoes_experiencias=(
+                        AvaliacaoExperienciaAdaptadaDto(
+                            experiencia=input_dto.experiencias_profissionais[0],
+                            status=StatusAvaliacaoAutomatica.AVALIADA,
+                            avaliacao=AvaliacaoExperiencia(
+                                clareza_escrita=dimensao,
+                                qualidade_detalhe=dimensao,
+                                aderencia_vaga=dimensao,
+                                consistencia_textual=dimensao,
+                            ),
+                        ),
+                    ),
+                )
+
+        fake_adaptar = FakeAdaptar()
+        app.dependency_overrides[obter_service_adaptar_curriculo] = (
+            lambda: fake_adaptar
+        )
+        app.dependency_overrides[obter_repositorio_perfil_estruturado] = (
+            lambda: repositorio
+        )
+
+        response = client.post(
+            "/v1/curriculos/curriculo-123/adaptacoes",
+            json={
+                "descricao_vaga": "Desenvolvedor Python",
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+                "perfil_identificador": "matheus",
+            },
+        )
+
+        app.dependency_overrides.pop(obter_service_adaptar_curriculo, None)
+        app.dependency_overrides.pop(obter_repositorio_perfil_estruturado, None)
+
+        assert response.status_code == 200
+        assert fake_adaptar.input_dto is not None
+        experiencias = fake_adaptar.input_dto.experiencias_profissionais
+        assert len(experiencias) == 1
+        assert experiencias[0].cargo == "Engenheiro de Software"
+        assert experiencias[0].empresa == "Starian"
+        assert experiencias[0].periodo == "2021-2024"
+
+        data = response.json()
+        assert data["nome_completo"] == "Matheus Silva"
+        assert data["status_avaliacao_vaga"] == "avaliada"
+        assert data["avaliacao_vaga"]["score"] == 80
+        assert data["avaliacoes_experiencias"][0]["status"] == "avaliada"
+        assert data["avaliacoes_experiencias"][0]["avaliacao"]["score"] == 80
+        assert (
+            data["avaliacoes_experiencias"][0]["experiencia"]["empresa"] == "Starian"
+        )
 
     def test_post_analisar_ats(self, client: TestClient):
         class FakeAnalisar:

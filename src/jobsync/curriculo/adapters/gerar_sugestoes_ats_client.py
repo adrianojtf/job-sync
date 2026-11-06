@@ -1,6 +1,6 @@
 """Adapter (implementa GerarSugestoesAtsPort) que sugere melhorias de ATS Score via IA.
 
-Diferente de AjustadorTextoGroq/GeradorCartaApresentacaoGroq, este adapter não
+Diferente de AjustadorTextoClient/GerarCartaApresentacaoClient, este adapter não
 reescreve nada do candidato — apenas aponta, para cada requisito faltante já
 identificado por CalcularAtsScore, o que mudar no currículo (e onde), sem
 jamais sugerir afirmar experiência que o candidato não possui.
@@ -11,7 +11,7 @@ from jobsync.ats_score import ResultadoAtsScore
 from jobsync.curriculo import Curriculo
 from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsPort
 from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
-from jobsync.shared_kernel.adapters.cliente_groq_client import ClienteGroq
+from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 _PROMPT_SISTEMA = """\
 Você é um especialista em otimização de currículos para sistemas de triagem \
@@ -41,10 +41,10 @@ todos os requisitos juntos.
 
 
 class GerarSugestoesAtsClient(GerarSugestoesAtsPort):
-    """Gera sugestões de melhoria de ATS Score (uma por tópico) usando o modelo Groq."""
+    """Gera sugestões de melhoria de ATS Score usando GPT-6 Luna."""
 
-    def __init__(self, cliente_groq: ClienteGroq | None = None) -> None:
-        self._cliente_groq = cliente_groq or ClienteGroq()
+    def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
+        self._cliente_openai = cliente_openai or ClienteOpenAI()
 
     def gerar(
         self,
@@ -73,7 +73,7 @@ class GerarSugestoesAtsClient(GerarSugestoesAtsPort):
             "sugerir invenção de fatos."
         )
 
-        resposta = self._cliente_groq.solicitar_json(
+        resposta = self._cliente_openai.solicitar_json(
             prompt_sistema=_PROMPT_SISTEMA,
             prompt_usuario=prompt_usuario,
         )

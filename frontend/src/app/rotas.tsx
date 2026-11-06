@@ -1,5 +1,8 @@
+import type { ReactElement } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
+import { CurriculosPage } from "../features/curriculos/CurriculosPage";
 import { EntrarPage } from "../features/entrar/EntrarPage";
+import { PerfilPage } from "../features/perfil/PerfilPage";
 import { AppShell } from "./AppShell";
 import { EmConstrucao } from "./EmConstrucao";
 import { ErroDeRota } from "./ErroDeRota";
@@ -9,6 +12,12 @@ import { PAGINAS } from "./paginas";
 export interface HandleRota {
   titulo: string;
 }
+
+/** Telas já entregues; as demais mostram EmConstrucao até a tarefa correspondente. */
+const TELAS: Record<string, ReactElement> = {
+  "/perfil": <PerfilPage />,
+  "/curriculos": <CurriculosPage />,
+};
 
 export const rotas: RouteObject[] = [
   {
@@ -32,7 +41,9 @@ export const rotas: RouteObject[] = [
       ...PAGINAS.map<RouteObject>((pagina) => ({
         ...(pagina.caminho === "/" ? { index: true } : { path: pagina.caminho.slice(1) }),
         handle: { titulo: pagina.titulo } satisfies HandleRota,
-        element: <EmConstrucao titulo={pagina.titulo} tarefa={pagina.tarefa} />,
+        element: TELAS[pagina.caminho] ?? (
+          <EmConstrucao titulo={pagina.titulo} tarefa={pagina.tarefa} />
+        ),
       })),
       { path: "*", element: <Navigate to="/" replace /> },
     ],

@@ -83,3 +83,19 @@ describe("Modal", () => {
     expect(aoFechar).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Modal com foco fora do diálogo", () => {
+  it("fecha com Esc mesmo quando o foco foi para o body", async () => {
+    const aoFechar = vi.fn();
+    render(
+      <Modal aberto titulo="Diálogo" aoFechar={aoFechar}>
+        <input aria-label="Campo" />
+      </Modal>,
+    );
+    (document.activeElement as HTMLElement).blur();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(aoFechar).toHaveBeenCalledTimes(1);
+  });
+});

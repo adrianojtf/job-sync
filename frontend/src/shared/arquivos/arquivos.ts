@@ -27,3 +27,14 @@ export function baixarArquivo(conteudo: Blob, nomeArquivo: string): void {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export const TAMANHO_MAXIMO_PDF_BYTES = 5 * 1024 * 1024;
+
+/** Valida um PDF antes do envio. Devolve a mensagem de erro ou undefined se o arquivo for aceito. */
+export function validarArquivoPdf(arquivo: File | null | undefined): string | undefined {
+  if (!arquivo) return "Escolha um arquivo PDF.";
+  const ehPdf = arquivo.type === "application/pdf" || arquivo.name.toLowerCase().endsWith(".pdf");
+  if (!ehPdf) return "O arquivo precisa ser um PDF.";
+  if (arquivo.size > TAMANHO_MAXIMO_PDF_BYTES) return "O arquivo tem mais de 5 MB.";
+  return undefined;
+}

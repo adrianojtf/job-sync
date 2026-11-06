@@ -28,15 +28,20 @@ export function Modal({ aberto, titulo, descricao, aoFechar, rodape, children }:
     return () => focoAnterior?.focus();
   }, [aberto]);
 
+  // Esc é ouvido no documento: o foco pode sair do diálogo (ex.: elemento removido da tela).
+  useEffect(() => {
+    if (!aberto) return;
+    const aoTeclarEsc = (evento: globalThis.KeyboardEvent) => {
+      if (evento.key === "Escape") aoFechar();
+    };
+    document.addEventListener("keydown", aoTeclarEsc);
+    return () => document.removeEventListener("keydown", aoTeclarEsc);
+  }, [aberto, aoFechar]);
+
   if (!aberto) return null;
 
-  // O foco fica preso no diálogo, então o teclado é tratado aqui: Esc fecha e Tab circula.
+  // Tab circula entre os elementos focáveis do diálogo.
   const aoTeclar = (evento: KeyboardEvent<HTMLDivElement>) => {
-    if (evento.key === "Escape") {
-      evento.stopPropagation();
-      aoFechar();
-      return;
-    }
     if (evento.key !== "Tab" || !dialogo.current) return;
     const focaveis = Array.from(dialogo.current.querySelectorAll<HTMLElement>(FOCAVEIS));
     const primeiro = focaveis[0];

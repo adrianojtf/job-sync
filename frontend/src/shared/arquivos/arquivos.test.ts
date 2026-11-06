@@ -1,4 +1,4 @@
-import { arquivoParaBase64, base64ParaBlob, baixarArquivo } from "./arquivos";
+import { arquivoParaBase64, base64ParaBlob, baixarArquivo, validarArquivoPdf } from "./arquivos";
 
 describe("arquivoParaBase64", () => {
   it("converte o conteúdo do arquivo em base64 sem o prefixo data:", async () => {
@@ -52,5 +52,28 @@ describe("baixarArquivo", () => {
     expect(revogarUrl).toHaveBeenCalledWith("blob:teste");
     clicar.mockRestore();
     vi.unstubAllGlobals();
+  });
+});
+
+describe("validarArquivoPdf", () => {
+  const pdf = (tamanho: number, nome = "cv.pdf", tipo = "application/pdf") =>
+    new File([new Uint8Array(tamanho)], nome, { type: tipo });
+
+  it("aceita PDF de até 5 MB", () => {
+    expect(validarArquivoPdf(pdf(5 * 1024 * 1024))).toBeUndefined();
+  });
+
+  it("exige um arquivo", () => {
+    expect(validarArquivoPdf(null)).toBe("Escolha um arquivo PDF.");
+  });
+
+  it("recusa arquivos que não são PDF", () => {
+    expect(validarArquivoPdf(pdf(10, "cv.docx", "application/msword"))).toBe(
+      "O arquivo precisa ser um PDF.",
+    );
+  });
+
+  it("recusa PDF acima de 5 MB", () => {
+    expect(validarArquivoPdf(pdf(5 * 1024 * 1024 + 1))).toBe("O arquivo tem mais de 5 MB.");
   });
 });

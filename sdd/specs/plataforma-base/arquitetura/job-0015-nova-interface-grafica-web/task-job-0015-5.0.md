@@ -21,11 +21,11 @@ Entregar as duas telas que alimentam os demais fluxos com currículo: o currícu
 
 ## Subtarefas
 
-- [ ] 5.1 Escrever os testes do formulário (red) com `react-hook-form` e `useFieldArray`.
-- [ ] 5.2 Implementar `features/perfil/` (formulário, salvar, estado vazio).
-- [ ] 5.3 Implementar a importação de PDF com revisão.
-- [ ] 5.4 Implementar a avaliação de experiência com `ScoreDimensions`.
-- [ ] 5.5 Escrever os testes (red) e implementar `features/curriculos/`.
+- [x] 5.1 Escrever os testes do formulário (red) com `react-hook-form` e `useFieldArray`.
+- [x] 5.2 Implementar `features/perfil/` (formulário, salvar, estado vazio).
+- [x] 5.3 Implementar a importação de PDF com revisão.
+- [x] 5.4 Implementar a avaliação de experiência com `ScoreDimensions`.
+- [x] 5.5 Escrever os testes (red) e implementar `features/curriculos/`.
 
 ## Detalhes de Implementação
 
@@ -39,10 +39,10 @@ Ver `prd-job-0015.md` → F4 e F5, e `techspec-job-0015.md` → "Endpoints de AP
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: adicionar e remover experiência e enviar o payload esperado (MSW).
-- [ ] Testes de unidade: 404 mostra o estado vazio; importar preenche o formulário sem salvar.
-- [ ] Testes de unidade: upload bloqueado com 10 currículos ou arquivo > 5 MB; remover pede confirmação e invalida a lista.
-- [ ] Testes de unidade: avaliação de experiência mostra as 4 dimensões.
+- [x] Testes de unidade: adicionar e remover experiência e enviar o payload esperado (MSW).
+- [x] Testes de unidade: 404 mostra o estado vazio; importar preenche o formulário sem salvar.
+- [x] Testes de unidade: upload bloqueado com 10 currículos ou arquivo > 5 MB; remover pede confirmação e invalida a lista.
+- [x] Testes de unidade: avaliação de experiência mostra as 4 dimensões.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

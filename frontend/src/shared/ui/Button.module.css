@@ -38,3 +38,7 @@
 .larguraTotal {
   width: 100%;
 }
+.carregando {
+  cursor: progress;
+  opacity: 0.7;
+}

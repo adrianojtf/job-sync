@@ -1,0 +1,28 @@
+.aviso {
+  border: 1px solid var(--line);
+  border-radius: var(--raio-lg);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.info {
+  background: #f6f5ff;
+  border-color: #e8e6ff;
+}
+.alerta {
+  background: var(--amber-soft);
+  border-color: #f5dfb8;
+  color: var(--amber);
+}
+.erro {
+  background: var(--red-soft);
+  border-color: #fecdca;
+  color: var(--red);
+}
+.texto {
+  margin: 0;
+}

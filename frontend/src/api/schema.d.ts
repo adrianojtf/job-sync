@@ -1779,7 +1779,7 @@ export interface components {
              * Secoes
              * @description Seções de texto do currículo.
              */
-            secoes?: components["schemas"]["SecaoRascunhoSchema"][];
+            secoes: components["schemas"]["SecaoRascunhoSchema"][];
             /**
              * Experiencias
              * @description Experiências estruturadas; nulo quando a fonte é um PDF (as experiências vêm na seção EXPERIENCIAS).

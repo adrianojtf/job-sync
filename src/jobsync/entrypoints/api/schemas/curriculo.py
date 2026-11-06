@@ -383,9 +383,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
     nome_completo: str = Field(description="Nome completo do candidato.")
     email: str = Field(default="", description="E-mail do candidato.")
     linkedin: str = Field(default="", description="LinkedIn do candidato.")
-    secoes: list[SecaoRascunhoSchema] = Field(
-        default_factory=list, description="Seções de texto do currículo."
-    )
+    secoes: list[SecaoRascunhoSchema] = Field(description="Seções de texto do currículo.")
     experiencias: list[ExperienciaRascunhoSchema] | None = Field(
         default=None,
         description=(

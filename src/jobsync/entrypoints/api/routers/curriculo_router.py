@@ -40,11 +40,14 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     AnalisarAtsRequest,
     AnalisarAtsResponse,
     CartaApresentacaoResponse,
+    CurriculoRevisadoResponse,
     CurriculoSalvarRequest,
     CurriculoSalvoConteudoResponse,
     CurriculoSalvoResponse,
     CurriculosListagemResponse,
     GerarCartaApresentacaoRequest,
+    GerarPdfCurriculoRevisadoRequest,
+    RascunhoAdaptadoResponse,
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
@@ -297,6 +300,80 @@ def _resposta_pdf(pdf: GerarPdfCurriculoRevisadoOutputDto) -> Response:
             "Content-Disposition": f'attachment; filename="{pdf.nome_arquivo.valor}"'
         },
     )
+
+
+@router.post(
+    "/curriculos/{id}/rascunhos-adaptados",
+    response_model=RascunhoAdaptadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Gerar rascunho do currículo adaptado",
+    description=(
+        "Adapta o currículo à vaga via IA e devolve o conteúdo organizado por seção "
+        "para revisão. Não gera PDF nem persiste o rascunho."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Dados da vaga ou fonte do currículo ausentes ou inválidos.",
+        },
+    },
+)
+def gerar_rascunho_adaptado(
+    id: str,
+    body: AdaptarCurriculoRequest,
+    service: ServiceAdaptarCurriculoDep,
+    buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+) -> RascunhoAdaptadoResponse:
+    """Adapta o currículo à vaga e devolve o rascunho para revisão."""
+    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
+    try:
+        output = service.executar(
+            body.to_dto(
+                curriculo_pre_montado=curriculo_pre_montado,
+                experiencias_profissionais=_experiencias_do_perfil(perfil),
+            )
+        )
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return RascunhoAdaptadoResponse.from_dto(output)
+
+
+@router.post(
+    "/curriculos-revisados",
+    response_model=CurriculoRevisadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Gerar PDF do currículo revisado",
+    description=(
+        "Gera o PDF a partir do rascunho revisado e confirmado pelo usuário, sem nova "
+        "chamada à IA. Use ?download=true para receber o PDF em binário."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Rascunho ou dados da vaga inválidos.",
+        },
+    },
+)
+def gerar_pdf_curriculo_revisado(
+    body: GerarPdfCurriculoRevisadoRequest,
+    service: ServiceGerarPdfCurriculoRevisadoDep,
+    download: bool = False,
+) -> CurriculoRevisadoResponse | Response:
+    """Gera o PDF do currículo a partir do conteúdo revisado."""
+    try:
+        pdf = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    if download:
+        return _resposta_pdf(pdf)
+    return CurriculoRevisadoResponse.from_dto(pdf)
 
 
 @router.post(

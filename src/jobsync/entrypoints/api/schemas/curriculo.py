@@ -12,7 +12,10 @@ from jobsync.curriculo import (
     AvaliacaoExperiencia,
     Curriculo,
     ExperienciaParaAvaliacao,
+    RascunhoCurriculoAdaptado,
+    TipoSecao,
 )
+from jobsync.curriculo.domain.rascunho_curriculo_adaptado import TITULO_EXPERIENCIAS_PADRAO
 from jobsync.curriculo.service_layer.avaliar_experiencia.dtos import (
     AvaliarExperienciaInputDto,
 )
@@ -23,6 +26,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
     StatusAvaliacaoAutomatica,
 )
 from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisadoInputDto,
     GerarPdfCurriculoRevisadoOutputDto,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga.dtos import (
@@ -274,12 +278,9 @@ class AvaliacaoExperienciaAdaptadaResponse(BaseModel):
         )
 
 
-class AdaptarCurriculoResponse(BaseModel):
-    """Resultado da adaptação de um currículo para uma vaga."""
+class AvaliacoesAdaptacaoResponse(BaseModel):
+    """Avaliações automáticas produzidas junto com a adaptação do currículo."""
 
-    nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
-    pdf_base64: str = Field(description="PDF do currículo adaptado codificado em base64.")
-    nome_completo: str = Field(description="Nome completo do candidato extraído do currículo.")
     avaliacao_vaga: AvaliacaoDescricaoVagaResponse | None = Field(
         default=None,
         description="Avaliação automática da vaga; nula se o Jev estiver indisponível.",
@@ -293,6 +294,33 @@ class AdaptarCurriculoResponse(BaseModel):
         description="Avaliação Jev de cada experiência de um perfil estruturado.",
     )
 
+    @staticmethod
+    def _campos_de_avaliacao(dto: AdaptarCurriculoParaVagaOutputDto) -> dict:
+        return {
+            "avaliacao_vaga": (
+                AvaliacaoDescricaoVagaResponse.from_domain(dto.avaliacao_vaga)
+                if dto.avaliacao_vaga is not None
+                else None
+            ),
+            "status_avaliacao_vaga": (
+                dto.status_avaliacao_vaga.value
+                if dto.status_avaliacao_vaga is not None
+                else None
+            ),
+            "avaliacoes_experiencias": [
+                AvaliacaoExperienciaAdaptadaResponse.from_dto(resultado)
+                for resultado in dto.avaliacoes_experiencias
+            ],
+        }
+
+
+class AdaptarCurriculoResponse(AvaliacoesAdaptacaoResponse):
+    """Resultado da adaptação de um currículo para uma vaga, já com o PDF (fluxo legado)."""
+
+    nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
+    pdf_base64: str = Field(description="PDF do currículo adaptado codificado em base64.")
+    nome_completo: str = Field(description="Nome completo do candidato extraído do currículo.")
+
     @classmethod
     def from_dto(
         cls,
@@ -303,20 +331,179 @@ class AdaptarCurriculoResponse(BaseModel):
             nome_arquivo=pdf.nome_arquivo.valor,
             pdf_base64=base64.b64encode(pdf.pdf_bytes).decode(),
             nome_completo=dto.rascunho.nome_completo,
-            avaliacao_vaga=(
-                AvaliacaoDescricaoVagaResponse.from_domain(dto.avaliacao_vaga)
-                if dto.avaliacao_vaga is not None
-                else None
-            ),
-            status_avaliacao_vaga=(
-                dto.status_avaliacao_vaga.value
-                if dto.status_avaliacao_vaga is not None
-                else None
-            ),
-            avaliacoes_experiencias=[
-                AvaliacaoExperienciaAdaptadaResponse.from_dto(resultado)
-                for resultado in dto.avaliacoes_experiencias
+            **cls._campos_de_avaliacao(dto),
+        )
+
+
+TipoSecaoNome = Literal[
+    "TECNOLOGIAS", "PERFIL", "EXPERIENCIAS", "FORMACAO", "CERTIFICACOES", "IDIOMAS"
+]
+
+
+class SecaoRascunhoSchema(BaseModel):
+    """Seção de texto do rascunho; conteúdo vazio remove a seção do PDF."""
+
+    tipo: TipoSecaoNome = Field(description="Tipo da seção do currículo.")
+    titulo: str = Field(description="Título da seção, vindo da adaptação.")
+    conteudo: str = Field(description="Conteúdo da seção, editável na revisão.")
+
+
+class ExperienciaRascunhoSchema(BaseModel):
+    """Experiência estruturada do rascunho (fonte: perfil estruturado)."""
+
+    cargo: str = Field(default="", description="Cargo da experiência.")
+    empresa: str = Field(default="", description="Empresa da experiência.")
+    periodo: str = Field(default="", description="Período da experiência.")
+    descricao: str = Field(default="", description="Descrição adaptada, editável na revisão.")
+
+
+class RascunhoCurriculoAdaptadoSchema(BaseModel):
+    """Rascunho do currículo adaptado, revisado pelo usuário antes do PDF."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "nome_completo": "Ana Souza",
+                "email": "ana@ex.com",
+                "linkedin": "https://linkedin.com/in/ana",
+                "secoes": [{"tipo": "PERFIL", "titulo": "Perfil", "conteudo": "Engenheira backend."}],
+                "experiencias": [
+                    {
+                        "cargo": "Dev Backend",
+                        "empresa": "TechCorp",
+                        "periodo": "2022 - Atual",
+                        "descricao": "Desenvolvi APIs em Python.",
+                    }
+                ],
+                "titulo_experiencias": "Experiências",
+            }
+        }
+    )
+
+    nome_completo: str = Field(description="Nome completo do candidato.")
+    email: str = Field(default="", description="E-mail do candidato.")
+    linkedin: str = Field(default="", description="LinkedIn do candidato.")
+    secoes: list[SecaoRascunhoSchema] = Field(
+        default_factory=list, description="Seções de texto do currículo."
+    )
+    experiencias: list[ExperienciaRascunhoSchema] | None = Field(
+        default=None,
+        description=(
+            "Experiências estruturadas; nulo quando a fonte é um PDF "
+            "(as experiências vêm na seção EXPERIENCIAS)."
+        ),
+    )
+    titulo_experiencias: str = Field(
+        default=TITULO_EXPERIENCIAS_PADRAO,
+        description="Título da seção de experiências estruturadas.",
+    )
+
+    @classmethod
+    def from_domain(cls, rascunho: RascunhoCurriculoAdaptado) -> RascunhoCurriculoAdaptadoSchema:
+        return cls(
+            nome_completo=rascunho.nome_completo,
+            email=rascunho.email,
+            linkedin=rascunho.linkedin,
+            secoes=[
+                SecaoRascunhoSchema(
+                    tipo=secao.tipo.name, titulo=secao.titulo, conteudo=secao.conteudo
+                )
+                for secao in rascunho.secoes
             ],
+            experiencias=(
+                None
+                if rascunho.experiencias is None
+                else [
+                    ExperienciaRascunhoSchema(
+                        cargo=experiencia.cargo,
+                        empresa=experiencia.empresa,
+                        periodo=experiencia.periodo,
+                        descricao=experiencia.descricao,
+                    )
+                    for experiencia in rascunho.experiencias
+                ]
+            ),
+            titulo_experiencias=rascunho.titulo_experiencias,
+        )
+
+    def to_domain(self) -> RascunhoCurriculoAdaptado:
+        """Converte para o domínio; levanta ValueError se o rascunho for inválido."""
+        return RascunhoCurriculoAdaptado.revisado(
+            nome_completo=self.nome_completo,
+            email=self.email,
+            linkedin=self.linkedin,
+            secoes=[
+                (TipoSecao[secao.tipo], secao.titulo, secao.conteudo)
+                for secao in self.secoes
+            ],
+            experiencias=(
+                None
+                if self.experiencias is None
+                else [
+                    ExperienciaParaAvaliacao(
+                        cargo=experiencia.cargo,
+                        empresa=experiencia.empresa,
+                        periodo=experiencia.periodo,
+                        descricao=experiencia.descricao,
+                    )
+                    for experiencia in self.experiencias
+                ]
+            ),
+            titulo_experiencias=self.titulo_experiencias,
+        )
+
+
+class RascunhoAdaptadoResponse(AvaliacoesAdaptacaoResponse):
+    """Rascunho adaptado pela IA, ainda sem PDF, para revisão do usuário."""
+
+    rascunho: RascunhoCurriculoAdaptadoSchema = Field(
+        description="Conteúdo adaptado, organizado por seção, para revisão."
+    )
+
+    @classmethod
+    def from_dto(cls, dto: AdaptarCurriculoParaVagaOutputDto) -> RascunhoAdaptadoResponse:
+        return cls(
+            rascunho=RascunhoCurriculoAdaptadoSchema.from_domain(dto.rascunho),
+            **cls._campos_de_avaliacao(dto),
+        )
+
+
+class GerarPdfCurriculoRevisadoRequest(BaseModel):
+    """Payload para gerar o PDF a partir do rascunho revisado e confirmado."""
+
+    rascunho: RascunhoCurriculoAdaptadoSchema = Field(
+        description="Rascunho no estado em que o usuário confirmou."
+    )
+    idioma_alvo: str = Field(description="Idioma de destino do currículo.")
+    cargo_alvo: str = Field(description="Cargo alvo (usado no nome do arquivo).")
+    empresa_alvo: str = Field(description="Empresa alvo (usada no nome do arquivo).")
+    data_referencia: date | None = Field(
+        default=None,
+        description="Data de referência para composição do nome do arquivo.",
+    )
+
+    def to_dto(self) -> GerarPdfCurriculoRevisadoInputDto:
+        """Converte para o DTO; levanta ValueError se o rascunho for inválido."""
+        return GerarPdfCurriculoRevisadoInputDto(
+            rascunho=self.rascunho.to_domain(),
+            idioma_alvo=self.idioma_alvo,
+            cargo_alvo=self.cargo_alvo,
+            empresa_alvo=self.empresa_alvo,
+            data_referencia=self.data_referencia,
+        )
+
+
+class CurriculoRevisadoResponse(BaseModel):
+    """PDF gerado a partir do rascunho revisado."""
+
+    nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
+    pdf_base64: str = Field(description="PDF do currículo revisado codificado em base64.")
+
+    @classmethod
+    def from_dto(cls, dto: GerarPdfCurriculoRevisadoOutputDto) -> CurriculoRevisadoResponse:
+        return cls(
+            nome_arquivo=dto.nome_arquivo.valor,
+            pdf_base64=base64.b64encode(dto.pdf_bytes).decode(),
         )
 
 

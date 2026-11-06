@@ -365,6 +365,146 @@ class TestCurriculoRouter:
             data["avaliacoes_experiencias"][0]["experiencia"]["empresa"] == "Starian"
         )
 
+    def test_post_rascunho_adaptado_devolve_rascunho_sem_pdf(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
+        class FakeAdaptar:
+            def executar(self, input_dto):
+                return AdaptarCurriculoParaVagaOutputDto(
+                    rascunho=_criar_rascunho(),
+                    curriculo_adaptado=_criar_curriculo(),
+                    analise_vaga=AnaliseVaga(
+                        requisitos=(), ambiguidade=(), texto_original="vaga"
+                    ),
+                )
+
+        app.dependency_overrides[obter_service_adaptar_curriculo] = FakeAdaptar
+
+        response = client.post(
+            "/v1/curriculos/curriculo-123/rascunhos-adaptados",
+            json={
+                "descricao_vaga": "Desenvolvedor Python",
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+                "pdf_base64": PDF_BASE64,
+            },
+        )
+
+        del app.dependency_overrides[obter_service_adaptar_curriculo]
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "pdf_base64" not in data
+        assert data["rascunho"]["nome_completo"] == "Matheus Silva"
+        assert data["rascunho"]["secoes"] == [
+            {"tipo": "TECNOLOGIAS", "titulo": "Tecnologias", "conteudo": "Python"}
+        ]
+        assert data["rascunho"]["experiencias"] is None
+        assert gerar_pdf_fake.input_dto is None
+
+    def test_post_rascunho_adaptado_com_entrada_invalida_devolve_422(
+        self, client: TestClient
+    ):
+        class FakeAdaptar:
+            def executar(self, input_dto):
+                raise ValueError("A descrição da vaga é obrigatória.")
+
+        app.dependency_overrides[obter_service_adaptar_curriculo] = FakeAdaptar
+
+        response = client.post(
+            "/v1/curriculos/curriculo-123/rascunhos-adaptados",
+            json={
+                "descricao_vaga": " ",
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+                "pdf_base64": PDF_BASE64,
+            },
+        )
+
+        del app.dependency_overrides[obter_service_adaptar_curriculo]
+
+        assert response.status_code == 422
+
+    def test_post_curriculo_revisado_gera_pdf_do_rascunho_editado(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
+        response = client.post(
+            "/v1/curriculos-revisados",
+            json={
+                "rascunho": {
+                    "nome_completo": "Matheus Editado",
+                    "email": "matheus@email.com",
+                    "linkedin": "",
+                    "secoes": [
+                        {"tipo": "PERFIL", "titulo": "Perfil", "conteudo": "Resumo editado."}
+                    ],
+                    "experiencias": [
+                        {
+                            "cargo": "Dev",
+                            "empresa": "TechCorp",
+                            "periodo": "2024",
+                            "descricao": "Texto editado.",
+                        }
+                    ],
+                },
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["pdf_base64"] == base64.b64encode(b"%PDF-1.4 adapted").decode()
+        assert data["nome_arquivo"].startswith("MatheusEditado-")
+        rascunho = gerar_pdf_fake.input_dto.rascunho
+        assert rascunho.secoes[0].conteudo == "Resumo editado."
+        assert rascunho.experiencias[0].descricao == "Texto editado."
+
+    def test_post_curriculo_revisado_com_download_devolve_pdf_binario(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
+        response = client.post(
+            "/v1/curriculos-revisados?download=true",
+            json={
+                "rascunho": {
+                    "nome_completo": "Matheus Silva",
+                    "secoes": [
+                        {"tipo": "PERFIL", "titulo": "Perfil", "conteudo": "Resumo."}
+                    ],
+                },
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.content == b"%PDF-1.4 adapted"
+
+    def test_post_curriculo_revisado_com_rascunho_invalido_devolve_422(
+        self, client: TestClient, gerar_pdf_fake: GerarPdfFake
+    ):
+        response = client.post(
+            "/v1/curriculos-revisados",
+            json={
+                "rascunho": {
+                    "nome_completo": "Matheus Silva",
+                    "secoes": [],
+                    "experiencias": [{"cargo": "", "empresa": "TechCorp", "descricao": "x"}],
+                },
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+            },
+        )
+
+        assert response.status_code == 422
+        assert gerar_pdf_fake.input_dto is None
+
     def test_post_analisar_ats(self, client: TestClient):
         class FakeAnalisar:
             def executar(self, input_dto):

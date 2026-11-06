@@ -10,6 +10,8 @@ Renderizar a seção de experiências igual ao modelo, com foco nos tópicos sep
 - Usar `InterpretadorExperiencias` (tarefa 2.0) para obter os blocos.
 - Empresa em Bold 11,5 pt preto à esquerda; período em Regular 10,5 pt `#595959` à direita, terminando em x ≈ 513 pt, via `Table` sem padding (RF 16).
 - Bloco sem período mostra só a empresa, sem erro (RF 24).
+- Cabeçalho `Cargo — Empresa (Período)`: empresa em negrito com o período à direita e cargo em itálico azul-marinho na linha abaixo (RF 32).
+- A linha de contexto é desenhada com o rótulo que veio no texto (RF 34).
 - Cargo em Italic 10,5 pt `#1F3864` na linha abaixo (RF 17).
 - Tópicos com `Paragraph(..., bulletText="●")`, `bulletIndent=18`, `leftIndent=36`, recuo pendente e `spaceAfter` entre tópicos (RF 18 a 20).
 - Contexto em Italic 10,5 pt `#595959`, após os tópicos (RF 21).
@@ -50,6 +52,8 @@ Consultar em `techspec-job-0016.md`:
 - [ ] Cargo em `Carlito-Italic` com cor `#1F3864`.
 - [ ] Contexto em `Carlito-Italic` com cor `#595959`.
 - [ ] Experiência só com contexto e experiência sem período geram PDF válido.
+- [ ] Cabeçalho `Cargo — Empresa (Período)` gera empresa em `Carlito-Bold`, período à direita e cargo na linha abaixo em `Carlito-Italic` `#1F3864`.
+- [ ] Contexto exibe o rótulo `Context:` ou `Contexto:` no PDF.
 - [ ] Ordem do texto extraído: empresa → período → cargo → tópicos → contexto.
 - [ ] Testes reescritos: `test_formatar_experiencias_com_cabecalho_e_posicao`, `test_nao_aplica_negrito_em_descricao_de_experiencia`, `test_adiciona_espacamento_extra_entre_blocos_de_experiencia`.
 

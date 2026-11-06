@@ -10,10 +10,13 @@ Criar a lógica pura que converte o texto da seção de experiências (ou de for
 - `BlocoExperiencia` deve ser um dataclass frozen com `empresa`, `periodo`, `cargo`, `topicos: tuple[str, ...]` e `contexto`.
 - `InterpretadorExperiencias.interpretar(conteudo) -> list[BlocoExperiencia]`, com blocos separados por linha em branco.
 - O período deve ser reconhecido no fim da primeira linha, nos formatos da techspec (mês en/pt, `MM/AAAA`, `AAAA`; fim com `Present`, `Presente`, `Atual`, `Current`, `Hoje`; separadores `-`, `–`, `—`).
-- O período entre parênteses no fim da linha (formato do Perfil Estruturado) também deve ser reconhecido.
+- O formato com travessão `Cargo — Empresa (Período)` (gerado pelo Perfil Estruturado e pelo JOB-0035) também deve ser reconhecido: `cargo` antes do travessão (U+2014), `empresa` entre o travessão e os parênteses, `periodo` dentro dos parênteses, vazio se `()` (RF 32).
+- Hífen no nome da empresa nunca separa; travessão sem parênteses no fim não separa.
+- Formação e certificações no formato `Curso — Instituição (Período)` e `Nome — Instituição (Ano)` seguem a mesma regra: lado esquerdo em `cargo`, direito em `empresa` (RF 33).
 - Sem período reconhecido: `empresa` recebe a linha inteira e `periodo` fica vazio.
 - Tópicos: linhas iniciadas por `-`, `•`, `●` ou `*`, sem o marcador.
-- Contexto: linha iniciada por `Context:` ou `Contexto:` (case-insensitive) e linhas soltas que não são tópicos.
+- Contexto: linha iniciada por um rótulo de `CatalogoLocalizacao.rotulos_contexto()` (`Context:` ou `Contexto:`, case-insensitive), com o rótulo mantido no texto, e linhas soltas que não são tópicos (RF 34).
+- `InterpretadorExperiencias` recebe o `CatalogoLocalizacao` por construtor opcional, como o `GeradorPdfClient`.
 - Nenhuma linha de entrada pode ser descartada.
 - Reaproveitar a regra de `_parece_posicao_experiencia` para identificar o cargo (DRY).
 </requirements>
@@ -22,7 +25,7 @@ Criar a lógica pura que converte o texto da seção de experiências (ou de for
 
 - [ ] 2.1 Escrever os testes de `InterpretadorExperiencias` cobrindo os casos da techspec (red).
 - [ ] 2.2 Implementar `BlocoExperiencia`.
-- [ ] 2.3 Implementar a regex de período e a separação empresa/período.
+- [ ] 2.3 Implementar a regex de período, a separação empresa/período e o formato com travessão.
 - [ ] 2.4 Implementar a classificação de linhas (cargo, tópico, contexto).
 - [ ] 2.5 Refatorar mantendo os testes verdes.
 
@@ -39,7 +42,10 @@ Consultar em `techspec-job-0016.md` a seção "Regras de interpretação de expe
 
 - [ ] Separa `Starian` e `Mar 2026 - Present`.
 - [ ] Separa `SIPPulse - High-Performance NGN SIP Solutions` e `Nov 2022 - Mar 2026` (hífen no nome da empresa não confunde a regex).
-- [ ] Reconhece período entre parênteses: `Software Engineer — Starian (Mar 2026 - Present)`.
+- [ ] Formato com travessão: `Software Engineer — Starian (Mar 2026 - Present)` gera cargo, empresa e período.
+- [ ] Parênteses vazios `()` geram `periodo == ""`.
+- [ ] Travessão sem parênteses no fim não separa.
+- [ ] Formação `Curso — Instituição (Período)` e certificação `Nome — Instituição (Ano)`.
 - [ ] Linha sem período retorna `periodo == ""`.
 - [ ] Reconhece cargo na segunda linha.
 - [ ] Reconhece tópicos com `-`, `•` e `●`.
@@ -55,3 +61,4 @@ Consultar em `techspec-job-0016.md` a seção "Regras de interpretação de expe
 - `src/jobsync/tests/curriculo/test_interpretador_experiencias.py` (novo)
 - `src/jobsync/curriculo/adapters/gerador_pdf_client.py` (referência: `_parece_posicao_experiencia`, `_separar_blocos_experiencias`)
 - `src/jobsync/perfil_estruturado/domain/montar_curriculo_do_perfil_estruturado_service.py` (referência de formato de entrada)
+- `src/jobsync/shared_kernel/domain/catalogo_localizacao.py` (rótulos de contexto, task 3.0)

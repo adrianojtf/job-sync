@@ -7,7 +7,7 @@
 Aplicar o padrão do modelo às seções finais: instituição e período na mesma linha, curso/grau em itálico azul na linha abaixo, e idiomas um por linha.
 
 <requirements>
-- Formação: instituição em Bold preto + período em `#595959` à direita; curso e grau em Italic `#1F3864` na linha abaixo (RF 25).
+- Formação: instituição em Bold preto + período em `#595959` à direita; curso e grau em Italic `#1F3864` na linha abaixo (RF 25). Aceitar também `Curso — Instituição (Período)` (RF 33).
 - Certificações: mesmo padrão de formação (RF 26).
 - Idiomas: uma linha por idioma, idioma em negrito e nível em regular (RF 27).
 - Reaproveitar `InterpretadorExperiencias` e o componente de linha empresa + período da tarefa 5.0 (DRY).
@@ -36,6 +36,7 @@ Consultar em `techspec-job-0016.md` a seção "Regras de renderização" (item F
 - [ ] `Estácio` em `Carlito-Bold` e `Jun 2022 - Jun 2024` alinhado à direita em `#595959`.
 - [ ] `Systems Analysis and Development - Associate Degree` em `Carlito-Italic` `#1F3864`.
 - [ ] Certificação com nome e ano na mesma linha.
+- [ ] Formação `Curso — Instituição (Período)` gera instituição em negrito com período à direita e curso em itálico azul na linha abaixo.
 - [ ] Idiomas: uma linha por idioma, idioma em negrito.
 - [ ] Formato antigo de formação gera PDF válido com todo o texto.
 

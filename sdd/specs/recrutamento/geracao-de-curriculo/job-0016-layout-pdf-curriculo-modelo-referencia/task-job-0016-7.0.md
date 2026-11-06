@@ -9,8 +9,7 @@ Garantir que o texto que chega ao gerador de PDF tenha a estrutura de linhas e t
 <requirements>
 - `AjustadorTextoClient`: regra geral de preservação de linhas e tópicos `-` (RF 28).
 - `AjustadorTextoClient`, seção `TECNOLOGIAS`: uma categoria por linha no formato `Rótulo: itens` (RF 29).
-- `AjustadorTextoClient`, seção `EXPERIENCIAS`: ordem empresa + período, cargo, tópicos `-`, linha `Context:`/`Contexto:`, com linha em branco entre experiências (RF 30).
-- `AjustadorExperienciaOpenAIClient`: manter os tópicos `-` da descrição original.
+- Fora desta task: a instrução da seção `EXPERIENCIAS` e o `AjustadorExperienciaOpenAIClient`, que pertencem ao JOB-0035 (RF 30).
 - `ExtratorCurriculoClient`: preservar quebras de linha e converter `●`/`•` em `- ` (RF 31).
 - Usar o texto sugerido na seção "Ajustes de prompt" da techspec.
 - Não alterar as regras atuais de não inventar fatos.
@@ -21,8 +20,7 @@ Garantir que o texto que chega ao gerador de PDF tenha a estrutura de linhas e t
 
 - [ ] 7.1 Escrever testes que capturam os prompts enviados ao `ClienteOpenAI` (mock com `unittest.mock`) e verificam as novas regras (red).
 - [ ] 7.2 Atualizar `AjustadorTextoClient`.
-- [ ] 7.3 Atualizar `AjustadorExperienciaOpenAIClient`.
-- [ ] 7.4 Atualizar `ExtratorCurriculoClient`.
+- [ ] 7.3 Atualizar `ExtratorCurriculoClient`.
 
 ## Detalhes de Implementação
 
@@ -37,8 +35,6 @@ Consultar em `techspec-job-0016.md` a seção "Ajustes de prompt".
 
 - [ ] `AjustadorTextoClient`: prompt contém a regra de tópicos `-` para qualquer seção.
 - [ ] `AjustadorTextoClient`: prompt de `TECNOLOGIAS` contém a regra de uma categoria por linha.
-- [ ] `AjustadorTextoClient`: prompt de `EXPERIENCIAS` contém a ordem do bloco.
-- [ ] `AjustadorExperienciaOpenAIClient`: prompt contém a regra de tópicos `-`.
 - [ ] `ExtratorCurriculoClient`: prompt contém a regra de quebras de linha e marcadores.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
@@ -46,7 +42,6 @@ Consultar em `techspec-job-0016.md` a seção "Ajustes de prompt".
 ## Arquivos relevantes
 
 - `src/jobsync/curriculo/adapters/ajustador_texto_client.py`
-- `src/jobsync/curriculo/adapters/ajustador_experiencia_openai_client.py`
 - `src/jobsync/curriculo/adapters/extrator_curriculo_client.py`
 - `src/jobsync/tests/curriculo/test_ajustador_texto_client.py`
-- `src/jobsync/tests/curriculo/` (testes dos outros dois clients, criar se não existirem)
+- `src/jobsync/tests/curriculo/` (teste do `ExtratorCurriculoClient`, criar se não existir)

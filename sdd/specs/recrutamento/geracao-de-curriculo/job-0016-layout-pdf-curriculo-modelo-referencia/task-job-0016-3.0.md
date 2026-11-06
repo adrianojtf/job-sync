@@ -9,7 +9,9 @@ Ajustar os rótulos de apresentação para ficarem iguais ao modelo: o título d
 <requirements>
 - `localizar_secao("en", "tecnologias")` deve retornar `Technical Skills`.
 - `localizar_secao("pt", "tecnologias")` continua retornando `Tecnologias`.
-- Novo método ou chave para o rótulo de contexto: `Context` em inglês e `Contexto` em português, com o mesmo fallback de idioma já existente.
+- Novo método `rotulo_contexto(idioma)`: `Context` em inglês e `Contexto` em português, com o mesmo fallback de idioma já existente.
+- Novo método `rotulos_contexto()`: todos os rótulos reconhecidos (`Context` e `Contexto`), usado pelo interpretador para reconhecer a linha de contexto.
+- É a fonte única do rótulo: o JOB-0035 reutiliza estes métodos e não cria módulo próprio de rótulos.
 - A conversão para caixa alta fica no gerador de PDF, não no catálogo.
 - Sem dependência de infraestrutura (`shared_kernel/domain`).
 </requirements>
@@ -17,7 +19,7 @@ Ajustar os rótulos de apresentação para ficarem iguais ao modelo: o título d
 ## Subtarefas
 
 - [ ] 3.1 Atualizar o teste existente em `test_catalogo_localizacao.py:10` para `Technical Skills` (red).
-- [ ] 3.2 Escrever testes do rótulo de contexto em pt, en e idioma desconhecido.
+- [ ] 3.2 Escrever testes de `rotulo_contexto` (pt, en e idioma desconhecido) e de `rotulos_contexto`.
 - [ ] 3.3 Implementar as mudanças em `CatalogoLocalizacao`.
 
 ## Detalhes de Implementação
@@ -33,7 +35,8 @@ Consultar em `techspec-job-0016.md` a tabela "Componentes modificados" (linha `C
 
 - [ ] `Technical Skills` para `en`.
 - [ ] `Tecnologias` para `pt`.
-- [ ] Rótulo de contexto em `en`, `pt` e fallback.
+- [ ] `rotulo_contexto` em `en`, `pt` e fallback.
+- [ ] `rotulos_contexto` devolve `Context` e `Contexto`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

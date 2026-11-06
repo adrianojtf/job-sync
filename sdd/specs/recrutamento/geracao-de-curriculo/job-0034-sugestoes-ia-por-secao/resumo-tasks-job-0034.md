@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 ContextoVaga e AnaliseVagaSchema
-- [ ] 2.0 Porta MelhoradorTextoCurriculoPort e adapter OpenAI
+- [x] 2.0 Porta MelhoradorTextoCurriculoPort e adapter OpenAI
 - [ ] 3.0 Casos de uso SugerirAjusteSecaoCurriculo e SugerirAjusteExperiencia
 - [ ] 4.0 Endpoints de sugestão e análise da vaga no rascunho
 - [ ] 5.0 Cliente de API e tipos do frontend

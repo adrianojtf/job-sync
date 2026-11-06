@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import type { RascunhoCurriculoAdaptado } from "../../api/tipos";
+import type { ContextoVaga, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import {
   CAMPOS_EXPERIENCIA,
   EXPERIENCIA_VAZIA,
@@ -9,6 +9,8 @@ import {
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
+import { SugestaoCampo } from "../../shared/formulario-curriculo/SugestaoCampo";
+import { useSugestoes } from "../../shared/formulario-curriculo/use-sugestoes";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { ConfirmacaoModal } from "../../shared/ui/ConfirmacaoModal";
@@ -18,12 +20,15 @@ import { AvaliarExperienciaModal } from "../perfil/AvaliarExperienciaModal";
 import {
   formularioParaRascunho,
   rascunhoParaFormulario,
+  tituloSecaoPerfil,
   type FormularioRevisao,
   type TipoSecao,
 } from "./formulario-revisao";
 
 interface Props {
   rascunho: RascunhoCurriculoAdaptado;
+  /** Vaga usada na adaptação: orienta as sugestões de IA de cada bloco. */
+  contextoVaga: ContextoVaga;
   gerando: boolean;
   erro?: string;
   aoConfirmar: (rascunho: RascunhoCurriculoAdaptado) => void;
@@ -31,22 +36,25 @@ interface Props {
 }
 
 /** Bloco de cada seção de texto, com os mesmos títulos da tela de cadastro (Meu perfil). */
-const SECOES_TEXTO: Partial<Record<TipoSecao, { titulo: string; rotulo: string; ajuda?: string }>> =
-  {
-    EXPERIENCIAS: {
-      titulo: "Experiências profissionais",
-      rotulo: "Experiências",
-      ajuda: "Separe cada experiência por uma linha em branco.",
-    },
-    TECNOLOGIAS: {
-      titulo: "Tecnologias e ferramentas",
-      rotulo: "Tecnologias",
-      ajuda: "Use uma linha por categoria. Ex.: Linguagens: Java, Python",
-    },
-    FORMACAO: { titulo: "Formação acadêmica", rotulo: "Formação" },
-    CERTIFICACOES: { titulo: "Certificações", rotulo: "Certificações" },
-    IDIOMAS: { titulo: "Idiomas", rotulo: "Idiomas" },
-  };
+const SECOES_TEXTO: Partial<
+  Record<TipoSecao, { titulo: string; rotulo: string; ajuda?: string; sugerir?: boolean }>
+> = {
+  EXPERIENCIAS: {
+    titulo: "Experiências profissionais",
+    rotulo: "Experiências",
+    ajuda: "Separe cada experiência por uma linha em branco.",
+    sugerir: true,
+  },
+  TECNOLOGIAS: {
+    titulo: "Tecnologias e ferramentas",
+    rotulo: "Tecnologias",
+    ajuda: "Use uma linha por categoria. Ex.: Linguagens: Java, Python",
+    sugerir: true,
+  },
+  FORMACAO: { titulo: "Formação acadêmica", rotulo: "Formação" },
+  CERTIFICACOES: { titulo: "Certificações", rotulo: "Certificações" },
+  IDIOMAS: { titulo: "Idiomas", rotulo: "Idiomas" },
+};
 
 /**
  * Revisão do currículo adaptado pela IA antes do PDF (JOB-0033). Todas as seções ficam
@@ -54,6 +62,7 @@ const SECOES_TEXTO: Partial<Record<TipoSecao, { titulo: string; rotulo: string; 
  */
 export function RevisaoCurriculoAdaptado({
   rascunho,
+  contextoVaga,
   gerando,
   erro,
   aoConfirmar,
@@ -67,6 +76,7 @@ export function RevisaoCurriculoAdaptado({
     null,
   );
   const experienciasEstruturadas = rascunho.experiencias != null;
+  const sugestoes = useSugestoes(contextoVaga);
 
   const idTitulo = useId();
   const titulo = useRef<HTMLHeadingElement>(null);
@@ -85,7 +95,11 @@ export function RevisaoCurriculoAdaptado({
       <Aviso>Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar.</Aviso>
 
       <form onSubmit={confirmar} noValidate className={estilos.secoes}>
-        <PainelDadosPessoais form={form} emailObrigatorio={false} />
+        <PainelDadosPessoais
+          form={form}
+          emailObrigatorio={false}
+          sugerirResumo={sugestoes.secao("PERFIL", tituloSecaoPerfil(rascunho))}
+        />
 
         {experienciasEstruturadas && (
           <ListaItensCurriculo
@@ -96,6 +110,14 @@ export function RevisaoCurriculoAdaptado({
             rotuloItem="Experiência"
             itemVazio={EXPERIENCIA_VAZIA}
             campos={CAMPOS_EXPERIENCIA}
+            complementoItem={(indice) => (
+              <SugestaoCampo
+                form={form}
+                campo={`experiencias.${indice}.descricao`}
+                rotuloBloco={`experiência ${indice + 1}`}
+                sugerir={sugestoes.experiencia(() => form.getValues(`experiencias.${indice}`))}
+              />
+            )}
             acoesItem={(indice) => (
               <Button
                 aria-label={`Avaliar experiência ${indice + 1}`}
@@ -118,6 +140,14 @@ export function RevisaoCurriculoAdaptado({
                 ajuda={bloco.ajuda}
                 {...form.register(`secoes.${indice}.conteudo`)}
               />
+              {bloco.sugerir && (
+                <SugestaoCampo
+                  form={form}
+                  campo={`secoes.${indice}.conteudo`}
+                  rotuloBloco={bloco.rotulo.toLowerCase()}
+                  sugerir={sugestoes.secao(secao.tipo, secao.titulo)}
+                />
+              )}
             </Panel>
           );
         })}

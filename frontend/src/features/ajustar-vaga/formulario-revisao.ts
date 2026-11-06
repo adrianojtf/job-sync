@@ -58,7 +58,7 @@ export function formularioParaRascunho(
     secoes: [
       {
         tipo: "PERFIL",
-        titulo: secaoPerfil(original)?.titulo ?? TITULO_PERFIL_PADRAO,
+        titulo: tituloSecaoPerfil(original),
         conteudo: formulario.resumo_profissional.trim(),
       },
       ...formulario.secoes.map((secao) => ({ ...secao, conteudo: secao.conteudo.trim() })),
@@ -73,6 +73,11 @@ export function formularioParaRascunho(
             descricao: experiencia.descricao.trim(),
           })),
   };
+}
+
+/** Título da seção de resumo do rascunho; o padrão vale quando a IA não devolveu o resumo. */
+export function tituloSecaoPerfil(rascunho: RascunhoCurriculoAdaptado): string {
+  return secaoPerfil(rascunho)?.titulo ?? TITULO_PERFIL_PADRAO;
 }
 
 function secaoPerfil(rascunho: RascunhoCurriculoAdaptado): SecaoRascunho | undefined {

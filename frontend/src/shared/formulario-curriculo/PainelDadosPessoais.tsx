@@ -3,11 +3,14 @@ import { Field } from "../ui/Field";
 import { Panel } from "../ui/Panel";
 import type { DadosPessoaisFormulario } from "./campos-curriculo";
 import estilos from "./FormularioCurriculo.module.css";
+import { SugestaoCampo } from "./SugestaoCampo";
 
 interface Props<T extends FieldValues & DadosPessoaisFormulario> {
   form: UseFormReturn<T>;
   /** O cadastro exige e-mail; um currículo vindo de PDF pode não ter. */
   emailObrigatorio?: boolean;
+  /** Quando informada, mostra "Sugestões de IA" no resumo profissional (JOB-0034). */
+  sugerirResumo?: (texto: string) => Promise<string>;
 }
 
 const campo = <T extends FieldValues>(nome: keyof DadosPessoaisFormulario) => nome as Path<T>;
@@ -16,6 +19,7 @@ const campo = <T extends FieldValues>(nome: keyof DadosPessoaisFormulario) => no
 export function PainelDadosPessoais<T extends FieldValues & DadosPessoaisFormulario>({
   form,
   emailObrigatorio = true,
+  sugerirResumo,
 }: Props<T>) {
   const { errors } = form.formState;
   return (
@@ -54,6 +58,14 @@ export function PainelDadosPessoais<T extends FieldValues & DadosPessoaisFormula
             rotulo="Resumo profissional"
             {...form.register(campo<T>("resumo_profissional"))}
           />
+          {sugerirResumo && (
+            <SugestaoCampo
+              form={form}
+              campo={campo<T>("resumo_profissional")}
+              rotuloBloco="resumo"
+              sugerir={sugerirResumo}
+            />
+          )}
         </div>
       </div>
     </Panel>

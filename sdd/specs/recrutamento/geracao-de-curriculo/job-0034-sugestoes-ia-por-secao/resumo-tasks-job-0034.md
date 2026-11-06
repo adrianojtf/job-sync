@@ -8,7 +8,7 @@
 - [x] 4.0 Endpoints de sugestão e análise da vaga no rascunho
 - [x] 5.0 Cliente de API e tipos do frontend
 - [x] 6.0 Componente SugestaoIA
-- [ ] 7.0 Integração das sugestões na revisão
+- [x] 7.0 Integração das sugestões na revisão
 - [ ] 8.0 Integração das sugestões em Meu perfil
 - [ ] 9.0 E2E, acessibilidade e suíte completa
 

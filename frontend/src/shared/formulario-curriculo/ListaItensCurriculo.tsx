@@ -23,6 +23,8 @@ interface Props<T extends FieldValues, N extends ArrayPath<T>> {
   itemVazio: FieldArray<T, N>;
   campos: CampoItem[];
   acoesItem?: (indice: number) => ReactNode;
+  /** Conteúdo extra abaixo dos campos do item, antes das ações (ex.: sugestão de IA). */
+  complementoItem?: (indice: number) => ReactNode;
 }
 
 /**
@@ -38,6 +40,7 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
   itemVazio,
   campos,
   acoesItem,
+  complementoItem,
 }: Props<T, N>) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: nome });
   const rotuloMinusculo = rotuloItem.toLowerCase();
@@ -89,6 +92,7 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
               );
             })}
           </div>
+          {complementoItem?.(indice)}
           <div className={estilos.acoesItem}>
             {acoesItem?.(indice)}
             <Button

@@ -170,6 +170,11 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
         {cabecalho}
         <RevisaoCurriculoAdaptado
           rascunho={adaptado.rascunho}
+          contextoVaga={{
+            descricao_vaga: vagaEmRevisao.descricao_vaga,
+            idioma_alvo: vagaEmRevisao.idioma_alvo,
+            analise_vaga: adaptado.analise_vaga,
+          }}
           gerando={gerarPdf.isPending}
           erro={gerarPdf.error?.message}
           aoConfirmar={(rascunho) => confirmarRevisao(vagaEmRevisao, rascunho)}

@@ -24,8 +24,17 @@ const RASCUNHO = {
   titulo_experiencias: "Experiências",
 };
 
+const ANALISE_VAGA = {
+  requisitos: [
+    { nome: "Java", categoria: "TECNOLOGIA", tipo: "EXPLICITO", origem: "DESCRICAO_VAGA" },
+  ],
+  ambiguidade: [],
+  texto_original: "Java, Kafka e AWS.",
+};
+
 const ADAPTADO = {
   rascunho: RASCUNHO,
+  analise_vaga: ANALISE_VAGA,
   avaliacao_vaga: AVALIACAO_VAGA,
   status_avaliacao_vaga: "avaliada",
   avaliacoes_experiencias: [
@@ -68,6 +77,10 @@ function servirIa() {
     http.post(`${API_TESTE}/v1/curriculos/:id/rascunhos-adaptados`, async (info) => {
       await registrar(`rascunhos:${info.params.id}`)(info);
       return HttpResponse.json(ADAPTADO);
+    }),
+    http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async (info) => {
+      await registrar("sugestao-secao")(info);
+      return HttpResponse.json({ conteudo_sugerido: "Resumo sugerido." });
     }),
     http.post(`${API_TESTE}/v1/curriculos-revisados`, async (info) => {
       await registrar("pdf")(info);
@@ -401,6 +414,30 @@ describe("AjustarVagaPage", () => {
     expect(screen.getByLabelText("Título da vaga")).toHaveValue("Senior Java");
     expect(screen.queryByRole("button", { name: "Baixar PDF" })).not.toBeInTheDocument();
     expect(chamadas.map((c) => c.rota)).not.toContain("pdf");
+  });
+
+  it("as sugestões da revisão usam a vaga adaptada e a análise devolvida com o rascunho", async () => {
+    servirDadosBase();
+    const chamadas = servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Sugestões de IA para resumo" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Aplicar sugestão em resumo" }),
+    );
+
+    expect(chamadas.find((c) => c.rota === "sugestao-secao")?.corpo).toEqual({
+      secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo adaptado pela IA." },
+      contexto_vaga: {
+        descricao_vaga: "Java, Kafka e AWS.",
+        idioma_alvo: "pt",
+        analise_vaga: ANALISE_VAGA,
+      },
+    });
+    expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo sugerido.");
   });
 
   it("falha ao gerar o PDF mantém a revisão com as edições", async () => {

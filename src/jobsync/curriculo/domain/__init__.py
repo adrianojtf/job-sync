@@ -1,5 +1,6 @@
 """Camada de domínio do Currículo."""
 
+from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.domain.avaliacao_experiencia import (
     AvaliacaoExperiencia,
@@ -17,6 +18,7 @@ from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsP
 from jobsync.curriculo.domain.rascunho_curriculo_adaptado import RascunhoCurriculoAdaptado
 
 __all__ = [
+    "ContextoVaga",
     "Curriculo",
     "SecaoCurriculo",
     "TipoSecao",

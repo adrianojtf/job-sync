@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from jobsync.entrypoints.api.schemas.avaliacao import (
     ResultadoDimensaoAvaliacaoResponse,
 )
-from jobsync.vaga import AvaliacaoDescricaoVaga, Vaga
+from jobsync.vaga import (
+    AnaliseVaga,
+    AvaliacaoDescricaoVaga,
+    CategoriaRequisitoTecnico,
+    OrigemRequisitoTecnico,
+    RequisitoTecnico,
+    TipoRequisitoTecnico,
+    Vaga,
+)
 from jobsync.vaga.service_layer.avaliar_descricao_vaga.dtos import (
     AvaliarDescricaoVagaInputDto,
 )
@@ -173,4 +182,61 @@ class AvaliacaoDescricaoVagaResponse(BaseModel):
                 avaliacao.relevancia
             ),
             inclusao=ResultadoDimensaoAvaliacaoResponse.from_domain(avaliacao.inclusao),
+        )
+
+
+class RequisitoTecnicoSchema(BaseModel):
+    """Requisito técnico extraído de uma vaga."""
+
+    nome: str = Field(description="Nome do requisito técnico.")
+    categoria: Literal["TECNOLOGIA", "FERRAMENTA", "HABILIDADE", "METODOLOGIA", "OUTRA"] = Field(
+        description="Categoria do requisito técnico."
+    )
+    tipo: Literal["EXPLICITO", "IMPLICITO", "AMBIGUO"] = Field(
+        description="Natureza do requisito técnico."
+    )
+    origem: Literal["DESCRICAO_VAGA", "INTERPRETACAO", "DESCONHECIDA"] = Field(
+        default="DESCONHECIDA", description="Origem do requisito, para rastreabilidade."
+    )
+
+
+class AnaliseVagaSchema(BaseModel):
+    """Análise estruturada de uma vaga, devolvida ao cliente e reenviada nos pedidos de sugestão."""
+
+    requisitos: list[RequisitoTecnicoSchema] = Field(description="Requisitos técnicos da vaga.")
+    ambiguidade: list[str] = Field(
+        default_factory=list, description="Pontos ambíguos encontrados na descrição."
+    )
+    texto_original: str = Field(description="Descrição original da vaga.")
+
+    @classmethod
+    def from_domain(cls, analise: AnaliseVaga) -> AnaliseVagaSchema:
+        return cls(
+            requisitos=[
+                RequisitoTecnicoSchema(
+                    nome=requisito.nome,
+                    categoria=requisito.categoria.name,
+                    tipo=requisito.tipo.name,
+                    origem=requisito.origem.name,
+                )
+                for requisito in analise.requisitos
+            ],
+            ambiguidade=list(analise.ambiguidade),
+            texto_original=analise.texto_original,
+        )
+
+    def to_domain(self) -> AnaliseVaga:
+        """Converte para o domínio; levanta ValueError se a análise for inválida."""
+        return AnaliseVaga(
+            requisitos=tuple(
+                RequisitoTecnico(
+                    nome=requisito.nome,
+                    categoria=CategoriaRequisitoTecnico[requisito.categoria],
+                    tipo=TipoRequisitoTecnico[requisito.tipo],
+                    origem=OrigemRequisitoTecnico[requisito.origem],
+                )
+                for requisito in self.requisitos
+            ),
+            ambiguidade=tuple(self.ambiguidade),
+            texto_original=self.texto_original,
         )

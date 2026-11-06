@@ -9,7 +9,7 @@ A solução fica no adapter `GeradorPdfClient` (ReportLab), sem mudar a porta `G
 - ler os tokens visuais (cores, tamanhos, recuos) de um objeto de estilo único;
 - interpretar cada bloco de experiência em partes (empresa, período, cargo, tópicos, contexto) antes de renderizar.
 
-Em paralelo, os prompts de extração e ajuste por IA ganham regras explícitas para **preservar quebras de linha e tópicos `-`**. Sem isso, o gerador recebe prosa e não tem tópicos para formatar. Esse é o defeito visto hoje nos PDFs em `storage/`.
+Em paralelo, os prompts de extração e ajuste por IA ganham regras explícitas para **preservar quebras de linha e tópicos `-`**. Sem isso, o gerador recebe prosa e não tem tópicos para formatar. Esse é o defeito visto hoje nos PDFs em `storage/`. O ajuste das experiências em conquistas + contexto é do JOB-0035, e este JOB só garante que o PDF desenhe o resultado (ver "Relação com o JOB-0035").
 
 Analogia: o gerador de PDF é a gráfica. O modelo é a prova de impressão. O prompt de IA é o redator. Se o redator entregar o texto sem os tópicos, a gráfica não tem como imprimir tópicos. Por isso o JOB corrige os dois pontos.
 
@@ -48,9 +48,8 @@ Componentes modificados:
 | Componente | Mudança |
 |---|---|
 | `GeradorPdfClient` (`src/jobsync/curriculo/adapters/gerador_pdf_client.py`) | Novo cabeçalho, títulos, tecnologias, experiências, formação; usa os componentes acima |
-| `CatalogoLocalizacao` (`src/jobsync/shared_kernel/domain/catalogo_localizacao.py`) | Título `tecnologias` em inglês passa de `Technologies` para `Technical Skills` (igual ao modelo); novo rótulo `contexto` (`Context` / `Contexto`) |
-| `AjustadorTextoClient` (`src/jobsync/curriculo/adapters/ajustador_texto_client.py`) | Regras de preservação de estrutura no prompt (RF 28 a 30) |
-| `AjustadorExperienciaOpenAIClient` (`src/jobsync/curriculo/adapters/ajustador_experiencia_openai_client.py`) | Regra para manter tópicos `-` na descrição ajustada |
+| `CatalogoLocalizacao` (`src/jobsync/shared_kernel/domain/catalogo_localizacao.py`) | Título `tecnologias` em inglês passa de `Technologies` para `Technical Skills` (igual ao modelo); novo rótulo `contexto` (`Context` / `Contexto`) e `rotulos_contexto()` com todos os rótulos reconhecidos. É a fonte única do rótulo, e o JOB-0035 a reutiliza |
+| `AjustadorTextoClient` (`src/jobsync/curriculo/adapters/ajustador_texto_client.py`) | Regra geral de preservação de linhas e tópicos e regra da seção TECNOLOGIAS (RF 28 e 29). A instrução da seção EXPERIENCIAS é do JOB-0035 |
 | `ExtratorCurriculoClient` (`src/jobsync/curriculo/adapters/extrator_curriculo_client.py`) | Regra para preservar quebras de linha e converter `●`/`•` em `- ` (RF 31) |
 
 Fluxo de dados (sem mudança de orquestração):
@@ -92,11 +91,13 @@ Entrada: texto da seção, blocos separados por linha em branco.
    - Mês: `Jan|Feb|...|Dec` e `Jan|Fev|...|Dez` (com ou sem ponto), ou `MM/AAAA`, ou só `AAAA`.
    - Fim: outra data ou `Present|Presente|Atual|Current|Hoje`.
    - Separador: `-`, `–` ou `—`, com espaços opcionais.
-   - Aceitar também o período entre parênteses no fim, ex.: `Software Engineer — Starian (Mar 2026 - Present)` (formato de `MontarCurriculoDoPerfilEstruturado`).
+   - **Formato com travessão** (gerado por `MontarCurriculoDoPerfilEstruturado` e pelo `para_texto` do JOB-0035): `Cargo — Empresa (Período)`. Reconhecido quando a linha contém ` — ` (travessão U+2014, nunca hífen, para não confundir com `SIPPulse - High-Performance...`) e termina em parênteses, com período ou vazios. Resultado: `cargo` = texto antes do travessão, `empresa` = texto entre o travessão e os parênteses, `periodo` = conteúdo dos parênteses (vazio se `()`).
+   - Formação e certificações usam a mesma regra com `Curso — Instituição (Período)` e `Nome — Instituição (Ano)`: o lado esquerdo vai para a linha em itálico azul e o direito, em negrito.
+   - Travessão sem parênteses no fim: sem separação (`empresa` = linha inteira).
    - Sem período encontrado: `empresa` = linha inteira, `periodo` = `""` (RF 24).
-2. **Cargo (2ª linha):** quando não começa com marcador, não começa com rótulo de contexto e tem até 80 caracteres sem ano de 4 dígitos (regra atual de `_parece_posicao_experiencia`, reaproveitada).
+2. **Cargo (2ª linha):** só quando o cargo não veio do cabeçalho com travessão, e quando não começa com marcador, não começa com rótulo de contexto e tem até 80 caracteres sem ano de 4 dígitos (regra atual de `_parece_posicao_experiencia`, reaproveitada).
 3. **Tópicos:** linhas que começam com `-`, `•`, `●` ou `*`. Remover o marcador e espaços.
-4. **Contexto:** linha que começa com `Context:` ou `Contexto:` (case-insensitive), mais as linhas seguintes que não são tópicos. Linhas soltas sem rótulo, após o cargo, também vão para `contexto`. Assim, nenhum texto se perde.
+4. **Contexto:** linha que começa com um rótulo de `CatalogoLocalizacao.rotulos_contexto()` (`Context:` ou `Contexto:`, case-insensitive), mais as linhas seguintes que não são tópicos. O rótulo permanece no texto exibido. Linhas soltas sem rótulo, após o cargo, também vão para `contexto`. Assim, nenhum texto se perde.
 
 ### Regras de renderização
 
@@ -131,9 +132,21 @@ Texto a incluir (em português, como os prompts atuais):
 
 - `AjustadorTextoClient`, regra geral: "Preserve a estrutura de linhas do conteúdo original. Cada linha que começa com '- ' no original deve continuar sendo uma linha que começa com '- ' na saída. Nunca junte tópicos em um parágrafo."
 - `TECNOLOGIAS`: "Mantenha uma categoria por linha, no formato 'Rótulo: item1, item2'."
-- `EXPERIENCIAS`: "Para cada experiência mantenha, nesta ordem: linha 'Empresa Período', linha do cargo, tópicos '- ' e a linha 'Context: ...' (ou 'Contexto: ...'). Separe experiências com uma linha em branco."
-- `AjustadorExperienciaOpenAIClient`: "Se a descrição original tiver tópicos iniciados por '- ', devolva a descrição com os mesmos tópicos '- ', um por linha."
+- `EXPERIENCIAS` e `AjustadorExperienciaOpenAIClient`: **fora deste JOB.** O JOB-0035 define o prompt (2 a 6 conquistas + contexto) e o formato JSON. Este JOB só garante a leitura do texto resultante.
 - `ExtratorCurriculoClient`: "Preserve as quebras de linha originais. Converta marcadores '●' ou '•' em '- '."
+
+### Contrato de texto de experiência
+
+Formato que o PDF aceita, vindo da IA (fonte PDF) ou da conversão do JOB-0035 e do Perfil Estruturado:
+
+```
+Empresa Período            ou   Cargo — Empresa (Período)
+Cargo                           - conquista
+- conquista                     Contexto: texto
+Contexto: texto
+```
+
+Blocos separados por linha em branco. Cargo, tópicos e contexto são opcionais.
 
 ## Abordagem de Testes
 
@@ -146,6 +159,8 @@ Seguir `.windsurf/rules/testing-rules.md`: AAA separado por linha em branco, sem
 - separa período entre parênteses do formato do perfil estruturado;
 - linha sem período retorna `periodo == ""`;
 - reconhece cargo, tópicos `-`, `•` e `●`, e contexto `Context:` / `Contexto:`;
+- formato com travessão `Cargo — Empresa (Período)`: separa os três campos; `()` vazio dá `periodo == ""`; sem parênteses não separa; hífen no nome da empresa não separa;
+- formação `Curso — Instituição (Período)` e certificação `Nome — Instituição (Ano)`;
 - bloco só com contexto (caso "Starian") e bloco sem contexto;
 - múltiplos blocos separados por linha em branco;
 - nenhuma linha de entrada é descartada.
@@ -162,11 +177,11 @@ Seguir `.windsurf/rules/testing-rules.md`: AAA separado por linha em branco, sem
 
 Testes existentes que mudam de expectativa (atualizar, não remover):
 - `test_formatar_experiencias_com_cabecalho_e_posicao`, `test_nao_aplica_negrito_em_descricao_de_experiencia` e `test_adiciona_espacamento_extra_entre_blocos_de_experiencia`: hoje verificam `<b>...</b>` e `&bull;` nos `Paragraph`. Reescrever para a nova saída (tabela de cabeçalho + `bulletText`).
-- `src/jobsync/tests/shared_kernel/test_catalogo_localizacao.py:10`: `Technologies` → `Technical Skills`.
+- `src/jobsync/tests/shared_kernel/test_catalogo_localizacao.py:10`: `Technologies` → `Technical Skills`. Novo teste de `rotulos_contexto()` em `en`, `pt` e idioma desconhecido.
 
 `test_registrador_fontes_pdf.py`: registra Carlito quando os arquivos existem; retorna Helvetica quando o diretório não existe (usar `tmp_path`).
 
-Testes de prompt (`test_ajustador_texto_client` e similares, com `unittest.mock` no `ClienteOpenAI`): verificar que o `prompt_usuario`/`prompt_sistema` enviado contém a regra de preservação de tópicos.
+Testes de prompt (`AjustadorTextoClient` e `ExtratorCurriculoClient`, com `unittest.mock` no `ClienteOpenAI`): verificar que o `prompt_usuario`/`prompt_sistema` enviado contém a regra de preservação de tópicos e, para TECNOLOGIAS, a de uma categoria por linha.
 
 ### Testes de Serviço
 
@@ -181,7 +196,7 @@ Testes de prompt (`test_ajustador_texto_client` e similares, com `unittest.mock`
 2. **`InterpretadorExperiencias` (TDD):** lógica pura, sem ReportLab. Fácil de testar isoladamente.
 3. **`GeradorPdfClient`:** cabeçalho, títulos, tecnologias, perfil, experiências, formação, nessa ordem. Atualizar os testes existentes afetados.
 4. **`CatalogoLocalizacao`:** novo título `Technical Skills` e rótulo `contexto`.
-5. **Prompts de IA:** extrator, ajustador de seção e ajustador de experiência.
+5. **Prompts de IA:** extrator e ajustador de seção (regra geral e TECNOLOGIAS). As experiências ficam no JOB-0035.
 6. **Validação visual** contra o modelo e ajuste fino de espaçamentos.
 
 ### Dependências Técnicas
@@ -206,7 +221,9 @@ Testes de prompt (`test_ajustador_texto_client` e similares, com `unittest.mock`
 | `Table` para empresa + período | Alinhamento à direita confiável e ordem de leitura linear | `canvas.drawRightString` (fora do fluxo, quebra paginação) |
 | `bulletText` no `Paragraph` | Recuo pendente nativo, uma linha de código por tópico | `ListFlowable` (mais verboso, sem ganho aqui) |
 | Interpretador no adapter, não no domínio | É regra de apresentação; evita mudar o agregado `Curriculo` (fora de escopo do PRD) | Estruturar experiências no domínio (mudança grande, afeta extração e IA) |
-| Corrigir prompts no mesmo JOB | Sem tópicos na entrada, o layout não atende o PRD | JOB separado (entrega visual incompleta) |
+| Corrigir no mesmo JOB os prompts de extração, de tecnologias e a regra geral | Sem tópicos na entrada, o layout não atende o PRD | JOB separado (entrega visual incompleta) |
+| Travessão (U+2014) como separador do formato `Cargo — Empresa (Período)` | Evita mudar `MontarCurriculoDoPerfilEstruturado` e o `para_texto` do JOB-0035; hífen nunca separa | Mudar os dois geradores para o formato do modelo (dois lugares a alterar e testar) |
+| Rótulo do contexto só no `CatalogoLocalizacao` | Fonte única (DRY) | O módulo `rotulos_experiencia.py` previsto no JOB-0035, com os mesmos rótulos em dois lugares |
 
 ### Riscos Conhecidos
 
@@ -214,6 +231,23 @@ Testes de prompt (`test_ajustador_texto_client` e similares, com `unittest.mock`
 - **Regex de período com falso positivo** (ex.: nome de empresa com ano): exigir que o período esteja no fim da linha e tenha o separador de intervalo.
 - **Diferença de paginação** em relação ao modelo: aceitável, desde que estilos e espaçamentos batam. `KeepTogether` evita cabeçalho órfão.
 - **Tamanho do repositório:** os 4 TTF somam cerca de 2,7 MB (medido no pacote `fonts-crosextra-carlito`).
+- **Conflito de merge no `GeradorPdfClient`:** o JOB-0035 também altera `_formatar_conteudo_experiencias`, que este JOB reescreve. Mitigação: integrar este JOB primeiro e remover essa parte do JOB-0035.
+- **Travessão em nome de empresa:** um nome com ` — ` e parênteses no fim seria separado de forma errada. Caso raro, e o resultado é só visual (nenhum texto se perde).
+
+### Relação com o JOB-0035
+
+Fonte: `prd-job-0035.md` e `techspec-job-0035.md` na branch `claude/job-0035-conquistas-contexto-experiencias` (só documentos, sem código).
+
+| Tema | JOB-0016 | JOB-0035 |
+|---|---|---|
+| Desenho do contexto no PDF (itálico cinza, rótulo) | Faz | Deixa de fazer |
+| Leitura de `Cargo — Empresa (Período)` | Faz | Usa |
+| Rótulo `Contexto`/`Context` | `CatalogoLocalizacao` (fonte única) | Reutiliza; não cria `rotulos_experiencia.py` |
+| Prompt de EXPERIENCIAS e `AjustadorExperienciaOpenAIClient` | Não altera | Altera |
+| Regra geral de tópicos, TECNOLOGIAS e extração | Altera | Não altera |
+| Modelo `ExperienciaAdaptada`, revisão, sugestões, endpoints | Não altera | Altera |
+
+Diferenças a resolver no JOB-0035: o estilo `contexto` com `Helvetica-Oblique` e `#666666` passa a ser Carlito Itálico `#595959` (medido no modelo, contraste de cerca de 7:1, cálculo meu); a ordem de verificação "contexto antes do ramo de cargo" é atendida pelo interpretador; o `refinar` e o `para_texto` não mudam.
 
 ### Conformidade com Padrões
 
@@ -231,7 +265,7 @@ Testes de prompt (`test_ajustador_texto_client` e similares, com `unittest.mock`
 - `src/jobsync/curriculo/domain/curriculo.py` (sem mudança, referência)
 - `src/jobsync/shared_kernel/domain/catalogo_localizacao.py`
 - `src/jobsync/curriculo/adapters/ajustador_texto_client.py`
-- `src/jobsync/curriculo/adapters/ajustador_experiencia_openai_client.py`
+- `sdd/specs/recrutamento/geracao-de-curriculo/job-0035-conquistas-e-contexto-nas-experiencias/` (branch `claude/job-0035-conquistas-contexto-experiencias`; referência, não alterar)
 - `src/jobsync/curriculo/adapters/extrator_curriculo_client.py`
 - `src/jobsync/perfil_estruturado/domain/montar_curriculo_do_perfil_estruturado_service.py` (formato de entrada a suportar)
 - `src/jobsync/curriculo/service_layer/adaptar_curriculo_para_vaga/service.py` e `src/jobsync/vaga_externa/service_layer/candidatar_na_vaga_externa/service.py` (consumidores da porta)

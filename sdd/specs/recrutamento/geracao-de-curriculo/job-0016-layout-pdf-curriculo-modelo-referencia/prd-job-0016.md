@@ -8,6 +8,17 @@ Este PRD define a reformulação visual do PDF para ficar **igual ao modelo de r
 
 Analogia: hoje o PDF é uma folha de anotações. O modelo é uma planilha bem formatada. O conteúdo é o mesmo, mas a hierarquia visual (cor, peso, itálico, alinhamento e tópicos) diz ao leitor onde olhar primeiro.
 
+### Relação com o JOB-0035
+
+O JOB-0035 (branch `claude/job-0035-conquistas-contexto-experiencias`) muda **o que** a IA entrega em cada experiência: conquistas em bullets e um parágrafo de contexto, como campos separados. Este JOB muda **como** o PDF desenha esse conteúdo. Os dois se encontram em um contrato de texto (ver seção 9):
+
+| JOB | Responsabilidade |
+|---|---|
+| JOB-0016 (este) | Layout do PDF igual ao modelo; leitura do texto de experiência, formação e certificações; preservação de linhas e tópicos nas seções de Tecnologias e na extração |
+| JOB-0035 | Campos de conquistas e contexto no domínio, na revisão e nas sugestões de IA; prompts de ajuste das experiências |
+
+O JOB-0035 passa a depender deste JOB para a parte de PDF. O desenho do contexto em itálico cinza, que o JOB-0035 previa no gerador, fica coberto aqui.
+
 ## Objetivos
 
 - Reproduzir no PDF gerado o estilo e o design do modelo de referência (tipografia, cores, alinhamentos, linhas divisórias e espaçamentos).
@@ -115,8 +126,17 @@ O que faz: garante que o texto que chega ao gerador de PDF ainda tenha a estrutu
 Requisitos funcionais:
 28. O ajuste de texto por IA deve manter cada tópico `-` do original como um tópico `-` na saída (pode reescrever o texto do tópico, não pode juntá-los em prosa).
 29. O ajuste da seção de Tecnologias deve manter uma categoria por linha, no formato `Rótulo: itens`.
-30. O ajuste da seção de Experiências deve manter a ordem de cada bloco: cabeçalho empresa + período, cargo, tópicos e contexto, com uma linha em branco entre experiências.
+30. O formato de bloco de experiência (cabeçalho, cargo, tópicos `-`, linha `Context:`/`Contexto:` e linha em branco entre experiências) é produzido pela IA nos ajustes de experiência, que pertencem ao JOB-0035. Este JOB só garante que o PDF desenhe esse formato (RF 16 a 24 e 32 a 34).
 31. A extração do currículo a partir do PDF deve preservar as quebras de linha e os marcadores do texto original.
+
+### 9. Contrato de texto compartilhado com o JOB-0035
+
+O texto da seção de experiências chega ao PDF por dois caminhos: a IA que escreve o texto (fonte PDF) e a conversão dos campos estruturados do JOB-0035 e do Perfil Estruturado. O PDF deve aceitar os dois formatos de cabeçalho, sem mudar esses geradores.
+
+Requisitos funcionais:
+32. O PDF deve aceitar o cabeçalho no formato do modelo (`Empresa Período`, cargo na linha seguinte) e no formato `Cargo — Empresa (Período)`, com travessão. No segundo, a empresa vai em negrito com o período à direita e o cargo vai em itálico azul-marinho na linha abaixo.
+33. Formação e certificações em `Curso — Instituição (Período)` e `Nome — Instituição (Ano)` seguem a mesma regra: instituição em negrito com o período à direita, e curso ou nome em itálico azul-marinho na linha abaixo.
+34. A linha iniciada por `Context:` ou `Contexto:` deve ser desenhada em itálico cinza depois dos tópicos, com o rótulo incluído no texto exibido. O rótulo deve ter uma única fonte no sistema (catálogo de localização), usada também pelo JOB-0035.
 
 ## Experiência do Usuário
 
@@ -137,6 +157,7 @@ Requisitos funcionais:
 - Não alterar o contrato da porta `GeradorPdfPort` nem a estrutura do agregado `Curriculo`.
 - Tempo de geração do PDF não deve aumentar de forma perceptível (meta: abaixo de 1 s por currículo de 2 páginas, sem contar chamadas de IA).
 - Não enviar dados do currículo a nenhum serviço novo.
+- Ordem entre JOBs: o JOB-0035 reescreve parte do mesmo gerador (`GeradorPdfClient`). Este JOB deve entrar primeiro, para o JOB-0035 não refazer o desenho do contexto.
 
 ## Fora de Escopo
 
@@ -146,12 +167,15 @@ Requisitos funcionais:
 - Mudanças no conteúdo gerado pela IA além da preservação de estrutura (RF 28 a 31).
 - Geração em formato DOCX.
 - Alteração da carta de apresentação ou de outros PDFs do sistema.
+- Campos de conquistas e contexto no modelo de domínio, edição na revisão, sugestões de IA por experiência, prompts de ajuste das experiências e a regra de métricas estimadas: tudo isso é do JOB-0035.
 
 ## Questões em Aberto
 
 1. **Período "Present"/"Atual":** o texto do período deve ser traduzido conforme o idioma alvo (`Present` → `Atual`) ou mantido como veio no conteúdo? Proposta: manter como veio; a IA já traduz o conteúdo.
 2. **Posição do período:** no modelo, o período termina em ~513 pt, e não na margem direita (567 pt), o que parece efeito de tabulação do editor de origem. Devemos copiar essa posição exata ou alinhar na margem direita? Proposta: copiar a posição do modelo, para ficar igual.
 3. **Marcador `●`:** no modelo o marcador usa outra fonte (Liberation Serif, 10 pt). Aceita-se usar o `●` da própria Carlito, se o resultado visual for equivalente?
-4. **Rótulo "Context:"** o rótulo deve ser obrigatório em toda experiência ou só renderizado quando existir no conteúdo? Proposta: só quando existir.
-5. **Currículo montado do Perfil Estruturado** (`MontarCurriculoDoPerfilEstruturado`) usa o formato `cargo — empresa (período)`. Ele deve ser ajustado neste JOB para o formato do modelo, ou fica para um JOB futuro?
+4. **Rótulo "Context:" (resolvida com o JOB-0035):** o JOB-0035 sempre escreve o rótulo na última linha do bloco. O PDF desenha o rótulo como veio no texto. Linhas soltas sem rótulo, depois do cargo e dos tópicos, também vão para o contexto, sem rótulo.
+5. **Currículo montado do Perfil Estruturado (resolvida):** `MontarCurriculoDoPerfilEstruturado` e o `para_texto` do JOB-0035 usam o formato `Cargo — Empresa (Período)`. O PDF passa a aceitar esse formato (RF 32 e 33), e nenhum dos dois geradores muda.
 6. **Código JIRA:** foi usado `JOB-0016` (próximo número livre no repositório). Confirmar se este é o código correto.
+7. **Cor do contexto:** a Tech Spec do JOB-0035 cita `#666666` com `Helvetica-Oblique` para o contexto. Este JOB usa `#595959` com Carlito Itálico, medidos no modelo. Confirmar que vale o modelo (proposta: sim, e atualizar o JOB-0035).
+8. **Ordem de integração e base da branch:** esta branch parte da `main` anterior ao PR 45 (JOB-0033 e JOB-0034). Integrar a `main` antes de abrir PR? A Tech Spec do JOB-0035 também precisa passar a citar a dependência deste JOB.

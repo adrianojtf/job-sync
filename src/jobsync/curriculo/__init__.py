@@ -11,6 +11,7 @@ from jobsync.curriculo.domain import (
     GeradorPdfPort,
     GerarCartaApresentacaoPort,
     GerarSugestoesAtsPort,
+    RascunhoCurriculoAdaptado,
     SecaoCurriculo,
     TipoSecao,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "GeradorPdfPort",
     "GerarCartaApresentacaoPort",
     "GerarSugestoesAtsPort",
+    "RascunhoCurriculoAdaptado",
     "SecaoCurriculo",
     "TipoSecao",
 ]

@@ -12,7 +12,6 @@ import type {
   CapturarVagaEntrada,
   CartaApresentacao,
   CriarCandidaturaEntrada,
-  CurriculoAdaptado,
   CurriculoConteudo,
   CurriculoRevisado,
   CurriculoSalvo,
@@ -47,7 +46,6 @@ export interface ApiClient {
   removerCurriculo(id: string, perfil: string): Promise<void>;
 
   avaliarVaga(descricaoVaga: string): Promise<AvaliacaoDescricaoVaga>;
-  adaptarCurriculo(curriculoId: string, dados: AdaptarCurriculoEntrada): Promise<CurriculoAdaptado>;
   /** Adapta via IA e devolve o rascunho para revisão, sem gerar PDF (JOB-0033). */
   gerarRascunhoAdaptado(
     curriculoId: string,

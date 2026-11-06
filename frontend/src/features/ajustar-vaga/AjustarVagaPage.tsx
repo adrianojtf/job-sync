@@ -1,7 +1,12 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { AdaptarCurriculoEntrada, CurriculoAdaptado } from "../../api/tipos";
+import type {
+  AdaptarCurriculoEntrada,
+  CurriculoRevisado,
+  RascunhoAdaptado,
+  RascunhoCurriculoAdaptado,
+} from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { base64ParaBlob, baixarArquivo } from "../../shared/arquivos/arquivos";
 import { Aviso } from "../../shared/ui/Aviso";
@@ -16,6 +21,7 @@ import { CartaGerada } from "./CartaGerada";
 import { useFontesCurriculo } from "./fonte-curriculo";
 import type { EstadoAjustarVaga } from "./navegacao";
 import resultados from "./Resultados.module.css";
+import { RevisaoCurriculoAdaptado } from "./RevisaoCurriculoAdaptado";
 import { SeletorFonteCurriculo } from "./SeletorFonteCurriculo";
 import { useAjustarVaga } from "./use-ajustar-vaga";
 
@@ -36,7 +42,10 @@ const obrigatorio = (mensagem: string) => ({
   validate: (valor: string) => valor.trim() !== "" || mensagem,
 });
 
-/** T5 — Ajustar para uma vaga (RF6.1–RF6.5). Um novo pedido vindo do modal recomeça o fluxo. */
+/**
+ * T5 — Ajustar para uma vaga (RF6.1–RF6.5). Um novo pedido vindo do modal recomeça o fluxo.
+ * O currículo adaptado passa por revisão antes do PDF (JOB-0033): vaga → revisão → resultado.
+ */
 export function AjustarVagaPage() {
   const estado = (useLocation().state ?? {}) as EstadoAjustarVaga;
   return <FluxoAjustarVaga key={estado.pedido ?? "inicial"} estado={estado} />;
@@ -44,7 +53,9 @@ export function AjustarVagaPage() {
 
 function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const fontes = useFontesCurriculo();
-  const { avaliar, adaptar, ats, carta } = useAjustarVaga();
+  const { avaliar, gerarRascunho, gerarPdf, ats, carta } = useAjustarVaga();
+  // Dados da vaga usados na adaptação em revisão; null fora da etapa de revisão.
+  const [vagaEmRevisao, setVagaEmRevisao] = useState<AdaptarCurriculoEntrada | null>(null);
   const form = useForm<Formulario>({
     defaultValues: {
       cargo: estado.cargo ?? "",
@@ -106,7 +117,27 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
 
   const gerarCurriculo = async () => {
     if (!(await form.trigger(["cargo", "empresa", "descricao"]))) return;
-    adaptar.mutate(await montarEntrada());
+    gerarPdf.reset();
+    gerarRascunho.mutate(await montarEntrada(), {
+      onSuccess: (_rascunho, entrada) => setVagaEmRevisao(entrada.dados),
+    });
+  };
+
+  const confirmarRevisao = (vaga: AdaptarCurriculoEntrada, rascunho: RascunhoCurriculoAdaptado) =>
+    gerarPdf.mutate(
+      {
+        rascunho,
+        idioma_alvo: vaga.idioma_alvo,
+        cargo_alvo: vaga.cargo_alvo,
+        empresa_alvo: vaga.empresa_alvo,
+      },
+      { onSuccess: () => setVagaEmRevisao(null) },
+    );
+
+  const descartarRevisao = () => {
+    gerarRascunho.reset();
+    gerarPdf.reset();
+    setVagaEmRevisao(null);
   };
 
   const analisarAts = async () => {
@@ -124,14 +155,33 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   };
 
   const semFonte = !fontes.carregando && fontes.opcoes.length === 0;
-  const avaliacaoVaga = avaliar.data ?? adaptar.data?.avaliacao_vaga ?? null;
+  const adaptado = gerarRascunho.data;
+  const avaliacaoVaga = avaliar.data ?? adaptado?.avaliacao_vaga ?? null;
+  const cabecalho = (
+    <CabecalhoPagina
+      titulo="Ajustar para uma vaga"
+      descricao="Analise a vaga, gere um currículo adaptado e prepare a candidatura."
+    />
+  );
+
+  if (vagaEmRevisao && adaptado) {
+    return (
+      <>
+        {cabecalho}
+        <RevisaoCurriculoAdaptado
+          rascunho={adaptado.rascunho}
+          gerando={gerarPdf.isPending}
+          erro={gerarPdf.error?.message}
+          aoConfirmar={(rascunho) => confirmarRevisao(vagaEmRevisao, rascunho)}
+          aoVoltar={descartarRevisao}
+        />
+      </>
+    );
+  }
 
   return (
     <>
-      <CabecalhoPagina
-        titulo="Ajustar para uma vaga"
-        descricao="Analise a vaga, gere um currículo adaptado e prepare a candidatura."
-      />
+      {cabecalho}
 
       <div className={estilos.layout}>
         <Panel titulo="Dados da vaga">
@@ -180,10 +230,10 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
               <Button
                 variante="primary"
                 disabled={semFonte}
-                carregando={adaptar.isPending}
+                carregando={gerarRascunho.isPending}
                 onClick={gerarCurriculo}
               >
-                {adaptar.isPending ? `Gerando… ${AVISO_DEMORA}` : "Gerar currículo adaptado"}
+                {gerarRascunho.isPending ? `Gerando… ${AVISO_DEMORA}` : "Gerar currículo adaptado"}
               </Button>
             </div>
           </form>
@@ -195,7 +245,7 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
             subtitulo="Completude, clareza, relevância e inclusão da descrição"
           >
             {avaliar.isError && <Aviso tom="erro">{avaliar.error.message}</Aviso>}
-            {adaptar.data?.status_avaliacao_vaga === "indisponivel" && !avaliar.data && (
+            {adaptado?.status_avaliacao_vaga === "indisponivel" && !avaliar.data && (
               <Aviso tom="alerta">
                 A avaliação automática da vaga não está disponível agora. O currículo foi gerado
                 normalmente.
@@ -211,13 +261,13 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
           </Panel>
 
           <Panel titulo="Currículo adaptado">
-            {adaptar.isError && <Aviso tom="erro">{adaptar.error.message}</Aviso>}
-            {adaptar.data ? (
-              <CurriculoGerado resultado={adaptar.data} />
+            {gerarRascunho.isError && <Aviso tom="erro">{gerarRascunho.error.message}</Aviso>}
+            {adaptado && gerarPdf.data ? (
+              <CurriculoGerado pdf={gerarPdf.data} adaptado={adaptado} />
             ) : (
-              !adaptar.isError && (
+              !gerarRascunho.isError && (
                 <p className={resultados.texto}>
-                  O PDF adaptado aparece aqui depois de “Gerar currículo adaptado”.
+                  O PDF adaptado aparece aqui depois de “Gerar currículo adaptado” e da revisão.
                 </p>
               )
             )}
@@ -278,14 +328,20 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   );
 }
 
-function CurriculoGerado({ resultado }: { resultado: CurriculoAdaptado }) {
+function CurriculoGerado({
+  pdf,
+  adaptado,
+}: {
+  pdf: CurriculoRevisado;
+  adaptado: RascunhoAdaptado;
+}) {
   const idTitulo = useId();
-  const baixar = () => baixarArquivo(base64ParaBlob(resultado.pdf_base64), resultado.nome_arquivo);
-  const avaliacoes = resultado.avaliacoes_experiencias ?? [];
+  const baixar = () => baixarArquivo(base64ParaBlob(pdf.pdf_base64), pdf.nome_arquivo);
+  const avaliacoes = adaptado.avaliacoes_experiencias ?? [];
   return (
     <div aria-live="polite">
       <div className={estilos.arquivo}>
-        <span className={estilos.nomeArquivo}>{resultado.nome_arquivo}</span>
+        <span className={estilos.nomeArquivo}>{pdf.nome_arquivo}</span>
         <Button variante="primary" onClick={baixar}>
           Baixar PDF
         </Button>

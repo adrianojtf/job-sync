@@ -13,7 +13,6 @@ export type SalvarCurriculoEntrada = Esquemas["CurriculoSalvarRequest"];
 export type CurriculoConteudo = Esquemas["CurriculoSalvoConteudoResponse"];
 export type AvaliacaoDescricaoVaga = Esquemas["AvaliacaoDescricaoVagaResponse"];
 export type AdaptarCurriculoEntrada = Esquemas["AdaptarCurriculoRequest"];
-export type CurriculoAdaptado = Esquemas["AdaptarCurriculoResponse"];
 export type RascunhoAdaptado = Esquemas["RascunhoAdaptadoResponse"];
 export type RascunhoCurriculoAdaptado = Esquemas["RascunhoCurriculoAdaptadoSchema"];
 export type GerarPdfCurriculoRevisadoEntrada = Esquemas["GerarPdfCurriculoRevisadoRequest"];

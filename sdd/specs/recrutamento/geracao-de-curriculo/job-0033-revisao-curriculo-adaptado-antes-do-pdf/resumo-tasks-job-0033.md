@@ -9,7 +9,7 @@
 - [x] 5.0 Extrair componentes do formulário de "Meu perfil"
 - [x] 6.0 Cliente de API e tipos do frontend
 - [x] 7.0 Tela RevisaoCurriculoAdaptado
-- [ ] 8.0 Integrar a revisão em AjustarVagaPage
+- [x] 8.0 Integrar a revisão em AjustarVagaPage
 - [ ] 9.0 E2E, acessibilidade e suíte completa
 
 ## Dependências

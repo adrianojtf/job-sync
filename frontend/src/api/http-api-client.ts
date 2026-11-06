@@ -14,7 +14,6 @@ import type {
   CapturarVagaEntrada,
   CartaApresentacao,
   CriarCandidaturaEntrada,
-  CurriculoAdaptado,
   CurriculoConteudo,
   CurriculoRevisado,
   CurriculoSalvo,
@@ -148,16 +147,6 @@ export class HttpApiClient implements ApiClient {
   avaliarVaga(descricaoVaga: string): Promise<AvaliacaoDescricaoVaga> {
     return this.requisitar("POST", "/v1/vagas/avaliacoes", {
       corpo: { descricao_vaga: descricaoVaga },
-      ia: true,
-    });
-  }
-
-  adaptarCurriculo(
-    curriculoId: string,
-    dados: AdaptarCurriculoEntrada,
-  ): Promise<CurriculoAdaptado> {
-    return this.requisitar("POST", caminho`/v1/curriculos/${curriculoId}/adaptacoes`, {
-      corpo: dados,
       ia: true,
     });
   }

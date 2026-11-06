@@ -5,7 +5,7 @@
 - [x] 1.0 Backend: CORS configurável e endpoint de token de captura
 - [x] 2.0 Backend: endpoint "Candidatar" em vaga externa
 - [x] 3.0 Fundação do frontend: projeto, testes, tipos do OpenAPI e ApiClient
-- [ ] 4.0 Design system do protótipo, AppShell, rotas e tela Entrar (T1)
+- [x] 4.0 Design system do protótipo, AppShell, rotas e tela Entrar (T1)
 - [ ] 5.0 Telas Meu perfil (T3) e Meus currículos (T4)
 - [ ] 6.0 Telas Ajustar para uma vaga (T5) e Analisar ATS (T6)
 - [ ] 7.0 Telas Vagas salvas (T7) e Candidaturas/Kanban (T9)

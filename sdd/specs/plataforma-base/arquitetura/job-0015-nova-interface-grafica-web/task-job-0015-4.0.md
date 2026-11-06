@@ -21,12 +21,12 @@ Converter o visual do protótipo em componentes reutilizáveis, montar a estrutu
 
 ## Subtarefas
 
-- [ ] 4.1 Extrair os tokens do protótipo para `tokens.css`.
-- [ ] 4.2 Escrever os testes (red) e implementar `Modal` e `Toast`.
-- [ ] 4.3 Implementar os demais componentes base.
-- [ ] 4.4 Implementar `AppShell`, as rotas e o `ErrorBoundary`.
-- [ ] 4.5 Implementar `SessaoProvider` e a guarda de rota.
-- [ ] 4.6 Implementar a tela Entrar (`features/entrar/`).
+- [x] 4.1 Extrair os tokens do protótipo para `tokens.css`.
+- [x] 4.2 Escrever os testes (red) e implementar `Modal` e `Toast`.
+- [x] 4.3 Implementar os demais componentes base.
+- [x] 4.4 Implementar `AppShell`, as rotas e o `ErrorBoundary`.
+- [x] 4.5 Implementar `SessaoProvider` e a guarda de rota.
+- [x] 4.6 Implementar a tela Entrar (`features/entrar/`).
 
 ## Detalhes de Implementação
 
@@ -40,9 +40,9 @@ Ver `techspec-job-0015.md` → "Visão Geral dos Componentes" (`app/`, `shared/u
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `Modal` fecha com `Esc` e clique fora; `Toast` some depois do tempo.
-- [ ] Testes de unidade: Entrar grava a sessão e redireciona; rota protegida sem sessão vai para Entrar; erro da API aparece em mensagem.
-- [ ] `npm test`, `npm run lint` e `npm run build` passam.
+- [x] Testes de unidade: `Modal` fecha com `Esc` e clique fora; `Toast` some depois do tempo.
+- [x] Testes de unidade: Entrar grava a sessão e redireciona; rota protegida sem sessão vai para Entrar; erro da API aparece em mensagem.
+- [x] `npm test`, `npm run lint` e `npm run build` passam.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

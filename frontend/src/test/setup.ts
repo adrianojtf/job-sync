@@ -5,6 +5,7 @@ import { servidorApi } from "./servidor-api";
 beforeAll(() => servidorApi.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();
+  localStorage.clear();
   servidorApi.resetHandlers();
 });
 afterAll(() => servidorApi.close());

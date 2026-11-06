@@ -15,17 +15,17 @@ Expor na API o caso de uso existente `CandidatarNaVagaExterna` (JOB-0007). Ele g
 - Response: `nome_arquivo`, `pdf_base64`, `nota`, `requisitos_faltantes`, `carta`, `url_vaga`.
 - Usar o perfil estruturado como `curriculo_pre_montado` quando existir (mesma regra de `/curriculos/{id}/adaptacoes`).
 - Extrair o helper `_curriculo_pre_montado` / `_perfil_estruturado` de `curriculo_router.py` para um módulo comum dos routers (DRY), sem mudar o comportamento atual.
-- Sem fonte de currículo: `400` em `ProblemaResponse`.
+- Sem fonte de currículo: `422` em `ProblemaResponse` (mesmo padrão de `/curriculos/{id}/adaptacoes`, que converte `ValueError` em 422).
 </requirements>
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes do router (red): 200 com perfil estruturado, 200 com `pdf_base64`, 400 sem fonte.
-- [ ] 2.2 Extrair o helper de currículo pré-montado e manter os testes de `curriculo_router` verdes.
-- [ ] 2.3 Criar os schemas `CandidatarVagaExternaRequest` e `CandidatarVagaExternaResponse` em `schemas/vaga_externa.py`.
-- [ ] 2.4 Adicionar `ServiceCandidatarNaVagaExternaDep` em `api/dependencies.py`.
-- [ ] 2.5 Implementar a rota em `vaga_externa_router.py`.
-- [ ] 2.6 Adicionar a requisição na `job-sync.postman_collection.json`.
+- [x] 2.1 Escrever os testes do router (red): 200 com perfil estruturado, 200 com `pdf_base64`, 422 sem fonte.
+- [x] 2.2 Extrair o helper de currículo pré-montado e manter os testes de `curriculo_router` verdes.
+- [x] 2.3 Criar os schemas `CandidatarVagaExternaRequest` e `CandidatarVagaExternaResponse` em `schemas/vaga_externa.py`.
+- [x] 2.4 Adicionar `ServiceCandidatarNaVagaExternaDep` em `api/dependencies.py`.
+- [x] 2.5 Implementar a rota em `vaga_externa_router.py`.
+- [x] 2.6 Adicionar a requisição na `job-sync.postman_collection.json`.
 
 ## Detalhes de Implementação
 
@@ -39,9 +39,9 @@ Ver `techspec-job-0015.md` → "Endpoints de API → Novos (backend)". Os DTOs d
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do router com fakes do service/LLM (3 cenários acima).
-- [ ] Testes existentes de `curriculo_router` continuam passando após a extração do helper.
-- [ ] `pytest` e `lint-imports` passam.
+- [x] Testes de unidade do router com fakes do service/LLM (3 cenários acima).
+- [x] Testes existentes de `curriculo_router` continuam passando após a extração do helper.
+- [x] `pytest` e `lint-imports` passam.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

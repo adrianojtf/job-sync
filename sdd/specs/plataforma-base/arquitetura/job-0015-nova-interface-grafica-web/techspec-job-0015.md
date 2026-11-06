@@ -167,7 +167,7 @@ Ferramentas: **Vitest + Testing Library + MSW** (Mock Service Worker, que simula
 
 **Backend (pytest, seguindo `testing-rules.md`):**
 - `TestTokenCapturaRouter`: 201 com token e 422 sem `perfil_identificador`.
-- Router de candidatar em vaga externa: 200 com perfil estruturado, 200 com `pdf_base64` e 400 sem nenhuma fonte de currículo.
+- Router de candidatar em vaga externa: 200 com perfil estruturado, 200 com `pdf_base64` e 422 sem nenhuma fonte de currículo (padrão dos routers de currículo).
 - Fakes in-memory dos repositórios, como nos testes de API existentes.
 
 ### Testes de Serviço

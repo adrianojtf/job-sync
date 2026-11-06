@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 Backend: CORS configurável e endpoint de token de captura
-- [ ] 2.0 Backend: endpoint "Candidatar" em vaga externa
+- [x] 2.0 Backend: endpoint "Candidatar" em vaga externa
 - [ ] 3.0 Fundação do frontend: projeto, testes, tipos do OpenAPI e ApiClient
 - [ ] 4.0 Design system do protótipo, AppShell, rotas e tela Entrar (T1)
 - [ ] 5.0 Telas Meu perfil (T3) e Meus currículos (T4)
@@ -18,7 +18,7 @@
 | # | Título | Complexidade | Dependências | Testes Principais |
 |---|--------|--------------|--------------|-------------------|
 | 1.0 | CORS + `POST /v1/tokens-captura` | low | — | `TestTokenCapturaRouter` (201, 422); CORS respeita `CORS_ORIGINS` |
-| 2.0 | `POST /v1/vagas/descobertas/candidaturas` | medium | — | 200 com perfil estruturado, 200 com `pdf_base64`, 400 sem fonte de currículo |
+| 2.0 | `POST /v1/vagas/descobertas/candidaturas` | medium | — | 200 com perfil estruturado, 200 com `pdf_base64`, 422 sem fonte de currículo |
 | 3.0 | Fundação do frontend | high | 1.0, 2.0 | `HttpApiClient` (timeout, 204/404/422/500); `ProblemaResponse → ApiError` |
 | 4.0 | Design system, AppShell, Entrar | medium | 3.0 | Entrar grava sessão e redireciona; rota protegida sem sessão volta para Entrar; Modal fecha com `Esc` |
 | 5.0 | Meu perfil + Meus currículos | high | 4.0 | Formulário adiciona/remove itens e envia payload; importar PDF pré-preenche; limite de 10 currículos |

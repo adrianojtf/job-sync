@@ -34,6 +34,8 @@ from jobsync.entrypoints.api.schemas.vaga import (
     VagasListagemResponse,
 )
 from jobsync.entrypoints.api.schemas.vaga_externa import (
+    CandidatarVagaExternaRequest,
+    CandidatarVagaExternaResponse,
     DescobrirVagasRequest,
     DescobrirVagasResponse,
     VagaDescobertaResponse,
@@ -48,6 +50,8 @@ __all__ = [
     "AvaliacaoExperienciaResponse",
     "AvaliarDescricaoVagaRequest",
     "AvaliarExperienciaRequest",
+    "CandidatarVagaExternaRequest",
+    "CandidatarVagaExternaResponse",
     "CandidaturaCriarRequest",
     "CandidaturaResponse",
     "CandidaturasListagemResponse",

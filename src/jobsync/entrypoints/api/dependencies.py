@@ -79,6 +79,9 @@ from jobsync.vaga_externa.adapters.extrator_texto_pagina_client import (
     ExtratorTextoPaginaClient,
 )
 from jobsync.vaga_externa.domain.buscador_vagas_externo_port import BuscadorVagasExternoPort
+from jobsync.vaga_externa.service_layer.candidatar_na_vaga_externa import (
+    CandidatarNaVagaExterna,
+)
 from jobsync.vaga_externa.service_layer.descobrir_vagas_com_match import (
     DescobrirVagasComMatch,
 )
@@ -240,6 +243,23 @@ def obter_service_descobrir_vagas_com_match() -> DescobrirVagasComMatch:
 
 ServiceDescobrirVagasComMatchDep = Annotated[
     DescobrirVagasComMatch, Depends(obter_service_descobrir_vagas_com_match)
+]
+
+
+def obter_service_candidatar_na_vaga_externa() -> CandidatarNaVagaExterna:
+    """Monta o caso de uso de candidatura em um clique a uma vaga externa."""
+    return CandidatarNaVagaExterna(
+        extrator=ExtratorCurriculoClient(),
+        analisador_vaga=JobDescriptionAnalyzerClient(),
+        ajustador_texto=AjustadorTextoClient(),
+        gerador_pdf=GeradorPdfClient(),
+        calcular_ats_score=CalcularAtsScore(),
+        gerador_carta=GerarCartaApresentacaoClient(),
+    )
+
+
+ServiceCandidatarNaVagaExternaDep = Annotated[
+    CandidatarNaVagaExterna, Depends(obter_service_candidatar_na_vaga_externa)
 ]
 
 

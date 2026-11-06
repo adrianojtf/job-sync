@@ -68,7 +68,7 @@ describe("Rotas e AppShell", () => {
     renderizarApp({ caminho: "/nao-existe", perfil: "adriano" });
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Visão geral" }),
+      await screen.findByRole("heading", { level: 1, name: /^(Bom dia|Boa tarde|Boa noite), / }),
     ).toBeInTheDocument();
   });
 
@@ -76,7 +76,7 @@ describe("Rotas e AppShell", () => {
     renderizarApp({ caminho: "/entrar", perfil: "adriano" });
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Visão geral" }),
+      await screen.findByRole("heading", { level: 1, name: /^(Bom dia|Boa tarde|Boa noite), / }),
     ).toBeInTheDocument();
   });
 

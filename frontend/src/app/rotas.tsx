@@ -9,6 +9,7 @@ import { DescobrirVagasPage } from "../features/descobrir-vagas/DescobrirVagasPa
 import { EntrarPage } from "../features/entrar/EntrarPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
 import { VagasSalvasPage } from "../features/vagas-salvas/VagasSalvasPage";
+import { VisaoGeralPage } from "../features/visao-geral/VisaoGeralPage";
 import { AppShell } from "./AppShell";
 import { EmConstrucao } from "./EmConstrucao";
 import { ErroDeRota } from "./ErroDeRota";
@@ -21,6 +22,7 @@ export interface HandleRota {
 
 /** Telas já entregues; as demais mostram EmConstrucao até a tarefa correspondente. */
 const TELAS: Record<string, ReactElement> = {
+  "/": <VisaoGeralPage />,
   "/perfil": <PerfilPage />,
   "/curriculos": <CurriculosPage />,
   "/ajustar-vaga": <AjustarVagaPage />,

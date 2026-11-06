@@ -10,7 +10,7 @@
 - [x] 6.0 Telas Ajustar para uma vaga (T5) e Analisar ATS (T6)
 - [x] 7.0 Telas Vagas salvas (T7) e Candidaturas/Kanban (T9)
 - [x] 8.0 Telas Descobrir vagas (T8) e Configurações (T10)
-- [ ] 9.0 Tela Visão geral (T2)
+- [x] 9.0 Tela Visão geral (T2)
 - [ ] 10.0 Entrega: Docker/Nginx, README, E2E, acessibilidade e checagem de contrato
 
 ## Detalhamento

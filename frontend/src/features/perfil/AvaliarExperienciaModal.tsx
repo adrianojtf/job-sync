@@ -3,7 +3,7 @@ import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
 import { Modal } from "../../shared/ui/Modal";
 import { ScoreDimensions } from "../../shared/ui/ScoreDimensions";
-import type { ExperienciaFormulario } from "./formulario-perfil";
+import type { ExperienciaFormulario } from "../../shared/formulario-curriculo/campos-curriculo";
 import { useAvaliarExperiencia } from "./use-perfil-estruturado";
 
 interface Props {

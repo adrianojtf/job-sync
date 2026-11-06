@@ -1,14 +1,36 @@
-"""Caso de uso: adaptar um currículo (PDF) para uma vaga específica, em um idioma alvo.
+"""Caso de uso: adaptar um currículo (PDF ou perfil) para uma vaga, em um idioma alvo.
 
-Orquestra as três portas (extração, ajuste de texto por seção, geração de PDF)
-sem conhecer os detalhes de infraestrutura de cada uma (Dependency Inversion).
-Cada seção do currículo é ajustada de forma independente, conforme solicitado:
-TECHNICAL SKILLS (Tecnologias), Perfil, Experiências e Formação são lidos e
-reescritos separadamente antes de serem remontados no currículo final.
+Orquestra as portas de extração e de ajuste de texto por seção sem conhecer os
+detalhes de infraestrutura de cada uma (Dependency Inversion). Cada seção do
+currículo é ajustada de forma independente: TECHNICAL SKILLS (Tecnologias),
+Perfil, Experiências e Formação são lidos e reescritos separadamente.
+
+O resultado é um `RascunhoCurriculoAdaptado`, não um PDF (JOB-0033): o usuário
+revisa o rascunho e só então `GerarPdfCurriculoRevisado` gera o arquivo.
 """
 from __future__ import annotations
 
 import logging
+
+from jobsync.curriculo import Curriculo, RascunhoCurriculoAdaptado, TipoSecao
+from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
+from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
+from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
+from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
+from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
+from jobsync.curriculo.domain.rascunho_curriculo_adaptado import TITULO_EXPERIENCIAS_PADRAO
+from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
+    AdaptarCurriculoParaVagaInputDto,
+    AdaptarCurriculoParaVagaOutputDto,
+    AvaliacaoExperienciaAdaptadaDto,
+    StatusAvaliacaoAutomatica,
+)
+from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.validator import (
+    AdaptarCurriculoParaVagaInputValidator,
+)
+from jobsync.vaga import AnaliseVaga, AvaliacaoDescricaoVaga
+from jobsync.vaga.domain.avaliador_descricao_vaga_port import AvaliadorDescricaoVagaPort
+from jobsync.vaga.domain.job_description_analyzer_port import JobDescriptionAnalyzerPort
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,39 +39,15 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
-    AdaptarCurriculoParaVagaInputDto,
-    AdaptarCurriculoParaVagaOutputDto,
-)
-from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.validator import (
-    AdaptarCurriculoParaVagaInputValidator,
-)
-from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
-from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
-from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
-from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
-from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
-from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
-from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
-from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
-    AvaliacaoExperienciaAdaptadaDto,
-    StatusAvaliacaoAutomatica,
-)
-from jobsync.shared_kernel.domain import NomeArquivo
-from jobsync.vaga import AnaliseVaga, AvaliacaoDescricaoVaga
-from jobsync.vaga.domain.avaliador_descricao_vaga_port import AvaliadorDescricaoVagaPort
-from jobsync.vaga.domain.job_description_analyzer_port import JobDescriptionAnalyzerPort
-
 
 class AdaptarCurriculoParaVaga:
-    """Caso de uso principal do sistema: lê o PDF, ajusta cada seção via IA e gera o PDF final."""
+    """Caso de uso principal do sistema: lê o currículo, ajusta cada seção via IA e devolve o rascunho."""
 
     def __init__(
         self,
         extrator: ExtratorCurriculoPort,
         analisador_vaga: JobDescriptionAnalyzerPort,
         ajustador_texto: AjustadorTextoPort,
-        gerador_pdf: GeradorPdfPort,
         avaliador_descricao_vaga: AvaliadorDescricaoVagaPort | None = None,
         ajustador_experiencia: AjustadorExperienciaPort | None = None,
         avaliador_experiencia: AvaliadorExperienciaPort | None = None,
@@ -57,7 +55,6 @@ class AdaptarCurriculoParaVaga:
         self._extrator = extrator
         self._analisador_vaga = analisador_vaga
         self._ajustador_texto = ajustador_texto
-        self._gerador_pdf = gerador_pdf
         self._avaliador_descricao_vaga = avaliador_descricao_vaga
         self._ajustador_experiencia = ajustador_experiencia
         self._avaliador_experiencia = avaliador_experiencia
@@ -72,25 +69,20 @@ class AdaptarCurriculoParaVaga:
             else self._extrator.extrair(input_dto.pdf_curriculo)
         )
         analise_vaga = self._analisador_vaga.analisar(input_dto.descricao_vaga)
-        curriculo_adaptado, experiencias_adaptadas = self._ajustar_todas_as_secoes(
-            curriculo_original, input_dto, analise_vaga
-        )
-        pdf_bytes = self._gerador_pdf.gerar(curriculo_adaptado, input_dto.idioma_alvo)
+        rascunho = self._montar_rascunho(curriculo_original, input_dto, analise_vaga)
         avaliacoes_experiencias = self._avaliar_experiencias(
-            experiencias_adaptadas, input_dto.descricao_vaga
+            rascunho.experiencias or (), input_dto.descricao_vaga
         )
-
-        nome_arquivo = NomeArquivo.criar(
-            nome_completo=curriculo_original.nome_completo,
-            cargo=input_dto.cargo_alvo,
-            empresa=input_dto.empresa_alvo,
-            data=input_dto.data_referencia,
+        logger.info(
+            "Rascunho adaptado gerado (secoes=%d, experiencias=%d, idioma=%s).",
+            len(rascunho.secoes),
+            len(rascunho.experiencias or ()),
+            input_dto.idioma_alvo,
         )
 
         return AdaptarCurriculoParaVagaOutputDto(
-            pdf_bytes=pdf_bytes,
-            nome_arquivo=nome_arquivo,
-            curriculo_adaptado=curriculo_adaptado,
+            rascunho=rascunho,
+            curriculo_adaptado=rascunho.para_curriculo(),
             analise_vaga=analise_vaga,
             avaliacao_vaga=avaliacao_vaga,
             status_avaliacao_vaga=status_avaliacao_vaga,
@@ -114,55 +106,50 @@ class AdaptarCurriculoParaVaga:
             )
             return None, StatusAvaliacaoAutomatica.INDISPONIVEL
 
-    def _ajustar_todas_as_secoes(
+    def _montar_rascunho(
         self,
         curriculo: Curriculo,
         input_dto: AdaptarCurriculoParaVagaInputDto,
         analise_vaga: AnaliseVaga,
-    ) -> tuple[Curriculo, tuple[ExperienciaParaAvaliacao, ...]]:
-        curriculo_atualizado = curriculo
-        experiencias_adaptadas: tuple[ExperienciaParaAvaliacao, ...] = ()
+    ) -> RascunhoCurriculoAdaptado:
         ajustar_experiencias = bool(
             input_dto.experiencias_profissionais and self._ajustador_experiencia
         )
-        encontrou_secao_experiencias = False
-
-        for secao_original in curriculo.secoes:
-            if ajustar_experiencias and secao_original.tipo == TipoSecao.EXPERIENCIAS:
-                experiencias_adaptadas = self._ajustar_experiencias(
-                    input_dto.experiencias_profissionais,
-                    input_dto,
-                    analise_vaga,
-                )
-                secao_ajustada = self._montar_secao_experiencias(
-                    experiencias_adaptadas, titulo=secao_original.titulo
-                )
-                curriculo_atualizado = curriculo_atualizado.substituir_secao(
-                    secao_ajustada
-                )
-                encontrou_secao_experiencias = True
-                continue
-
-            secao_ajustada = self._ajustador_texto.ajustar_secao(                
-                secao=secao_original,
+        secao_experiencias = curriculo.obter_secao(TipoSecao.EXPERIENCIAS)
+        secoes_de_texto = (
+            tuple(secao for secao in curriculo.secoes if secao.tipo != TipoSecao.EXPERIENCIAS)
+            if ajustar_experiencias
+            else curriculo.secoes
+        )
+        secoes_ajustadas = tuple(
+            self._ajustador_texto.ajustar_secao(
+                secao=secao,
                 descricao_vaga=input_dto.descricao_vaga,
                 idioma_alvo=input_dto.idioma_alvo,
                 analise_vaga=analise_vaga,
             )
-
-            curriculo_atualizado = curriculo_atualizado.substituir_secao(secao_ajustada)
-
-        if ajustar_experiencias and not encontrou_secao_experiencias:
-            experiencias_adaptadas = self._ajustar_experiencias(
-                input_dto.experiencias_profissionais,
-                input_dto,
-                analise_vaga,
+            for secao in secoes_de_texto
+        )
+        experiencias = (
+            self._ajustar_experiencias(
+                input_dto.experiencias_profissionais, input_dto, analise_vaga
             )
-            curriculo_atualizado = curriculo_atualizado.substituir_secao(
-                self._montar_secao_experiencias(experiencias_adaptadas)
-            )
+            if ajustar_experiencias
+            else None
+        )
 
-        return curriculo_atualizado, experiencias_adaptadas
+        return RascunhoCurriculoAdaptado(
+            nome_completo=curriculo.nome_completo,
+            email=curriculo.email,
+            linkedin=curriculo.linkedin,
+            secoes=secoes_ajustadas,
+            experiencias=experiencias,
+            titulo_experiencias=(
+                secao_experiencias.titulo
+                if secao_experiencias is not None
+                else TITULO_EXPERIENCIAS_PADRAO
+            ),
+        )
 
     def _ajustar_experiencias(
         self,
@@ -190,35 +177,6 @@ class AdaptarCurriculoParaVaga:
                     analise_vaga=analise_vaga,
                 ),
             )
-        )
-
-    @staticmethod
-    def _montar_secao_experiencias(
-        experiencias: tuple[ExperienciaParaAvaliacao, ...],
-        titulo: str = "Experiências",
-    ) -> SecaoCurriculo:
-        blocos = []
-        for experiencia in experiencias:
-            identificacao = " — ".join(
-                valor.strip()
-                for valor in (experiencia.cargo, experiencia.empresa)
-                if valor and valor.strip()
-            )
-            if experiencia.periodo and experiencia.periodo.strip():
-                identificacao = (
-                    f"{identificacao} ({experiencia.periodo.strip()})"
-                    if identificacao
-                    else experiencia.periodo.strip()
-                )
-            conteudo = "\n".join(
-                parte for parte in (identificacao, experiencia.descricao.strip()) if parte
-            )
-            if conteudo:
-                blocos.append(conteudo)
-        return SecaoCurriculo(
-            tipo=TipoSecao.EXPERIENCIAS,
-            titulo=titulo,
-            conteudo="\n\n".join(blocos),
         )
 
     def _avaliar_experiencias(

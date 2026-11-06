@@ -12,16 +12,22 @@ import type {
   CapturarVagaEntrada,
   CartaApresentacao,
   CriarCandidaturaEntrada,
-  CurriculoAdaptado,
   CurriculoConteudo,
+  CurriculoRevisado,
   CurriculoSalvo,
   DescobrirVagasEntrada,
   GerarCartaEntrada,
+  GerarPdfCurriculoRevisadoEntrada,
   Perfil,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
+  RascunhoAdaptado,
   SalvarCurriculoEntrada,
   StatusCandidatura,
+  SugerirAjusteExperienciaEntrada,
+  SugerirAjusteSecaoEntrada,
+  SugestaoExperiencia,
+  SugestaoSecao,
   TokenCaptura,
   Vaga,
   VagaDescoberta,
@@ -37,6 +43,10 @@ export interface ApiClient {
   atualizarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   importarPerfilDePdf(pdfBase64: string): Promise<PerfilEstruturado>;
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia>;
+  /** Sugere, via IA, um novo texto para uma seção (JOB-0034). Nada é alterado no servidor. */
+  sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao>;
+  /** Sugere, via IA, uma nova descrição para uma experiência (JOB-0034). */
+  sugerirAjusteExperiencia(dados: SugerirAjusteExperienciaEntrada): Promise<SugestaoExperiencia>;
 
   listarCurriculos(perfil: string): Promise<CurriculoSalvo[]>;
   salvarCurriculo(dados: SalvarCurriculoEntrada): Promise<CurriculoSalvo>;
@@ -44,7 +54,13 @@ export interface ApiClient {
   removerCurriculo(id: string, perfil: string): Promise<void>;
 
   avaliarVaga(descricaoVaga: string): Promise<AvaliacaoDescricaoVaga>;
-  adaptarCurriculo(curriculoId: string, dados: AdaptarCurriculoEntrada): Promise<CurriculoAdaptado>;
+  /** Adapta via IA e devolve o rascunho para revisão, sem gerar PDF (JOB-0033). */
+  gerarRascunhoAdaptado(
+    curriculoId: string,
+    dados: AdaptarCurriculoEntrada,
+  ): Promise<RascunhoAdaptado>;
+  /** Gera o PDF a partir do rascunho revisado e confirmado pelo usuário. */
+  gerarPdfCurriculoRevisado(dados: GerarPdfCurriculoRevisadoEntrada): Promise<CurriculoRevisado>;
   analisarAts(curriculoId: string, dados: AnalisarAtsEntrada): Promise<AnaliseAts>;
   gerarCarta(dados: GerarCartaEntrada): Promise<CartaApresentacao>;
 

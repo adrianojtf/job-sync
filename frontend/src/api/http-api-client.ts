@@ -14,17 +14,23 @@ import type {
   CapturarVagaEntrada,
   CartaApresentacao,
   CriarCandidaturaEntrada,
-  CurriculoAdaptado,
   CurriculoConteudo,
+  CurriculoRevisado,
   CurriculoSalvo,
   DescobrirVagasEntrada,
   GerarCartaEntrada,
+  GerarPdfCurriculoRevisadoEntrada,
   Perfil,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
+  RascunhoAdaptado,
   Problema,
   SalvarCurriculoEntrada,
   StatusCandidatura,
+  SugerirAjusteExperienciaEntrada,
+  SugerirAjusteSecaoEntrada,
+  SugestaoExperiencia,
+  SugestaoSecao,
   TokenCaptura,
   Vaga,
   VagaDescoberta,
@@ -119,6 +125,17 @@ export class HttpApiClient implements ApiClient {
     });
   }
 
+  sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao> {
+    return this.requisitar("POST", "/v1/secoes-curriculo/sugestoes", { corpo: dados, ia: true });
+  }
+
+  sugerirAjusteExperiencia(dados: SugerirAjusteExperienciaEntrada): Promise<SugestaoExperiencia> {
+    return this.requisitar("POST", "/v1/experiencias-profissionais/sugestoes", {
+      corpo: dados,
+      ia: true,
+    });
+  }
+
   async listarCurriculos(perfil: string): Promise<CurriculoSalvo[]> {
     const resposta = await this.requisitar<Listagem<CurriculoSalvo>>("GET", "/v1/curriculos", {
       query: { perfil_identificador: perfil },
@@ -149,14 +166,18 @@ export class HttpApiClient implements ApiClient {
     });
   }
 
-  adaptarCurriculo(
+  gerarRascunhoAdaptado(
     curriculoId: string,
     dados: AdaptarCurriculoEntrada,
-  ): Promise<CurriculoAdaptado> {
-    return this.requisitar("POST", caminho`/v1/curriculos/${curriculoId}/adaptacoes`, {
+  ): Promise<RascunhoAdaptado> {
+    return this.requisitar("POST", caminho`/v1/curriculos/${curriculoId}/rascunhos-adaptados`, {
       corpo: dados,
       ia: true,
     });
+  }
+
+  gerarPdfCurriculoRevisado(dados: GerarPdfCurriculoRevisadoEntrada): Promise<CurriculoRevisado> {
+    return this.requisitar("POST", "/v1/curriculos-revisados", { corpo: dados });
   }
 
   analisarAts(curriculoId: string, dados: AnalisarAtsEntrada): Promise<AnaliseAts> {

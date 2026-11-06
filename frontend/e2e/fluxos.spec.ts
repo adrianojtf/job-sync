@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { entrar, novoPerfil, PDF_MINIMO, SAUDACAO } from "./apoio";
+import { entrar, novoPerfil, PDF_MINIMO, SAUDACAO, semearPerfilCompleto } from "./apoio";
 
 test("primeiro acesso: entrar, ver a Visão geral vazia e salvar o currículo mestre", async ({
   page,
@@ -38,7 +38,7 @@ test("primeiro acesso: entrar, ver a Visão geral vazia e salvar o currículo me
   ).toHaveAttribute("aria-valuenow", "43");
 });
 
-test("ajustar para uma vaga, baixar o PDF, criar a candidatura e mover no Kanban", async ({
+test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover no Kanban", async ({
   page,
 }) => {
   const perfil = novoPerfil("e2e-fluxo");
@@ -83,6 +83,12 @@ test("ajustar para uma vaga, baixar o PDF, criar a candidatura e mover no Kanban
     "85",
   );
   await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeHidden();
+  const revisada = page.getByRole("group", { name: "Experiência 1" });
+  await expect(revisada.getByLabel("Descrição")).toHaveValue("APIs em Python e FastAPI.");
+  await revisada.getByLabel("Descrição").fill("APIs em Python, FastAPI e Kafka.");
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Baixar PDF" }).click(),
@@ -111,4 +117,63 @@ test("ajustar para uma vaga, baixar o PDF, criar a candidatura e mover no Kanban
   await expect(page.getByRole("region", { name: "Entrevista, 1 candidatura" })).toContainText(
     "Senior Python Engineer",
   );
+});
+
+test("revisão do currículo adaptado: pede, aplica uma sugestão de IA e gera o PDF", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-sugestao-revisao");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Senior Python Engineer");
+  await page.getByLabel("Empresa").fill("Globex");
+  await page.getByLabel("Descrição da vaga").fill("Python, FastAPI e Kafka.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+
+  const experiencia = page.getByRole("group", { name: "Experiência 1" });
+  await experiencia.getByLabel("Descrição").fill("APIs em Python e Kafka.");
+  await page.getByRole("button", { name: "Sugestões de IA para experiência 1" }).click();
+  const sugestao = page.getByRole("region", { name: "Sugestão da IA para experiência 1" });
+  await expect(sugestao).toContainText("Sugestão com vaga: APIs em Python e Kafka.");
+  await expect(experiencia.getByLabel("Descrição")).toHaveValue("APIs em Python e Kafka.");
+  await page.getByRole("button", { name: "Aplicar sugestão em experiência 1" }).click();
+  await expect(experiencia.getByLabel("Descrição")).toHaveValue(
+    "Sugestão com vaga: APIs em Python e Kafka.",
+  );
+  await expect(experiencia.getByLabel("Descrição")).toBeFocused();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    (async () => {
+      await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
+      await page.getByRole("button", { name: "Baixar PDF" }).click();
+    })(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/-SeniorPythonEngineer-Globex\.pdf$/);
+});
+
+test("Meu perfil: sugestão de IA sem vaga altera o campo, mas não salva o perfil", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-sugestao-perfil");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+  await page.goto("/perfil");
+
+  await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
+  await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toContainText(
+    "Sugestão de escrita: Backend Python.",
+  );
+  await page.getByRole("button", { name: "Aplicar sugestão em resumo" }).click();
+  await expect(page.getByLabel("Resumo profissional")).toHaveValue(
+    "Sugestão de escrita: Backend Python.",
+  );
+  await expect(page.getByText("Alterações não salvas")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByLabel("Resumo profissional")).toHaveValue("Backend Python.");
 });

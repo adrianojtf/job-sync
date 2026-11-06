@@ -210,6 +210,102 @@ describe("HttpApiClient", () => {
     expect(avaliacao.score).toBe(80);
   });
 
+  it("gera o rascunho adaptado pela rota de IA, sem PDF", async () => {
+    let caminho = "";
+    servidorApi.use(
+      http.post(`${BASE}/v1/curriculos/:id/rascunhos-adaptados`, ({ request }) => {
+        caminho = new URL(request.url).pathname;
+        return HttpResponse.json({
+          rascunho: { nome_completo: "Ana", secoes: [], experiencias: null },
+        });
+      }),
+    );
+
+    const resposta = await criarCliente().gerarRascunhoAdaptado("perfil-estruturado", {
+      descricao_vaga: "Vaga",
+      idioma_alvo: "pt",
+      cargo_alvo: "Dev",
+      empresa_alvo: "TechCorp",
+      perfil_identificador: "ana",
+    });
+
+    expect(caminho).toBe("/v1/curriculos/perfil-estruturado/rascunhos-adaptados");
+    expect(resposta.rascunho.nome_completo).toBe("Ana");
+  });
+
+  it("envia o rascunho revisado para gerar o PDF", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/curriculos-revisados`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ nome_arquivo: "Ana.pdf", pdf_base64: "JVBERg==" });
+      }),
+    );
+    const dados = {
+      rascunho: { nome_completo: "Ana Editada", secoes: [], experiencias: null },
+      idioma_alvo: "pt",
+      cargo_alvo: "Dev",
+      empresa_alvo: "TechCorp",
+    };
+
+    const resposta = await criarCliente().gerarPdfCurriculoRevisado(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.nome_arquivo).toBe("Ana.pdf");
+  });
+
+  it("pede sugestão de seção pela rota de IA e devolve o texto sugerido", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ conteudo_sugerido: "Texto novo." });
+      }),
+    );
+    const dados = { secao: { tipo: "PERFIL" as const, titulo: "Perfil", conteudo: "Texto." } };
+
+    const resposta = await criarCliente().sugerirAjusteSecao(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.conteudo_sugerido).toBe("Texto novo.");
+  });
+
+  it("pede sugestão de experiência e devolve a descrição sugerida", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ descricao_sugerida: "Descrição nova." });
+      }),
+    );
+    const dados = {
+      experiencia: { cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "Antiga." },
+    };
+
+    const resposta = await criarCliente().sugerirAjusteExperiencia(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.descricao_sugerida).toBe("Descrição nova.");
+  });
+
+  it("usa o timeout longo nas sugestões de IA", async () => {
+    servidorApi.use(
+      http.post(`${BASE}/v1/secoes-curriculo/sugestoes`, async () => {
+        await delay(60);
+        return HttpResponse.json({ conteudo_sugerido: "ok" });
+      }),
+    );
+
+    const resposta = await criarCliente({
+      timeoutPadraoMs: 20,
+      timeoutIaMs: 500,
+    }).sugerirAjusteSecao({
+      secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Texto." },
+    });
+
+    expect(resposta.conteudo_sugerido).toBe("ok");
+  });
+
   it("move a candidatura enviando o novo status", async () => {
     let corpoRecebido: unknown;
     servidorApi.use(

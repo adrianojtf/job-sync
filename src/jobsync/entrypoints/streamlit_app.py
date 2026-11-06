@@ -31,6 +31,10 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVagaInputDto,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga, AnalisarAtsVagaInputDto
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisado,
+    GerarPdfCurriculoRevisadoInputDto,
+)
 from jobsync.vaga_externa.service_layer.candidatar_na_vaga_externa import (
     CandidatarNaVagaExterna,
     CandidatarNaVagaExternaInputDto,
@@ -143,8 +147,12 @@ def _montar_caso_de_uso() -> AdaptarCurriculoParaVaga:
     extrator = ExtratorCurriculoClient(cliente_openai=cliente_openai)
     analisador_vaga = JobDescriptionAnalyzerClient(cliente_openai=cliente_openai)
     ajustador_texto = AjustadorTextoClient(cliente_openai=cliente_openai)
-    gerador_pdf = GeradorPdfClient()
-    return AdaptarCurriculoParaVaga(extrator, analisador_vaga, ajustador_texto, gerador_pdf)
+    return AdaptarCurriculoParaVaga(extrator, analisador_vaga, ajustador_texto)
+
+
+def _montar_gerador_pdf_curriculo() -> GerarPdfCurriculoRevisado:
+    """Monta o caso de uso de geração do PDF; aqui o rascunho segue sem revisão."""
+    return GerarPdfCurriculoRevisado(GeradorPdfClient())
 
 
 def _montar_gerador_carta_apresentacao() -> GerarCartaApresentacao:
@@ -788,13 +796,22 @@ def _pagina_adaptar_curriculo(
                     data_referencia=date.today(),
                 )
                 resultado = caso_de_uso.executar(input_dto)
-                caminho_salvo = _salvar_no_armazenamento(resultado.nome_arquivo.valor, resultado.pdf_bytes)
+                pdf = _montar_gerador_pdf_curriculo().executar(
+                    GerarPdfCurriculoRevisadoInputDto(
+                        rascunho=resultado.rascunho,
+                        idioma_alvo=input_dto.idioma_alvo,
+                        cargo_alvo=input_dto.cargo_alvo,
+                        empresa_alvo=input_dto.empresa_alvo,
+                        data_referencia=input_dto.data_referencia,
+                    )
+                )
+                caminho_salvo = _salvar_no_armazenamento(pdf.nome_arquivo.valor, pdf.pdf_bytes)
 
             st.success(f"Currículo gerado e salvo em: {caminho_salvo}")
             st.download_button(
                 label="Baixar PDF adaptado",
-                data=resultado.pdf_bytes,
-                file_name=resultado.nome_arquivo.valor,
+                data=pdf.pdf_bytes,
+                file_name=pdf.nome_arquivo.valor,
                 mime="application/pdf",
             )
 
@@ -813,7 +830,7 @@ def _pagina_adaptar_curriculo(
                     carta = gerador_carta.executar(
                         resultado.curriculo_adaptado, resultado.analise_vaga, idioma_alvo
                     )
-                nome_arquivo_carta = f"carta-apresentacao-{resultado.nome_arquivo.valor.replace('.pdf', '.txt')}"
+                nome_arquivo_carta = f"carta-apresentacao-{pdf.nome_arquivo.valor.replace('.pdf', '.txt')}"
                 st.download_button(
                     label="Baixar carta de apresentação",
                     data=carta,

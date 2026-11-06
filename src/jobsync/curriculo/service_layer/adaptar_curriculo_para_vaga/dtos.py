@@ -5,8 +5,12 @@ from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 
-from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaParaAvaliacao
-from jobsync.shared_kernel.domain import NomeArquivo
+from jobsync.curriculo import (
+    AvaliacaoExperiencia,
+    Curriculo,
+    ExperienciaParaAvaliacao,
+    RascunhoCurriculoAdaptado,
+)
 from jobsync.vaga import AnaliseVaga, AvaliacaoDescricaoVaga
 
 
@@ -42,15 +46,17 @@ class AdaptarCurriculoParaVagaInputDto:
 
 @dataclass(frozen=True)
 class AdaptarCurriculoParaVagaOutputDto:
-    """Resultado do caso de uso: PDF gerado e nome de arquivo padronizado.
+    """Resultado do caso de uso: o rascunho adaptado, ainda sem PDF (JOB-0033).
 
+    O PDF só é gerado após a revisão do usuário, por `GerarPdfCurriculoRevisado`.
+    `curriculo_adaptado` é o rascunho já convertido, para consumidores que não
+    passam pela revisão (ex.: carta de apresentação).
     Expõe `analise_vaga` (já calculada internamente) para que outras
     funcionalidades (ATS Score, carta de apresentação) possam reaproveitá-la
     sem uma segunda chamada de IA para analisar a mesma vaga.
     """
 
-    pdf_bytes: bytes
-    nome_arquivo: NomeArquivo
+    rascunho: RascunhoCurriculoAdaptado
     curriculo_adaptado: Curriculo
     analise_vaga: AnaliseVaga
     avaliacao_vaga: AvaliacaoDescricaoVaga | None = None

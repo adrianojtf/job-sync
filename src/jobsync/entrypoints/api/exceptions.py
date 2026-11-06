@@ -15,6 +15,7 @@ from jobsync.vaga.service_layer.avaliar_descricao_vaga.exceptions import (
 from jobsync.curriculo.service_layer.avaliar_experiencia.exceptions import (
     AvaliacaoExperienciaIndisponivel,
 )
+from jobsync.curriculo.service_layer.sugestao_ia_indisponivel import SugestaoIAIndisponivel
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,18 @@ def adicionar_handlers_excecao(app: FastAPI) -> None:
             title="Avaliação de experiência indisponível",
             detail=str(exc),
             type_slug="avaliacao-experiencia-indisponivel",
+        )
+
+    @app.exception_handler(SugestaoIAIndisponivel)
+    async def _sugestao_ia_indisponivel_handler(
+        request: Request, exc: SugestaoIAIndisponivel
+    ) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            title="Sugestão de IA indisponível",
+            detail=str(exc),
+            type_slug="sugestao-ia-indisponivel",
         )
 
     @app.exception_handler(HTTPException)

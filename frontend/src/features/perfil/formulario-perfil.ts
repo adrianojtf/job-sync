@@ -1,4 +1,8 @@
 import type { PerfilEstruturado, PerfilEstruturadoEntrada } from "../../api/tipos";
+import type {
+  DadosPessoaisFormulario,
+  ExperienciaFormulario,
+} from "../../shared/formulario-curriculo/campos-curriculo";
 
 export type NivelIdioma = "BASICO" | "INTERMEDIARIO" | "AVANCADO" | "FLUENTE" | "NATIVO";
 
@@ -10,19 +14,8 @@ export const NIVEIS_IDIOMA: { valor: NivelIdioma; rotulo: string }[] = [
   { valor: "NATIVO", rotulo: "Nativo" },
 ];
 
-export interface ExperienciaFormulario {
-  empresa: string;
-  cargo: string;
-  periodo: string;
-  descricao: string;
-}
-
 /** Estado do formulário de Meu perfil: tecnologias ficam como texto separado por vírgula. */
-export interface FormularioPerfil {
-  nome_completo: string;
-  email: string;
-  linkedin: string;
-  resumo_profissional: string;
+export interface FormularioPerfil extends DadosPessoaisFormulario {
   experiencias: ExperienciaFormulario[];
   formacoes: { instituicao: string; curso: string; periodo: string }[];
   certificacoes: { nome: string; instituicao: string; ano: string }[];
@@ -30,12 +23,6 @@ export interface FormularioPerfil {
   tecnologias: string;
 }
 
-export const EXPERIENCIA_VAZIA: ExperienciaFormulario = {
-  empresa: "",
-  cargo: "",
-  periodo: "",
-  descricao: "",
-};
 export const FORMACAO_VAZIA = { instituicao: "", curso: "", periodo: "" };
 export const CERTIFICACAO_VAZIA = { nome: "", instituicao: "", ano: "" };
 export const IDIOMA_VAZIO = { idioma: "", nivel: "INTERMEDIARIO" };

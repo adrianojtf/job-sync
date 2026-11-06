@@ -24,11 +24,21 @@ from jobsync.curriculo.adapters.avaliador_experiencia_jev_client import (
 )
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.curriculo.adapters.gerar_sugestoes_ats_client import GerarSugestoesAtsClient
+from jobsync.curriculo.adapters.melhorador_texto_curriculo_openai_client import (
+    MelhoradorTextoCurriculoOpenAIClient,
+)
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVaga,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisado,
+)
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia import SugerirAjusteExperiencia
+from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import (
+    SugerirAjusteSecaoCurriculo,
+)
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
 from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
@@ -133,7 +143,6 @@ def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
         extrator=ExtratorCurriculoClient(),
         analisador_vaga=JobDescriptionAnalyzerClient(),
         ajustador_texto=AjustadorTextoClient(),
-        gerador_pdf=GeradorPdfClient(),
         avaliador_descricao_vaga=avaliador_vaga,
         ajustador_experiencia=AjustadorExperienciaOpenAIClient(),
         avaliador_experiencia=avaliador_experiencia,
@@ -142,6 +151,42 @@ def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
 
 ServiceAdaptarCurriculoDep = Annotated[
     AdaptarCurriculoParaVaga, Depends(obter_service_adaptar_curriculo)
+]
+
+
+def obter_service_gerar_pdf_curriculo_revisado() -> GerarPdfCurriculoRevisado:
+    """Monta o caso de uso que gera o PDF a partir do rascunho revisado."""
+    return GerarPdfCurriculoRevisado(gerador_pdf=GeradorPdfClient())
+
+
+ServiceGerarPdfCurriculoRevisadoDep = Annotated[
+    GerarPdfCurriculoRevisado, Depends(obter_service_gerar_pdf_curriculo_revisado)
+]
+
+
+def obter_service_sugerir_ajuste_secao_curriculo() -> SugerirAjusteSecaoCurriculo:
+    """Monta o caso de uso de sugestão de IA para uma seção de texto."""
+    return SugerirAjusteSecaoCurriculo(
+        ajustador_texto=AjustadorTextoClient(),
+        melhorador=MelhoradorTextoCurriculoOpenAIClient(),
+    )
+
+
+ServiceSugerirAjusteSecaoCurriculoDep = Annotated[
+    SugerirAjusteSecaoCurriculo, Depends(obter_service_sugerir_ajuste_secao_curriculo)
+]
+
+
+def obter_service_sugerir_ajuste_experiencia() -> SugerirAjusteExperiencia:
+    """Monta o caso de uso de sugestão de IA para uma experiência profissional."""
+    return SugerirAjusteExperiencia(
+        ajustador_experiencia=AjustadorExperienciaOpenAIClient(),
+        melhorador=MelhoradorTextoCurriculoOpenAIClient(),
+    )
+
+
+ServiceSugerirAjusteExperienciaDep = Annotated[
+    SugerirAjusteExperiencia, Depends(obter_service_sugerir_ajuste_experiencia)
 ]
 
 

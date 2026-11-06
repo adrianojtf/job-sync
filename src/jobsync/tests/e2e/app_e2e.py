@@ -19,10 +19,13 @@ from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperie
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
 from jobsync.curriculo.domain.gerar_carta_apresentacao_port import GerarCartaApresentacaoPort
 from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsPort
+from jobsync.curriculo.domain.melhorador_texto_curriculo_port import MelhoradorTextoCurriculoPort
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import AdaptarCurriculoParaVaga
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia import SugerirAjusteExperiencia
+from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import SugerirAjusteSecaoCurriculo
 from jobsync.entrypoints.api import dependencies
 from jobsync.entrypoints.api.main import app
 from jobsync.shared_kernel.domain.score_avaliacao import ResultadoDimensaoAvaliacao
@@ -76,6 +79,40 @@ class AjustadorExperienciaE2E(AjustadorExperienciaPort):
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
     ) -> ExperienciaParaAvaliacao:
         return experiencia
+
+
+class AjustadorTextoSugestaoE2E(AjustadorTextoPort):
+    """Sugestão com vaga: marca o texto recebido, para o E2E provar de onde veio."""
+
+    def ajustar_secao(self, secao: SecaoCurriculo, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga) -> SecaoCurriculo:
+        return secao.com_novo_conteudo(f"Sugestão com vaga: {secao.conteudo}")
+
+
+class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
+    def ajustar(
+        self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+    ) -> ExperienciaParaAvaliacao:
+        return ExperienciaParaAvaliacao(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            descricao=f"Sugestão com vaga: {experiencia.descricao}",
+        )
+
+
+class MelhoradorTextoE2E(MelhoradorTextoCurriculoPort):
+    """Sugestão sem vaga: marca o texto recebido."""
+
+    def melhorar_secao(self, secao: SecaoCurriculo) -> SecaoCurriculo:
+        return secao.com_novo_conteudo(f"Sugestão de escrita: {secao.conteudo}")
+
+    def melhorar_experiencia(self, experiencia: ExperienciaParaAvaliacao) -> ExperienciaParaAvaliacao:
+        return ExperienciaParaAvaliacao(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            descricao=f"Sugestão de escrita: {experiencia.descricao}",
+        )
 
 
 class AvaliadorDescricaoVagaE2E(AvaliadorDescricaoVagaPort):
@@ -138,7 +175,6 @@ def _adaptar() -> AdaptarCurriculoParaVaga:
         extrator=ExtratorCurriculoE2E(),
         analisador_vaga=AnalisadorVagaE2E(),
         ajustador_texto=AjustadorTextoE2E(),
-        gerador_pdf=GeradorPdfClient(),
         avaliador_descricao_vaga=AvaliadorDescricaoVagaE2E(),
         ajustador_experiencia=AjustadorExperienciaE2E(),
         avaliador_experiencia=AvaliadorExperienciaE2E(),
@@ -150,6 +186,12 @@ app.dependency_overrides.update(
         dependencies.obter_service_avaliar_descricao_vaga: lambda: AvaliarDescricaoVaga(avaliador=AvaliadorDescricaoVagaE2E()),
         dependencies.obter_service_avaliar_experiencia: lambda: AvaliarExperiencia(avaliador=AvaliadorExperienciaE2E()),
         dependencies.obter_service_adaptar_curriculo: _adaptar,
+        dependencies.obter_service_sugerir_ajuste_secao_curriculo: lambda: SugerirAjusteSecaoCurriculo(
+            ajustador_texto=AjustadorTextoSugestaoE2E(), melhorador=MelhoradorTextoE2E()
+        ),
+        dependencies.obter_service_sugerir_ajuste_experiencia: lambda: SugerirAjusteExperiencia(
+            ajustador_experiencia=AjustadorExperienciaSugestaoE2E(), melhorador=MelhoradorTextoE2E()
+        ),
         dependencies.obter_service_analisar_ats_vaga: lambda: AnalisarAtsVaga(
             extrator=ExtratorCurriculoE2E(),
             analisador_vaga=AnalisadorVagaE2E(),

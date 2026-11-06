@@ -1,10 +1,10 @@
-# Tech Spec — Nova interface gráfica web do job-sync (JOB-0014)
+# Tech Spec — Nova interface gráfica web do job-sync (JOB-0015)
 
-- **Código**: `JOB-0014`
+- **Código**: `JOB-0015`
 - **Módulo**: `plataforma-base`
 - **Subsistema**: `arquitetura`
 - **Status**: Rascunho
-- **Baseado em**: [prd-job-0014.md](prd-job-0014.md)
+- **Baseado em**: [prd-job-0015.md](prd-job-0015.md)
 - **Depende de**: [techspec-job-0012.md](../job-0012-separacao-backend-frontend/techspec-job-0012.md)
 - **Referência visual**: [carreira_saas_prototipo.html](../../../../prototipos/carreira_saas_prototipo.html)
 

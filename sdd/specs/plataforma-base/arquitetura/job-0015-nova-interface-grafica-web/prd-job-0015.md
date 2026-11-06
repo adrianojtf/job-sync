@@ -1,6 +1,6 @@
-# PRD — Nova interface gráfica web do job-sync (JOB-0014)
+# PRD — Nova interface gráfica web do job-sync (JOB-0015)
 
-- **Código**: `JOB-0014`
+- **Código**: `JOB-0015`
 - **Módulo**: `plataforma-base`
 - **Subsistema**: `arquitetura`
 - **Resumo da funcionalidade**: `nova-interface-grafica-web`

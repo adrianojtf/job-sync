@@ -27,25 +27,25 @@ def obter_caminho_banco() -> str:
     )
 
 
-def obter_repositorio_token(caminho_banco: str | None = None) -> TokenCapturaRepositoryImpl:
-    return TokenCapturaRepositoryImpl(caminho_banco=caminho_banco or obter_caminho_banco())
+def obter_repositorio_token() -> TokenCapturaRepositoryImpl:
+    return TokenCapturaRepositoryImpl(caminho_banco=obter_caminho_banco())
 
 
-def obter_repositorio_vaga(caminho_banco: str | None = None) -> VagaRepositoryImpl:
-    return VagaRepositoryImpl(caminho_banco=caminho_banco or obter_caminho_banco())
+def obter_repositorio_vaga() -> VagaRepositoryImpl:
+    return VagaRepositoryImpl(caminho_banco=obter_caminho_banco())
 
 
-def obter_repositorio_candidatura(caminho_banco: str | None = None) -> CandidaturaRepositoryImpl:
-    return CandidaturaRepositoryImpl(caminho_banco=caminho_banco or obter_caminho_banco())
+def obter_repositorio_candidatura() -> CandidaturaRepositoryImpl:
+    return CandidaturaRepositoryImpl(caminho_banco=obter_caminho_banco())
 
 
-def obter_repositorio_curriculo_salvo(caminho_banco: str | None = None) -> CurriculoSalvoRepositoryImpl:
-    return CurriculoSalvoRepositoryImpl(caminho_banco=caminho_banco or obter_caminho_banco())
+def obter_repositorio_curriculo_salvo() -> CurriculoSalvoRepositoryImpl:
+    return CurriculoSalvoRepositoryImpl(caminho_banco=obter_caminho_banco())
 
 
-def obter_repositorio_perfil(caminho_banco: str | None = None) -> PerfilRepositoryImpl:
-    return PerfilRepositoryImpl(caminho_banco=caminho_banco or obter_caminho_banco())
+def obter_repositorio_perfil() -> PerfilRepositoryImpl:
+    return PerfilRepositoryImpl(caminho_banco=obter_caminho_banco())
 
 
-def obter_repositorio_perfil_estruturado(caminho_banco: str | None = None) -> PerfilEstruturadoRepositoryImpl:
-    return PerfilEstruturadoRepositoryImpl(caminho_banco=caminho_banco or obter_caminho_banco())
+def obter_repositorio_perfil_estruturado() -> PerfilEstruturadoRepositoryImpl:
+    return PerfilEstruturadoRepositoryImpl(caminho_banco=obter_caminho_banco())

@@ -1965,7 +1965,6 @@ export interface operations {
         parameters: {
             query: {
                 perfil_identificador: string;
-                caminho_banco?: string | null;
             };
             header?: never;
             path?: never;
@@ -1995,9 +1994,7 @@ export interface operations {
     };
     salvar_curriculo_v1_curriculos_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2032,7 +2029,6 @@ export interface operations {
         parameters: {
             query: {
                 perfil_identificador: string;
-                caminho_banco?: string | null;
             };
             header?: never;
             path: {
@@ -2066,7 +2062,6 @@ export interface operations {
         parameters: {
             query: {
                 perfil_identificador: string;
-                caminho_banco?: string | null;
             };
             header?: never;
             path: {
@@ -2098,7 +2093,6 @@ export interface operations {
         parameters: {
             query: {
                 perfil_identificador: string;
-                caminho_banco?: string | null;
             };
             header?: never;
             path: {
@@ -2130,9 +2124,7 @@ export interface operations {
     };
     gerar_carta_apresentacao_v1_cartas_apresentacao_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2167,7 +2159,6 @@ export interface operations {
         parameters: {
             query?: {
                 download?: boolean;
-                caminho_banco?: string | null;
             };
             header?: never;
             path: {
@@ -2203,9 +2194,7 @@ export interface operations {
     };
     analisar_ats_v1_curriculos__id__analises_ats_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 id: string;
@@ -2284,7 +2273,6 @@ export interface operations {
         parameters: {
             query: {
                 perfil_identificador: string;
-                caminho_banco?: string | null;
             };
             header?: never;
             path?: never;
@@ -2314,9 +2302,7 @@ export interface operations {
     };
     capturar_vaga_v1_vagas_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2382,9 +2368,7 @@ export interface operations {
     };
     candidatar_na_vaga_externa_v1_vagas_descobertas_candidaturas_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2419,7 +2403,6 @@ export interface operations {
         parameters: {
             query: {
                 perfil_identificador: string;
-                caminho_banco?: string | null;
             };
             header?: never;
             path?: never;
@@ -2449,9 +2432,7 @@ export interface operations {
     };
     criar_candidatura_v1_candidaturas_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2484,9 +2465,7 @@ export interface operations {
     };
     submeter_candidatura_v1_candidaturas__id__submissao_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 id: string;
@@ -2541,9 +2520,7 @@ export interface operations {
     };
     obter_perfil_v1_perfis__id__get: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 id: string;
@@ -2574,9 +2551,7 @@ export interface operations {
     };
     salvar_perfil_estruturado_v1_perfil_estruturado_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2609,9 +2584,7 @@ export interface operations {
     };
     buscar_perfil_estruturado_v1_perfil_estruturado__perfil_identificador__get: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 perfil_identificador: string;
@@ -2642,9 +2615,7 @@ export interface operations {
     };
     atualizar_perfil_estruturado_v1_perfil_estruturado__perfil_identificador__put: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path: {
                 perfil_identificador: string;
@@ -2712,9 +2683,7 @@ export interface operations {
     };
     criar_token_captura_v1_tokens_captura_post: {
         parameters: {
-            query?: {
-                caminho_banco?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;

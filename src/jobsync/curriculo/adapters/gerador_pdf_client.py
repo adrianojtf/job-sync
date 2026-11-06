@@ -9,6 +9,7 @@ from __future__ import annotations
 import io
 import re
 
+from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
@@ -21,6 +22,7 @@ from reportlab.platypus import (
 
 from jobsync.curriculo import Curriculo, TipoSecao
 from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
+from jobsync.curriculo.domain.rotulos_experiencia import ROTULOS_CONTEXTO_RECONHECIDOS
 from jobsync.shared_kernel.domain import CatalogoLocalizacao
 
 _ORDEM_SECOES = (
@@ -298,6 +300,7 @@ class GeradorPdfClient(GeradorPdfPort):
 
     def _formatar_conteudo_experiencias(self, conteudo: str, estilo_corpo: ParagraphStyle) -> list:
         blocos = self._separar_blocos_experiencias(conteudo)
+        estilo_contexto = self._estilo_contexto(estilo_corpo)
         elementos = []
 
         for indice_bloco, bloco in enumerate(blocos):
@@ -306,6 +309,9 @@ class GeradorPdfClient(GeradorPdfPort):
                 if linha_tratada.startswith(("-", "•", "*")):
                     texto = linha_tratada.lstrip("-•* ").strip()
                     elementos.append(Paragraph(f"&bull;&nbsp;&nbsp;{self._escape_text(texto)}", estilo_corpo))
+                    elementos.append(Spacer(1, 2))
+                elif index > 0 and self._eh_linha_de_contexto(linha_tratada):
+                    elementos.append(Paragraph(self._escape_text(linha_tratada), estilo_contexto))
                     elementos.append(Spacer(1, 2))
                 elif index == 0:
                     elementos.append(Paragraph(self._negritar_experiencia(linha_tratada), estilo_corpo))
@@ -321,6 +327,21 @@ class GeradorPdfClient(GeradorPdfPort):
                 elementos.append(Spacer(1, 6))
 
         return elementos
+
+    @staticmethod
+    def _estilo_contexto(estilo_corpo: ParagraphStyle) -> ParagraphStyle:
+        return ParagraphStyle(
+            "ContextoExperiencia",
+            parent=estilo_corpo,
+            fontName="Helvetica-Oblique",
+            textColor=HexColor("#666666"),
+        )
+
+    @staticmethod
+    def _eh_linha_de_contexto(linha: str) -> bool:
+        """Linha final da experiência no padrão "Contexto: ..." ou "Context: ..."."""
+        rotulo, separador, _ = linha.partition(":")
+        return bool(separador) and rotulo.strip().lower() in ROTULOS_CONTEXTO_RECONHECIDOS
 
     @staticmethod
     def _separar_blocos_experiencias(conteudo: str) -> list[list[str]]:

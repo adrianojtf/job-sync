@@ -8,6 +8,7 @@ para o idioma solicitado, sem inventar fatos que não constam no original.
 from __future__ import annotations
 
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
+from jobsync.curriculo.domain.rotulos_experiencia import ROTULO_CONTEXTO
 from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
 from jobsync.curriculo import SecaoCurriculo, TipoSecao
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
@@ -24,11 +25,6 @@ _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
         "mais alinhadas à vaga, mantendo-se fiel aos fatos originais (não invente "
         "anos de experiência, cargos ou tecnologias que não constam no texto original)."
     ),
-    TipoSecao.EXPERIENCIAS: (
-        "Ajuste a ênfase de cada experiência para destacar responsabilidades e "
-        "resultados mais relevantes à vaga. Preserve empresas, cargos, datas e "
-        "métricas/números exatamente como no original — não invente resultados."
-    ),
     TipoSecao.FORMACAO: (
         "Apenas traduza/adapte o idioma, se necessário. Não altere instituições, "
         "cursos ou datas."
@@ -37,10 +33,30 @@ _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
     TipoSecao.IDIOMAS: "Apenas traduza/adapte o idioma, se necessário, sem alterar os fatos.",
 }
 
+def _instrucao_experiencias(rotulo_contexto: str) -> str:
+    """Padrão de conquistas e contexto para a seção de experiências vinda de um PDF.
+
+    A linha final no formato "Rótulo: ..." é a convenção que o gerador de PDF reconhece.
+    """
+    return (
+        "Reescreva cada experiência no padrão de conquistas e contexto, com um bloco por experiência, "
+        "separado do próximo por uma linha em branco. Em cada bloco: "
+        "(1) mantenha a primeira linha de identificação (cargo, empresa e período) como no original; "
+        '(2) liste de 2 a 6 conquistas, uma por linha, cada uma iniciada por "- ", em frases curtas '
+        "que começam com verbo de ação e citam o resultado medido quando houver dado; "
+        f'(3) termine com uma única linha "{rotulo_contexto}: ..." com de 1 a 3 frases sobre a empresa, '
+        "a área e o papel, sem repetir as conquistas. "
+        "Preserve empresas, cargos e datas exatamente como no original. "
+        "Prefira sempre os números do original; quando ele não trouxer número, você pode propor "
+        "métricas e volumes plausíveis e conservadores."
+    )
+
+
 _PROMPT_SISTEMA = """\
 Você é um especialista em redação de currículos (resume writer) que ajuda \
 candidatos a adaptar seu currículo para vagas específicas, SEM jamais \
-inventar experiência, tecnologia ou resultado que não exista no texto original.
+inventar experiência, empresa ou tecnologia que não exista no texto original. \
+O que fazer com números e métricas é definido na instrução específica de cada seção.
 
 Responda ESTRITAMENTE em JSON no formato:
 {"conteudo_ajustado": "texto da seção já reescrita"}
@@ -60,8 +76,12 @@ class AjustadorTextoClient(AjustadorTextoPort):
         idioma_alvo: str,
         analise_vaga: AnaliseVaga,
     ) -> SecaoCurriculo:
-        instrucao_especifica = _INSTRUCOES_POR_TIPO.get(
-            secao.tipo, "Traduza/adapte o idioma, mantendo os fatos originais."
+        instrucao_especifica = (
+            _instrucao_experiencias(ROTULO_CONTEXTO.get(idioma_alvo, ROTULO_CONTEXTO["pt"]))
+            if secao.tipo == TipoSecao.EXPERIENCIAS
+            else _INSTRUCOES_POR_TIPO.get(
+                secao.tipo, "Traduza/adapte o idioma, mantendo os fatos originais."
+            )
         )
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
 

@@ -3,10 +3,21 @@
 Não depende de rede nem de LLM: valida apenas que o PDF é gerado
 corretamente a partir de um Curriculo de domínio.
 """
+import io
+
+import pdfplumber
+import pytest
+from reportlab.lib.colors import HexColor
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Spacer
 
-from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import (
+    Curriculo,
+    ExperienciaAdaptada,
+    RascunhoCurriculoAdaptado,
+    SecaoCurriculo,
+    TipoSecao,
+)
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 
 
@@ -150,3 +161,141 @@ def test_gera_pdf_valido_com_todas_as_secoes():
 
     assert pdf_bytes.startswith(b"%PDF")
     assert len(pdf_bytes) > 500
+
+
+def _paragrafos_de_experiencias(conteudo: str) -> list:
+    estilo = getSampleStyleSheet()["Normal"]
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.EXPERIENCIAS)
+    return [elemento for elemento in elementos if hasattr(elemento, "text")]
+
+
+def test_formata_linha_de_contexto_em_italico_cinza_depois_dos_bullets():
+    conteudo = (
+        "Software Engineer — SIPPulse (2022 - Atual)\n"
+        "- Developed a VoIP billing system.\n"
+        "Context: Worked on the communications platform."
+    )
+
+    paragrafos = _paragrafos_de_experiencias(conteudo)
+
+    contexto = paragrafos[-1]
+    assert contexto.text == "Context: Worked on the communications platform."
+    assert contexto.style.fontName == "Helvetica-Oblique"
+    assert contexto.style.textColor == HexColor("#666666")
+    assert paragrafos[1].text == "&bull;&nbsp;&nbsp;Developed a VoIP billing system."
+
+
+@pytest.mark.parametrize("linha", ["Contexto: Empresa de telecom.", "CONTEXT: Telecom company.", "contexto:Empresa."])
+def test_reconhece_o_rotulo_do_contexto_nos_dois_idiomas_sem_diferenciar_maiusculas(linha):
+    paragrafos = _paragrafos_de_experiencias(f"Dev — TechCorp (2024)\n- Criei APIs.\n{linha}")
+
+    assert paragrafos[-1].style.fontName == "Helvetica-Oblique"
+    assert paragrafos[-1].text == linha
+
+
+def test_contexto_logo_apos_o_cabecalho_nao_vira_negrito():
+    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp (2024)\nContexto: Empresa de telecom.")
+
+    assert paragrafos[0].text == "<b>Dev — TechCorp (2024)</b>"
+    assert paragrafos[1].text == "Contexto: Empresa de telecom."
+    assert paragrafos[1].style.fontName == "Helvetica-Oblique"
+
+
+def test_escapa_caracteres_especiais_na_linha_de_contexto():
+    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp\nContexto: P&D de <telecom>.")
+
+    assert paragrafos[1].text == "Contexto: P&amp;D de &lt;telecom&gt;."
+
+
+def test_experiencia_sem_contexto_nao_gera_linha_em_italico():
+    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp (2024)\n- Criei APIs.\n- Reduzi custos.")
+
+    assert all(p.style.fontName != "Helvetica-Oblique" for p in paragrafos)
+    assert len(paragrafos) == 3
+
+
+def test_linha_que_apenas_comeca_com_a_palavra_contexto_nao_e_tratada_como_rotulo():
+    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp\n- Criei APIs.\nContextualizei o sistema legado.")
+
+    assert paragrafos[-1].text == "Contextualizei o sistema legado."
+    assert paragrafos[-1].style.fontName != "Helvetica-Oblique"
+
+
+def test_cada_experiencia_tem_o_proprio_contexto():
+    conteudo = (
+        "Dev — A (2024)\n- Criei APIs.\nContexto: Empresa A.\n\n"
+        "Dev — B (2022)\n- Criei testes.\nContexto: Empresa B."
+    )
+
+    paragrafos = _paragrafos_de_experiencias(conteudo)
+
+    textos_em_italico = [p.text for p in paragrafos if p.style.fontName == "Helvetica-Oblique"]
+    assert textos_em_italico == ["Contexto: Empresa A.", "Contexto: Empresa B."]
+
+
+def test_pdf_desenha_o_contexto_em_fonte_obliqua_cinza_depois_dos_bullets():
+    curriculo = Curriculo(
+        nome_completo="Ana Souza",
+        email="ana@example.com",
+        linkedin="",
+        secoes=(
+            SecaoCurriculo(
+                TipoSecao.EXPERIENCIAS,
+                "Experiências",
+                "Software Engineer — SIPPulse (2022 - Atual)\n"
+                "- Developed a VoIP billing system.\n"
+                "Contexto: Atuei na plataforma de comunicação.",
+            ),
+        ),
+    )
+
+    pdf_bytes = GeradorPdfClient().gerar(curriculo, "pt")
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        pagina = pdf.pages[0]
+        linhas = pagina.extract_text().splitlines()
+        topo_do_contexto = _topo(pagina, "Contexto:")
+        letras_da_linha = [
+            c for c in pagina.chars if c["text"].strip() and abs(c["top"] - topo_do_contexto) < 1
+        ]
+
+    assert linhas.index("Contexto: Atuei na plataforma de comunicação.") > linhas.index(
+        "(cid:127) Developed a VoIP billing system."
+    )
+    assert letras_da_linha
+    assert all("Oblique" in c["fontname"] for c in letras_da_linha)
+    assert all(c["non_stroking_color"] == pytest.approx((0.4, 0.4, 0.4)) for c in letras_da_linha)
+
+
+def _topo(pagina, palavra: str) -> float:
+    return next(p["top"] for p in pagina.extract_words() if p["text"] == palavra)
+
+
+@pytest.mark.parametrize(("idioma", "rotulo"), [("pt", "Contexto:"), ("en", "Context:")])
+def test_pdf_de_um_rascunho_desenha_o_contexto_no_rotulo_do_idioma(idioma, rotulo):
+    rascunho = RascunhoCurriculoAdaptado(
+        nome_completo="Ana Souza",
+        email="ana@example.com",
+        linkedin="",
+        secoes=(),
+        experiencias=(
+            ExperienciaAdaptada(
+                cargo="Engenheira",
+                empresa="TechCorp",
+                periodo="2024",
+                conquistas=("Criei APIs.", "Reduzi custos."),
+                contexto="Empresa de pagamentos.",
+            ),
+        ),
+    )
+
+    pdf_bytes = GeradorPdfClient().gerar(rascunho.para_curriculo(idioma), idioma)
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        pagina = pdf.pages[0]
+        topo = _topo(pagina, rotulo)
+        letras = [c for c in pagina.chars if c["text"].strip() and abs(c["top"] - topo) < 1]
+        texto = pagina.extract_text()
+
+    assert f"{rotulo} Empresa de pagamentos." in texto
+    assert all("Oblique" in c["fontname"] for c in letras)

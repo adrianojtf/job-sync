@@ -5,10 +5,42 @@ import { AVALIACAO_VAGA, CURRICULO_SALVO, dimensao, servirDadosBase } from "../.
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 
-const ADAPTADO = {
+const PDF_REVISADO = {
   nome_arquivo: "AdrianoTeixeira-2026-11-06-SeniorJava-Olist.pdf",
   pdf_base64: btoa("%PDF-adaptado"),
+};
+
+const RASCUNHO = {
   nome_completo: "Adriano Teixeira",
+  email: "adriano@email.com",
+  linkedin: "",
+  secoes: [
+    { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo adaptado pela IA." },
+    { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
+  ],
+  experiencias: [
+    {
+      cargo: "Dev Java",
+      empresa: "Neoway",
+      periodo: "2020-2024",
+      conquistas: ["APIs em Java."],
+      contexto: "Empresa de dados.",
+    },
+  ],
+  titulo_experiencias: "Experiências",
+};
+
+const ANALISE_VAGA = {
+  requisitos: [
+    { nome: "Java", categoria: "TECNOLOGIA", tipo: "EXPLICITO", origem: "DESCRICAO_VAGA" },
+  ],
+  ambiguidade: [],
+  texto_original: "Java, Kafka e AWS.",
+};
+
+const ADAPTADO = {
+  rascunho: RASCUNHO,
+  analise_vaga: ANALISE_VAGA,
   avaliacao_vaga: AVALIACAO_VAGA,
   status_avaliacao_vaga: "avaliada",
   avaliacoes_experiencias: [
@@ -48,9 +80,17 @@ function servirIa() {
       await registrar("avaliacoes")(info);
       return HttpResponse.json(AVALIACAO_VAGA);
     }),
-    http.post(`${API_TESTE}/v1/curriculos/:id/adaptacoes`, async (info) => {
-      await registrar(`adaptacoes:${info.params.id}`)(info);
+    http.post(`${API_TESTE}/v1/curriculos/:id/rascunhos-adaptados`, async (info) => {
+      await registrar(`rascunhos:${info.params.id}`)(info);
       return HttpResponse.json(ADAPTADO);
+    }),
+    http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async (info) => {
+      await registrar("sugestao-secao")(info);
+      return HttpResponse.json({ conteudo_sugerido: "Resumo sugerido." });
+    }),
+    http.post(`${API_TESTE}/v1/curriculos-revisados`, async (info) => {
+      await registrar("pdf")(info);
+      return HttpResponse.json(PDF_REVISADO);
     }),
     http.post(`${API_TESTE}/v1/curriculos/:id/analises-ats`, async (info) => {
       await registrar("ats")(info);
@@ -73,6 +113,11 @@ async function preencherVaga() {
   await userEvent.type(await screen.findByLabelText("Título da vaga"), "Senior Java");
   await userEvent.type(screen.getByLabelText("Empresa"), "Olist");
   await userEvent.type(screen.getByLabelText("Descrição da vaga"), "Java, Kafka e AWS.");
+}
+
+async function confirmarRevisao() {
+  await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+  await userEvent.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
 }
 
 function capturarDownloads() {
@@ -190,7 +235,7 @@ describe("AjustarVagaPage", () => {
     expect(screen.getByRole("button", { name: "Gerar currículo adaptado" })).toBeDisabled();
   });
 
-  it("gera com o perfil estruturado, baixa o PDF e mostra as avaliações das experiências", async () => {
+  it("gera com o perfil estruturado, revisa, baixa o PDF e mostra as avaliações das experiências", async () => {
     servirDadosBase();
     const chamadas = servirIa();
     const downloads = capturarDownloads();
@@ -200,8 +245,27 @@ describe("AjustarVagaPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
 
-    expect(await screen.findByText(ADAPTADO.nome_arquivo)).toBeInTheDocument();
-    expect(chamadas.find((c) => c.rota.startsWith("adaptacoes"))?.corpo).toMatchObject({
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+    expect(screen.queryByRole("button", { name: "Baixar PDF" })).not.toBeInTheDocument();
+    expect(chamadas.map((c) => c.rota)).not.toContain("pdf");
+    await userEvent.clear(screen.getByLabelText("Resumo profissional"));
+    await userEvent.type(screen.getByLabelText("Resumo profissional"), "Resumo revisado.");
+    await confirmarRevisao();
+
+    expect(await screen.findByText(PDF_REVISADO.nome_arquivo)).toBeInTheDocument();
+    expect(chamadas.find((c) => c.rota === "pdf")?.corpo).toEqual({
+      rascunho: {
+        ...RASCUNHO,
+        secoes: [
+          { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo revisado." },
+          { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
+        ],
+      },
+      idioma_alvo: "en",
+      cargo_alvo: "Senior Java",
+      empresa_alvo: "Olist",
+    });
+    expect(chamadas.find((c) => c.rota.startsWith("rascunhos"))?.corpo).toMatchObject({
       descricao_vaga: "Java, Kafka e AWS.",
       cargo_alvo: "Senior Java",
       empresa_alvo: "Olist",
@@ -220,7 +284,7 @@ describe("AjustarVagaPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Baixar PDF" }));
 
-    expect(downloads).toEqual([ADAPTADO.nome_arquivo]);
+    expect(downloads).toEqual([PDF_REVISADO.nome_arquivo]);
   });
 
   it("gera a partir de um currículo da biblioteca enviando o PDF", async () => {
@@ -232,9 +296,9 @@ describe("AjustarVagaPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
 
-    await screen.findByText(ADAPTADO.nome_arquivo);
-    const adaptacao = chamadas.find((c) => c.rota.startsWith("adaptacoes"))!;
-    expect(adaptacao.rota).toBe("adaptacoes:c1");
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+    const adaptacao = chamadas.find((c) => c.rota.startsWith("rascunhos"))!;
+    expect(adaptacao.rota).toBe("rascunhos:c1");
     expect(atob(adaptacao.corpo.pdf_base64 as string)).toBe("%PDF-biblioteca");
     expect(adaptacao.corpo.perfil_identificador).toBeUndefined();
   });
@@ -254,7 +318,7 @@ describe("AjustarVagaPage", () => {
     servirDadosBase();
     servirIa();
     servidorApi.use(
-      http.post(`${API_TESTE}/v1/curriculos/:id/adaptacoes`, () =>
+      http.post(`${API_TESTE}/v1/curriculos/:id/rascunhos-adaptados`, () =>
         HttpResponse.json({
           ...ADAPTADO,
           avaliacao_vaga: null,
@@ -266,6 +330,7 @@ describe("AjustarVagaPage", () => {
     await preencherVaga();
 
     await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await confirmarRevisao();
 
     expect(
       await screen.findByText(/A avaliação automática da vaga não está disponível agora/),
@@ -320,7 +385,7 @@ describe("AjustarVagaPage", () => {
   it("mostra o erro da geração e mantém os dados digitados", async () => {
     servirDadosBase();
     servidorApi.use(
-      http.post(`${API_TESTE}/v1/curriculos/:id/adaptacoes`, () =>
+      http.post(`${API_TESTE}/v1/curriculos/:id/rascunhos-adaptados`, () =>
         HttpResponse.json(
           {
             type: "t",
@@ -340,6 +405,70 @@ describe("AjustarVagaPage", () => {
 
     expect(await screen.findByText("A empresa alvo é obrigatória.")).toBeInTheDocument();
     expect(screen.getByLabelText("Título da vaga")).toHaveValue("Senior Java");
+  });
+
+  it("voltar da revisão descarta o rascunho e mantém os dados da vaga", async () => {
+    servirDadosBase();
+    const chamadas = servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Voltar para a vaga" }));
+
+    expect(screen.getByLabelText("Título da vaga")).toHaveValue("Senior Java");
+    expect(screen.queryByRole("button", { name: "Baixar PDF" })).not.toBeInTheDocument();
+    expect(chamadas.map((c) => c.rota)).not.toContain("pdf");
+  });
+
+  it("as sugestões da revisão usam a vaga adaptada e a análise devolvida com o rascunho", async () => {
+    servirDadosBase();
+    const chamadas = servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Sugestões de IA para resumo" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Aplicar sugestão em resumo" }),
+    );
+
+    expect(chamadas.find((c) => c.rota === "sugestao-secao")?.corpo).toEqual({
+      secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo adaptado pela IA." },
+      contexto_vaga: {
+        descricao_vaga: "Java, Kafka e AWS.",
+        idioma_alvo: "pt",
+        analise_vaga: ANALISE_VAGA,
+      },
+    });
+    expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo sugerido.");
+  });
+
+  it("falha ao gerar o PDF mantém a revisão com as edições", async () => {
+    servirDadosBase();
+    servirIa();
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/curriculos-revisados`, () =>
+        HttpResponse.json(
+          { type: "t", title: "Erro", status: 422, detail: "Rascunho inválido.", instance: "i" },
+          { status: 422 },
+        ),
+      ),
+    );
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+    await userEvent.type(screen.getByLabelText("Resumo profissional"), " Editado.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
+
+    expect(await screen.findByText(/Rascunho inválido\./)).toBeInTheDocument();
+    expect(screen.getByLabelText("Resumo profissional")).toHaveValue(
+      "Resumo adaptado pela IA. Editado.",
+    );
   });
 
   it("aceita dados pré-preenchidos pela navegação", async () => {

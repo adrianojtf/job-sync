@@ -9,8 +9,12 @@ from datetime import date, datetime
 from jobsync.ats_score import ResultadoAtsScore
 from jobsync.candidatura import Candidatura, MudancaStatus, StatusCandidatura
 from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import RascunhoCurriculoAdaptado
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
     AdaptarCurriculoParaVagaOutputDto,
+)
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisadoOutputDto,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga.dtos import (
     AnalisarAtsVagaOutputDto,
@@ -131,13 +135,20 @@ class TestCurriculoSchemas:
             empresa="TechCorp",
         )
         dto = AdaptarCurriculoParaVagaOutputDto(
-            pdf_bytes=b"%PDF-1.4 adapted",
-            nome_arquivo=nome_arquivo,
+            rascunho=RascunhoCurriculoAdaptado(
+                nome_completo=curriculo.nome_completo,
+                email=curriculo.email,
+                linkedin=curriculo.linkedin,
+                secoes=curriculo.secoes,
+            ),
             curriculo_adaptado=curriculo,
             analise_vaga=analise,
         )
+        pdf = GerarPdfCurriculoRevisadoOutputDto(
+            pdf_bytes=b"%PDF-1.4 adapted", nome_arquivo=nome_arquivo
+        )
 
-        response = AdaptarCurriculoResponse.from_dto(dto)
+        response = AdaptarCurriculoResponse.from_dto(dto, pdf)
 
         assert response.nome_arquivo == nome_arquivo.valor
         assert response.pdf_base64 == base64.b64encode(b"%PDF-1.4 adapted").decode()

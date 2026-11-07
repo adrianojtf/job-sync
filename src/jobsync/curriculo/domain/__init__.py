@@ -1,6 +1,8 @@
 """Camada de domínio do Currículo."""
 
+from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.curriculo.domain.avaliacao_experiencia import (
     AvaliacaoExperiencia,
     ExperienciaParaAvaliacao,
@@ -14,9 +16,13 @@ from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPo
 from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
 from jobsync.curriculo.domain.gerar_carta_apresentacao_port import GerarCartaApresentacaoPort
 from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsPort
+from jobsync.curriculo.domain.melhorador_texto_curriculo_port import MelhoradorTextoCurriculoPort
+from jobsync.curriculo.domain.rascunho_curriculo_adaptado import RascunhoCurriculoAdaptado
 
 __all__ = [
+    "ContextoVaga",
     "Curriculo",
+    "ExperienciaAdaptada",
     "SecaoCurriculo",
     "TipoSecao",
     "AvaliacaoExperiencia",
@@ -28,4 +34,6 @@ __all__ = [
     "GeradorPdfPort",
     "GerarCartaApresentacaoPort",
     "GerarSugestoesAtsPort",
+    "MelhoradorTextoCurriculoPort",
+    "RascunhoCurriculoAdaptado",
 ]

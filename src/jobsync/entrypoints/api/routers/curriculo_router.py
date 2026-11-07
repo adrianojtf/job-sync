@@ -4,7 +4,20 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from jobsync.curriculo import ExperienciaParaAvaliacao
+from jobsync.curriculo import (
+    ExperienciaParaAvaliacao,
+    RascunhoCurriculoAdaptado,
+    SecaoCurriculo,
+    TipoSecao,
+)
+from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
+    AdaptarCurriculoParaVagaInputDto,
+)
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisado,
+    GerarPdfCurriculoRevisadoInputDto,
+    GerarPdfCurriculoRevisadoOutputDto,
+)
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import (
     CurriculoSalvoNaoEncontrado,
 )
@@ -19,9 +32,13 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceAvaliarExperienciaDep,
     ServiceBuscarPerfilEstruturadoDep,
     ServiceGerarCartaApresentacaoDep,
+    ServiceGerarPdfCurriculoRevisadoDep,
     ServiceListarCurriculosSalvosDep,
     ServiceRemoverCurriculoSalvoDep,
     ServiceSalvarCurriculoDep,
+    ServiceSugerirAjusteExperienciaAdaptadaDep,
+    ServiceSugerirAjusteExperienciaDep,
+    ServiceSugerirAjusteSecaoCurriculoDep,
 )
 from jobsync.entrypoints.api.schemas.curriculo import (
     AdaptarCurriculoRequest,
@@ -31,11 +48,20 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     AnalisarAtsRequest,
     AnalisarAtsResponse,
     CartaApresentacaoResponse,
+    CurriculoRevisadoResponse,
     CurriculoSalvarRequest,
     CurriculoSalvoConteudoResponse,
     CurriculoSalvoResponse,
     CurriculosListagemResponse,
     GerarCartaApresentacaoRequest,
+    GerarPdfCurriculoRevisadoRequest,
+    RascunhoAdaptadoResponse,
+    SugerirAjusteExperienciaAdaptadaRequest,
+    SugerirAjusteExperienciaAdaptadaResponse,
+    SugerirAjusteExperienciaRequest,
+    SugerirAjusteExperienciaResponse,
+    SugerirAjusteSecaoRequest,
+    SugerirAjusteSecaoResponse,
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
@@ -240,10 +266,79 @@ def adaptar_curriculo(
     id: str,
     body: AdaptarCurriculoRequest,
     service: ServiceAdaptarCurriculoDep,
+    gerar_pdf: ServiceGerarPdfCurriculoRevisadoDep,
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
     download: bool = False,
 ) -> AdaptarCurriculoResponse | Response:
-    """Adapta o currículo à descrição da vaga informada."""
+    """Adapta o currículo à descrição da vaga e gera o PDF sem revisão (fluxo legado)."""
+    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
+    try:
+        input_dto = body.to_dto(
+            curriculo_pre_montado=curriculo_pre_montado,
+            experiencias_profissionais=_experiencias_do_perfil(perfil),
+        )
+        output = service.executar(input_dto)
+        pdf = _gerar_pdf_sem_revisao(gerar_pdf, input_dto, output.rascunho)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    if download:
+        return _resposta_pdf(pdf)
+    return AdaptarCurriculoResponse.from_dto(output, pdf)
+
+
+def _gerar_pdf_sem_revisao(
+    gerar_pdf: GerarPdfCurriculoRevisado,
+    input_dto: AdaptarCurriculoParaVagaInputDto,
+    rascunho: RascunhoCurriculoAdaptado,
+) -> GerarPdfCurriculoRevisadoOutputDto:
+    return gerar_pdf.executar(
+        GerarPdfCurriculoRevisadoInputDto(
+            rascunho=rascunho,
+            idioma_alvo=input_dto.idioma_alvo,
+            cargo_alvo=input_dto.cargo_alvo,
+            empresa_alvo=input_dto.empresa_alvo,
+            data_referencia=input_dto.data_referencia,
+        )
+    )
+
+
+def _resposta_pdf(pdf: GerarPdfCurriculoRevisadoOutputDto) -> Response:
+    return Response(
+        content=pdf.pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{pdf.nome_arquivo.valor}"'
+        },
+    )
+
+
+@router.post(
+    "/curriculos/{id}/rascunhos-adaptados",
+    response_model=RascunhoAdaptadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Gerar rascunho do currículo adaptado",
+    description=(
+        "Adapta o currículo à vaga via IA e devolve o conteúdo organizado por seção "
+        "para revisão. Não gera PDF nem persiste o rascunho."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Dados da vaga ou fonte do currículo ausentes ou inválidos.",
+        },
+    },
+)
+def gerar_rascunho_adaptado(
+    id: str,
+    body: AdaptarCurriculoRequest,
+    service: ServiceAdaptarCurriculoDep,
+    buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+) -> RascunhoAdaptadoResponse:
+    """Adapta o currículo à vaga e devolve o rascunho para revisão."""
     perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
     curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
     try:
@@ -258,15 +353,142 @@ def adaptar_curriculo(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    if download:
-        return Response(
-            content=output.pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'attachment; filename="{output.nome_arquivo.valor}"'
-            },
+    return RascunhoAdaptadoResponse.from_dto(output)
+
+
+@router.post(
+    "/curriculos-revisados",
+    response_model=CurriculoRevisadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Gerar PDF do currículo revisado",
+    description=(
+        "Gera o PDF a partir do rascunho revisado e confirmado pelo usuário, sem nova "
+        "chamada à IA. Use ?download=true para receber o PDF em binário."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Rascunho ou dados da vaga inválidos.",
+        },
+    },
+)
+def gerar_pdf_curriculo_revisado(
+    body: GerarPdfCurriculoRevisadoRequest,
+    service: ServiceGerarPdfCurriculoRevisadoDep,
+    download: bool = False,
+) -> CurriculoRevisadoResponse | Response:
+    """Gera o PDF do currículo a partir do conteúdo revisado."""
+    try:
+        pdf = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
         )
-    return AdaptarCurriculoResponse.from_dto(output)
+    if download:
+        return _resposta_pdf(pdf)
+    return CurriculoRevisadoResponse.from_dto(pdf)
+
+
+_RESPOSTAS_SUGESTAO = {
+    status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        "model": ProblemaResponse,
+        "description": "Texto, seção ou contexto da vaga ausentes ou inválidos.",
+    },
+    status.HTTP_502_BAD_GATEWAY: {
+        "model": ProblemaResponse,
+        "description": "O provedor de IA está indisponível.",
+    },
+}
+
+
+@router.post(
+    "/secoes-curriculo/sugestoes",
+    response_model=SugerirAjusteSecaoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sugerir ajuste de uma seção",
+    description=(
+        "Sugere, via IA, uma nova versão do texto de uma seção (perfil, tecnologias ou "
+        "experiências). Com contexto de vaga adapta o texto à vaga; sem ele, melhora a "
+        "escrita. Nada é persistido nem alterado."
+    ),
+    responses=_RESPOSTAS_SUGESTAO,
+)
+def sugerir_ajuste_secao(
+    body: SugerirAjusteSecaoRequest,
+    service: ServiceSugerirAjusteSecaoCurriculoDep,
+) -> SugerirAjusteSecaoResponse:
+    """Devolve o texto sugerido para a seção informada."""
+    try:
+        secao = SecaoCurriculo(
+            tipo=TipoSecao[body.secao.tipo],
+            titulo=body.secao.titulo,
+            conteudo=body.secao.conteudo,
+        )
+        contexto = body.contexto_vaga.to_domain() if body.contexto_vaga else None
+        sugerida = service.executar(secao, contexto)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return SugerirAjusteSecaoResponse(conteudo_sugerido=sugerida.conteudo)
+
+
+@router.post(
+    "/experiencias-profissionais/sugestoes",
+    response_model=SugerirAjusteExperienciaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sugerir ajuste de uma experiência",
+    description=(
+        "Sugere, via IA, uma nova descrição para uma experiência do perfil, melhorando a "
+        "escrita sem vaga-alvo. Para adaptar à vaga, use POST /v1/experiencias-adaptadas/"
+        "sugestoes. Cargo, empresa e período não são alterados, e nada é persistido."
+    ),
+    responses=_RESPOSTAS_SUGESTAO,
+)
+def sugerir_ajuste_experiencia(
+    body: SugerirAjusteExperienciaRequest,
+    service: ServiceSugerirAjusteExperienciaDep,
+) -> SugerirAjusteExperienciaResponse:
+    """Devolve a descrição sugerida para a experiência do perfil informada."""
+    try:
+        sugerida = service.executar(body.experiencia.to_domain())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return SugerirAjusteExperienciaResponse(descricao_sugerida=sugerida.descricao)
+
+
+@router.post(
+    "/experiencias-adaptadas/sugestoes",
+    response_model=SugerirAjusteExperienciaAdaptadaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sugerir ajuste de uma experiência adaptada",
+    description=(
+        "Sugere, via IA, conquistas e contexto novos para uma experiência do currículo adaptado, "
+        "partindo dos textos atuais e orientado pela vaga. Cargo, empresa e período não são "
+        "alterados, e nada é persistido."
+    ),
+    responses=_RESPOSTAS_SUGESTAO,
+)
+def sugerir_ajuste_experiencia_adaptada(
+    body: SugerirAjusteExperienciaAdaptadaRequest,
+    service: ServiceSugerirAjusteExperienciaAdaptadaDep,
+) -> SugerirAjusteExperienciaAdaptadaResponse:
+    """Devolve conquistas e contexto sugeridos para a experiência informada."""
+    try:
+        sugerida = service.executar(body.experiencia.to_domain(), body.contexto_vaga.to_domain())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return SugerirAjusteExperienciaAdaptadaResponse(
+        conquistas=list(sugerida.conquistas), contexto=sugerida.contexto
+    )
 
 
 @router.post(

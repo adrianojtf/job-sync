@@ -14,6 +14,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
 )
 from jobsync.curriculo import (
     AvaliacaoExperiencia,
+    ExperienciaAdaptada,
     Curriculo,
     ExperienciaParaAvaliacao,
     SecaoCurriculo,
@@ -23,7 +24,6 @@ from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperie
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
-from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
 from jobsync.shared_kernel.domain.score_avaliacao import ResultadoDimensaoAvaliacao
 from jobsync.vaga import (
     AnaliseVaga,
@@ -75,17 +75,6 @@ class JobDescriptionAnalyzerFake(JobDescriptionAnalyzerPort):
         return self.analise
 
 
-class GeradorPdfFake(GeradorPdfPort):
-    def __init__(self):
-        self.curriculo_recebido: Curriculo | None = None
-        self.idioma_recebido: str | None = None
-
-    def gerar(self, curriculo: Curriculo, idioma_alvo: str) -> bytes:
-        self.curriculo_recebido = curriculo
-        self.idioma_recebido = idioma_alvo
-        return b"%PDF-FAKE-CONTENT"
-
-
 class AvaliadorDescricaoVagaFake(AvaliadorDescricaoVagaPort):
     def __init__(
         self,
@@ -118,16 +107,26 @@ class AjustadorExperienciaFake(AjustadorExperienciaPort):
         descricao_vaga: str,
         idioma_alvo: str,
         analise_vaga: AnaliseVaga,
-    ) -> ExperienciaParaAvaliacao:
+    ) -> ExperienciaAdaptada:
         self.recebidas.append(experiencia)
         if self._eventos is not None:
             self._eventos.append("ajustar_experiencia")
-        return ExperienciaParaAvaliacao(
-            descricao=f"[AJUSTADA] {experiencia.descricao}",
+        return ExperienciaAdaptada(
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
+            conquistas=(f"[AJUSTADA] {experiencia.descricao}",),
+            contexto=f"Contexto de {experiencia.empresa}.",
         )
+
+    def refinar(
+        self,
+        experiencia: ExperienciaAdaptada,
+        descricao_vaga: str,
+        idioma_alvo: str,
+        analise_vaga: AnaliseVaga,
+    ) -> ExperienciaAdaptada:
+        return experiencia
 
 
 class AvaliadorExperienciaFake(AvaliadorExperienciaPort):
@@ -170,19 +169,17 @@ def _curriculo_exemplo() -> Curriculo:
 
 
 class TestAdaptarCurriculoParaVaga:
-    def test_extrai_ajusta_todas_as_secoes_e_gera_pdf(self):
+    def test_extrai_e_ajusta_todas_as_secoes_em_um_rascunho(self):
         curriculo = _curriculo_exemplo()
         extrator = ExtratorFake(curriculo)
         analisador_vaga = JobDescriptionAnalyzerFake(
             AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga para Engenheiro de Software Python Sênior")
         )
         ajustador = AjustadorTextoFake()
-        gerador_pdf = GeradorPdfFake()
         caso_de_uso = AdaptarCurriculoParaVaga(
             extrator,
             analisador_vaga,
             ajustador,
-            gerador_pdf,
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -199,10 +196,11 @@ class TestAdaptarCurriculoParaVaga:
         assert len(ajustador.chamadas) == 4
         assert all(chamada[1] == "Vaga para Engenheiro de Software Python Sênior" for chamada in ajustador.chamadas)
         assert all(chamada[2] == "pt" for chamada in ajustador.chamadas)
-        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
-        assert gerador_pdf.idioma_recebido == "pt"
-        assert resultado.nome_arquivo.valor.startswith("AdrianoJoaoTeixeiraFilho-")
-        assert resultado.nome_arquivo.valor.endswith("-EngenheiroDeSoftwareSenior-Techcorp.pdf")
+        assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
+        assert resultado.rascunho.email == "adriano@example.com"
+        assert len(resultado.rascunho.secoes) == 4
+        assert resultado.rascunho.experiencias is None
+        assert resultado.curriculo_adaptado == resultado.rascunho.para_curriculo("pt")
 
     def test_analisa_vaga_e_repassa_analise_para_ajustador_texto(self):
         curriculo = _curriculo_exemplo()
@@ -221,12 +219,10 @@ class TestAdaptarCurriculoParaVaga:
         )
         analisador_vaga = JobDescriptionAnalyzerFake(analise)
         ajustador = AjustadorTextoFake()
-        gerador_pdf = GeradorPdfFake()
         caso_de_uso = AdaptarCurriculoParaVaga(
             extrator,
             analisador_vaga,
             ajustador,
-            gerador_pdf,
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -242,22 +238,20 @@ class TestAdaptarCurriculoParaVaga:
         assert analisador_vaga.recebeu_descricao == input_dto.descricao_vaga
         assert len(ajustador.chamadas) == 4
         assert all(chamada[3] is analise for chamada in ajustador.chamadas)
-        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
         assert resultado.analise_vaga is analise
 
-    def test_cada_secao_ajustada_e_repassada_ao_gerador_de_pdf(self):
+    def test_cada_secao_ajustada_compoe_o_rascunho(self):
         curriculo = _curriculo_exemplo()
         extrator = ExtratorFake(curriculo)
         analisador_vaga = JobDescriptionAnalyzerFake(
             AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
         )
         ajustador = AjustadorTextoFake()
-        gerador_pdf = GeradorPdfFake()
         caso_de_uso = AdaptarCurriculoParaVaga(
             extrator,
             analisador_vaga,
             ajustador,
-            gerador_pdf,
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -268,12 +262,10 @@ class TestAdaptarCurriculoParaVaga:
             empresa_alvo="TechCorp",
         )
 
-        caso_de_uso.executar(input_dto)
+        resultado = caso_de_uso.executar(input_dto)
 
-        curriculo_gerado = gerador_pdf.curriculo_recebido
-        secao_perfil = curriculo_gerado.obter_secao(TipoSecao.PERFIL)
+        secao_perfil = resultado.rascunho.para_curriculo("en").obter_secao(TipoSecao.PERFIL)
         assert secao_perfil.conteudo == "[AJUSTADO-en] Engenheiro backend."
-        assert gerador_pdf.idioma_recebido == "en"
 
     def test_idioma_invalido_gera_erro(self):
         extrator = ExtratorFake(_curriculo_exemplo())
@@ -284,7 +276,6 @@ class TestAdaptarCurriculoParaVaga:
             extrator,
             analisador_vaga,
             AjustadorTextoFake(),
-            GeradorPdfFake(),
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -307,7 +298,6 @@ class TestAdaptarCurriculoParaVaga:
             extrator,
             analisador_vaga,
             AjustadorTextoFake(),
-            GeradorPdfFake(),
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -331,7 +321,6 @@ class TestAdaptarCurriculoParaVaga:
             extrator,
             analisador_vaga,
             AjustadorTextoFake(),
-            GeradorPdfFake(),
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -345,14 +334,13 @@ class TestAdaptarCurriculoParaVaga:
         resultado = caso_de_uso.executar(input_dto)
 
         assert extrator.recebeu_pdf is None
-        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
 
     def test_sem_pdf_e_sem_curriculo_pre_montado_gera_erro(self):
         caso_de_uso = AdaptarCurriculoParaVaga(
             ExtratorFake(_curriculo_exemplo()),
             JobDescriptionAnalyzerFake(AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")),
             AjustadorTextoFake(),
-            GeradorPdfFake(),
         )
 
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -422,7 +410,6 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
                 AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
             ),
             AjustadorTextoFake(eventos=eventos),
-            GeradorPdfFake(),
             avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(
                 _avaliacao_vaga(), eventos=eventos
             ),
@@ -444,14 +431,12 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
 
     def test_score_baixo_da_vaga_nao_bloqueia_adaptacao(self):
         ajustador = AjustadorTextoFake()
-        gerador_pdf = GeradorPdfFake()
         caso_de_uso = AdaptarCurriculoParaVaga(
             ExtratorFake(_curriculo_exemplo()),
             JobDescriptionAnalyzerFake(
                 AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
             ),
             ajustador,
-            gerador_pdf,
             avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga(20)),
         )
         input_dto = AdaptarCurriculoParaVagaInputDto(
@@ -464,7 +449,7 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
 
         resultado = caso_de_uso.executar(input_dto)
 
-        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
         assert resultado.avaliacao_vaga.score == 20
         assert len(ajustador.chamadas) == 4
 
@@ -475,7 +460,6 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
                 AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
             ),
             AjustadorTextoFake(),
-            GeradorPdfFake(),
             avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(
                 _avaliacao_vaga(), erro=RuntimeError("Jev indisponível")
             ),
@@ -490,7 +474,7 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
 
         resultado = caso_de_uso.executar(input_dto)
 
-        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
         assert resultado.avaliacao_vaga is None
         assert resultado.status_avaliacao_vaga == StatusAvaliacaoAutomatica.INDISPONIVEL
 
@@ -498,14 +482,12 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
         ajustador_texto = AjustadorTextoFake()
         ajustador_experiencia = AjustadorExperienciaFake()
         avaliador_experiencia = AvaliadorExperienciaFake(_avaliacao_experiencia())
-        gerador_pdf = GeradorPdfFake()
         caso_de_uso = AdaptarCurriculoParaVaga(
             ExtratorFake(_curriculo_exemplo()),
             JobDescriptionAnalyzerFake(
                 AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
             ),
             ajustador_texto,
-            gerador_pdf,
             avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga()),
             ajustador_experiencia=ajustador_experiencia,
             avaliador_experiencia=avaliador_experiencia,
@@ -518,10 +500,10 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
         ]
         assert ajustador_experiencia.recebidas == list(_experiencias_exemplo())
         assert len(avaliador_experiencia.recebidas) == 2
-        assert all(
-            experiencia.descricao.startswith("[AJUSTADA]")
-            for experiencia in avaliador_experiencia.recebidas
-        )
+        assert [experiencia.descricao for experiencia in avaliador_experiencia.recebidas] == [
+            "- [AJUSTADA] Desenvolvi APIs em Python.\nContexto de Starian.",
+            "- [AJUSTADA] Mantive serviços em Go.\nContexto de TechCorp.",
+        ]
 
         assert len(resultado.avaliacoes_experiencias) == 2
         original = _experiencias_exemplo()
@@ -534,12 +516,34 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
             assert resultado_experiencia.experiencia.empresa == esperada.empresa
             assert resultado_experiencia.experiencia.periodo == esperada.periodo
 
-        secao = gerador_pdf.curriculo_recebido.obter_secao(TipoSecao.EXPERIENCIAS)
+        assert TipoSecao.EXPERIENCIAS not in [
+            secao.tipo for secao in resultado.rascunho.secoes
+        ]
+        assert [
+            (experiencia.cargo, experiencia.empresa, experiencia.conquistas, experiencia.contexto)
+            for experiencia in resultado.rascunho.experiencias
+        ] == [
+            (
+                "Engenheira de Software",
+                "Starian",
+                ("[AJUSTADA] Desenvolvi APIs em Python.",),
+                "Contexto de Starian.",
+            ),
+            (
+                "Desenvolvedora Backend",
+                "TechCorp",
+                ("[AJUSTADA] Mantive serviços em Go.",),
+                "Contexto de TechCorp.",
+            ),
+        ]
+        secao = resultado.rascunho.para_curriculo("pt").obter_secao(TipoSecao.EXPERIENCIAS)
         assert secao.titulo == "Experiências"
         assert "Engenheira de Software — Starian (2021-2024)" in secao.conteudo
         assert "Desenvolvedora Backend — TechCorp (2019-2021)" in secao.conteudo
         assert "[AJUSTADA] Desenvolvi APIs em Python." in secao.conteudo
         assert "[AJUSTADA] Mantive serviços em Go." in secao.conteudo
+        assert "\nContexto: Contexto de Starian." in secao.conteudo
+        assert "\nContexto: Contexto de TechCorp." in secao.conteudo
 
     def test_jev_indisponivel_nas_experiencias_marca_cada_resultado(self):
         avaliador_experiencia = AvaliadorExperienciaFake(
@@ -551,7 +555,6 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
                 AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
             ),
             AjustadorTextoFake(),
-            GeradorPdfFake(),
             avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga()),
             ajustador_experiencia=AjustadorExperienciaFake(),
             avaliador_experiencia=avaliador_experiencia,
@@ -559,7 +562,7 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
 
         resultado = caso_de_uso.executar(_input_estruturado())
 
-        assert resultado.pdf_bytes == b"%PDF-FAKE-CONTENT"
+        assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
         assert len(resultado.avaliacoes_experiencias) == 2
         assert all(
             item.status == StatusAvaliacaoAutomatica.INDISPONIVEL
@@ -578,7 +581,6 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
                 AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")
             ),
             ajustador_texto,
-            GeradorPdfFake(),
             avaliador_descricao_vaga=AvaliadorDescricaoVagaFake(_avaliacao_vaga()),
             ajustador_experiencia=AjustadorExperienciaFake(),
             avaliador_experiencia=avaliador_experiencia,

@@ -10,8 +10,19 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from jobsync.curriculo import (
     AvaliacaoExperiencia,
+    ContextoVaga,
     Curriculo,
+    ExperienciaAdaptada,
     ExperienciaParaAvaliacao,
+    RascunhoCurriculoAdaptado,
+    TipoSecao,
+)
+from jobsync.curriculo.domain.rascunho_curriculo_adaptado import (
+    TITULO_EXPERIENCIAS_PADRAO,
+    ExperienciaEditada,
+)
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada.validator import (
+    MENSAGEM_SEM_CONTEUDO,
 )
 from jobsync.curriculo.service_layer.avaliar_experiencia.dtos import (
     AvaliarExperienciaInputDto,
@@ -21,6 +32,10 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
     AdaptarCurriculoParaVagaInputDto,
     AdaptarCurriculoParaVagaOutputDto,
     StatusAvaliacaoAutomatica,
+)
+from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
+    GerarPdfCurriculoRevisadoInputDto,
+    GerarPdfCurriculoRevisadoOutputDto,
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga.dtos import (
     AnalisarAtsVagaInputDto,
@@ -33,7 +48,7 @@ from jobsync.curriculo_salvo.service_layer.salvar_curriculo.dtos import (
 from jobsync.entrypoints.api.schemas.avaliacao import (
     ResultadoDimensaoAvaliacaoResponse,
 )
-from jobsync.entrypoints.api.schemas.vaga import AvaliacaoDescricaoVagaResponse
+from jobsync.entrypoints.api.schemas.vaga import AnaliseVagaSchema, AvaliacaoDescricaoVagaResponse
 
 
 class CurriculoSalvarRequest(BaseModel):
@@ -271,12 +286,9 @@ class AvaliacaoExperienciaAdaptadaResponse(BaseModel):
         )
 
 
-class AdaptarCurriculoResponse(BaseModel):
-    """Resultado da adaptação de um currículo para uma vaga."""
+class AvaliacoesAdaptacaoResponse(BaseModel):
+    """Avaliações automáticas produzidas junto com a adaptação do currículo."""
 
-    nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
-    pdf_base64: str = Field(description="PDF do currículo adaptado codificado em base64.")
-    nome_completo: str = Field(description="Nome completo do candidato extraído do currículo.")
     avaliacao_vaga: AvaliacaoDescricaoVagaResponse | None = Field(
         default=None,
         description="Avaliação automática da vaga; nula se o Jev estiver indisponível.",
@@ -290,26 +302,240 @@ class AdaptarCurriculoResponse(BaseModel):
         description="Avaliação Jev de cada experiência de um perfil estruturado.",
     )
 
-    @classmethod
-    def from_dto(cls, dto: AdaptarCurriculoParaVagaOutputDto) -> AdaptarCurriculoResponse:
-        return cls(
-            nome_arquivo=dto.nome_arquivo.valor,
-            pdf_base64=base64.b64encode(dto.pdf_bytes).decode(),
-            nome_completo=dto.curriculo_adaptado.nome_completo,
-            avaliacao_vaga=(
+    @staticmethod
+    def _campos_de_avaliacao(dto: AdaptarCurriculoParaVagaOutputDto) -> dict:
+        return {
+            "avaliacao_vaga": (
                 AvaliacaoDescricaoVagaResponse.from_domain(dto.avaliacao_vaga)
                 if dto.avaliacao_vaga is not None
                 else None
             ),
-            status_avaliacao_vaga=(
+            "status_avaliacao_vaga": (
                 dto.status_avaliacao_vaga.value
                 if dto.status_avaliacao_vaga is not None
                 else None
             ),
-            avaliacoes_experiencias=[
+            "avaliacoes_experiencias": [
                 AvaliacaoExperienciaAdaptadaResponse.from_dto(resultado)
                 for resultado in dto.avaliacoes_experiencias
             ],
+        }
+
+
+class AdaptarCurriculoResponse(AvaliacoesAdaptacaoResponse):
+    """Resultado da adaptação de um currículo para uma vaga, já com o PDF (fluxo legado)."""
+
+    nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
+    pdf_base64: str = Field(description="PDF do currículo adaptado codificado em base64.")
+    nome_completo: str = Field(description="Nome completo do candidato extraído do currículo.")
+
+    @classmethod
+    def from_dto(
+        cls,
+        dto: AdaptarCurriculoParaVagaOutputDto,
+        pdf: GerarPdfCurriculoRevisadoOutputDto,
+    ) -> AdaptarCurriculoResponse:
+        return cls(
+            nome_arquivo=pdf.nome_arquivo.valor,
+            pdf_base64=base64.b64encode(pdf.pdf_bytes).decode(),
+            nome_completo=dto.rascunho.nome_completo,
+            **cls._campos_de_avaliacao(dto),
+        )
+
+
+TipoSecaoNome = Literal[
+    "TECNOLOGIAS", "PERFIL", "EXPERIENCIAS", "FORMACAO", "CERTIFICACOES", "IDIOMAS"
+]
+
+
+class SecaoRascunhoSchema(BaseModel):
+    """Seção de texto do rascunho; conteúdo vazio remove a seção do PDF."""
+
+    tipo: TipoSecaoNome = Field(description="Tipo da seção do currículo.")
+    titulo: str = Field(description="Título da seção, vindo da adaptação.")
+    conteudo: str = Field(description="Conteúdo da seção, editável na revisão.")
+
+
+class ExperienciaAdaptadaSchema(BaseModel):
+    """Experiência adaptada, com conquistas e contexto, no rascunho e nas sugestões de IA.
+
+    Campos desconhecidos são rejeitados: um cliente com o formato antigo (`descricao`) recebe
+    422 em vez de ter o conteúdo da experiência ignorado em silêncio.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    cargo: str = Field(default="", description="Cargo da experiência.")
+    empresa: str = Field(default="", description="Empresa da experiência.")
+    periodo: str = Field(default="", description="Período da experiência.")
+    conquistas: list[str] = Field(
+        default_factory=list, description="Conquistas da experiência, uma por item."
+    )
+    contexto: str = Field(
+        default="", description="Parágrafo de contexto sobre a empresa, a área e o papel."
+    )
+
+    @classmethod
+    def from_domain(cls, experiencia: ExperienciaAdaptada) -> ExperienciaAdaptadaSchema:
+        return cls(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            conquistas=list(experiencia.conquistas),
+            contexto=experiencia.contexto,
+        )
+
+    def como_editada(self) -> ExperienciaEditada:
+        """Experiência como o usuário a editou, para o rascunho descartar o que ficou em branco."""
+        return (self.cargo, self.empresa, self.periodo, self.conquistas, self.contexto)
+
+    def to_domain(self) -> ExperienciaAdaptada:
+        """Converte para o domínio; levanta ValueError se faltar cargo, empresa ou conteúdo."""
+        experiencia = ExperienciaAdaptada.revisada(*self.como_editada())
+        if experiencia is None or not experiencia.tem_conteudo:
+            raise ValueError(MENSAGEM_SEM_CONTEUDO)
+        return experiencia
+
+
+class RascunhoCurriculoAdaptadoSchema(BaseModel):
+    """Rascunho do currículo adaptado, revisado pelo usuário antes do PDF."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "nome_completo": "Ana Souza",
+                "email": "ana@ex.com",
+                "linkedin": "https://linkedin.com/in/ana",
+                "secoes": [{"tipo": "PERFIL", "titulo": "Perfil", "conteudo": "Engenheira backend."}],
+                "experiencias": [
+                    {
+                        "cargo": "Dev Backend",
+                        "empresa": "TechCorp",
+                        "periodo": "2022 - Atual",
+                        "descricao": "Desenvolvi APIs em Python.",
+                    }
+                ],
+                "titulo_experiencias": "Experiências",
+            }
+        }
+    )
+
+    nome_completo: str = Field(description="Nome completo do candidato.")
+    email: str = Field(default="", description="E-mail do candidato.")
+    linkedin: str = Field(default="", description="LinkedIn do candidato.")
+    secoes: list[SecaoRascunhoSchema] = Field(description="Seções de texto do currículo.")
+    experiencias: list[ExperienciaAdaptadaSchema] | None = Field(
+        default=None,
+        description=(
+            "Experiências estruturadas; nulo quando a fonte é um PDF "
+            "(as experiências vêm na seção EXPERIENCIAS)."
+        ),
+    )
+    titulo_experiencias: str = Field(
+        default=TITULO_EXPERIENCIAS_PADRAO,
+        description="Título da seção de experiências estruturadas.",
+    )
+
+    @classmethod
+    def from_domain(cls, rascunho: RascunhoCurriculoAdaptado) -> RascunhoCurriculoAdaptadoSchema:
+        return cls(
+            nome_completo=rascunho.nome_completo,
+            email=rascunho.email,
+            linkedin=rascunho.linkedin,
+            secoes=[
+                SecaoRascunhoSchema(
+                    tipo=secao.tipo.name, titulo=secao.titulo, conteudo=secao.conteudo
+                )
+                for secao in rascunho.secoes
+            ],
+            experiencias=(
+                None
+                if rascunho.experiencias is None
+                else [
+                    ExperienciaAdaptadaSchema.from_domain(experiencia)
+                    for experiencia in rascunho.experiencias
+                ]
+            ),
+            titulo_experiencias=rascunho.titulo_experiencias,
+        )
+
+    def to_domain(self) -> RascunhoCurriculoAdaptado:
+        """Converte para o domínio; levanta ValueError se o rascunho for inválido."""
+        return RascunhoCurriculoAdaptado.revisado(
+            nome_completo=self.nome_completo,
+            email=self.email,
+            linkedin=self.linkedin,
+            secoes=[
+                (TipoSecao[secao.tipo], secao.titulo, secao.conteudo)
+                for secao in self.secoes
+            ],
+            experiencias=(
+                None
+                if self.experiencias is None
+                else [experiencia.como_editada() for experiencia in self.experiencias]
+            ),
+            titulo_experiencias=self.titulo_experiencias,
+        )
+
+
+class RascunhoAdaptadoResponse(AvaliacoesAdaptacaoResponse):
+    """Rascunho adaptado pela IA, ainda sem PDF, para revisão do usuário."""
+
+    rascunho: RascunhoCurriculoAdaptadoSchema = Field(
+        description="Conteúdo adaptado, organizado por seção, para revisão."
+    )
+    analise_vaga: AnaliseVagaSchema = Field(
+        description=(
+            "Análise da vaga usada na adaptação; o cliente a reenvia nos pedidos de "
+            "sugestão para evitar uma nova análise por IA."
+        )
+    )
+
+    @classmethod
+    def from_dto(cls, dto: AdaptarCurriculoParaVagaOutputDto) -> RascunhoAdaptadoResponse:
+        return cls(
+            rascunho=RascunhoCurriculoAdaptadoSchema.from_domain(dto.rascunho),
+            analise_vaga=AnaliseVagaSchema.from_domain(dto.analise_vaga),
+            **cls._campos_de_avaliacao(dto),
+        )
+
+
+class GerarPdfCurriculoRevisadoRequest(BaseModel):
+    """Payload para gerar o PDF a partir do rascunho revisado e confirmado."""
+
+    rascunho: RascunhoCurriculoAdaptadoSchema = Field(
+        description="Rascunho no estado em que o usuário confirmou."
+    )
+    idioma_alvo: str = Field(description="Idioma de destino do currículo.")
+    cargo_alvo: str = Field(description="Cargo alvo (usado no nome do arquivo).")
+    empresa_alvo: str = Field(description="Empresa alvo (usada no nome do arquivo).")
+    data_referencia: date | None = Field(
+        default=None,
+        description="Data de referência para composição do nome do arquivo.",
+    )
+
+    def to_dto(self) -> GerarPdfCurriculoRevisadoInputDto:
+        """Converte para o DTO; levanta ValueError se o rascunho for inválido."""
+        return GerarPdfCurriculoRevisadoInputDto(
+            rascunho=self.rascunho.to_domain(),
+            idioma_alvo=self.idioma_alvo,
+            cargo_alvo=self.cargo_alvo,
+            empresa_alvo=self.empresa_alvo,
+            data_referencia=self.data_referencia,
+        )
+
+
+class CurriculoRevisadoResponse(BaseModel):
+    """PDF gerado a partir do rascunho revisado."""
+
+    nome_arquivo: str = Field(description="Nome padronizado do PDF gerado.")
+    pdf_base64: str = Field(description="PDF do currículo revisado codificado em base64.")
+
+    @classmethod
+    def from_dto(cls, dto: GerarPdfCurriculoRevisadoOutputDto) -> CurriculoRevisadoResponse:
+        return cls(
+            nome_arquivo=dto.nome_arquivo.valor,
+            pdf_base64=base64.b64encode(dto.pdf_bytes).decode(),
         )
 
 
@@ -476,3 +702,83 @@ class AvaliarExperienciaRequest(BaseModel):
             experiencia=self.experiencia.to_domain(),
             descricao_vaga=self.descricao_vaga,
         )
+
+
+class ContextoVagaSchema(BaseModel):
+    """Contexto da vaga-alvo; presente na revisão do currículo adaptado, ausente em Meu perfil."""
+
+    descricao_vaga: str = Field(description="Texto completo da descrição da vaga.")
+    idioma_alvo: str = Field(description="Idioma de destino do currículo (pt ou en).")
+    analise_vaga: AnaliseVagaSchema = Field(
+        description="Análise da vaga devolvida junto com o rascunho."
+    )
+
+    def to_domain(self) -> ContextoVaga:
+        """Converte para o domínio; levanta ValueError se o contexto for inválido."""
+        return ContextoVaga(
+            descricao_vaga=self.descricao_vaga,
+            idioma_alvo=self.idioma_alvo,
+            analise_vaga=self.analise_vaga.to_domain(),
+        )
+
+
+class SugerirAjusteSecaoRequest(BaseModel):
+    """Pedido de sugestão de IA para uma seção de texto, a partir do texto atual do campo."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "secao": {"tipo": "PERFIL", "titulo": "Perfil", "conteudo": "Engenheira backend."}
+            }
+        }
+    )
+
+    secao: SecaoRascunhoSchema = Field(description="Seção com o texto atual, incluindo edições.")
+    contexto_vaga: ContextoVagaSchema | None = Field(
+        default=None,
+        description="Contexto da vaga; sem ele, a IA apenas melhora a escrita.",
+    )
+
+
+class SugerirAjusteSecaoResponse(BaseModel):
+    """Texto sugerido para a seção; nada é alterado ou persistido."""
+
+    conteudo_sugerido: str = Field(description="Nova versão do conteúdo da seção.")
+
+
+class SugerirAjusteExperienciaRequest(BaseModel):
+    """Pedido de sugestão de IA para uma experiência do perfil, a partir da descrição atual.
+
+    Sem vaga: a IA só melhora a escrita. Com vaga, use POST /v1/experiencias-adaptadas/sugestoes.
+    Campos desconhecidos (como `contexto_vaga`) são rejeitados em vez de ignorados.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    experiencia: ExperienciaParaAvaliacaoRequest = Field(
+        description="Experiência com a descrição atual, incluindo edições."
+    )
+
+
+class SugerirAjusteExperienciaResponse(BaseModel):
+    """Descrição sugerida; cargo, empresa e período não são alterados."""
+
+    descricao_sugerida: str = Field(description="Nova versão da descrição da experiência.")
+
+
+class SugerirAjusteExperienciaAdaptadaRequest(BaseModel):
+    """Pedido de sugestão de IA para as conquistas e o contexto de uma experiência, com a vaga."""
+
+    experiencia: ExperienciaAdaptadaSchema = Field(
+        description="Experiência com as conquistas e o contexto atuais, incluindo edições."
+    )
+    contexto_vaga: ContextoVagaSchema = Field(
+        description="Vaga que orienta a sugestão: descrição, idioma e análise devolvida com o rascunho."
+    )
+
+
+class SugerirAjusteExperienciaAdaptadaResponse(BaseModel):
+    """Conquistas e contexto sugeridos; cargo, empresa e período não são alterados."""
+
+    conquistas: list[str] = Field(description="Conquistas sugeridas, uma por item.")
+    contexto: str = Field(description="Contexto sugerido.")

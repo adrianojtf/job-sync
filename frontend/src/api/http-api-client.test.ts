@@ -210,6 +210,178 @@ describe("HttpApiClient", () => {
     expect(avaliacao.score).toBe(80);
   });
 
+  it("gera o rascunho adaptado pela rota de IA, sem PDF", async () => {
+    let caminho = "";
+    servidorApi.use(
+      http.post(`${BASE}/v1/curriculos/:id/rascunhos-adaptados`, ({ request }) => {
+        caminho = new URL(request.url).pathname;
+        return HttpResponse.json({
+          rascunho: { nome_completo: "Ana", secoes: [], experiencias: null },
+        });
+      }),
+    );
+
+    const resposta = await criarCliente().gerarRascunhoAdaptado("perfil-estruturado", {
+      descricao_vaga: "Vaga",
+      idioma_alvo: "pt",
+      cargo_alvo: "Dev",
+      empresa_alvo: "TechCorp",
+      perfil_identificador: "ana",
+    });
+
+    expect(caminho).toBe("/v1/curriculos/perfil-estruturado/rascunhos-adaptados");
+    expect(resposta.rascunho.nome_completo).toBe("Ana");
+  });
+
+  it("envia o rascunho revisado para gerar o PDF", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/curriculos-revisados`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ nome_arquivo: "Ana.pdf", pdf_base64: "JVBERg==" });
+      }),
+    );
+    const dados = {
+      rascunho: { nome_completo: "Ana Editada", secoes: [], experiencias: null },
+      idioma_alvo: "pt",
+      cargo_alvo: "Dev",
+      empresa_alvo: "TechCorp",
+    };
+
+    const resposta = await criarCliente().gerarPdfCurriculoRevisado(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.nome_arquivo).toBe("Ana.pdf");
+  });
+
+  it("pede sugestão de seção pela rota de IA e devolve o texto sugerido", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ conteudo_sugerido: "Texto novo." });
+      }),
+    );
+    const dados = { secao: { tipo: "PERFIL" as const, titulo: "Perfil", conteudo: "Texto." } };
+
+    const resposta = await criarCliente().sugerirAjusteSecao(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.conteudo_sugerido).toBe("Texto novo.");
+  });
+
+  it("pede sugestão de experiência e devolve a descrição sugerida", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ descricao_sugerida: "Descrição nova." });
+      }),
+    );
+    const dados = {
+      experiencia: { cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "Antiga." },
+    };
+
+    const resposta = await criarCliente().sugerirAjusteExperiencia(dados);
+
+    expect(corpoRecebido).toEqual(dados);
+    expect(resposta.descricao_sugerida).toBe("Descrição nova.");
+  });
+
+  it("usa o timeout longo nas sugestões de IA", async () => {
+    servidorApi.use(
+      http.post(`${BASE}/v1/secoes-curriculo/sugestoes`, async () => {
+        await delay(60);
+        return HttpResponse.json({ conteudo_sugerido: "ok" });
+      }),
+    );
+
+    const resposta = await criarCliente({
+      timeoutPadraoMs: 20,
+      timeoutIaMs: 500,
+    }).sugerirAjusteSecao({
+      secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Texto." },
+    });
+
+    expect(resposta.conteudo_sugerido).toBe("ok");
+  });
+
+  describe("sugestão de experiência adaptada", () => {
+    const dados = {
+      experiencia: {
+        cargo: "Dev",
+        empresa: "TechCorp",
+        periodo: "2024",
+        conquistas: ["Criei APIs.", "Reduzi custos."],
+        contexto: "Empresa de pagamentos.",
+      },
+      contexto_vaga: {
+        descricao_vaga: "Vaga Java",
+        idioma_alvo: "en",
+        analise_vaga: { requisitos: [], ambiguidade: [], texto_original: "Vaga Java" },
+      },
+    };
+
+    it("envia as conquistas, o contexto e a vaga e devolve os textos refinados", async () => {
+      let corpoRecebido: unknown;
+      servidorApi.use(
+        http.post(`${BASE}/v1/experiencias-adaptadas/sugestoes`, async ({ request }) => {
+          corpoRecebido = await request.json();
+          return HttpResponse.json({
+            conquistas: ["Desenvolvi APIs REST."],
+            contexto: "Plataforma de pagamentos.",
+          });
+        }),
+      );
+
+      const resposta = await criarCliente().sugerirAjusteExperienciaAdaptada(dados);
+
+      expect(corpoRecebido).toEqual(dados);
+      expect(resposta).toEqual({
+        conquistas: ["Desenvolvi APIs REST."],
+        contexto: "Plataforma de pagamentos.",
+      });
+    });
+
+    it("usa o timeout longo das rotas de IA", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/experiencias-adaptadas/sugestoes`, async () => {
+          await delay(60);
+          return HttpResponse.json({ conquistas: ["ok"], contexto: "" });
+        }),
+      );
+
+      const resposta = await criarCliente({
+        timeoutPadraoMs: 20,
+        timeoutIaMs: 500,
+      }).sugerirAjusteExperienciaAdaptada(dados);
+
+      expect(resposta.conquistas).toEqual(["ok"]);
+    });
+
+    it("traz a mensagem do servidor quando a IA está indisponível", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/experiencias-adaptadas/sugestoes`, () =>
+          HttpResponse.json(
+            {
+              type: "t",
+              title: "Sugestão de IA indisponível",
+              status: 502,
+              detail: "O serviço de sugestões de IA está indisponível.",
+              instance: "i",
+            },
+            { status: 502 },
+          ),
+        ),
+      );
+
+      const erro = await capturarErro(criarCliente().sugerirAjusteExperienciaAdaptada(dados));
+
+      expect(erro.status).toBe(502);
+      expect(erro.message).toBe("O serviço de sugestões de IA está indisponível.");
+    });
+  });
+
   it("move a candidatura enviando o novo status", async () => {
     let corpoRecebido: unknown;
     servidorApi.use(

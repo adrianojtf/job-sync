@@ -356,7 +356,15 @@ class SecaoRascunhoSchema(BaseModel):
     conteudo: str = Field(description="Conteúdo da seção, editável na revisão.")
 
 
-class _CamposExperienciaAdaptada(BaseModel):
+class ExperienciaAdaptadaSchema(BaseModel):
+    """Experiência adaptada, com conquistas e contexto, no rascunho e nas sugestões de IA.
+
+    Campos desconhecidos são rejeitados: um cliente com o formato antigo (`descricao`) recebe
+    422 em vez de ter o conteúdo da experiência ignorado em silêncio.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     cargo: str = Field(default="", description="Cargo da experiência.")
     empresa: str = Field(default="", description="Empresa da experiência.")
     periodo: str = Field(default="", description="Período da experiência.")
@@ -366,10 +374,6 @@ class _CamposExperienciaAdaptada(BaseModel):
     contexto: str = Field(
         default="", description="Parágrafo de contexto sobre a empresa, a área e o papel."
     )
-
-
-class ExperienciaAdaptadaSchema(_CamposExperienciaAdaptada):
-    """Experiência adaptada (conquistas e contexto), como a recebem as sugestões de IA."""
 
     @classmethod
     def from_domain(cls, experiencia: ExperienciaAdaptada) -> ExperienciaAdaptadaSchema:
@@ -381,45 +385,16 @@ class ExperienciaAdaptadaSchema(_CamposExperienciaAdaptada):
             contexto=experiencia.contexto,
         )
 
+    def como_editada(self) -> ExperienciaEditada:
+        """Experiência como o usuário a editou, para o rascunho descartar o que ficou em branco."""
+        return (self.cargo, self.empresa, self.periodo, self.conquistas, self.contexto)
+
     def to_domain(self) -> ExperienciaAdaptada:
         """Converte para o domínio; levanta ValueError se faltar cargo, empresa ou conteúdo."""
-        experiencia = ExperienciaAdaptada.revisada(
-            self.cargo, self.empresa, self.periodo, self.conquistas, self.contexto
-        )
+        experiencia = ExperienciaAdaptada.revisada(*self.como_editada())
         if experiencia is None or not experiencia.tem_conteudo:
             raise ValueError(MENSAGEM_SEM_CONTEUDO)
         return experiencia
-
-
-class ExperienciaRascunhoSchema(_CamposExperienciaAdaptada):
-    """Experiência estruturada do rascunho (fonte: perfil estruturado)."""
-
-    descricao: str | None = Field(
-        default=None,
-        description=(
-            "Legado: conquistas e contexto em texto, uma conquista por linha. Só vale na "
-            "entrada quando `conquistas` e `contexto` não vêm; use esses campos."
-        ),
-    )
-
-    @classmethod
-    def from_domain(cls, experiencia: ExperienciaAdaptada) -> ExperienciaRascunhoSchema:
-        return cls(
-            cargo=experiencia.cargo,
-            empresa=experiencia.empresa,
-            periodo=experiencia.periodo,
-            conquistas=list(experiencia.conquistas),
-            contexto=experiencia.contexto,
-            descricao=experiencia.como_descricao(),
-        )
-
-    def como_editada(self) -> ExperienciaEditada:
-        """Experiência como o usuário a editou, preferindo conquistas e contexto à descrição legada."""
-        sem_campos_novos = not any(c.strip() for c in self.conquistas) and not self.contexto.strip()
-        if self.descricao is not None and sem_campos_novos:
-            conquistas = ExperienciaAdaptada.conquistas_de_descricao(self.descricao)
-            return (self.cargo, self.empresa, self.periodo, conquistas, "")
-        return (self.cargo, self.empresa, self.periodo, self.conquistas, self.contexto)
 
 
 class RascunhoCurriculoAdaptadoSchema(BaseModel):
@@ -449,7 +424,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
     email: str = Field(default="", description="E-mail do candidato.")
     linkedin: str = Field(default="", description="LinkedIn do candidato.")
     secoes: list[SecaoRascunhoSchema] = Field(description="Seções de texto do currículo.")
-    experiencias: list[ExperienciaRascunhoSchema] | None = Field(
+    experiencias: list[ExperienciaAdaptadaSchema] | None = Field(
         default=None,
         description=(
             "Experiências estruturadas; nulo quando a fonte é um PDF "
@@ -477,7 +452,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 None
                 if rascunho.experiencias is None
                 else [
-                    ExperienciaRascunhoSchema.from_domain(experiencia)
+                    ExperienciaAdaptadaSchema.from_domain(experiencia)
                     for experiencia in rascunho.experiencias
                 ]
             ),
@@ -772,18 +747,16 @@ class SugerirAjusteSecaoResponse(BaseModel):
 
 
 class SugerirAjusteExperienciaRequest(BaseModel):
-    """Pedido de sugestão de IA para uma experiência, a partir da descrição atual."""
+    """Pedido de sugestão de IA para uma experiência do perfil, a partir da descrição atual.
+
+    Sem vaga: a IA só melhora a escrita. Com vaga, use POST /v1/experiencias-adaptadas/sugestoes.
+    Campos desconhecidos (como `contexto_vaga`) são rejeitados em vez de ignorados.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     experiencia: ExperienciaParaAvaliacaoRequest = Field(
         description="Experiência com a descrição atual, incluindo edições."
-    )
-    contexto_vaga: ContextoVagaSchema | None = Field(
-        default=None,
-        description=(
-            "Contexto da vaga; sem ele, a IA apenas melhora a escrita. Legado para pedidos com "
-            "vaga: use POST /v1/experiencias-adaptadas/sugestoes, que trabalha com conquistas "
-            "e contexto."
-        ),
     )
 
 

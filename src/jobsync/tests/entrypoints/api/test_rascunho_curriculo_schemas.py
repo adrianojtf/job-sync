@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from pydantic import ValidationError
 
 from jobsync.curriculo import (
     ExperienciaAdaptada,
@@ -14,7 +15,6 @@ from jobsync.curriculo import (
 )
 from jobsync.entrypoints.api.schemas.curriculo import (
     ExperienciaAdaptadaSchema,
-    ExperienciaRascunhoSchema,
     GerarPdfCurriculoRevisadoRequest,
     RascunhoCurriculoAdaptadoSchema,
     SecaoRascunhoSchema,
@@ -45,48 +45,6 @@ class TestRascunhoCurriculoAdaptadoSchema:
         assert schema.secoes[0].tipo == "PERFIL"
         assert schema.to_domain() == rascunho
 
-    def test_descricao_da_experiencia_mostra_uma_conquista_por_linha_sem_marcadores(self):
-        rascunho = RascunhoCurriculoAdaptado(
-            nome_completo="Ana Souza",
-            email="",
-            linkedin="",
-            secoes=(),
-            experiencias=(
-                ExperienciaAdaptada(
-                    cargo="Dev",
-                    empresa="TechCorp",
-                    periodo="",
-                    conquistas=("Criei APIs.", "Reduzi custos."),
-                ),
-            ),
-        )
-
-        schema = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho)
-
-        assert schema.experiencias[0].descricao == "Criei APIs.\nReduzi custos."
-        assert schema.to_domain() == rascunho
-
-    def test_descricao_da_experiencia_nao_perde_o_contexto_gerado_pela_ia(self):
-        rascunho = RascunhoCurriculoAdaptado(
-            nome_completo="Ana Souza",
-            email="",
-            linkedin="",
-            secoes=(),
-            experiencias=(
-                ExperienciaAdaptada(
-                    cargo="Dev",
-                    empresa="TechCorp",
-                    periodo="",
-                    conquistas=("Criei APIs.",),
-                    contexto="Empresa de pagamentos.",
-                ),
-            ),
-        )
-
-        schema = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho)
-
-        assert schema.experiencias[0].descricao == "Criei APIs.\nEmpresa de pagamentos."
-
     def test_rascunho_de_fonte_pdf_tem_experiencias_nulas(self):
         rascunho = RascunhoCurriculoAdaptado(
             nome_completo="Ana Souza",
@@ -107,7 +65,7 @@ class TestRascunhoCurriculoAdaptadoSchema:
                 SecaoRascunhoSchema(tipo="PERFIL", titulo="Perfil", conteudo="Resumo."),
                 SecaoRascunhoSchema(tipo="IDIOMAS", titulo="Idiomas", conteudo="  "),
             ],
-            experiencias=[ExperienciaRascunhoSchema()],
+            experiencias=[ExperienciaAdaptadaSchema()],
         )
 
         rascunho = schema.to_domain()
@@ -176,7 +134,7 @@ class TestExperienciaDoRascunhoComConquistasEContexto:
 
         assert experiencia.conquistas == ["Criei APIs.", "Reduzi custos."]
         assert experiencia.contexto == "Empresa de pagamentos."
-        assert experiencia.descricao == "Criei APIs.\nReduzi custos.\nEmpresa de pagamentos."
+        assert "descricao" not in experiencia.model_dump()
 
     def test_ida_e_volta_preserva_conquistas_e_contexto(self):
         rascunho = RascunhoCurriculoAdaptado(
@@ -218,19 +176,9 @@ class TestExperienciaDoRascunhoComConquistasEContexto:
         assert rascunho.experiencias[0].conquistas == ()
         assert rascunho.experiencias[0].contexto == "Empresa de pagamentos."
 
-    def test_to_domain_ainda_aceita_a_descricao_legada_quando_nao_ha_conquistas_nem_contexto(self):
-        rascunho = _rascunho_schema(descricao="- Criei APIs.\nReduzi custos.").to_domain()
-
-        assert rascunho.experiencias[0].conquistas == ("Criei APIs.", "Reduzi custos.")
-        assert rascunho.experiencias[0].contexto == ""
-
-    def test_conquistas_e_contexto_prevalecem_sobre_a_descricao_legada(self):
-        rascunho = _rascunho_schema(
-            descricao="Texto antigo.", conquistas=["Criei APIs."], contexto="Contexto novo."
-        ).to_domain()
-
-        assert rascunho.experiencias[0].conquistas == ("Criei APIs.",)
-        assert rascunho.experiencias[0].contexto == "Contexto novo."
+    def test_descricao_legada_e_rejeitada_em_vez_de_ignorada(self):
+        with pytest.raises(ValidationError, match="descricao"):
+            _rascunho_schema(descricao="- Criei APIs.")
 
 
 class TestExperienciaAdaptadaSchema:
@@ -265,3 +213,9 @@ class TestExperienciaAdaptadaSchema:
             "conquistas": ["A.", "B."],
             "contexto": "C.",
         }
+
+    def test_campo_desconhecido_e_rejeitado(self):
+        with pytest.raises(ValidationError, match="descricao"):
+            ExperienciaAdaptadaSchema.model_validate(
+                {"cargo": "Dev", "empresa": "TechCorp", "descricao": "texto antigo"}
+            )

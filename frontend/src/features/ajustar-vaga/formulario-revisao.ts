@@ -24,7 +24,7 @@ const TITULO_PERFIL_PADRAO = "Perfil";
  * cadastro; as experiências ficam estruturadas quando a fonte é o perfil; o resto é texto.
  */
 export interface FormularioRevisao extends DadosPessoaisFormulario {
-  experiencias: ExperienciaFormulario[];
+  experiencias: ExperienciaAdaptadaFormulario[];
   secoes: SecaoRascunho[];
 }
 
@@ -34,12 +34,7 @@ export function rascunhoParaFormulario(rascunho: RascunhoCurriculoAdaptado): For
     email: rascunho.email ?? "",
     linkedin: rascunho.linkedin ?? "",
     resumo_profissional: secaoPerfil(rascunho)?.conteudo ?? "",
-    experiencias: (rascunho.experiencias ?? []).map((experiencia) => ({
-      cargo: experiencia.cargo ?? "",
-      empresa: experiencia.empresa ?? "",
-      periodo: experiencia.periodo ?? "",
-      descricao: experiencia.descricao ?? "",
-    })),
+    experiencias: (rascunho.experiencias ?? []).map(experienciaAdaptadaParaFormulario),
     secoes: ORDEM_SECOES_TEXTO.flatMap((tipo) =>
       rascunho.secoes.filter((secao) => secao.tipo === tipo).map((secao) => ({ ...secao })),
     ),
@@ -67,12 +62,7 @@ export function formularioParaRascunho(
     experiencias:
       original.experiencias == null
         ? null
-        : formulario.experiencias.map((experiencia) => ({
-            cargo: experiencia.cargo.trim(),
-            empresa: experiencia.empresa.trim(),
-            periodo: experiencia.periodo.trim(),
-            descricao: experiencia.descricao.trim(),
-          })),
+        : formulario.experiencias.map(formularioParaExperienciaAdaptada),
   };
 }
 

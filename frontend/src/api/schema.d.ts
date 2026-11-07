@@ -243,7 +243,7 @@ export interface paths {
         put?: never;
         /**
          * Sugerir ajuste de uma experiência
-         * @description Sugere, via IA, uma nova descrição para uma experiência profissional. Com contexto de vaga adapta o texto à vaga; sem ele, melhora a escrita. Cargo, empresa e período não são alterados, e nada é persistido.
+         * @description Sugere, via IA, uma nova descrição para uma experiência do perfil, melhorando a escrita sem vaga-alvo. Para adaptar à vaga, use POST /v1/experiencias-adaptadas/sugestoes. Cargo, empresa e período não são alterados, e nada é persistido.
          */
         post: operations["sugerir_ajuste_experiencia_v1_experiencias_profissionais_sugestoes_post"];
         delete?: never;
@@ -1269,7 +1269,10 @@ export interface components {
         };
         /**
          * ExperienciaAdaptadaSchema
-         * @description Experiência adaptada (conquistas e contexto), como a recebem as sugestões de IA.
+         * @description Experiência adaptada, com conquistas e contexto, no rascunho e nas sugestões de IA.
+         *
+         *     Campos desconhecidos são rejeitados: um cliente com o formato antigo (`descricao`) recebe
+         *     422 em vez de ter o conteúdo da experiência ignorado em silêncio.
          */
         ExperienciaAdaptadaSchema: {
             /**
@@ -1408,46 +1411,6 @@ export interface components {
              * @description Descrição das atividades e responsabilidades do cargo.
              */
             descricao: string;
-        };
-        /**
-         * ExperienciaRascunhoSchema
-         * @description Experiência estruturada do rascunho (fonte: perfil estruturado).
-         */
-        ExperienciaRascunhoSchema: {
-            /**
-             * Cargo
-             * @description Cargo da experiência.
-             * @default
-             */
-            cargo?: string;
-            /**
-             * Empresa
-             * @description Empresa da experiência.
-             * @default
-             */
-            empresa?: string;
-            /**
-             * Periodo
-             * @description Período da experiência.
-             * @default
-             */
-            periodo?: string;
-            /**
-             * Conquistas
-             * @description Conquistas da experiência, uma por item.
-             */
-            conquistas?: string[];
-            /**
-             * Contexto
-             * @description Parágrafo de contexto sobre a empresa, a área e o papel.
-             * @default
-             */
-            contexto?: string;
-            /**
-             * Descricao
-             * @description Legado: conquistas e contexto em texto, uma conquista por linha. Só vale na entrada quando `conquistas` e `contexto` não vêm; use esses campos.
-             */
-            descricao?: string | null;
         };
         /**
          * FormacaoAcademicaRequest
@@ -1930,7 +1893,7 @@ export interface components {
              * Experiencias
              * @description Experiências estruturadas; nulo quando a fonte é um PDF (as experiências vêm na seção EXPERIENCIAS).
              */
-            experiencias?: components["schemas"]["ExperienciaRascunhoSchema"][] | null;
+            experiencias?: components["schemas"]["ExperienciaAdaptadaSchema"][] | null;
             /**
              * Titulo Experiencias
              * @description Título da seção de experiências estruturadas.
@@ -2071,13 +2034,14 @@ export interface components {
         };
         /**
          * SugerirAjusteExperienciaRequest
-         * @description Pedido de sugestão de IA para uma experiência, a partir da descrição atual.
+         * @description Pedido de sugestão de IA para uma experiência do perfil, a partir da descrição atual.
+         *
+         *     Sem vaga: a IA só melhora a escrita. Com vaga, use POST /v1/experiencias-adaptadas/sugestoes.
+         *     Campos desconhecidos (como `contexto_vaga`) são rejeitados em vez de ignorados.
          */
         SugerirAjusteExperienciaRequest: {
             /** @description Experiência com a descrição atual, incluindo edições. */
             experiencia: components["schemas"]["ExperienciaParaAvaliacaoRequest"];
-            /** @description Contexto da vaga; sem ele, a IA apenas melhora a escrita. Legado para pedidos com vaga: use POST /v1/experiencias-adaptadas/sugestoes, que trabalha com conquistas e contexto. */
-            contexto_vaga?: components["schemas"]["ContextoVagaSchema"] | null;
         };
         /**
          * SugerirAjusteExperienciaResponse

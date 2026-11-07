@@ -19,7 +19,15 @@ const rascunhoDoPerfil: RascunhoCurriculoAdaptado = {
     { tipo: "PERFIL", titulo: "Profile", conteudo: "Engenheira backend." },
     { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
   ],
-  experiencias: [{ cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "APIs." }],
+  experiencias: [
+    {
+      cargo: "Dev",
+      empresa: "TechCorp",
+      periodo: "2024",
+      conquistas: ["APIs."],
+      contexto: "Empresa de TI.",
+    },
+  ],
   titulo_experiencias: "Experience",
 };
 
@@ -36,7 +44,13 @@ describe("rascunhoParaFormulario", () => {
     expect(formulario.resumo_profissional).toBe("Engenheira backend.");
     expect(formulario.secoes.map((secao) => secao.tipo)).toEqual(["TECNOLOGIAS", "FORMACAO"]);
     expect(formulario.experiencias).toEqual([
-      { cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "APIs." },
+      {
+        cargo: "Dev",
+        empresa: "TechCorp",
+        periodo: "2024",
+        conquistas: "APIs.",
+        contexto: "Empresa de TI.",
+      },
     ]);
   });
 
@@ -73,7 +87,8 @@ describe("formularioParaRascunho", () => {
     const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
     formulario.nome_completo = "  Ana Corrigida ";
     formulario.resumo_profissional = "Resumo novo.";
-    formulario.experiencias[0]!.descricao = " Texto editado. ";
+    formulario.experiencias[0]!.conquistas = " Texto editado. \n\n Outra conquista. ";
+    formulario.experiencias[0]!.contexto = " Contexto editado. ";
     formulario.secoes[0]!.conteudo = "Linguagens: Java, Go";
 
     const rascunho = formularioParaRascunho(formulario, rascunhoDoPerfil);
@@ -85,7 +100,13 @@ describe("formularioParaRascunho", () => {
       conteudo: "Resumo novo.",
     });
     expect(rascunho.secoes[1]?.conteudo).toBe("Linguagens: Java, Go");
-    expect(rascunho.experiencias?.[0]?.descricao).toBe("Texto editado.");
+    expect(rascunho.experiencias?.[0]).toEqual({
+      cargo: "Dev",
+      empresa: "TechCorp",
+      periodo: "2024",
+      conquistas: ["Texto editado.", "Outra conquista."],
+      contexto: "Contexto editado.",
+    });
   });
 
   it("mantém experiências nulas quando a fonte é PDF e cria o resumo com título padrão", () => {

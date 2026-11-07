@@ -129,18 +129,6 @@ class TestExperienciaAdaptadaRevisada:
             )
 
 
-class TestExperienciaAdaptadaConquistasDeDescricao:
-    def test_cada_linha_da_descricao_vira_uma_conquista_sem_marcadores(self):
-        conquistas = ExperienciaAdaptada.conquistas_de_descricao(
-            "- Criei APIs.\n• Reduzi custos.\n\n  Mantive serviços.  "
-        )
-
-        assert conquistas == ("Criei APIs.", "Reduzi custos.", "Mantive serviços.")
-
-    def test_descricao_vazia_resulta_sem_conquistas(self):
-        assert ExperienciaAdaptada.conquistas_de_descricao("  ") == ()
-
-
 class TestExperienciaAdaptadaComoDescricao:
     def test_conquistas_por_linha_sem_marcadores_seguidas_do_contexto(self):
         descricao = _experiencia().como_descricao()

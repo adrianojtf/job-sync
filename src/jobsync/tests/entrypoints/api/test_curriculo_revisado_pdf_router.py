@@ -58,13 +58,10 @@ def test_pdf_sem_contexto_nao_traz_rotulo(client):
     assert "Contexto" not in texto
 
 
-def test_pdf_ainda_aceita_a_descricao_legada(client):
+def test_descricao_legada_e_rejeitada_com_422_em_vez_de_perder_o_conteudo(client):
     response = client.post(
         "/v1/curriculos-revisados", json=_corpo("pt", descricao="- Criei APIs.\nReduzi custos.")
     )
 
-    texto, _ = _pagina(response)
-
-    assert response.status_code == 200
-    assert "Criei APIs." in texto
-    assert "Reduzi custos." in texto
+    assert response.status_code == 422
+    assert "descricao" in response.json()["detail"]

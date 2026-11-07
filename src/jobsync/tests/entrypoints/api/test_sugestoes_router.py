@@ -161,28 +161,7 @@ class TestSugestaoDeSecaoRouter:
 
 
 class TestSugestaoDeExperienciaRouter:
-    def test_com_contexto_de_vaga_refina_conquistas_e_contexto_e_devolve_a_descricao(
-        self, client: TestClient
-    ):
-        perfil, adaptada = _sobrescrever_servicos_de_experiencia()
-        corpo = _corpo_experiencia(contexto_vaga=CONTEXTO_VAGA)
-        corpo["experiencia"]["descricao"] = "- Criei APIs.\nReduzi custos."
-
-        response = client.post("/v1/experiencias-profissionais/sugestoes", json=corpo)
-
-        assert response.status_code == 200
-        assert response.json() == {"descricao_sugerida": "Conquista sugerida.\nContexto sugerido."}
-        experiencia, contexto = adaptada.chamadas[0]
-        assert experiencia == ExperienciaAdaptada(
-            cargo="Dev",
-            empresa="TechCorp",
-            periodo="2024",
-            conquistas=("Criei APIs.", "Reduzi custos."),
-        )
-        assert contexto.descricao_vaga == "Vaga Java com Kafka"
-        assert perfil.chamadas == []
-
-    def test_sem_contexto_de_vaga_so_melhora_a_escrita(self, client: TestClient):
+    def test_melhora_a_escrita_da_descricao_do_perfil(self, client: TestClient):
         perfil, adaptada = _sobrescrever_servicos_de_experiencia()
 
         response = client.post(
@@ -204,46 +183,23 @@ class TestSugestaoDeExperienciaRouter:
         assert response.status_code == 422
         assert perfil.chamadas == []
 
-    def test_contexto_de_vaga_invalido_devolve_422(self, client: TestClient):
-        _, adaptada = _sobrescrever_servicos_de_experiencia()
-        contexto = {**CONTEXTO_VAGA, "idioma_alvo": "fr"}
-
-        response = client.post(
-            "/v1/experiencias-profissionais/sugestoes",
-            json=_corpo_experiencia(contexto_vaga=contexto),
-        )
-
-        assert response.status_code == 422
-        assert adaptada.chamadas == []
-
-    def test_com_contexto_de_vaga_exige_cargo_e_empresa(self, client: TestClient):
-        _, adaptada = _sobrescrever_servicos_de_experiencia()
-        corpo = _corpo_experiencia(contexto_vaga=CONTEXTO_VAGA)
-        corpo["experiencia"]["cargo"] = ""
-
-        response = client.post("/v1/experiencias-profissionais/sugestoes", json=corpo)
-
-        assert response.status_code == 422
-        assert "cargo" in response.json()["detail"]
-        assert adaptada.chamadas == []
-
-    def test_ia_indisponivel_sem_contexto_devolve_502(self, client: TestClient):
-        _sobrescrever_servicos_de_experiencia(perfil=ServicoExperienciaFake(erro=SugestaoIAIndisponivel()))
-
-        response = client.post(
-            "/v1/experiencias-profissionais/sugestoes", json=_corpo_experiencia()
-        )
-
-        assert response.status_code == 502
-
-    def test_ia_indisponivel_com_contexto_devolve_502(self, client: TestClient):
-        _sobrescrever_servicos_de_experiencia(
-            adaptada=ServicoExperienciaAdaptadaFake(erro=SugestaoIAIndisponivel())
-        )
+    def test_contexto_de_vaga_e_rejeitado_em_vez_de_ignorado(self, client: TestClient):
+        perfil, _ = _sobrescrever_servicos_de_experiencia()
 
         response = client.post(
             "/v1/experiencias-profissionais/sugestoes",
             json=_corpo_experiencia(contexto_vaga=CONTEXTO_VAGA),
+        )
+
+        assert response.status_code == 422
+        assert "contexto_vaga" in response.json()["detail"]
+        assert perfil.chamadas == []
+
+    def test_ia_indisponivel_devolve_502(self, client: TestClient):
+        _sobrescrever_servicos_de_experiencia(perfil=ServicoExperienciaFake(erro=SugestaoIAIndisponivel()))
+
+        response = client.post(
+            "/v1/experiencias-profissionais/sugestoes", json=_corpo_experiencia()
         )
 
         assert response.status_code == 502

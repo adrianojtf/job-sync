@@ -6,13 +6,10 @@ período identificam a experiência e não mudam na adaptação.
 """
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
-
-_MARCADORES = re.compile(r"^[\-•*]+\s*")
 
 
 def _preenchido(valor: str) -> bool:
@@ -63,17 +60,8 @@ class ExperienciaAdaptada:
             contexto=contexto.strip(),
         )
 
-    @staticmethod
-    def conquistas_de_descricao(descricao: str) -> tuple[str, ...]:
-        """Ponte para a descrição em texto livre: cada linha não vazia vira uma conquista."""
-        return tuple(
-            texto
-            for linha in descricao.splitlines()
-            if (texto := _MARCADORES.sub("", linha.strip()).strip())
-        )
-
     def como_descricao(self) -> str:
-        """Ponte para a descrição em texto livre: conquistas por linha, sem marcadores, e o contexto."""
+        """Conquistas por linha, sem marcadores, e o contexto: o texto que a IA recebe e mede."""
         linhas = list(self.conquistas)
         if _preenchido(self.contexto):
             linhas.append(self.contexto.strip())

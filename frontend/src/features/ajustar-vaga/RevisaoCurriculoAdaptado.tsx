@@ -2,8 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ContextoVaga, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import {
-  CAMPOS_EXPERIENCIA,
-  EXPERIENCIA_VAZIA,
+  CAMPOS_EXPERIENCIA_ADAPTADA,
+  EXPERIENCIA_ADAPTADA_VAZIA,
   type ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
@@ -17,7 +17,9 @@ import { ConfirmacaoModal } from "../../shared/ui/ConfirmacaoModal";
 import { Field } from "../../shared/ui/Field";
 import { Panel } from "../../shared/ui/Panel";
 import { AvaliarExperienciaModal } from "../perfil/AvaliarExperienciaModal";
+import { SugestaoExperienciaAdaptada } from "./SugestaoExperienciaAdaptada";
 import {
+  experienciaAdaptadaParaAvaliacao,
   formularioParaRascunho,
   rascunhoParaFormulario,
   tituloSecaoPerfil,
@@ -93,6 +95,12 @@ export function RevisaoCurriculoAdaptado({
         Revise o currículo adaptado
       </h2>
       <Aviso>Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar.</Aviso>
+      {experienciasEstruturadas && (
+        <Aviso tom="alerta">
+          A IA pode ter estimado métricas e volumes nas experiências. Confirme que os números são
+          verdadeiros antes de gerar o PDF.
+        </Aviso>
+      )}
 
       <form onSubmit={confirmar} noValidate className={estilos.secoes}>
         <PainelDadosPessoais
@@ -108,20 +116,23 @@ export function RevisaoCurriculoAdaptado({
             titulo="Experiências profissionais"
             subtitulo="Da mais recente para a mais antiga"
             rotuloItem="Experiência"
-            itemVazio={EXPERIENCIA_VAZIA}
-            campos={CAMPOS_EXPERIENCIA}
+            itemVazio={EXPERIENCIA_ADAPTADA_VAZIA}
+            campos={CAMPOS_EXPERIENCIA_ADAPTADA}
             complementoItem={(indice) => (
-              <SugestaoCampo
+              <SugestaoExperienciaAdaptada
                 form={form}
-                campo={`experiencias.${indice}.descricao`}
-                rotuloBloco={`experiência ${indice + 1}`}
-                sugerir={sugestoes.experiencia(() => form.getValues(`experiencias.${indice}`))}
+                indice={indice}
+                contextoVaga={contextoVaga}
               />
             )}
             acoesItem={(indice) => (
               <Button
                 aria-label={`Avaliar experiência ${indice + 1}`}
-                onClick={() => setExperienciaAvaliada(form.getValues(`experiencias.${indice}`))}
+                onClick={() =>
+                  setExperienciaAvaliada(
+                    experienciaAdaptadaParaAvaliacao(form.getValues(`experiencias.${indice}`)),
+                  )
+                }
               >
                 Avaliar
               </Button>

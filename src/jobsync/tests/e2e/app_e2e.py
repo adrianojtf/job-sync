@@ -75,20 +75,17 @@ class AjustadorTextoE2E(AjustadorTextoPort):
         return secao
 
 
-def _adaptada(experiencia: ExperienciaParaAvaliacao | ExperienciaAdaptada, texto: str) -> ExperienciaAdaptada:
-    return ExperienciaAdaptada(
-        cargo=experiencia.cargo,
-        empresa=experiencia.empresa,
-        periodo=experiencia.periodo,
-        conquistas=(texto,) if texto.strip() else (),
-    )
-
-
 class AjustadorExperienciaE2E(AjustadorExperienciaPort):
     def ajustar(
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
     ) -> ExperienciaAdaptada:
-        return _adaptada(experiencia, experiencia.descricao)
+        return ExperienciaAdaptada(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            conquistas=(experiencia.descricao,) if experiencia.descricao.strip() else (),
+            contexto=f"Contexto de {experiencia.empresa}.",
+        )
 
     def refinar(
         self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
@@ -107,12 +104,18 @@ class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
     def ajustar(
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
     ) -> ExperienciaAdaptada:
-        return _adaptada(experiencia, f"Sugestão com vaga: {experiencia.descricao}")
+        raise NotImplementedError("As sugestões com vaga usam refinar.")
 
     def refinar(
         self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
     ) -> ExperienciaAdaptada:
-        return _adaptada(experiencia, f"Sugestão com vaga: {experiencia.como_descricao()}")
+        return ExperienciaAdaptada(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            conquistas=tuple(f"Sugestão com vaga: {conquista}" for conquista in experiencia.conquistas),
+            contexto=f"Sugestão com vaga: {experiencia.contexto}",
+        )
 
 
 class MelhoradorTextoE2E(MelhoradorTextoCurriculoPort):

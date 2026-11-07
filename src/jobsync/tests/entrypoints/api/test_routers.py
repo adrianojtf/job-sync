@@ -450,7 +450,8 @@ class TestCurriculoRouter:
                             "cargo": "Dev",
                             "empresa": "TechCorp",
                             "periodo": "2024",
-                            "descricao": "Texto editado.",
+                            "conquistas": ["Texto editado."],
+                            "contexto": "Contexto editado.",
                         }
                     ],
                 },
@@ -467,6 +468,7 @@ class TestCurriculoRouter:
         rascunho = gerar_pdf_fake.input_dto.rascunho
         assert rascunho.secoes[0].conteudo == "Resumo editado."
         assert rascunho.experiencias[0].conquistas == ("Texto editado.",)
+        assert rascunho.experiencias[0].contexto == "Contexto editado."
 
     def test_post_curriculo_revisado_com_download_devolve_pdf_binario(
         self, client: TestClient, gerar_pdf_fake: GerarPdfFake
@@ -499,7 +501,7 @@ class TestCurriculoRouter:
                 "rascunho": {
                     "nome_completo": "Matheus Silva",
                     "secoes": [],
-                    "experiencias": [{"cargo": "", "empresa": "TechCorp", "descricao": "x"}],
+                    "experiencias": [{"cargo": "", "empresa": "TechCorp", "conquistas": ["x"]}],
                 },
                 "idioma_alvo": "pt",
                 "cargo_alvo": "Engenheiro",

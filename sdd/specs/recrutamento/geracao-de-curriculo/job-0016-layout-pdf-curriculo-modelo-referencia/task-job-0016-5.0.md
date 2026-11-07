@@ -11,7 +11,9 @@ Renderizar a seção de experiências igual ao modelo, com foco nos tópicos sep
 - Empresa em Bold 11,5 pt preto à esquerda; período em Regular 10,5 pt `#595959` à direita, terminando em x ≈ 513 pt, via `Table` sem padding (RF 16).
 - Bloco sem período mostra só a empresa, sem erro (RF 24).
 - Cabeçalho `Cargo — Empresa (Período)`: empresa em negrito com o período à direita e cargo em itálico azul-marinho na linha abaixo (RF 32).
-- A linha de contexto é desenhada com o rótulo que veio no texto (RF 34).
+- A linha de contexto é desenhada com o rótulo que veio no texto (RF 34), em Carlito Italic `#595959`.
+- Remover `_estilo_contexto` e `_eh_linha_de_contexto` do JOB-0035, que ficam substituídos pelo estilo e pelo interpretador.
+- Atualizar os testes do JOB-0035 sobre o contexto em `test_gerador_pdf_client.py`, trocando `Helvetica-Oblique` e `#666666` por `Carlito-Italic` e `#595959` e mantendo as demais asserções.
 - Cargo em Italic 10,5 pt `#1F3864` na linha abaixo (RF 17).
 - Tópicos com `Paragraph(..., bulletText="●")`, `bulletIndent=18`, `leftIndent=36`, recuo pendente e `spaceAfter` entre tópicos (RF 18 a 20).
 - Contexto em Italic 10,5 pt `#595959`, após os tópicos (RF 21).

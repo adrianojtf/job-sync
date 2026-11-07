@@ -4,7 +4,7 @@
 
 - [x] 1.0 Fontes Carlito, `RegistradorFontesPdf` e `EstiloCurriculoPdf`
 - [ ] 2.0 `InterpretadorExperiencias` e `BlocoExperiencia`
-- [ ] 3.0 `CatalogoLocalizacao`: título "Technical Skills" e rótulo de contexto
+- [ ] 3.0 `CatalogoLocalizacao`: título "Technical Skills"
 - [ ] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
 - [ ] 5.0 `GeradorPdfClient`: experiências com empresa/período, cargo, tópicos e contexto
 - [ ] 6.0 `GeradorPdfClient`: formação, certificações e idiomas
@@ -14,12 +14,11 @@
 ## Status
 
 - Tarefa 1.0 concluída.
-- Execução das demais tarefas em pausa, aguardando a execução do JOB-0035. Escopo ajustado ao JOB-0035 (ver `techspec-job-0016.md`, seção "Relação com o JOB-0035").
+- JOB-0035 integrado à `main` (PR 47) e a `main` integrada a esta branch. Escopo ajustado ao que o JOB-0035 entregou (ver `techspec-job-0016.md`, seção "Relação com o JOB-0035").
 
 ## Dependências
 
-- 1.0, 3.0 e 7.0 não dependem de nenhuma outra tarefa e podem ser feitas em paralelo.
-- 3.0 deve ser concluída antes de 2.0 (o interpretador usa `rotulos_contexto()`).
+- 1.0, 2.0, 3.0 e 7.0 não dependem de nenhuma outra tarefa e podem ser feitas em paralelo.
 - 1.0 e 3.0 devem ser concluídas antes de 4.0.
 - 2.0 e 4.0 devem ser concluídas antes de 5.0.
 - 5.0 deve ser concluída antes de 6.0.
@@ -30,8 +29,8 @@
 | # | Título | Complexidade | Dependências | Testes Principais |
 |---|--------|--------------|--------------|-------------------|
 | 1.0 | Fontes e estilo | low | — | `TestRegistradorFontesPdf`: registra Carlito; fallback Helvetica com diretório inexistente; registro idempotente |
-| 2.0 | Interpretador de experiências | medium | 3.0 | `TestInterpretadorExperiencias`: empresa/período, formato `Cargo — Empresa (Período)`, sem período, tópicos `-`/`•`/`●`, contexto, formação, nenhuma linha perdida |
-| 3.0 | Catálogo de rótulos | low | — | `Technical Skills` em inglês; `rotulo_contexto` e `rotulos_contexto`; fallback de idioma |
+| 2.0 | Interpretador de experiências | medium | — | `TestInterpretadorExperiencias`: empresa/período, formato `Cargo — Empresa (Período)`, sem período, tópicos `-`/`•`/`●`, contexto, formação, nenhuma linha perdida |
+| 3.0 | Catálogo de rótulos | low | — | `Technical Skills` em inglês; `Tecnologias` em português |
 | 4.0 | Cabeçalho, títulos, tecnologias, perfil | medium | 1.0, 3.0 | Nome centralizado em caixa alta (Carlito-Bold 16, `#1F3864`); título em caixa alta + linha; uma categoria por linha |
 | 5.0 | Experiências | high | 2.0, 4.0 | `●` em x ≈ 63 pt e continuação em x ≈ 81 pt; período com x1 ≈ 513 pt e cor `#595959`; cargo itálico azul; ordem do texto extraído |
 | 6.0 | Formação, certificações, idiomas | medium | 5.0 | Instituição negrito + período à direita; curso em itálico azul; idioma em negrito por linha |

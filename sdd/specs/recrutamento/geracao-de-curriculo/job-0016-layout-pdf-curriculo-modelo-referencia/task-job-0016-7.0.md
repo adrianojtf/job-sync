@@ -9,7 +9,7 @@ Garantir que o texto que chega ao gerador de PDF tenha a estrutura de linhas e t
 <requirements>
 - `AjustadorTextoClient`: regra geral de preservação de linhas e tópicos `-` (RF 28).
 - `AjustadorTextoClient`, seção `TECNOLOGIAS`: uma categoria por linha no formato `Rótulo: itens` (RF 29).
-- Fora desta task: a instrução da seção `EXPERIENCIAS` e o `AjustadorExperienciaOpenAIClient`, que pertencem ao JOB-0035 (RF 30).
+- Fora desta task: a instrução da seção `EXPERIENCIAS` e o `AjustadorExperienciaOpenAIClient`, que o JOB-0035 já implementou na `main` (RF 30).
 - `ExtratorCurriculoClient`: preservar quebras de linha e converter `●`/`•` em `- ` (RF 31).
 - Usar o texto sugerido na seção "Ajustes de prompt" da techspec.
 - Não alterar as regras atuais de não inventar fatos.

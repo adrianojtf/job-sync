@@ -47,8 +47,8 @@ Componentes modificados:
 
 | Componente | Mudança |
 |---|---|
-| `GeradorPdfClient` (`src/jobsync/curriculo/adapters/gerador_pdf_client.py`) | Novo cabeçalho, títulos, tecnologias, experiências, formação; usa os componentes acima |
-| `CatalogoLocalizacao` (`src/jobsync/shared_kernel/domain/catalogo_localizacao.py`) | Título `tecnologias` em inglês passa de `Technologies` para `Technical Skills` (igual ao modelo); novo rótulo `contexto` (`Context` / `Contexto`) e `rotulos_contexto()` com todos os rótulos reconhecidos. É a fonte única do rótulo, e o JOB-0035 a reutiliza |
+| `GeradorPdfClient` (`src/jobsync/curriculo/adapters/gerador_pdf_client.py`) | Novo cabeçalho, títulos, tecnologias, experiências, formação; usa os componentes acima; remove `_estilo_contexto` e `_eh_linha_de_contexto` do JOB-0035 |
+| `CatalogoLocalizacao` (`src/jobsync/shared_kernel/domain/catalogo_localizacao.py`) | Título `tecnologias` em inglês passa de `Technologies` para `Technical Skills` (igual ao modelo). O rótulo do contexto não entra aqui: a fonte única é `curriculo/domain/rotulos_experiencia.py` (JOB-0035) |
 | `AjustadorTextoClient` (`src/jobsync/curriculo/adapters/ajustador_texto_client.py`) | Regra geral de preservação de linhas e tópicos e regra da seção TECNOLOGIAS (RF 28 e 29). A instrução da seção EXPERIENCIAS é do JOB-0035 |
 | `ExtratorCurriculoClient` (`src/jobsync/curriculo/adapters/extrator_curriculo_client.py`) | Regra para preservar quebras de linha e converter `●`/`•` em `- ` (RF 31) |
 
@@ -91,13 +91,12 @@ Entrada: texto da seção, blocos separados por linha em branco.
    - Mês: `Jan|Feb|...|Dec` e `Jan|Fev|...|Dez` (com ou sem ponto), ou `MM/AAAA`, ou só `AAAA`.
    - Fim: outra data ou `Present|Presente|Atual|Current|Hoje`.
    - Separador: `-`, `–` ou `—`, com espaços opcionais.
-   - **Formato com travessão** (gerado por `MontarCurriculoDoPerfilEstruturado` e pelo `para_texto` do JOB-0035): `Cargo — Empresa (Período)`. Reconhecido quando a linha contém ` — ` (travessão U+2014, nunca hífen, para não confundir com `SIPPulse - High-Performance...`) e termina em parênteses, com período ou vazios. Resultado: `cargo` = texto antes do travessão, `empresa` = texto entre o travessão e os parênteses, `periodo` = conteúdo dos parênteses (vazio se `()`).
+   - **Formato com travessão** (gerado por `MontarCurriculoDoPerfilEstruturado` e pelo `para_texto` do JOB-0035): `Cargo — Empresa (Período)`. Reconhecido quando a linha contém ` — ` (travessão U+2014, nunca hífen, para não confundir com `SIPPulse - High-Performance...`). Os parênteses finais são opcionais: o `para_texto` do JOB-0035 os omite quando não há período. Resultado: `cargo` = texto antes do travessão, `empresa` = texto entre o travessão e os parênteses (ou o fim da linha), `periodo` = conteúdo dos parênteses (vazio se `()` ou ausente).
    - Formação e certificações usam a mesma regra com `Curso — Instituição (Período)` e `Nome — Instituição (Ano)`: o lado esquerdo vai para a linha em itálico azul e o direito, em negrito.
-   - Travessão sem parênteses no fim: sem separação (`empresa` = linha inteira).
    - Sem período encontrado: `empresa` = linha inteira, `periodo` = `""` (RF 24).
 2. **Cargo (2ª linha):** só quando o cargo não veio do cabeçalho com travessão, e quando não começa com marcador, não começa com rótulo de contexto e tem até 80 caracteres sem ano de 4 dígitos (regra atual de `_parece_posicao_experiencia`, reaproveitada).
 3. **Tópicos:** linhas que começam com `-`, `•`, `●` ou `*`. Remover o marcador e espaços.
-4. **Contexto:** linha que começa com um rótulo de `CatalogoLocalizacao.rotulos_contexto()` (`Context:` ou `Contexto:`, case-insensitive), mais as linhas seguintes que não são tópicos. O rótulo permanece no texto exibido. Linhas soltas sem rótulo, após o cargo, também vão para `contexto`. Assim, nenhum texto se perde.
+4. **Contexto:** linha que tem, antes do primeiro `:`, um rótulo de `ROTULOS_CONTEXTO_RECONHECIDOS` (`jobsync.curriculo.domain.rotulos_experiencia`; mesma regra do JOB-0035: sem diferenciar maiúsculas, aceita `Contexto:texto` sem espaço, e `Contextualizei...` não é rótulo), mais as linhas seguintes que não são tópicos. O rótulo permanece no texto exibido. Linhas soltas sem rótulo, após o cargo, também vão para `contexto`. Assim, nenhum texto se perde.
 
 ### Regras de renderização
 
@@ -159,7 +158,7 @@ Seguir `.windsurf/rules/testing-rules.md`: AAA separado por linha em branco, sem
 - separa período entre parênteses do formato do perfil estruturado;
 - linha sem período retorna `periodo == ""`;
 - reconhece cargo, tópicos `-`, `•` e `●`, e contexto `Context:` / `Contexto:`;
-- formato com travessão `Cargo — Empresa (Período)`: separa os três campos; `()` vazio dá `periodo == ""`; sem parênteses não separa; hífen no nome da empresa não separa;
+- formato com travessão `Cargo — Empresa (Período)`: separa os três campos; `()` vazio e parênteses ausentes dão `periodo == ""`; hífen no nome da empresa não separa;
 - formação `Curso — Instituição (Período)` e certificação `Nome — Instituição (Ano)`;
 - bloco só com contexto (caso "Starian") e bloco sem contexto;
 - múltiplos blocos separados por linha em branco;
@@ -177,7 +176,8 @@ Seguir `.windsurf/rules/testing-rules.md`: AAA separado por linha em branco, sem
 
 Testes existentes que mudam de expectativa (atualizar, não remover):
 - `test_formatar_experiencias_com_cabecalho_e_posicao`, `test_nao_aplica_negrito_em_descricao_de_experiencia` e `test_adiciona_espacamento_extra_entre_blocos_de_experiencia`: hoje verificam `<b>...</b>` e `&bull;` nos `Paragraph`. Reescrever para a nova saída (tabela de cabeçalho + `bulletText`).
-- `src/jobsync/tests/shared_kernel/test_catalogo_localizacao.py:10`: `Technologies` → `Technical Skills`. Novo teste de `rotulos_contexto()` em `en`, `pt` e idioma desconhecido.
+- `src/jobsync/tests/shared_kernel/test_catalogo_localizacao.py:10`: `Technologies` → `Technical Skills`.
+- Testes do JOB-0035 em `test_gerador_pdf_client.py` (contexto em itálico cinza): trocar `Helvetica-Oblique` e `#666666` por `Carlito-Italic` e `#595959`, mantendo as demais asserções.
 
 `test_registrador_fontes_pdf.py`: registra Carlito quando os arquivos existem; retorna Helvetica quando o diretório não existe (usar `tmp_path`).
 
@@ -195,7 +195,7 @@ Testes de prompt (`AjustadorTextoClient` e `ExtratorCurriculoClient`, com `unitt
 1. **Fontes e estilo:** `RegistradorFontesPdf`, `EstiloCurriculoPdf` e os arquivos Carlito. Base de todo o resto.
 2. **`InterpretadorExperiencias` (TDD):** lógica pura, sem ReportLab. Fácil de testar isoladamente.
 3. **`GeradorPdfClient`:** cabeçalho, títulos, tecnologias, perfil, experiências, formação, nessa ordem. Atualizar os testes existentes afetados.
-4. **`CatalogoLocalizacao`:** novo título `Technical Skills` e rótulo `contexto`.
+4. **`CatalogoLocalizacao`:** novo título `Technical Skills`.
 5. **Prompts de IA:** extrator e ajustador de seção (regra geral e TECNOLOGIAS). As experiências ficam no JOB-0035.
 6. **Validação visual** contra o modelo e ajuste fino de espaçamentos.
 
@@ -223,7 +223,7 @@ Testes de prompt (`AjustadorTextoClient` e `ExtratorCurriculoClient`, com `unitt
 | Interpretador no adapter, não no domínio | É regra de apresentação; evita mudar o agregado `Curriculo` (fora de escopo do PRD) | Estruturar experiências no domínio (mudança grande, afeta extração e IA) |
 | Corrigir no mesmo JOB os prompts de extração, de tecnologias e a regra geral | Sem tópicos na entrada, o layout não atende o PRD | JOB separado (entrega visual incompleta) |
 | Travessão (U+2014) como separador do formato `Cargo — Empresa (Período)` | Evita mudar `MontarCurriculoDoPerfilEstruturado` e o `para_texto` do JOB-0035; hífen nunca separa | Mudar os dois geradores para o formato do modelo (dois lugares a alterar e testar) |
-| Rótulo do contexto só no `CatalogoLocalizacao` | Fonte única (DRY) | O módulo `rotulos_experiencia.py` previsto no JOB-0035, com os mesmos rótulos em dois lugares |
+| Reutilizar `rotulos_experiencia.py` (JOB-0035) para o rótulo do contexto | Já está na `main`; fonte única (DRY) | Duplicar o rótulo no `CatalogoLocalizacao` (era o plano antes do JOB-0035 ser integrado) |
 
 ### Riscos Conhecidos
 
@@ -231,23 +231,22 @@ Testes de prompt (`AjustadorTextoClient` e `ExtratorCurriculoClient`, com `unitt
 - **Regex de período com falso positivo** (ex.: nome de empresa com ano): exigir que o período esteja no fim da linha e tenha o separador de intervalo.
 - **Diferença de paginação** em relação ao modelo: aceitável, desde que estilos e espaçamentos batam. `KeepTogether` evita cabeçalho órfão.
 - **Tamanho do repositório:** os 4 TTF somam cerca de 2,7 MB (medido no pacote `fonts-crosextra-carlito`).
-- **Conflito de merge no `GeradorPdfClient`:** o JOB-0035 também altera `_formatar_conteudo_experiencias`, que este JOB reescreve. Mitigação: integrar este JOB primeiro e remover essa parte do JOB-0035.
+- **Regressão nos comportamentos do JOB-0035:** este JOB reescreve `_formatar_conteudo_experiencias`, onde o JOB-0035 colocou o reconhecimento do contexto. Mitigação: manter as asserções dos testes dele e trocar só fonte e cor.
 - **Travessão em nome de empresa:** um nome com ` — ` e parênteses no fim seria separado de forma errada. Caso raro, e o resultado é só visual (nenhum texto se perde).
 
 ### Relação com o JOB-0035
 
-Fonte: `prd-job-0035.md` e `techspec-job-0035.md` na branch `claude/job-0035-conquistas-contexto-experiencias` (só documentos, sem código).
+O JOB-0035 já está na `main` (PR 47). Ele criou `ExperienciaAdaptada` (com `para_texto`), `rotulos_experiencia.py`, os prompts de experiências e um desenho provisório do contexto no `GeradorPdfClient`.
 
-| Tema | JOB-0016 | JOB-0035 |
+| Tema | JOB-0016 | JOB-0035 (na `main`) |
 |---|---|---|
-| Desenho do contexto no PDF (itálico cinza, rótulo) | Faz | Deixa de fazer |
-| Leitura de `Cargo — Empresa (Período)` | Faz | Usa |
-| Rótulo `Contexto`/`Context` | `CatalogoLocalizacao` (fonte única) | Reutiliza; não cria `rotulos_experiencia.py` |
-| Prompt de EXPERIENCIAS e `AjustadorExperienciaOpenAIClient` | Não altera | Altera |
-| Regra geral de tópicos, TECNOLOGIAS e extração | Altera | Não altera |
-| Modelo `ExperienciaAdaptada`, revisão, sugestões, endpoints | Não altera | Altera |
+| Desenho do contexto no PDF | Substitui o provisório pelo estilo do modelo | Deixou `_estilo_contexto` e `_eh_linha_de_contexto` (Helvetica Oblique, `#666666`) |
+| Leitura de `Cargo — Empresa (Período)` | Faz (parênteses opcionais) | `para_texto` gera esse formato |
+| Rótulo `Contexto`/`Context` | Reutiliza `ROTULOS_CONTEXTO_RECONHECIDOS` | `curriculo/domain/rotulos_experiencia.py` |
+| Prompt de EXPERIENCIAS e `AjustadorExperienciaOpenAIClient` | Não altera | Alterou |
+| Regra geral de tópicos, TECNOLOGIAS e extração | Altera | Não alterou |
 
-Diferenças a resolver no JOB-0035: o estilo `contexto` com `Helvetica-Oblique` e `#666666` passa a ser Carlito Itálico `#595959` (medido no modelo, contraste de cerca de 7:1, cálculo meu); a ordem de verificação "contexto antes do ramo de cargo" é atendida pelo interpretador; o `refinar` e o `para_texto` não mudam.
+Comportamentos do JOB-0035 que o novo gerador deve manter (há testes em `test_gerador_pdf_client.py`): rótulo nos dois idiomas, sem diferenciar maiúsculas e aceitando `Contexto:texto` sem espaço; `Contextualizei...` não é rótulo; contexto logo após o cabeçalho não vira negrito; caracteres especiais escapados; sem contexto, sem linha em itálico. Muda só a fonte (`Carlito-Italic`) e a cor (`#595959`, contraste de cerca de 7:1, cálculo meu).
 
 ### Conformidade com Padrões
 
@@ -265,7 +264,8 @@ Diferenças a resolver no JOB-0035: o estilo `contexto` com `Helvetica-Oblique` 
 - `src/jobsync/curriculo/domain/curriculo.py` (sem mudança, referência)
 - `src/jobsync/shared_kernel/domain/catalogo_localizacao.py`
 - `src/jobsync/curriculo/adapters/ajustador_texto_client.py`
-- `sdd/specs/recrutamento/geracao-de-curriculo/job-0035-conquistas-e-contexto-nas-experiencias/` (branch `claude/job-0035-conquistas-contexto-experiencias`; referência, não alterar)
+- `src/jobsync/curriculo/domain/rotulos_experiencia.py` e `experiencia_adaptada.py` (JOB-0035; referência, não alterar)
+- `sdd/specs/recrutamento/geracao-de-curriculo/job-0035-conquistas-e-contexto-nas-experiencias/` (referência)
 - `src/jobsync/curriculo/adapters/extrator_curriculo_client.py`
 - `src/jobsync/perfil_estruturado/domain/montar_curriculo_do_perfil_estruturado_service.py` (formato de entrada a suportar)
 - `src/jobsync/curriculo/service_layer/adaptar_curriculo_para_vaga/service.py` e `src/jobsync/vaga_externa/service_layer/candidatar_na_vaga_externa/service.py` (consumidores da porta)

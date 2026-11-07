@@ -10,13 +10,14 @@ Criar a lógica pura que converte o texto da seção de experiências (ou de for
 - `BlocoExperiencia` deve ser um dataclass frozen com `empresa`, `periodo`, `cargo`, `topicos: tuple[str, ...]` e `contexto`.
 - `InterpretadorExperiencias.interpretar(conteudo) -> list[BlocoExperiencia]`, com blocos separados por linha em branco.
 - O período deve ser reconhecido no fim da primeira linha, nos formatos da techspec (mês en/pt, `MM/AAAA`, `AAAA`; fim com `Present`, `Presente`, `Atual`, `Current`, `Hoje`; separadores `-`, `–`, `—`).
-- O formato com travessão `Cargo — Empresa (Período)` (gerado pelo Perfil Estruturado e pelo JOB-0035) também deve ser reconhecido: `cargo` antes do travessão (U+2014), `empresa` entre o travessão e os parênteses, `periodo` dentro dos parênteses, vazio se `()` (RF 32).
-- Hífen no nome da empresa nunca separa; travessão sem parênteses no fim não separa.
+- O formato com travessão `Cargo — Empresa (Período)` (gerado pelo Perfil Estruturado e pelo `para_texto` do JOB-0035) também deve ser reconhecido: `cargo` antes do travessão (U+2014), `empresa` entre o travessão e os parênteses (ou o fim da linha), `periodo` dentro dos parênteses, vazio se `()` ou ausente (RF 32).
+- Os parênteses são opcionais: o JOB-0035 os omite quando não há período.
+- Hífen no nome da empresa nunca separa.
 - Formação e certificações no formato `Curso — Instituição (Período)` e `Nome — Instituição (Ano)` seguem a mesma regra: lado esquerdo em `cargo`, direito em `empresa` (RF 33).
 - Sem período reconhecido: `empresa` recebe a linha inteira e `periodo` fica vazio.
 - Tópicos: linhas iniciadas por `-`, `•`, `●` ou `*`, sem o marcador.
-- Contexto: linha iniciada por um rótulo de `CatalogoLocalizacao.rotulos_contexto()` (`Context:` ou `Contexto:`, case-insensitive), com o rótulo mantido no texto, e linhas soltas que não são tópicos (RF 34).
-- `InterpretadorExperiencias` recebe o `CatalogoLocalizacao` por construtor opcional, como o `GeradorPdfClient`.
+- Contexto: linha cujo texto antes do primeiro `:` está em `ROTULOS_CONTEXTO_RECONHECIDOS` (`jobsync.curriculo.domain.rotulos_experiencia`), sem diferenciar maiúsculas, com o rótulo mantido no texto, e linhas soltas que não são tópicos (RF 34).
+- `Contexto:texto` (sem espaço) é reconhecido; `Contextualizei...` não é rótulo.
 - Nenhuma linha de entrada pode ser descartada.
 - Reaproveitar a regra de `_parece_posicao_experiencia` para identificar o cargo (DRY).
 </requirements>
@@ -44,7 +45,8 @@ Consultar em `techspec-job-0016.md` a seção "Regras de interpretação de expe
 - [ ] Separa `SIPPulse - High-Performance NGN SIP Solutions` e `Nov 2022 - Mar 2026` (hífen no nome da empresa não confunde a regex).
 - [ ] Formato com travessão: `Software Engineer — Starian (Mar 2026 - Present)` gera cargo, empresa e período.
 - [ ] Parênteses vazios `()` geram `periodo == ""`.
-- [ ] Travessão sem parênteses no fim não separa.
+- [ ] Travessão sem parênteses separa cargo e empresa, com `periodo == ""`.
+- [ ] `Contexto:texto` sem espaço e `CONTEXT:` em maiúsculas são reconhecidos; `Contextualizei o sistema` não é contexto.
 - [ ] Formação `Curso — Instituição (Período)` e certificação `Nome — Instituição (Ano)`.
 - [ ] Linha sem período retorna `periodo == ""`.
 - [ ] Reconhece cargo na segunda linha.
@@ -61,4 +63,4 @@ Consultar em `techspec-job-0016.md` a seção "Regras de interpretação de expe
 - `src/jobsync/tests/curriculo/test_interpretador_experiencias.py` (novo)
 - `src/jobsync/curriculo/adapters/gerador_pdf_client.py` (referência: `_parece_posicao_experiencia`, `_separar_blocos_experiencias`)
 - `src/jobsync/perfil_estruturado/domain/montar_curriculo_do_perfil_estruturado_service.py` (referência de formato de entrada)
-- `src/jobsync/shared_kernel/domain/catalogo_localizacao.py` (rótulos de contexto, task 3.0)
+- `src/jobsync/curriculo/domain/rotulos_experiencia.py` (rótulos de contexto, JOB-0035)

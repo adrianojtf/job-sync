@@ -18,9 +18,9 @@ Garantir que o texto que chega ao gerador de PDF tenha a estrutura de linhas e t
 
 ## Subtarefas
 
-- [ ] 7.1 Escrever testes que capturam os prompts enviados ao `ClienteOpenAI` (mock com `unittest.mock`) e verificam as novas regras (red).
-- [ ] 7.2 Atualizar `AjustadorTextoClient`.
-- [ ] 7.3 Atualizar `ExtratorCurriculoClient`.
+- [x] 7.1 Escrever testes que capturam os prompts enviados ao `ClienteOpenAI` (mock com `unittest.mock`) e verificam as novas regras (red).
+- [x] 7.2 Atualizar `AjustadorTextoClient`.
+- [x] 7.3 Atualizar `ExtratorCurriculoClient`.
 
 ## Detalhes de Implementação
 
@@ -33,9 +33,9 @@ Consultar em `techspec-job-0016.md` a seção "Ajustes de prompt".
 
 ## Testes da Tarefa
 
-- [ ] `AjustadorTextoClient`: prompt contém a regra de tópicos `-` para qualquer seção.
-- [ ] `AjustadorTextoClient`: prompt de `TECNOLOGIAS` contém a regra de uma categoria por linha.
-- [ ] `ExtratorCurriculoClient`: prompt contém a regra de quebras de linha e marcadores.
+- [x] `AjustadorTextoClient`: prompt contém a regra de tópicos `-` para qualquer seção.
+- [x] `AjustadorTextoClient`: prompt de `TECNOLOGIAS` contém a regra de uma categoria por linha.
+- [x] `ExtratorCurriculoClient`: prompt contém a regra de quebras de linha e marcadores.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

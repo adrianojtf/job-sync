@@ -8,7 +8,7 @@
 - [ ] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
 - [ ] 5.0 `GeradorPdfClient`: experiências com empresa/período, cargo, tópicos e contexto
 - [ ] 6.0 `GeradorPdfClient`: formação, certificações e idiomas
-- [ ] 7.0 Prompts de IA: preservar quebras de linha e tópicos `-`
+- [x] 7.0 Prompts de IA: preservar quebras de linha e tópicos `-`
 - [ ] 8.0 Validação visual contra o modelo, suíte completa e `lint-imports`
 
 ## Status

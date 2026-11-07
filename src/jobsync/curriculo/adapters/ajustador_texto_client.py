@@ -18,7 +18,9 @@ _NOME_IDIOMA = {"pt": "português do Brasil", "en": "inglês (formato americano 
 _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
     TipoSecao.TECNOLOGIAS: (
         "Reordene e destaque as tecnologias mais relevantes para a vaga primeiro, "
-        "mantendo TODAS as tecnologias originais (não remova nenhuma)."
+        "mantendo TODAS as tecnologias originais (não remova nenhuma). "
+        "Se o original tiver categorias no formato 'Rótulo: itens', mantenha uma categoria por linha, "
+        "no formato 'Rótulo: item1, item2'; se não tiver, não crie categorias."
     ),
     TipoSecao.PERFIL: (
         "Reescreva o resumo profissional para enfatizar a experiência e competências "
@@ -111,7 +113,10 @@ class AjustadorTextoClient(AjustadorTextoPort):
             "Não inclua idiomas (ex.: inglês, espanhol, português) como se fossem tecnologias, "
             "mesmo que apareçam nos requisitos explícitos ou implícitos — idiomas pertencem a "
             "outra seção do currículo e devem ser ignorados aqui, independentemente da seção "
-            "que está sendo reescrita. Não infira frameworks, ferramentas ou habilidades que não estejam no conteúdo original."
+            "que está sendo reescrita. Não infira frameworks, ferramentas ou habilidades que não estejam no conteúdo original.\n\n"
+            "Preserve a estrutura de linhas do conteúdo original: cada linha que começa com \"- \" no original "
+            "continua sendo uma linha que começa com \"- \" na saída, e cada categoria ou item que estava em "
+            "sua própria linha continua em sua própria linha. Nunca junte tópicos ou linhas em um parágrafo."
         )
 
         resposta = self._cliente_openai.solicitar_json(

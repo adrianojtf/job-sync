@@ -7,7 +7,7 @@ def test_mapeia_secao_para_pt_e_en():
     catalogo = CatalogoLocalizacao()
 
     assert catalogo.localizar_secao("pt", "tecnologias") == "Tecnologias"
-    assert catalogo.localizar_secao("en", "tecnologias") == "Technologies"
+    assert catalogo.localizar_secao("en", "tecnologias") == "Technical Skills"
 
 
 def test_fallback_para_idioma_desconhecido_usa_portugues():

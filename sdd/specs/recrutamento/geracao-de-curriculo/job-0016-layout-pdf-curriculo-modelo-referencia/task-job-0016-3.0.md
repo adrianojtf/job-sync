@@ -18,8 +18,8 @@ O rótulo do contexto ("Context" / "Contexto") não entra aqui: o JOB-0035 já o
 
 ## Subtarefas
 
-- [ ] 3.1 Atualizar o teste existente em `test_catalogo_localizacao.py` para `Technical Skills` (red).
-- [ ] 3.2 Alterar o rótulo em `CatalogoLocalizacao`.
+- [x] 3.1 Atualizar o teste existente em `test_catalogo_localizacao.py` para `Technical Skills` (red).
+- [x] 3.2 Alterar o rótulo em `CatalogoLocalizacao`.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Consultar em `techspec-job-0016.md` a tabela "Componentes modificados" (linha `C
 
 ## Testes da Tarefa
 
-- [ ] `Technical Skills` para `en`.
-- [ ] `Tecnologias` para `pt`.
+- [x] `Technical Skills` para `en`.
+- [x] `Tecnologias` para `pt`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

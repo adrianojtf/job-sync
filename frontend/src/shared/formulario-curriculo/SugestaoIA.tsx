@@ -4,26 +4,42 @@ import { Aviso } from "../ui/Aviso";
 import { Button } from "../ui/Button";
 import estilos from "./SugestaoIA.module.css";
 
-interface Props {
+interface PropsComuns<S> {
   /** Nome do bloco, usado nos rótulos acessíveis (ex.: "resumo", "experiência 2"). */
   rotuloBloco: string;
   /** Texto atual do campo, com as edições ainda não salvas: é o que a IA recebe. */
   textoAtual: string;
   /** Estratégia de busca da sugestão: cada tela injeta a sua (com ou sem contexto de vaga). */
-  sugerir: (texto: string) => Promise<string>;
-  /** Grava a sugestão no campo do bloco, marcando-o como alterado. */
-  aplicar: (sugestao: string) => void;
+  sugerir: (texto: string) => Promise<S>;
+  /** Grava a sugestão no(s) campo(s) do bloco, marcando-o(s) como alterado(s). */
+  aplicar: (sugestao: S) => void;
   /** Devolve o foco ao campo de texto do bloco depois de aplicar ou descartar. */
   focarCampo?: () => void;
 }
 
 /**
+ * Sugestão em texto puro dispensa `descrever`; qualquer outro formato (ex.: conquistas e
+ * contexto de uma experiência) precisa dizer como mostrá-lo no painel.
+ */
+type Props<S> = PropsComuns<S> &
+  ([S] extends [string]
+    ? { descrever?: (sugestao: S) => string }
+    : { descrever: (sugestao: S) => string });
+
+/**
  * Botão "Sugestões de IA" de um bloco do formulário de currículo (JOB-0034). A sugestão é só
  * uma proposta, exibida abaixo do campo: o texto só muda quando o usuário aplica.
  */
-export function SugestaoIA({ rotuloBloco, textoAtual, sugerir, aplicar, focarCampo }: Props) {
+export function SugestaoIA<S = string>({
+  rotuloBloco,
+  textoAtual,
+  sugerir,
+  aplicar,
+  focarCampo,
+  descrever = String,
+}: Props<S>) {
   const idDica = useId();
-  const [sugestao, setSugestao] = useState<string | null>(null);
+  const [sugestao, setSugestao] = useState<S | null>(null);
   const pedido = useMutation({ mutationFn: sugerir });
   const vazio = textoAtual.trim() === "";
 
@@ -64,7 +80,7 @@ export function SugestaoIA({ rotuloBloco, textoAtual, sugerir, aplicar, focarCam
         {sugestao !== null && (
           <section className={estilos.painel} aria-label={`Sugestão da IA para ${rotuloBloco}`}>
             <h4 className={estilos.titulo}>Sugestão da IA</h4>
-            <p className={estilos.texto}>{sugestao}</p>
+            <p className={estilos.texto}>{descrever(sugestao)}</p>
             <div className={estilos.decisao}>
               <Button
                 aria-label={`Descartar sugestão de ${rotuloBloco}`}

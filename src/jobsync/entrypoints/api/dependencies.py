@@ -36,6 +36,9 @@ from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
     GerarPdfCurriculoRevisado,
 )
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia import SugerirAjusteExperiencia
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada import (
+    SugerirAjusteExperienciaAdaptada,
+)
 from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import (
     SugerirAjusteSecaoCurriculo,
 )
@@ -178,15 +181,22 @@ ServiceSugerirAjusteSecaoCurriculoDep = Annotated[
 
 
 def obter_service_sugerir_ajuste_experiencia() -> SugerirAjusteExperiencia:
-    """Monta o caso de uso de sugestão de IA para uma experiência profissional."""
-    return SugerirAjusteExperiencia(
-        ajustador_experiencia=AjustadorExperienciaOpenAIClient(),
-        melhorador=MelhoradorTextoCurriculoOpenAIClient(),
-    )
+    """Monta o caso de uso de sugestão de IA para uma experiência do perfil (sem vaga)."""
+    return SugerirAjusteExperiencia(melhorador=MelhoradorTextoCurriculoOpenAIClient())
 
 
 ServiceSugerirAjusteExperienciaDep = Annotated[
     SugerirAjusteExperiencia, Depends(obter_service_sugerir_ajuste_experiencia)
+]
+
+
+def obter_service_sugerir_ajuste_experiencia_adaptada() -> SugerirAjusteExperienciaAdaptada:
+    """Monta o caso de uso de sugestão de IA para uma experiência adaptada (com vaga)."""
+    return SugerirAjusteExperienciaAdaptada(ajustador_experiencia=AjustadorExperienciaOpenAIClient())
+
+
+ServiceSugerirAjusteExperienciaAdaptadaDep = Annotated[
+    SugerirAjusteExperienciaAdaptada, Depends(obter_service_sugerir_ajuste_experiencia_adaptada)
 ]
 
 

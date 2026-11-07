@@ -12,11 +12,18 @@ from jobsync.curriculo import (
     AvaliacaoExperiencia,
     ContextoVaga,
     Curriculo,
+    ExperienciaAdaptada,
     ExperienciaParaAvaliacao,
     RascunhoCurriculoAdaptado,
     TipoSecao,
 )
-from jobsync.curriculo.domain.rascunho_curriculo_adaptado import TITULO_EXPERIENCIAS_PADRAO
+from jobsync.curriculo.domain.rascunho_curriculo_adaptado import (
+    TITULO_EXPERIENCIAS_PADRAO,
+    ExperienciaEditada,
+)
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada.validator import (
+    MENSAGEM_SEM_CONTEUDO,
+)
 from jobsync.curriculo.service_layer.avaliar_experiencia.dtos import (
     AvaliarExperienciaInputDto,
 )
@@ -349,13 +356,45 @@ class SecaoRascunhoSchema(BaseModel):
     conteudo: str = Field(description="Conteúdo da seção, editável na revisão.")
 
 
-class ExperienciaRascunhoSchema(BaseModel):
-    """Experiência estruturada do rascunho (fonte: perfil estruturado)."""
+class ExperienciaAdaptadaSchema(BaseModel):
+    """Experiência adaptada, com conquistas e contexto, no rascunho e nas sugestões de IA.
+
+    Campos desconhecidos são rejeitados: um cliente com o formato antigo (`descricao`) recebe
+    422 em vez de ter o conteúdo da experiência ignorado em silêncio.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     cargo: str = Field(default="", description="Cargo da experiência.")
     empresa: str = Field(default="", description="Empresa da experiência.")
     periodo: str = Field(default="", description="Período da experiência.")
-    descricao: str = Field(default="", description="Descrição adaptada, editável na revisão.")
+    conquistas: list[str] = Field(
+        default_factory=list, description="Conquistas da experiência, uma por item."
+    )
+    contexto: str = Field(
+        default="", description="Parágrafo de contexto sobre a empresa, a área e o papel."
+    )
+
+    @classmethod
+    def from_domain(cls, experiencia: ExperienciaAdaptada) -> ExperienciaAdaptadaSchema:
+        return cls(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            conquistas=list(experiencia.conquistas),
+            contexto=experiencia.contexto,
+        )
+
+    def como_editada(self) -> ExperienciaEditada:
+        """Experiência como o usuário a editou, para o rascunho descartar o que ficou em branco."""
+        return (self.cargo, self.empresa, self.periodo, self.conquistas, self.contexto)
+
+    def to_domain(self) -> ExperienciaAdaptada:
+        """Converte para o domínio; levanta ValueError se faltar cargo, empresa ou conteúdo."""
+        experiencia = ExperienciaAdaptada.revisada(*self.como_editada())
+        if experiencia is None or not experiencia.tem_conteudo:
+            raise ValueError(MENSAGEM_SEM_CONTEUDO)
+        return experiencia
 
 
 class RascunhoCurriculoAdaptadoSchema(BaseModel):
@@ -385,7 +424,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
     email: str = Field(default="", description="E-mail do candidato.")
     linkedin: str = Field(default="", description="LinkedIn do candidato.")
     secoes: list[SecaoRascunhoSchema] = Field(description="Seções de texto do currículo.")
-    experiencias: list[ExperienciaRascunhoSchema] | None = Field(
+    experiencias: list[ExperienciaAdaptadaSchema] | None = Field(
         default=None,
         description=(
             "Experiências estruturadas; nulo quando a fonte é um PDF "
@@ -413,12 +452,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 None
                 if rascunho.experiencias is None
                 else [
-                    ExperienciaRascunhoSchema(
-                        cargo=experiencia.cargo,
-                        empresa=experiencia.empresa,
-                        periodo=experiencia.periodo,
-                        descricao=experiencia.descricao,
-                    )
+                    ExperienciaAdaptadaSchema.from_domain(experiencia)
                     for experiencia in rascunho.experiencias
                 ]
             ),
@@ -438,15 +472,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
             experiencias=(
                 None
                 if self.experiencias is None
-                else [
-                    ExperienciaParaAvaliacao(
-                        cargo=experiencia.cargo,
-                        empresa=experiencia.empresa,
-                        periodo=experiencia.periodo,
-                        descricao=experiencia.descricao,
-                    )
-                    for experiencia in self.experiencias
-                ]
+                else [experiencia.como_editada() for experiencia in self.experiencias]
             ),
             titulo_experiencias=self.titulo_experiencias,
         )
@@ -721,14 +747,16 @@ class SugerirAjusteSecaoResponse(BaseModel):
 
 
 class SugerirAjusteExperienciaRequest(BaseModel):
-    """Pedido de sugestão de IA para uma experiência, a partir da descrição atual."""
+    """Pedido de sugestão de IA para uma experiência do perfil, a partir da descrição atual.
+
+    Sem vaga: a IA só melhora a escrita. Com vaga, use POST /v1/experiencias-adaptadas/sugestoes.
+    Campos desconhecidos (como `contexto_vaga`) são rejeitados em vez de ignorados.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     experiencia: ExperienciaParaAvaliacaoRequest = Field(
         description="Experiência com a descrição atual, incluindo edições."
-    )
-    contexto_vaga: ContextoVagaSchema | None = Field(
-        default=None,
-        description="Contexto da vaga; sem ele, a IA apenas melhora a escrita.",
     )
 
 
@@ -736,3 +764,21 @@ class SugerirAjusteExperienciaResponse(BaseModel):
     """Descrição sugerida; cargo, empresa e período não são alterados."""
 
     descricao_sugerida: str = Field(description="Nova versão da descrição da experiência.")
+
+
+class SugerirAjusteExperienciaAdaptadaRequest(BaseModel):
+    """Pedido de sugestão de IA para as conquistas e o contexto de uma experiência, com a vaga."""
+
+    experiencia: ExperienciaAdaptadaSchema = Field(
+        description="Experiência com as conquistas e o contexto atuais, incluindo edições."
+    )
+    contexto_vaga: ContextoVagaSchema = Field(
+        description="Vaga que orienta a sugestão: descrição, idioma e análise devolvida com o rascunho."
+    )
+
+
+class SugerirAjusteExperienciaAdaptadaResponse(BaseModel):
+    """Conquistas e contexto sugeridos; cargo, empresa e período não são alterados."""
+
+    conquistas: list[str] = Field(description="Conquistas sugeridas, uma por item.")
+    contexto: str = Field(description="Contexto sugerido.")

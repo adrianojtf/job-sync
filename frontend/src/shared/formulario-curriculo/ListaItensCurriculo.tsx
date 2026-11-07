@@ -80,13 +80,20 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
                       tipoCampo="select"
                       rotulo={campo.rotulo}
                       opcoes={campo.opcoes ?? []}
+                      ajuda={campo.ajuda}
                       erro={erro}
                       {...registro}
                     />
                   ) : campo.tipoCampo === "textarea" ? (
-                    <Field tipoCampo="textarea" rotulo={campo.rotulo} erro={erro} {...registro} />
+                    <Field
+                      tipoCampo="textarea"
+                      rotulo={campo.rotulo}
+                      ajuda={campo.ajuda}
+                      erro={erro}
+                      {...registro}
+                    />
                   ) : (
-                    <Field rotulo={campo.rotulo} erro={erro} {...registro} />
+                    <Field rotulo={campo.rotulo} ajuda={campo.ajuda} erro={erro} {...registro} />
                   )}
                 </div>
               );

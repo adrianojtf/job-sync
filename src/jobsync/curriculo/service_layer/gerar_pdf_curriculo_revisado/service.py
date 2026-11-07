@@ -31,7 +31,7 @@ class GerarPdfCurriculoRevisado:
     ) -> GerarPdfCurriculoRevisadoOutputDto:
         GerarPdfCurriculoRevisadoInputValidator.validar(input_dto)
         rascunho = input_dto.rascunho
-        curriculo = rascunho.para_curriculo()
+        curriculo = rascunho.para_curriculo(input_dto.idioma_alvo)
 
         pdf_bytes = self._gerador_pdf.gerar(curriculo, input_dto.idioma_alvo)
         logger.info(

@@ -5,15 +5,16 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from pydantic import ValidationError
 
 from jobsync.curriculo import (
-    ExperienciaParaAvaliacao,
+    ExperienciaAdaptada,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
     TipoSecao,
 )
 from jobsync.entrypoints.api.schemas.curriculo import (
-    ExperienciaRascunhoSchema,
+    ExperienciaAdaptadaSchema,
     GerarPdfCurriculoRevisadoRequest,
     RascunhoCurriculoAdaptadoSchema,
     SecaoRascunhoSchema,
@@ -27,8 +28,8 @@ def _rascunho_dominio() -> RascunhoCurriculoAdaptado:
         linkedin="linkedin.com/in/ana",
         secoes=(SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo."),),
         experiencias=(
-            ExperienciaParaAvaliacao(
-                cargo="Dev", empresa="TechCorp", periodo="2024", descricao="APIs."
+            ExperienciaAdaptada(
+                cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=("APIs.",)
             ),
         ),
         titulo_experiencias="Experience",
@@ -64,7 +65,7 @@ class TestRascunhoCurriculoAdaptadoSchema:
                 SecaoRascunhoSchema(tipo="PERFIL", titulo="Perfil", conteudo="Resumo."),
                 SecaoRascunhoSchema(tipo="IDIOMAS", titulo="Idiomas", conteudo="  "),
             ],
-            experiencias=[ExperienciaRascunhoSchema()],
+            experiencias=[ExperienciaAdaptadaSchema()],
         )
 
         rascunho = schema.to_domain()
@@ -99,3 +100,122 @@ class TestGerarPdfCurriculoRevisadoRequest:
         assert dto.cargo_alvo == "Engenheiro"
         assert dto.empresa_alvo == "TechCorp"
         assert dto.data_referencia == date(2026, 11, 6)
+
+
+def _rascunho_schema(**experiencia) -> RascunhoCurriculoAdaptadoSchema:
+    return RascunhoCurriculoAdaptadoSchema.model_validate(
+        {
+            "nome_completo": "Ana Souza",
+            "secoes": [],
+            "experiencias": [{"cargo": "Dev", "empresa": "TechCorp", **experiencia}],
+        }
+    )
+
+
+class TestExperienciaDoRascunhoComConquistasEContexto:
+    def test_from_domain_expoe_conquistas_e_contexto_em_campos_separados(self):
+        rascunho = RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(),
+            experiencias=(
+                ExperienciaAdaptada(
+                    cargo="Dev",
+                    empresa="TechCorp",
+                    periodo="2024",
+                    conquistas=("Criei APIs.", "Reduzi custos."),
+                    contexto="Empresa de pagamentos.",
+                ),
+            ),
+        )
+
+        experiencia = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho).experiencias[0]
+
+        assert experiencia.conquistas == ["Criei APIs.", "Reduzi custos."]
+        assert experiencia.contexto == "Empresa de pagamentos."
+        assert "descricao" not in experiencia.model_dump()
+
+    def test_ida_e_volta_preserva_conquistas_e_contexto(self):
+        rascunho = RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(),
+            experiencias=(
+                ExperienciaAdaptada(
+                    cargo="Dev",
+                    empresa="TechCorp",
+                    periodo="2024",
+                    conquistas=("Criei APIs.",),
+                    contexto="Empresa de pagamentos.",
+                ),
+            ),
+        )
+
+        assert RascunhoCurriculoAdaptadoSchema.from_domain(rascunho).to_domain() == rascunho
+
+    def test_to_domain_usa_conquistas_e_contexto_editados_e_descarta_conquistas_em_branco(self):
+        rascunho = _rascunho_schema(
+            conquistas=["  Criei APIs. ", "", "  "], contexto=" Empresa de pagamentos. "
+        ).to_domain()
+
+        assert rascunho.experiencias == (
+            ExperienciaAdaptada(
+                cargo="Dev",
+                empresa="TechCorp",
+                periodo="",
+                conquistas=("Criei APIs.",),
+                contexto="Empresa de pagamentos.",
+            ),
+        )
+
+    def test_to_domain_aceita_experiencia_so_com_contexto(self):
+        rascunho = _rascunho_schema(contexto="Empresa de pagamentos.").to_domain()
+
+        assert rascunho.experiencias[0].conquistas == ()
+        assert rascunho.experiencias[0].contexto == "Empresa de pagamentos."
+
+    def test_descricao_legada_e_rejeitada_em_vez_de_ignorada(self):
+        with pytest.raises(ValidationError, match="descricao"):
+            _rascunho_schema(descricao="- Criei APIs.")
+
+
+class TestExperienciaAdaptadaSchema:
+    def test_to_domain_apara_e_descarta_conquistas_em_branco(self):
+        schema = ExperienciaAdaptadaSchema(
+            cargo=" Dev ", empresa="TechCorp", periodo="2024", conquistas=[" A. ", " "], contexto=" C. "
+        )
+
+        assert schema.to_domain() == ExperienciaAdaptada(
+            cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=("A.",), contexto="C."
+        )
+
+    def test_to_domain_sem_nenhum_conteudo_gera_erro(self):
+        with pytest.raises(ValueError, match="conquista ou o contexto"):
+            ExperienciaAdaptadaSchema(cargo="Dev", empresa="TechCorp").to_domain()
+
+    def test_to_domain_sem_empresa_gera_erro(self):
+        with pytest.raises(ValueError, match="empresa"):
+            ExperienciaAdaptadaSchema(cargo="Dev", empresa="", conquistas=["A."]).to_domain()
+
+    def test_from_domain_copia_todos_os_campos(self):
+        experiencia = ExperienciaAdaptada(
+            cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=("A.", "B."), contexto="C."
+        )
+
+        schema = ExperienciaAdaptadaSchema.from_domain(experiencia)
+
+        assert schema.model_dump() == {
+            "cargo": "Dev",
+            "empresa": "TechCorp",
+            "periodo": "2024",
+            "conquistas": ["A.", "B."],
+            "contexto": "C.",
+        }
+
+    def test_campo_desconhecido_e_rejeitado(self):
+        with pytest.raises(ValidationError, match="descricao"):
+            ExperienciaAdaptadaSchema.model_validate(
+                {"cargo": "Dev", "empresa": "TechCorp", "descricao": "texto antigo"}
+            )

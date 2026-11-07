@@ -1,6 +1,7 @@
-import type { RascunhoCurriculoAdaptado } from "../../api/tipos";
+import type { ExperienciaAdaptada, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import type {
   DadosPessoaisFormulario,
+  ExperienciaAdaptadaFormulario,
   ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 
@@ -23,7 +24,7 @@ const TITULO_PERFIL_PADRAO = "Perfil";
  * cadastro; as experiências ficam estruturadas quando a fonte é o perfil; o resto é texto.
  */
 export interface FormularioRevisao extends DadosPessoaisFormulario {
-  experiencias: ExperienciaFormulario[];
+  experiencias: ExperienciaAdaptadaFormulario[];
   secoes: SecaoRascunho[];
 }
 
@@ -33,12 +34,7 @@ export function rascunhoParaFormulario(rascunho: RascunhoCurriculoAdaptado): For
     email: rascunho.email ?? "",
     linkedin: rascunho.linkedin ?? "",
     resumo_profissional: secaoPerfil(rascunho)?.conteudo ?? "",
-    experiencias: (rascunho.experiencias ?? []).map((experiencia) => ({
-      cargo: experiencia.cargo ?? "",
-      empresa: experiencia.empresa ?? "",
-      periodo: experiencia.periodo ?? "",
-      descricao: experiencia.descricao ?? "",
-    })),
+    experiencias: (rascunho.experiencias ?? []).map(experienciaAdaptadaParaFormulario),
     secoes: ORDEM_SECOES_TEXTO.flatMap((tipo) =>
       rascunho.secoes.filter((secao) => secao.tipo === tipo).map((secao) => ({ ...secao })),
     ),
@@ -66,12 +62,7 @@ export function formularioParaRascunho(
     experiencias:
       original.experiencias == null
         ? null
-        : formulario.experiencias.map((experiencia) => ({
-            cargo: experiencia.cargo.trim(),
-            empresa: experiencia.empresa.trim(),
-            periodo: experiencia.periodo.trim(),
-            descricao: experiencia.descricao.trim(),
-          })),
+        : formulario.experiencias.map(formularioParaExperienciaAdaptada),
   };
 }
 
@@ -82,4 +73,65 @@ export function tituloSecaoPerfil(rascunho: RascunhoCurriculoAdaptado): string {
 
 function secaoPerfil(rascunho: RascunhoCurriculoAdaptado): SecaoRascunho | undefined {
   return rascunho.secoes.find((secao) => secao.tipo === "PERFIL");
+}
+
+/** Cada linha do texto é uma conquista; linhas em branco e espaços nas pontas são ignorados. */
+export function linhasParaConquistas(texto: string): string[] {
+  return texto
+    .split("\n")
+    .map((linha) => linha.trim())
+    .filter((linha) => linha !== "");
+}
+
+export function conquistasParaLinhas(conquistas: string[]): string {
+  return conquistas.join("\n");
+}
+
+/** Leva uma experiência da API para o formulário, com as conquistas em linhas de texto. */
+export function experienciaAdaptadaParaFormulario(
+  experiencia: ExperienciaAdaptada,
+): ExperienciaAdaptadaFormulario {
+  return {
+    cargo: experiencia.cargo ?? "",
+    empresa: experiencia.empresa ?? "",
+    periodo: experiencia.periodo ?? "",
+    conquistas: conquistasParaLinhas(experiencia.conquistas ?? []),
+    contexto: experiencia.contexto ?? "",
+  };
+}
+
+/** Devolve a experiência editada ao formato da API, com textos aparados e conquistas em lista. */
+export function formularioParaExperienciaAdaptada(
+  formulario: ExperienciaAdaptadaFormulario,
+): ExperienciaAdaptada {
+  return {
+    cargo: formulario.cargo.trim(),
+    empresa: formulario.empresa.trim(),
+    periodo: formulario.periodo.trim(),
+    conquistas: linhasParaConquistas(formulario.conquistas),
+    contexto: formulario.contexto.trim(),
+  };
+}
+
+/**
+ * Texto que o avaliador recebe: conquistas em bullets e o contexto, sem cabeçalho nem rótulo.
+ * Espelha `ExperienciaAdaptada.para_avaliacao` do backend; os testes dos dois lados usam os
+ * mesmos exemplos para não divergirem.
+ */
+export function descricaoParaAvaliacao(formulario: ExperienciaAdaptadaFormulario): string {
+  const linhas = linhasParaConquistas(formulario.conquistas).map((conquista) => `- ${conquista}`);
+  if (formulario.contexto.trim() !== "") linhas.push(formulario.contexto.trim());
+  return linhas.join("\n");
+}
+
+/** Experiência no formato do modal "Avaliar", com a descrição composta. */
+export function experienciaAdaptadaParaAvaliacao(
+  formulario: ExperienciaAdaptadaFormulario,
+): ExperienciaFormulario {
+  return {
+    empresa: formulario.empresa,
+    cargo: formulario.cargo,
+    periodo: formulario.periodo,
+    descricao: descricaoParaAvaliacao(formulario),
+  };
 }

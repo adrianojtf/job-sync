@@ -19,7 +19,13 @@ const RASCUNHO = {
     { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
   ],
   experiencias: [
-    { cargo: "Dev Java", empresa: "Neoway", periodo: "2020-2024", descricao: "APIs em Java." },
+    {
+      cargo: "Dev Java",
+      empresa: "Neoway",
+      periodo: "2020-2024",
+      conquistas: ["APIs em Java."],
+      contexto: "Empresa de dados.",
+    },
   ],
   titulo_experiencias: "Experiências",
 };

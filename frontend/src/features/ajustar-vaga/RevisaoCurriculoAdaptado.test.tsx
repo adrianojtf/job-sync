@@ -16,7 +16,15 @@ const rascunhoDoPerfil: RascunhoCurriculoAdaptado = {
     { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
     { tipo: "FORMACAO", titulo: "Formação acadêmica", conteudo: "ADS — Estácio" },
   ],
-  experiencias: [{ cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "Texto da IA." }],
+  experiencias: [
+    {
+      cargo: "Dev",
+      empresa: "TechCorp",
+      periodo: "2024",
+      conquistas: ["Conquista da IA."],
+      contexto: "Contexto da IA.",
+    },
+  ],
   titulo_experiencias: "Experiências",
 };
 
@@ -45,12 +53,15 @@ function servirSugestoes() {
       pedidos.push({ rota: "secao", corpo: (await request.json()) as Record<string, unknown> });
       return HttpResponse.json({ conteudo_sugerido: "Seção sugerida pela IA." });
     }),
-    http.post(`${API_TESTE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
+    http.post(`${API_TESTE}/v1/experiencias-adaptadas/sugestoes`, async ({ request }) => {
       pedidos.push({
         rota: "experiencia",
         corpo: (await request.json()) as Record<string, unknown>,
       });
-      return HttpResponse.json({ descricao_sugerida: "Experiência sugerida pela IA." });
+      return HttpResponse.json({
+        conquistas: ["Conquista sugerida.", "Outra conquista sugerida."],
+        contexto: "Contexto sugerido pela IA.",
+      });
     }),
   );
   return pedidos;
@@ -81,7 +92,9 @@ describe("RevisaoCurriculoAdaptado", () => {
     expect(screen.getByRole("heading", { name: "Revise o currículo adaptado" })).toHaveFocus();
     expect(screen.getByLabelText("Nome completo")).toHaveValue("Ana Souza");
     expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo da IA.");
-    expect(screen.getByLabelText("Descrição")).toHaveValue("Texto da IA.");
+    expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
+    expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto da IA.");
+    expect(screen.queryByLabelText("Descrição")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Tecnologias")).toHaveValue("Linguagens: Java");
     expect(screen.getByLabelText("Formação")).toHaveValue("ADS — Estácio");
     expect(screen.queryByRole("heading", { name: "Certificações" })).not.toBeInTheDocument();
@@ -94,8 +107,10 @@ describe("RevisaoCurriculoAdaptado", () => {
 
     await usuario.clear(screen.getByLabelText("Resumo profissional"));
     await usuario.type(screen.getByLabelText("Resumo profissional"), "Resumo revisado.");
-    await usuario.clear(screen.getByLabelText("Descrição"));
-    await usuario.type(screen.getByLabelText("Descrição"), "Texto revisado.");
+    await usuario.clear(screen.getByLabelText("Conquistas"));
+    await usuario.type(screen.getByLabelText("Conquistas"), "Primeira.{Enter}Segunda.");
+    await usuario.clear(screen.getByLabelText("Contexto"));
+    await usuario.type(screen.getByLabelText("Contexto"), "Contexto revisado.");
     await usuario.clear(screen.getByLabelText("Formação"));
     expect(screen.getByText("Alterações não confirmadas")).toBeInTheDocument();
     await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
@@ -109,7 +124,13 @@ describe("RevisaoCurriculoAdaptado", () => {
         { tipo: "FORMACAO", titulo: "Formação acadêmica", conteudo: "" },
       ],
       experiencias: [
-        { cargo: "Dev", empresa: "TechCorp", periodo: "2024", descricao: "Texto revisado." },
+        {
+          cargo: "Dev",
+          empresa: "TechCorp",
+          periodo: "2024",
+          conquistas: ["Primeira.", "Segunda."],
+          contexto: "Contexto revisado.",
+        },
       ],
     });
   });
@@ -139,7 +160,7 @@ describe("RevisaoCurriculoAdaptado", () => {
     await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
 
     expect(aoConfirmar.mock.calls[0]?.[0].experiencias).toEqual([
-      { cargo: "Engenheira", empresa: "Starian", periodo: "", descricao: "" },
+      { cargo: "Engenheira", empresa: "Starian", periodo: "", conquistas: [], contexto: "" },
     ]);
   });
 
@@ -210,6 +231,54 @@ describe("RevisaoCurriculoAdaptado", () => {
     expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo da IA. Editado.");
   });
 
+  it("avisa que a IA pode ter estimado números quando as experiências são estruturadas", () => {
+    renderizar();
+
+    expect(screen.getByText(/A IA pode ter estimado métricas e volumes/)).toBeInTheDocument();
+  });
+
+  it("não mostra o aviso de números estimados quando a fonte é PDF", () => {
+    renderizar({ rascunho: rascunhoDePdf });
+
+    expect(screen.queryByText(/A IA pode ter estimado métricas e volumes/)).not.toBeInTheDocument();
+  });
+
+  it("avalia a experiência com o texto composto de conquistas e contexto atuais", async () => {
+    const usuario = userEvent.setup();
+    let corpoRecebido: unknown;
+    const dimensao = (score: number) => ({ score, nivel: "adequado", confianca: 0.9 });
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/experiencias-profissionais/avaliacoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({
+          score: 74,
+          clareza_escrita: dimensao(80),
+          qualidade_detalhe: dimensao(60),
+          aderencia_vaga: dimensao(70),
+          consistencia_textual: dimensao(86),
+        });
+      }),
+    );
+    renderizar();
+    await usuario.type(screen.getByLabelText("Conquistas"), "{Enter}Segunda conquista.");
+
+    await usuario.click(screen.getByRole("button", { name: "Avaliar experiência 1" }));
+    const dialogo = screen.getByRole("dialog", { name: "Avaliar experiência" });
+    await usuario.type(within(dialogo).getByLabelText("Descrição da vaga"), "Vaga Java");
+    await usuario.click(within(dialogo).getByRole("button", { name: "Avaliar" }));
+    await within(dialogo).findByText("74");
+
+    expect(corpoRecebido).toEqual({
+      experiencia: {
+        empresa: "TechCorp",
+        cargo: "Dev",
+        periodo: "2024",
+        descricao: "- Conquista da IA.\n- Segunda conquista.\nContexto da IA.",
+      },
+      descricao_vaga: "Vaga Java",
+    });
+  });
+
   describe("sugestões de IA", () => {
     const botao = (rotulo: string) =>
       screen.getByRole("button", { name: `Sugestões de IA para ${rotulo}` });
@@ -272,17 +341,17 @@ describe("RevisaoCurriculoAdaptado", () => {
       expect(screen.getByLabelText("Formação")).toHaveValue("ADS — Estácio");
     });
 
-    it("sugere para uma experiência preservando cargo, empresa e período", async () => {
+    it("sugere conquistas e contexto novos, com a vaga, e aplica os dois campos de uma vez", async () => {
       const usuario = userEvent.setup();
       const pedidos = servirSugestoes();
       renderizar();
-      await usuario.type(screen.getByLabelText("Descrição"), " Editada.");
+      await usuario.type(screen.getByLabelText("Conquistas"), " Editada.");
+      await usuario.type(screen.getByLabelText("Contexto"), " Editado.");
 
       await usuario.click(botao("experiência 1"));
-      await screen.findByText("Experiência sugerida pela IA.");
-      await usuario.click(
-        screen.getByRole("button", { name: "Aplicar sugestão em experiência 1" }),
-      );
+      const painel = await screen.findByRole("region", {
+        name: "Sugestão da IA para experiência 1",
+      });
 
       expect(pedidos[0]).toEqual({
         rota: "experiencia",
@@ -291,13 +360,70 @@ describe("RevisaoCurriculoAdaptado", () => {
             cargo: "Dev",
             empresa: "TechCorp",
             periodo: "2024",
-            descricao: "Texto da IA. Editada.",
+            conquistas: ["Conquista da IA. Editada."],
+            contexto: "Contexto da IA. Editado.",
           },
           contexto_vaga: contextoVaga,
         },
       });
-      expect(screen.getByLabelText("Descrição")).toHaveValue("Experiência sugerida pela IA.");
+      expect(painel.querySelector("p")?.textContent).toBe(
+        "- Conquista sugerida.\n- Outra conquista sugerida.\nContexto: Contexto sugerido pela IA.",
+      );
+      expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA. Editada.");
+
+      await usuario.click(
+        screen.getByRole("button", { name: "Aplicar sugestão em experiência 1" }),
+      );
+
+      expect(screen.getByLabelText("Conquistas")).toHaveValue(
+        "Conquista sugerida.\nOutra conquista sugerida.",
+      );
+      expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto sugerido pela IA.");
       expect(screen.getByLabelText("Cargo")).toHaveValue("Dev");
+      expect(screen.getByLabelText("Conquistas")).toHaveFocus();
+      expect(screen.getByText("Alterações não confirmadas")).toBeInTheDocument();
+    });
+
+    it("descartar a sugestão da experiência não altera os campos", async () => {
+      const usuario = userEvent.setup();
+      servirSugestoes();
+      renderizar();
+
+      await usuario.click(botao("experiência 1"));
+      await usuario.click(
+        await screen.findByRole("button", { name: "Descartar sugestão de experiência 1" }),
+      );
+
+      expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
+      expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto da IA.");
+    });
+
+    it("a sugestão da experiência fica desabilitada sem conquistas nem contexto", async () => {
+      const usuario = userEvent.setup();
+      renderizar();
+
+      await usuario.clear(screen.getByLabelText("Conquistas"));
+      await usuario.clear(screen.getByLabelText("Contexto"));
+
+      expect(botao("experiência 1")).toBeDisabled();
+    });
+
+    it("mostra o erro da sugestão da experiência e mantém os textos", async () => {
+      const usuario = userEvent.setup();
+      servidorApi.use(
+        http.post(`${API_TESTE}/v1/experiencias-adaptadas/sugestoes`, () =>
+          HttpResponse.json(
+            { type: "t", title: "Erro", status: 502, detail: "IA fora do ar.", instance: "i" },
+            { status: 502 },
+          ),
+        ),
+      );
+      renderizar();
+
+      await usuario.click(botao("experiência 1"));
+
+      expect(await screen.findByText(/IA fora do ar\./)).toBeInTheDocument();
+      expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
     });
 
     it("mostra o erro no bloco e mantém o texto quando a IA falha", async () => {

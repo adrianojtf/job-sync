@@ -808,7 +808,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"rascunho\": {\"nome_completo\": \"Matheus Silva\", \"email\": \"matheus@email.com\", \"linkedin\": \"\", \"secoes\": [{\"tipo\": \"PERFIL\", \"titulo\": \"Perfil\", \"conteudo\": \"Engenheiro backend com foco em Python.\"}], \"experiencias\": [{\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"descricao\": \"Desenvolvi APIs em Python e FastAPI.\"}]}, \"idioma_alvo\": \"pt\", \"cargo_alvo\": \"Engenheiro de Software\", \"empresa_alvo\": \"TechCorp\"}",
+          "raw": "{\"rascunho\": {\"nome_completo\": \"Matheus Silva\", \"email\": \"matheus@email.com\", \"linkedin\": \"\", \"secoes\": [{\"tipo\": \"PERFIL\", \"titulo\": \"Perfil\", \"conteudo\": \"Engenheiro backend com foco em Python.\"}], \"experiencias\": [{\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"conquistas\": [\"Desenvolvi APIs em Python e FastAPI, reduzindo o tempo de resposta em 40%.\"], \"contexto\": \"Na Starian, atuei na plataforma de pagamentos usada diariamente por milhares de clientes.\"}]}, \"idioma_alvo\": \"pt\", \"cargo_alvo\": \"Engenheiro de Software\", \"empresa_alvo\": \"TechCorp\"}",
           "options": {
             "raw": {
               "language": "json"
@@ -913,6 +913,51 @@
             "exec": [
               "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,502,500,503]).to.include(pm.response.code));",
               "if (pm.response.code === 200) { pm.test('Sugestao presente', () => pm.expect(pm.response.json()).to.have.property('descricao_sugerida')); }",
+              "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15e - Sugerir ajuste de experiencia adaptada (IA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/experiencias-adaptadas/sugestoes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "experiencias-adaptadas",
+            "sugestoes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"experiencia\": {\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"conquistas\": [\"Desenvolvi APIs em Python e FastAPI.\"], \"contexto\": \"Plataforma de pagamentos.\"}, \"contexto_vaga\": {\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI.\", \"idioma_alvo\": \"pt\", \"analise_vaga\": {\"requisitos\": [{\"nome\": \"Python\", \"categoria\": \"TECNOLOGIA\", \"tipo\": \"EXPLICITO\", \"origem\": \"DESCRICAO_VAGA\"}], \"ambiguidade\": [], \"texto_original\": \"Desenvolvedor Python Senior com FastAPI.\"}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,502,500,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Conquistas e contexto presentes', () => { const j = pm.response.json(); pm.expect(j).to.have.property('conquistas'); pm.expect(j).to.have.property('contexto'); }); }",
               "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
             ]
           }

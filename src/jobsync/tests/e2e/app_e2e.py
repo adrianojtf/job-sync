@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 from jobsync.ats_score import CalcularAtsScore, ResultadoAtsScore
-from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
@@ -25,6 +25,7 @@ from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia import SugerirAjusteExperiencia
+from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada import SugerirAjusteExperienciaAdaptada
 from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import SugerirAjusteSecaoCurriculo
 from jobsync.entrypoints.api import dependencies
 from jobsync.entrypoints.api.main import app
@@ -77,7 +78,18 @@ class AjustadorTextoE2E(AjustadorTextoPort):
 class AjustadorExperienciaE2E(AjustadorExperienciaPort):
     def ajustar(
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
-    ) -> ExperienciaParaAvaliacao:
+    ) -> ExperienciaAdaptada:
+        return ExperienciaAdaptada(
+            cargo=experiencia.cargo,
+            empresa=experiencia.empresa,
+            periodo=experiencia.periodo,
+            conquistas=(experiencia.descricao,) if experiencia.descricao.strip() else (),
+            contexto=f"Contexto de {experiencia.empresa}.",
+        )
+
+    def refinar(
+        self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+    ) -> ExperienciaAdaptada:
         return experiencia
 
 
@@ -91,12 +103,18 @@ class AjustadorTextoSugestaoE2E(AjustadorTextoPort):
 class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
     def ajustar(
         self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
-    ) -> ExperienciaParaAvaliacao:
-        return ExperienciaParaAvaliacao(
+    ) -> ExperienciaAdaptada:
+        raise NotImplementedError("As sugestões com vaga usam refinar.")
+
+    def refinar(
+        self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+    ) -> ExperienciaAdaptada:
+        return ExperienciaAdaptada(
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
-            descricao=f"Sugestão com vaga: {experiencia.descricao}",
+            conquistas=tuple(f"Sugestão com vaga: {conquista}" for conquista in experiencia.conquistas),
+            contexto=f"Sugestão com vaga: {experiencia.contexto}",
         )
 
 
@@ -190,7 +208,10 @@ app.dependency_overrides.update(
             ajustador_texto=AjustadorTextoSugestaoE2E(), melhorador=MelhoradorTextoE2E()
         ),
         dependencies.obter_service_sugerir_ajuste_experiencia: lambda: SugerirAjusteExperiencia(
-            ajustador_experiencia=AjustadorExperienciaSugestaoE2E(), melhorador=MelhoradorTextoE2E()
+            melhorador=MelhoradorTextoE2E()
+        ),
+        dependencies.obter_service_sugerir_ajuste_experiencia_adaptada: lambda: SugerirAjusteExperienciaAdaptada(
+            ajustador_experiencia=AjustadorExperienciaSugestaoE2E()
         ),
         dependencies.obter_service_analisar_ats_vaga: lambda: AnalisarAtsVaga(
             extrator=ExtratorCurriculoE2E(),

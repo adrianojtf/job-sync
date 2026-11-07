@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SugestaoIA } from "./SugestaoIA";
 
-function renderizar(props: Partial<Parameters<typeof SugestaoIA>[0]> = {}) {
+function renderizar(props: Partial<Parameters<typeof SugestaoIA<string>>[0]> = {}) {
   const sugerir = vi.fn().mockResolvedValue("Texto sugerido pela IA.");
   const aplicar = vi.fn();
   const focarCampo = vi.fn();
@@ -119,5 +119,87 @@ describe("SugestaoIA", () => {
     const sugestao = await screen.findByText("Texto sugerido pela IA.");
 
     expect(sugestao.closest("[aria-live]")).toHaveAttribute("aria-live", "polite");
+  });
+});
+
+describe("SugestaoIA com sugestão estruturada", () => {
+  interface SugestaoExperiencia {
+    conquistas: string[];
+    contexto: string;
+  }
+  const sugestao: SugestaoExperiencia = {
+    conquistas: ["Criei APIs.", "Reduzi custos."],
+    contexto: "Pagamentos.",
+  };
+  const descrever = (s: SugestaoExperiencia) =>
+    `${s.conquistas.map((c) => `- ${c}`).join("\n")}\n${s.contexto}`;
+
+  function renderizarEstruturado() {
+    const sugerir = vi.fn().mockResolvedValue(sugestao);
+    const aplicar = vi.fn();
+    const focarCampo = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SugestaoIA
+          rotuloBloco="experiência 1"
+          textoAtual="Criei APIs."
+          sugerir={sugerir}
+          descrever={descrever}
+          aplicar={aplicar}
+          focarCampo={focarCampo}
+        />
+      </QueryClientProvider>,
+    );
+    return { sugerir, aplicar, focarCampo };
+  }
+
+  it("mostra o texto descrito da sugestão e aplica o objeto inteiro", async () => {
+    const { sugerir, aplicar, focarCampo } = renderizarEstruturado();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Sugestões de IA para experiência 1" }),
+    );
+    const painel = await screen.findByRole("region", { name: "Sugestão da IA para experiência 1" });
+
+    expect(sugerir).toHaveBeenCalledWith("Criei APIs.");
+    expect(painel.querySelector("p")?.textContent).toBe(
+      "- Criei APIs.\n- Reduzi custos.\nPagamentos.",
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Aplicar sugestão em experiência 1" }),
+    );
+
+    expect(aplicar).toHaveBeenCalledWith(sugestao);
+    expect(focarCampo).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("region")).not.toBeInTheDocument();
+  });
+
+  it("exige descrever quando a sugestão não é texto", () => {
+    const semDescrever = () => (
+      // @ts-expect-error sugestão estruturada exige `descrever`
+      <SugestaoIA
+        rotuloBloco="experiência 1"
+        textoAtual="Criei APIs."
+        sugerir={async () => sugestao}
+        aplicar={() => undefined}
+      />
+    );
+
+    expect(semDescrever).toBeTypeOf("function");
+  });
+
+  it("descartar não aplica nada", async () => {
+    const { aplicar } = renderizarEstruturado();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Sugestões de IA para experiência 1" }),
+    );
+    await screen.findByRole("region", { name: "Sugestão da IA para experiência 1" });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Descartar sugestão de experiência 1" }),
+    );
+
+    expect(aplicar).not.toHaveBeenCalled();
   });
 });

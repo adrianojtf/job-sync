@@ -306,6 +306,82 @@ describe("HttpApiClient", () => {
     expect(resposta.conteudo_sugerido).toBe("ok");
   });
 
+  describe("sugestão de experiência adaptada", () => {
+    const dados = {
+      experiencia: {
+        cargo: "Dev",
+        empresa: "TechCorp",
+        periodo: "2024",
+        conquistas: ["Criei APIs.", "Reduzi custos."],
+        contexto: "Empresa de pagamentos.",
+      },
+      contexto_vaga: {
+        descricao_vaga: "Vaga Java",
+        idioma_alvo: "en",
+        analise_vaga: { requisitos: [], ambiguidade: [], texto_original: "Vaga Java" },
+      },
+    };
+
+    it("envia as conquistas, o contexto e a vaga e devolve os textos refinados", async () => {
+      let corpoRecebido: unknown;
+      servidorApi.use(
+        http.post(`${BASE}/v1/experiencias-adaptadas/sugestoes`, async ({ request }) => {
+          corpoRecebido = await request.json();
+          return HttpResponse.json({
+            conquistas: ["Desenvolvi APIs REST."],
+            contexto: "Plataforma de pagamentos.",
+          });
+        }),
+      );
+
+      const resposta = await criarCliente().sugerirAjusteExperienciaAdaptada(dados);
+
+      expect(corpoRecebido).toEqual(dados);
+      expect(resposta).toEqual({
+        conquistas: ["Desenvolvi APIs REST."],
+        contexto: "Plataforma de pagamentos.",
+      });
+    });
+
+    it("usa o timeout longo das rotas de IA", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/experiencias-adaptadas/sugestoes`, async () => {
+          await delay(60);
+          return HttpResponse.json({ conquistas: ["ok"], contexto: "" });
+        }),
+      );
+
+      const resposta = await criarCliente({
+        timeoutPadraoMs: 20,
+        timeoutIaMs: 500,
+      }).sugerirAjusteExperienciaAdaptada(dados);
+
+      expect(resposta.conquistas).toEqual(["ok"]);
+    });
+
+    it("traz a mensagem do servidor quando a IA está indisponível", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/experiencias-adaptadas/sugestoes`, () =>
+          HttpResponse.json(
+            {
+              type: "t",
+              title: "Sugestão de IA indisponível",
+              status: 502,
+              detail: "O serviço de sugestões de IA está indisponível.",
+              instance: "i",
+            },
+            { status: 502 },
+          ),
+        ),
+      );
+
+      const erro = await capturarErro(criarCliente().sugerirAjusteExperienciaAdaptada(dados));
+
+      expect(erro.status).toBe(502);
+      expect(erro.message).toBe("O serviço de sugestões de IA está indisponível.");
+    });
+  });
+
   it("move a candidatura enviando o novo status", async () => {
     let corpoRecebido: unknown;
     servidorApi.use(

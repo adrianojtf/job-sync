@@ -24,9 +24,11 @@ import type {
   RascunhoAdaptado,
   SalvarCurriculoEntrada,
   StatusCandidatura,
+  SugerirAjusteExperienciaAdaptadaEntrada,
   SugerirAjusteExperienciaEntrada,
   SugerirAjusteSecaoEntrada,
   SugestaoExperiencia,
+  SugestaoExperienciaAdaptada,
   SugestaoSecao,
   TokenCaptura,
   Vaga,
@@ -47,6 +49,10 @@ export interface ApiClient {
   sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao>;
   /** Sugere, via IA, uma nova descrição para uma experiência (JOB-0034). */
   sugerirAjusteExperiencia(dados: SugerirAjusteExperienciaEntrada): Promise<SugestaoExperiencia>;
+  /** Refina conquistas e contexto de uma experiência adaptada, orientado pela vaga (JOB-0035). */
+  sugerirAjusteExperienciaAdaptada(
+    dados: SugerirAjusteExperienciaAdaptadaEntrada,
+  ): Promise<SugestaoExperienciaAdaptada>;
 
   listarCurriculos(perfil: string): Promise<CurriculoSalvo[]>;
   salvarCurriculo(dados: SalvarCurriculoEntrada): Promise<CurriculoSalvo>;

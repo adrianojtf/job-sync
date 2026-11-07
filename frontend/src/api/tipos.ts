@@ -23,6 +23,10 @@ export type SugerirAjusteSecaoEntrada = Esquemas["SugerirAjusteSecaoRequest"];
 export type SugestaoSecao = Esquemas["SugerirAjusteSecaoResponse"];
 export type SugerirAjusteExperienciaEntrada = Esquemas["SugerirAjusteExperienciaRequest"];
 export type SugestaoExperiencia = Esquemas["SugerirAjusteExperienciaResponse"];
+export type ExperienciaAdaptada = Esquemas["ExperienciaAdaptadaSchema"];
+export type SugerirAjusteExperienciaAdaptadaEntrada =
+  Esquemas["SugerirAjusteExperienciaAdaptadaRequest"];
+export type SugestaoExperienciaAdaptada = Esquemas["SugerirAjusteExperienciaAdaptadaResponse"];
 export type AnalisarAtsEntrada = Esquemas["AnalisarAtsRequest"];
 export type AnaliseAts = Esquemas["AnalisarAtsResponse"];
 export type GerarCartaEntrada = Esquemas["GerarCartaApresentacaoRequest"];

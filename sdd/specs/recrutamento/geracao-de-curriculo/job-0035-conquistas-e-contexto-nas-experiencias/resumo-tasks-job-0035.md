@@ -7,7 +7,7 @@
 - [x] 3.0 Gerador de PDF e prompt da fonte PDF
 - [x] 4.0 Casos de uso de sugestão
 - [x] 5.0 API
-- [ ] 6.0 Cliente de API e tipos
+- [x] 6.0 Cliente de API e tipos
 - [ ] 7.0 SugestaoIA genérico e formulário
 - [ ] 8.0 Tela de revisão
 - [ ] 9.0 E2E, acessibilidade e suíte completa

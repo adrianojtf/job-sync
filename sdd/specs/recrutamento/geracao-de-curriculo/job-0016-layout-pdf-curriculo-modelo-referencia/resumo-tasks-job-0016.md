@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 Fontes Carlito, `RegistradorFontesPdf` e `EstiloCurriculoPdf`
-- [ ] 2.0 `InterpretadorExperiencias` e `BlocoExperiencia`
+- [x] 2.0 `InterpretadorExperiencias` e `BlocoExperiencia`
 - [x] 3.0 `CatalogoLocalizacao`: título "Technical Skills"
 - [ ] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
 - [ ] 5.0 `GeradorPdfClient`: experiências com empresa/período, cargo, tópicos e contexto

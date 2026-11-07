@@ -71,6 +71,7 @@ class BlocoExperiencia:
     cargo: str = ""
     topicos: tuple[str, ...] = ()
     contexto: str = ""
+    descricao: tuple[str, ...] = ()  # linhas soltas, desenhadas como texto normal
 
 
 class InterpretadorExperiencias:
@@ -91,12 +92,13 @@ Entrada: texto da seção, blocos separados por linha em branco.
    - Mês: `Jan|Feb|...|Dec` e `Jan|Fev|...|Dez` (com ou sem ponto), ou `MM/AAAA`, ou só `AAAA`.
    - Fim: outra data ou `Present|Presente|Atual|Current|Hoje`.
    - Separador: `-`, `–` ou `—`, com espaços opcionais.
-   - **Formato com travessão** (gerado por `MontarCurriculoDoPerfilEstruturado` e pelo `para_texto` do JOB-0035): `Cargo — Empresa (Período)`. Reconhecido quando a linha contém ` — ` (travessão U+2014, nunca hífen, para não confundir com `SIPPulse - High-Performance...`). Os parênteses finais são opcionais: o `para_texto` do JOB-0035 os omite quando não há período. Resultado: `cargo` = texto antes do travessão, `empresa` = texto entre o travessão e os parênteses (ou o fim da linha), `periodo` = conteúdo dos parênteses (vazio se `()` ou ausente).
+   - **Formato com travessão** (gerado por `MontarCurriculoDoPerfilEstruturado` e pelo `para_texto` do JOB-0035): `Cargo — Empresa (Período)`. Reconhecido quando a linha contém ` — ` (travessão U+2014, nunca hífen, para não confundir com `SIPPulse - High-Performance...`). Os parênteses finais são opcionais: o `para_texto` do JOB-0035 os omite quando não há período. Resultado: `cargo` = texto antes do travessão, `empresa` = texto entre o travessão e os parênteses (ou o fim da linha), `periodo` = conteúdo dos parênteses (vazio se `()` ou ausente). Parênteses cujo conteúdo não é período, data ou ano (ex.: `(UFSC)`) permanecem no nome.
    - Formação e certificações usam a mesma regra com `Curso — Instituição (Período)` e `Nome — Instituição (Ano)`: o lado esquerdo vai para a linha em itálico azul e o direito, em negrito.
    - Sem período encontrado: `empresa` = linha inteira, `periodo` = `""` (RF 24).
 2. **Cargo (2ª linha):** só quando o cargo não veio do cabeçalho com travessão, e quando não começa com marcador, não começa com rótulo de contexto e tem até 80 caracteres sem ano de 4 dígitos (regra atual de `_parece_posicao_experiencia`, reaproveitada).
 3. **Tópicos:** linhas que começam com `-`, `•`, `●` ou `*`. Remover o marcador e espaços.
-4. **Contexto:** linha que tem, antes do primeiro `:`, um rótulo de `ROTULOS_CONTEXTO_RECONHECIDOS` (`jobsync.curriculo.domain.rotulos_experiencia`; mesma regra do JOB-0035: sem diferenciar maiúsculas, aceita `Contexto:texto` sem espaço, e `Contextualizei...` não é rótulo), mais as linhas seguintes que não são tópicos. O rótulo permanece no texto exibido. Linhas soltas sem rótulo, após o cargo, também vão para `contexto`. Assim, nenhum texto se perde.
+4. **Contexto:** linha que tem, antes do primeiro `:`, um rótulo de `ROTULOS_CONTEXTO_RECONHECIDOS` (`jobsync.curriculo.domain.rotulos_experiencia`; mesma regra do JOB-0035: sem diferenciar maiúsculas, aceita `Contexto:texto` sem espaço, e `Contextualizei...` não é rótulo), mais as linhas seguintes que não são tópicos nem rótulo (continuação do mesmo parágrafo, unidas por espaço). O rótulo permanece no texto exibido.
+5. **Descrição:** qualquer outra linha (sem marcador, sem rótulo, fora do cabeçalho e do cargo) vai para `descricao` e é desenhada como texto normal, como hoje. Isso preserva o texto corrido de currículos antigos e o comportamento do JOB-0035 (`Contextualizei...` não vira itálico). Nenhum texto se perde.
 
 ### Regras de renderização
 

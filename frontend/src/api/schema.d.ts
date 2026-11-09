@@ -630,6 +630,37 @@ export interface components {
             nome_completo: string;
         };
         /**
+         * AjusteTecnologiaSchema
+         * @description Troca de tecnologia feita pela IA em uma experiência, para o usuário conferir.
+         */
+        AjusteTecnologiaSchema: {
+            /**
+             * Indice Experiencia
+             * @description Posição da experiência em `experiencias`.
+             */
+            indice_experiencia: number;
+            /**
+             * Cargo
+             * @description Cargo da experiência que recebeu a troca.
+             */
+            cargo: string;
+            /**
+             * Empresa
+             * @description Empresa da experiência que recebeu a troca.
+             */
+            empresa: string;
+            /**
+             * Original
+             * @description Tecnologia do perfil substituída.
+             */
+            original: string;
+            /**
+             * Alvo
+             * @description Tecnologia equivalente pedida pela vaga.
+             */
+            alvo: string;
+        };
+        /**
          * AnalisarAtsRequest
          * @description Payload para análise de aderência ATS de um currículo a uma vaga.
          * @example {
@@ -1118,6 +1149,12 @@ export interface components {
             idioma_alvo: string;
             /** @description Análise da vaga devolvida junto com o rascunho. */
             analise_vaga: components["schemas"]["AnaliseVagaSchema"];
+            /**
+             * Cargo Alvo
+             * @description Cargo-alvo (título da vaga); orienta a ênfase da sugestão.
+             * @default
+             */
+            cargo_alvo?: string;
         };
         /**
          * CurriculoRevisadoResponse
@@ -1413,6 +1450,11 @@ export interface components {
             descricao: string;
         };
         /**
+         * FocoRefino
+         * @enum {string}
+         */
+        FocoRefino: "aderencia_vaga" | "impacto" | "palavras_chave" | "clareza_concisao" | "enfase_tecnica";
+        /**
          * FormacaoAcademicaRequest
          * @description Uma formação acadêmica para criação/edição do perfil.
          */
@@ -1583,6 +1625,23 @@ export interface components {
              * @description Data e hora da mudança.
              */
             data: string;
+        };
+        /**
+         * PedidoRefinoSchema
+         * @description Histórico do campo na tela: cada tentativa muda o foco e não repete as anteriores.
+         */
+        PedidoRefinoSchema: {
+            /**
+             * Tentativa
+             * @description Número do pedido para o mesmo campo, a partir de 1.
+             * @default 1
+             */
+            tentativa?: number;
+            /**
+             * Sugestoes Anteriores
+             * @description Últimas sugestões já mostradas para o campo, para a IA não repeti-las.
+             */
+            sugestoes_anteriores?: string[];
         };
         /**
          * PerfilEstruturadoRequest
@@ -1845,11 +1904,23 @@ export interface components {
          * RascunhoCurriculoAdaptadoSchema
          * @description Rascunho do currículo adaptado, revisado pelo usuário antes do PDF.
          * @example {
+         *       "ajustes_tecnologia": [
+         *         {
+         *           "alvo": "Angular",
+         *           "cargo": "Dev Backend",
+         *           "empresa": "TechCorp",
+         *           "indice_experiencia": 0,
+         *           "original": "React"
+         *         }
+         *       ],
          *       "email": "ana@ex.com",
          *       "experiencias": [
          *         {
          *           "cargo": "Dev Backend",
-         *           "descricao": "Desenvolvi APIs em Python.",
+         *           "conquistas": [
+         *             "Desenvolvi APIs em Angular e Java."
+         *           ],
+         *           "contexto": "Na TechCorp, atuei no front-end com Angular.",
          *           "empresa": "TechCorp",
          *           "periodo": "2022 - Atual"
          *         }
@@ -1900,6 +1971,11 @@ export interface components {
              * @default Experiências
              */
             titulo_experiencias?: string;
+            /**
+             * Ajustes Tecnologia
+             * @description Trocas de tecnologia feitas pela IA nas experiências (informativo). Ignorado na geração do PDF revisado.
+             */
+            ajustes_tecnologia?: components["schemas"]["AjusteTecnologiaSchema"][];
         };
         /**
          * RequisitoFaltanteExternoResponse
@@ -2015,6 +2091,8 @@ export interface components {
             experiencia: components["schemas"]["ExperienciaAdaptadaSchema"];
             /** @description Vaga que orienta a sugestão: descrição, idioma e análise devolvida com o rascunho. */
             contexto_vaga: components["schemas"]["ContextoVagaSchema"];
+            /** @description Tentativa e sugestões anteriores; sem ele, vale a primeira tentativa. */
+            refino?: components["schemas"]["PedidoRefinoSchema"];
         };
         /**
          * SugerirAjusteExperienciaAdaptadaResponse
@@ -2031,6 +2109,8 @@ export interface components {
              * @description Contexto sugerido.
              */
             contexto: string;
+            /** @description Foco usado nesta sugestão, em rodízio pela tentativa. */
+            foco: components["schemas"]["FocoRefino"];
         };
         /**
          * SugerirAjusteExperienciaRequest
@@ -2042,6 +2122,8 @@ export interface components {
         SugerirAjusteExperienciaRequest: {
             /** @description Experiência com a descrição atual, incluindo edições. */
             experiencia: components["schemas"]["ExperienciaParaAvaliacaoRequest"];
+            /** @description Tentativa e sugestões anteriores; sem ele, vale a primeira tentativa. */
+            refino?: components["schemas"]["PedidoRefinoSchema"];
         };
         /**
          * SugerirAjusteExperienciaResponse
@@ -2053,6 +2135,8 @@ export interface components {
              * @description Nova versão da descrição da experiência.
              */
             descricao_sugerida: string;
+            /** @description Foco usado nesta sugestão, em rodízio pela tentativa. */
+            foco: components["schemas"]["FocoRefino"];
         };
         /**
          * SugerirAjusteSecaoRequest
@@ -2070,6 +2154,8 @@ export interface components {
             secao: components["schemas"]["SecaoRascunhoSchema"];
             /** @description Contexto da vaga; sem ele, a IA apenas melhora a escrita. */
             contexto_vaga?: components["schemas"]["ContextoVagaSchema"] | null;
+            /** @description Tentativa e sugestões anteriores; sem ele, vale a primeira tentativa. */
+            refino?: components["schemas"]["PedidoRefinoSchema"];
         };
         /**
          * SugerirAjusteSecaoResponse
@@ -2081,6 +2167,8 @@ export interface components {
              * @description Nova versão do conteúdo da seção.
              */
             conteudo_sugerido: string;
+            /** @description Foco usado nesta sugestão, em rodízio pela tentativa. */
+            foco: components["schemas"]["FocoRefino"];
         };
         /**
          * TokenCapturaCriarRequest

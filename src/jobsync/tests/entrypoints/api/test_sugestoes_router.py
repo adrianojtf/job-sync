@@ -8,6 +8,7 @@ from jobsync.curriculo import (
     ExperienciaAdaptada,
     ExperienciaParaAvaliacao,
     FocoRefino,
+    PedidoRefino,
     SecaoCurriculo,
     SugestaoRefinada,
 )
@@ -35,8 +36,11 @@ class ServicoSecaoFake:
         self.chamadas: list[tuple] = []
         self._erro = erro
 
-    def executar(self, secao: SecaoCurriculo, contexto):
+        self.refinos: list[PedidoRefino] = []
+
+    def executar(self, secao: SecaoCurriculo, contexto, refino: PedidoRefino):
         self.chamadas.append((secao, contexto))
+        self.refinos.append(refino)
         if self._erro:
             raise self._erro
         return SugestaoRefinada(secao.com_novo_conteudo("Texto sugerido."), FocoRefino.IMPACTO)
@@ -47,8 +51,11 @@ class ServicoExperienciaFake:
         self.chamadas: list[ExperienciaParaAvaliacao] = []
         self._erro = erro
 
-    def executar(self, experiencia: ExperienciaParaAvaliacao):
+        self.refinos: list[PedidoRefino] = []
+
+    def executar(self, experiencia: ExperienciaParaAvaliacao, refino: PedidoRefino):
         self.chamadas.append(experiencia)
+        self.refinos.append(refino)
         if self._erro:
             raise self._erro
         return SugestaoRefinada(
@@ -67,8 +74,11 @@ class ServicoExperienciaAdaptadaFake:
         self.chamadas: list[tuple] = []
         self._erro = erro
 
-    def executar(self, experiencia: ExperienciaAdaptada, contexto):
+        self.refinos: list[PedidoRefino] = []
+
+    def executar(self, experiencia: ExperienciaAdaptada, contexto, refino: PedidoRefino):
         self.chamadas.append((experiencia, contexto))
+        self.refinos.append(refino)
         if self._erro:
             raise self._erro
         return SugestaoRefinada(
@@ -128,7 +138,7 @@ class TestSugestaoDeSecaoRouter:
         )
 
         assert response.status_code == 200
-        assert response.json() == {"conteudo_sugerido": "Texto sugerido."}
+        assert response.json() == {"conteudo_sugerido": "Texto sugerido.", "foco": "impacto"}
         secao, contexto = servico.chamadas[0]
         assert secao.conteudo == "Texto atual."
         assert contexto.idioma_alvo == "en"
@@ -181,7 +191,7 @@ class TestSugestaoDeExperienciaRouter:
         )
 
         assert response.status_code == 200
-        assert response.json() == {"descricao_sugerida": "Descrição sugerida."}
+        assert response.json() == {"descricao_sugerida": "Descrição sugerida.", "foco": "impacto"}
         assert perfil.chamadas[0].descricao == "Descrição atual."
         assert adaptada.chamadas == []
 
@@ -243,6 +253,7 @@ class TestSugestaoDeExperienciaAdaptadaRouter:
         assert response.json() == {
             "conquistas": ["Conquista sugerida."],
             "contexto": "Contexto sugerido.",
+            "foco": "aderencia_vaga",
         }
         experiencia, contexto = adaptada.chamadas[0]
         assert experiencia == ExperienciaAdaptada(
@@ -331,3 +342,69 @@ class TestSugestaoDeExperienciaAdaptadaRouter:
         )
 
         assert response.status_code == 502
+
+
+REFINO = {"tentativa": 2, "sugestoes_anteriores": ["Versão 1."]}
+
+
+class TestRefinoDasSugestoesRouter:
+    def test_secao_repassa_o_refino_e_o_cargo_alvo(self, client: TestClient):
+        servico = ServicoSecaoFake()
+        app.dependency_overrides[obter_service_sugerir_ajuste_secao_curriculo] = lambda: servico
+
+        response = client.post(
+            "/v1/secoes-curriculo/sugestoes",
+            json=_corpo_secao(
+                contexto_vaga={**CONTEXTO_VAGA, "cargo_alvo": "Code Reviewer"}, refino=REFINO
+            ),
+        )
+
+        assert response.status_code == 200
+        assert servico.refinos == [PedidoRefino(tentativa=2, sugestoes_anteriores=("Versão 1.",))]
+        assert servico.chamadas[0][1].cargo_alvo == "Code Reviewer"
+
+    def test_sem_refino_usa_a_primeira_tentativa(self, client: TestClient):
+        servico = ServicoSecaoFake()
+        app.dependency_overrides[obter_service_sugerir_ajuste_secao_curriculo] = lambda: servico
+
+        response = client.post("/v1/secoes-curriculo/sugestoes", json=_corpo_secao())
+
+        assert response.status_code == 200
+        assert servico.refinos == [PedidoRefino()]
+
+    def test_experiencia_do_perfil_aceita_o_refino(self, client: TestClient):
+        perfil, _ = _sobrescrever_servicos_de_experiencia()
+
+        response = client.post(
+            "/v1/experiencias-profissionais/sugestoes", json=_corpo_experiencia(refino=REFINO)
+        )
+
+        assert response.status_code == 200
+        assert perfil.refinos == [PedidoRefino(tentativa=2, sugestoes_anteriores=("Versão 1.",))]
+
+    def test_experiencia_adaptada_repassa_o_refino_e_o_cargo_alvo(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+
+        response = client.post(
+            "/v1/experiencias-adaptadas/sugestoes",
+            json=_corpo_experiencia_adaptada(
+                contexto_vaga={**CONTEXTO_VAGA, "cargo_alvo": "Code Reviewer"}, refino=REFINO
+            ),
+        )
+
+        assert response.status_code == 200
+        assert adaptada.refinos == [PedidoRefino(tentativa=2, sugestoes_anteriores=("Versão 1.",))]
+        assert adaptada.chamadas[0][1].cargo_alvo == "Code Reviewer"
+
+    @pytest.mark.parametrize(
+        "refino",
+        [{"tentativa": 0}, {"tentativa": 5, "sugestoes_anteriores": ["a", "b", "c", "d"]}],
+    )
+    def test_refino_invalido_devolve_422_sem_chamar_o_servico(self, client: TestClient, refino):
+        servico = ServicoSecaoFake()
+        app.dependency_overrides[obter_service_sugerir_ajuste_secao_curriculo] = lambda: servico
+
+        response = client.post("/v1/secoes-curriculo/sugestoes", json=_corpo_secao(refino=refino))
+
+        assert response.status_code == 422
+        assert servico.chamadas == []

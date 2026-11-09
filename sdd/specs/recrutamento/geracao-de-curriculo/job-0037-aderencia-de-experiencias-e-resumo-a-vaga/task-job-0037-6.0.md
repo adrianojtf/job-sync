@@ -18,11 +18,11 @@ Expor na API o cargo-alvo do contexto, o refino, o foco e os ajustes de tecnolog
 
 ## Subtarefas
 
-- [ ] 6.1 Testes de schema e router (Red).
-- [ ] 6.2 Schemas e conversões.
-- [ ] 6.3 Routers.
-- [ ] 6.4 Postman.
-- [ ] 6.5 Tipos do frontend.
+- [x] 6.1 Testes de schema e router (Red).
+- [x] 6.2 Schemas e conversões.
+- [x] 6.3 Routers.
+- [x] 6.4 Postman.
+- [x] 6.5 Tipos do frontend.
 
 ## Detalhes de Implementação
 
@@ -35,7 +35,7 @@ Ver "Modelos de Dados" e "Endpoints de API" em `techspec-job-0037.md`.
 
 ## Testes da Tarefa
 
-- [ ] Testes de schema e router; verificação do contrato gerado.
+- [x] Testes de schema e router; verificação do contrato gerado.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

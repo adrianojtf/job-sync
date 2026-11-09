@@ -779,7 +779,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
-              "if (pm.response.code === 200) { pm.test('Rascunho presente e sem PDF', () => { const j = pm.response.json(); pm.expect(j).to.have.property('rascunho'); pm.expect(j.rascunho).to.have.property('secoes'); pm.expect(j).to.not.have.property('pdf_base64'); }); }",
+              "if (pm.response.code === 200) { pm.test('Rascunho presente e sem PDF', () => { const j = pm.response.json(); pm.expect(j).to.have.property('rascunho'); pm.expect(j.rascunho).to.have.property('secoes'); pm.expect(j).to.not.have.property('pdf_base64'); pm.expect(j.rascunho).to.have.property('ajustes_tecnologia'); }); }",
               "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
             ]
           }
@@ -852,7 +852,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"secao\": {\"tipo\": \"PERFIL\", \"titulo\": \"Perfil\", \"conteudo\": \"Engenheiro backend com foco em Python.\"}, \"contexto_vaga\": {\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI.\", \"idioma_alvo\": \"pt\", \"analise_vaga\": {\"requisitos\": [{\"nome\": \"Python\", \"categoria\": \"TECNOLOGIA\", \"tipo\": \"EXPLICITO\", \"origem\": \"DESCRICAO_VAGA\"}], \"ambiguidade\": [], \"texto_original\": \"Desenvolvedor Python Senior com FastAPI.\"}}}",
+          "raw": "{\"secao\": {\"tipo\": \"PERFIL\", \"titulo\": \"Perfil\", \"conteudo\": \"Engenheiro backend com foco em Python.\"}, \"contexto_vaga\": {\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI.\", \"idioma_alvo\": \"pt\", \"analise_vaga\": {\"requisitos\": [{\"nome\": \"Python\", \"categoria\": \"TECNOLOGIA\", \"tipo\": \"EXPLICITO\", \"origem\": \"DESCRICAO_VAGA\"}], \"ambiguidade\": [], \"texto_original\": \"Desenvolvedor Python Senior com FastAPI.\"}, \"cargo_alvo\": \"Engenheiro de Software\"}, \"refino\": {\"tentativa\": 2, \"sugestoes_anteriores\": [\"Engenheiro backend Python com foco em APIs.\"]}}",
           "options": {
             "raw": {
               "language": "json"
@@ -867,7 +867,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,502,500,503]).to.include(pm.response.code));",
-              "if (pm.response.code === 200) { pm.test('Sugestao presente', () => pm.expect(pm.response.json()).to.have.property('conteudo_sugerido')); }",
+              "if (pm.response.code === 200) { pm.test('Sugestao presente', () => pm.expect(pm.response.json()).to.have.property('conteudo_sugerido')); pm.test('Foco da sugestao presente', () => pm.expect(pm.response.json()).to.have.property('foco')); }",
               "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
             ]
           }
@@ -897,7 +897,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"experiencia\": {\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"descricao\": \"Desenvolvi APIs em Python e FastAPI.\"}}",
+          "raw": "{\"experiencia\": {\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"descricao\": \"Desenvolvi APIs em Python e FastAPI.\"}, \"refino\": {\"tentativa\": 2, \"sugestoes_anteriores\": [\"Engenheiro backend Python com foco em APIs.\"]}}",
           "options": {
             "raw": {
               "language": "json"
@@ -912,7 +912,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,502,500,503]).to.include(pm.response.code));",
-              "if (pm.response.code === 200) { pm.test('Sugestao presente', () => pm.expect(pm.response.json()).to.have.property('descricao_sugerida')); }",
+              "if (pm.response.code === 200) { pm.test('Sugestao presente', () => pm.expect(pm.response.json()).to.have.property('descricao_sugerida')); pm.test('Foco da sugestao presente', () => pm.expect(pm.response.json()).to.have.property('foco')); }",
               "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
             ]
           }
@@ -942,7 +942,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"experiencia\": {\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"conquistas\": [\"Desenvolvi APIs em Python e FastAPI.\"], \"contexto\": \"Plataforma de pagamentos.\"}, \"contexto_vaga\": {\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI.\", \"idioma_alvo\": \"pt\", \"analise_vaga\": {\"requisitos\": [{\"nome\": \"Python\", \"categoria\": \"TECNOLOGIA\", \"tipo\": \"EXPLICITO\", \"origem\": \"DESCRICAO_VAGA\"}], \"ambiguidade\": [], \"texto_original\": \"Desenvolvedor Python Senior com FastAPI.\"}}}",
+          "raw": "{\"experiencia\": {\"cargo\": \"Engenheiro de Software\", \"empresa\": \"Starian\", \"periodo\": \"2021 - Atual\", \"conquistas\": [\"Desenvolvi APIs em Python e FastAPI.\"], \"contexto\": \"Plataforma de pagamentos.\"}, \"contexto_vaga\": {\"descricao_vaga\": \"Desenvolvedor Python Senior com FastAPI.\", \"idioma_alvo\": \"pt\", \"analise_vaga\": {\"requisitos\": [{\"nome\": \"Python\", \"categoria\": \"TECNOLOGIA\", \"tipo\": \"EXPLICITO\", \"origem\": \"DESCRICAO_VAGA\"}], \"ambiguidade\": [], \"texto_original\": \"Desenvolvedor Python Senior com FastAPI.\"}, \"cargo_alvo\": \"Engenheiro de Software\"}, \"refino\": {\"tentativa\": 2, \"sugestoes_anteriores\": [\"Engenheiro backend Python com foco em APIs.\"]}}",
           "options": {
             "raw": {
               "language": "json"
@@ -957,7 +957,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,502,500,503]).to.include(pm.response.code));",
-              "if (pm.response.code === 200) { pm.test('Conquistas e contexto presentes', () => { const j = pm.response.json(); pm.expect(j).to.have.property('conquistas'); pm.expect(j).to.have.property('contexto'); }); }",
+              "if (pm.response.code === 200) { pm.test('Conquistas e contexto presentes', () => { const j = pm.response.json(); pm.expect(j).to.have.property('conquistas'); pm.expect(j).to.have.property('contexto'); }); pm.test('Foco da sugestao presente', () => pm.expect(pm.response.json()).to.have.property('foco')); }",
               "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
             ]
           }

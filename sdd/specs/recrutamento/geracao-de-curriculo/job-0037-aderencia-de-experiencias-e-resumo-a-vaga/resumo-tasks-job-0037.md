@@ -7,7 +7,7 @@
 - [x] 3.0 Identificador de equivalências (porta e adapter)
 - [x] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
 - [x] 5.0 Refino variável no backend
-- [ ] 6.0 API, Postman e tipos do frontend
+- [x] 6.0 API, Postman e tipos do frontend
 - [ ] 7.0 SugestaoIA com histórico e foco
 - [ ] 8.0 Tela de revisão: ajustes de tecnologia, aviso e cargo-alvo
 - [ ] 9.0 E2E, acessibilidade e suíte completa
@@ -61,3 +61,7 @@
 - **Task 5.0 — trecho de prompt único:** foco e versões anteriores vêm de `curriculo/adapters/prompt_refino.py` (`bloco_refino`), usado pelos três adapters.
 - **Task 5.0 — sugestão de experiência na revisão:** `refinar` não recebe o plano de trocas; mantém as tecnologias já citadas por instrução ("Mantenha as tecnologias já citadas nas conquistas e no contexto atuais"), como previsto na tech spec.
 - **Achado fora do escopo:** `curriculo_router.py` importa `SalvarCurriculo` sem uso (anterior a esta JOB). Não alterado.
+- **Task 6.0 — `foco` como enum do domínio:** os schemas usam `FocoRefino` diretamente; o OpenAPI expõe o enum `FocoRefino` com os cinco valores, e o frontend o recebe como tipo literal.
+- **Task 6.0 — `ajustes_tecnologia` com cargo e empresa:** além de `indice_experiencia`, cada ajuste traz cargo e empresa da experiência, para a lista da revisão não depender do índice. No envio para `/curriculos-revisados` o campo é aceito e ignorado.
+- **Task 6.0 — exemplo do rascunho no OpenAPI:** o exemplo ainda usava `descricao` (formato anterior à JOB-0035), que o schema rejeita. Atualizado para conquistas, contexto e `ajustes_tecnologia`.
+- **Task 6.0 — limites do refino:** `tentativa >= 1` e no máximo 3 `sugestoes_anteriores` são validados pelo Pydantic (422 antes de chegar ao caso de uso).

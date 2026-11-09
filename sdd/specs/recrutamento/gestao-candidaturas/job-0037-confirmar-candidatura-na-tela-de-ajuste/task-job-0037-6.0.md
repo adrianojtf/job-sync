@@ -10,7 +10,7 @@ Adicionar o botão ao cartão do PDF gerado, com os estados do PRD: inicial, env
 - Guardar uma cópia da vaga usada (`cargo_alvo`, `empresa_alvo`, `descricao_vaga`) quando o PDF é gerado, para o botão não depender do formulário, que pode ser editado depois.
 - Mutation `confirmarCandidatura` em `use-ajustar-vaga.ts`; em sucesso, invalidar `chaveCandidaturas`, `chaveCurriculos` e `chaveVagas` do perfil.
 - Botão "Confirmar candidatura" no `CurriculoGerado`, ao lado de "Baixar PDF" (que continua sendo o botão primário); só aparece com PDF gerado (RF 1).
-- Empresa em branco: botão desabilitado com a explicação "Informe a empresa na vaga para confirmar a candidatura" (RF 2).
+- Empresa: sem estado próprio, porque o formulário já a exige para gerar o PDF (RF 2 revisado). O backend continua validando.
 - Enviando: botão desabilitado e indicando andamento (RF 3).
 - Sucesso: "Candidatura confirmada em Aplicado" com o link "Ver no board" e botão desabilitado (RF 9).
 - 409: mostrar "Sua biblioteca de currículos está cheia. Remova um currículo para confirmar a candidatura." (RF 10). Outro erro: mensagem e nova tentativa (RF 11).
@@ -21,11 +21,11 @@ Adicionar o botão ao cartão do PDF gerado, com os estados do PRD: inicial, env
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever os testes da tela (red).
-- [ ] 6.2 Criar a mutation e a invalidação das listas.
-- [ ] 6.3 Guardar a vaga do PDF gerado e passá-la ao `CurriculoGerado`.
-- [ ] 6.4 Implementar o botão e os estados.
-- [ ] 6.5 Reiniciar o botão ao gerar um novo PDF.
+- [x] 6.1 Escrever os testes da tela (red).
+- [x] 6.2 Criar a mutation e a invalidação das listas.
+- [x] 6.3 Guardar a vaga do PDF gerado e passá-la ao `CurriculoGerado`.
+- [x] 6.4 Implementar o botão e os estados.
+- [x] 6.5 Reiniciar o botão ao gerar um novo PDF.
 
 ## Detalhes de Implementação
 
@@ -39,14 +39,16 @@ Consultar em `techspec-job-0037.md` a seção "Frontend". O ponto de captura da 
 
 ## Testes da Tarefa
 
-- [ ] O botão não aparece antes de o PDF ser gerado e aparece depois.
-- [ ] Sem empresa, o botão fica desabilitado e mostra a explicação.
-- [ ] O clique envia `cargo`, `empresa`, `descricao_vaga`, `nome_arquivo`, `pdf_base64` e o perfil.
-- [ ] Sucesso mostra a mensagem e o link para o board, e desabilita o botão.
-- [ ] Erro 409 mostra a mensagem de biblioteca cheia.
-- [ ] Outro erro mostra a mensagem e permite tentar de novo.
-- [ ] Gerar um novo PDF depois de confirmar volta o botão ao estado inicial.
-- [ ] As listas de candidaturas, currículos e vagas são invalidadas.
+- [x] O botão não aparece antes de o PDF ser gerado e aparece depois.
+- [x] O clique envia `cargo`, `empresa`, `descricao_vaga`, `nome_arquivo`, `pdf_base64` e o perfil.
+- [x] Sucesso mostra a mensagem e o link para o board, e desabilita o botão.
+- [x] Erro 409 mostra a mensagem de biblioteca cheia.
+- [x] Outro erro mostra a mensagem e permite tentar de novo.
+- [x] Gerar um novo PDF depois de confirmar volta o botão ao estado inicial.
+- [x] As listas de candidaturas, currículos e vagas são invalidadas.
+- [x] O foco vai para a mensagem de confirmação quando o botão fica desabilitado.
+- [x] O clique durante o envio não dispara uma segunda requisição.
+- [x] A candidatura leva a vaga que gerou o PDF, não o que foi editado no formulário depois.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -56,5 +58,7 @@ Consultar em `techspec-job-0037.md` a seção "Frontend". O ponto de captura da 
 - `frontend/src/features/ajustar-vaga/use-ajustar-vaga.ts`
 - `frontend/src/features/ajustar-vaga/AjustarVagaPage.test.tsx`
 - `frontend/src/features/candidaturas/use-candidaturas.ts` (chave de cache)
+- `frontend/src/features/ajustar-vaga/AjustarVagaPage.module.css`
+- `frontend/src/test/renderizar-app.tsx` (passou a devolver o `queryClient`, para o teste verificar a invalidação)
 - `frontend/src/features/curriculos/use-curriculos.ts` (chave de cache)
 - `frontend/src/features/vagas-salvas/use-vagas-salvas.ts` (chave de cache)

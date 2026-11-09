@@ -120,7 +120,7 @@ Observação: `POST /v1/curriculos` devolve 422 para a mesma condição de bibli
 
 - `confirmarCandidaturaAjustada(dados)` no `ApiClient`, com `pdf_base64` e `nome_arquivo` vindos do PDF gerado.
 - O `CurriculoGerado` recebe a vaga do PDF e o estado da mutation. Estados: inicial, enviando, confirmado e erro.
-- Empresa em branco: botão desabilitado com a explicação do PRD.
+- Empresa: o formulário já exige a empresa para gerar o PDF, então o botão não tem estado para empresa em branco. O backend continua validando (422).
 - Novo PDF gerado: `confirmarCandidatura.reset()` volta o botão ao estado inicial (RF 12).
 - Em sucesso, invalidar `chaveCandidaturas`, `chaveCurriculos` e `chaveVagas` do perfil.
 - A mensagem de sucesso e a de erro usam `role="status"` e `role="alert"`, como as outras telas.
@@ -203,7 +203,6 @@ Nenhuma bloqueante. As tarefas 1 e 2 não dependem uma da outra.
 - **Biblioteca poluída:** os PDFs confirmados entram na lista de currículos-base (questões 1 e 2 do PRD).
 - **Duplicidade:** dois cliques rápidos podem criar duas candidaturas. O botão desabilita ao enviar, mas o servidor não é idempotente.
 - **Tamanho do corpo:** o PDF em base64 cresce cerca de um terço. Verificar o limite de corpo do servidor e do Nginx para um PDF de 2 páginas (o gerado hoje tem cerca de 55 KB).
-- **Empresa opcional na tela de ajuste:** sem empresa, a confirmação fica bloqueada. Se isso incomodar, a questão 4 do PRD resolve.
 
 ### Conformidade com Padrões
 

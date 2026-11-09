@@ -32,7 +32,6 @@ Persona principal: **candidato** que adapta o currículo para uma vaga e vai se 
 
 Casos extremos:
 
-- Empresa em branco no formulário (o campo é opcional hoje).
 - Biblioteca com 10 currículos (limite por perfil).
 - Falha no meio da confirmação (rede ou banco).
 - Clique duplo no botão ou confirmação repetida da mesma geração.
@@ -45,7 +44,7 @@ Casos extremos:
 Requisitos funcionais:
 
 1. A tela deve mostrar o botão "Confirmar candidatura" junto do "Baixar PDF", somente quando houver um PDF gerado.
-2. O botão deve ficar desabilitado, com a explicação "Informe a empresa na vaga para confirmar a candidatura", quando a empresa estiver em branco.
+2. A empresa e o cargo da candidatura devem ser os informados na tela de ajuste. A tela já exige a empresa para gerar o currículo, então o botão não precisa de um estado para empresa em branco.
 3. Durante o envio, o botão deve ficar desabilitado e indicar que está em andamento.
 
 ### 2. Registro da candidatura
@@ -110,5 +109,5 @@ Requisitos de UI/UX:
 1. **Biblioteca poluída:** a biblioteca é também a lista de currículos-base para adaptar. Cada confirmação adiciona um PDF já adaptado a ela, que pode aparecer como opção de base. Vale marcar esses PDFs como "enviados em candidaturas" e escondê-los da lista de bases, em outro JOB?
 2. **Limite de 10:** o candidato que confirma muitas candidaturas atinge o limite rápido. Aumentar o limite ou separar os PDFs de candidaturas da biblioteca?
 3. **Duplicidade:** confirmar a mesma empresa e cargo duas vezes cria duas candidaturas. Avisar o candidato antes?
-4. **Empresa em branco:** em vez de desabilitar o botão, pedir a empresa no próprio cartão do PDF?
+4. **Empresa em branco (resolvida):** a tela de ajuste já exige a empresa para gerar o currículo, então não há como chegar ao PDF sem ela.
 5. **Código do JOB:** foi usado `JOB-0037`, o próximo número livre. Confirmar.

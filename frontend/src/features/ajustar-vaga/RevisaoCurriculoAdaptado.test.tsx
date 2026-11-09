@@ -241,6 +241,41 @@ describe("RevisaoCurriculoAdaptado", () => {
     expect(screen.getByText(/A IA pode ter estimado métricas e volumes/)).toBeInTheDocument();
   });
 
+  it("o aviso pede para conferir trocas de tecnologia e atividades citadas pela IA", () => {
+    renderizar();
+
+    expect(screen.getByText(/A IA pode ter estimado métricas e volumes/)).toHaveTextContent(
+      "defender em entrevista",
+    );
+  });
+
+  it("mostra as trocas de tecnologia feitas pela IA", () => {
+    renderizar({
+      rascunho: {
+        ...rascunhoDoPerfil,
+        ajustes_tecnologia: [
+          {
+            indice_experiencia: 0,
+            cargo: "Dev",
+            empresa: "TechCorp",
+            original: "React",
+            alvo: "Angular",
+          },
+        ],
+      },
+    });
+
+    expect(screen.getByRole("list", { name: "Ajustes de tecnologia" })).toHaveTextContent(
+      "React → Angular em Dev — TechCorp",
+    );
+  });
+
+  it("não mostra a lista de ajustes quando não houve troca", () => {
+    renderizar();
+
+    expect(screen.queryByRole("list", { name: "Ajustes de tecnologia" })).not.toBeInTheDocument();
+  });
+
   it("não mostra o aviso de números estimados quando a fonte é PDF", () => {
     renderizar({ rascunho: rascunhoDePdf });
 

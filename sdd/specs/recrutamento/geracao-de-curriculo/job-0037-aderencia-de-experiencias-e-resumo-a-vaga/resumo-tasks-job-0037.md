@@ -9,7 +9,7 @@
 - [x] 5.0 Refino variável no backend
 - [x] 6.0 API, Postman e tipos do frontend
 - [x] 7.0 SugestaoIA com histórico e foco
-- [ ] 8.0 Tela de revisão: ajustes de tecnologia, aviso e cargo-alvo
+- [x] 8.0 Tela de revisão: ajustes de tecnologia, aviso e cargo-alvo
 - [ ] 9.0 E2E, acessibilidade e suíte completa
 
 ## Dependências
@@ -69,3 +69,6 @@
 - **Task 7.0 — o que conta como tentativa:** só sugestões recebidas com sucesso (aplicadas ou descartadas). Um pedido que falhou não avança a tentativa nem entra no histórico.
 - **Task 7.0 — histórico de sugestão estruturada:** a experiência adaptada guarda no histórico o texto descrito no painel (conquistas e linha de contexto), que é o que a IA recebe como versão anterior.
 - **Task 7.0 — histórico não reinicia ao editar o campo:** o histórico vale enquanto o bloco estiver montado, mesmo que o usuário edite o texto entre pedidos (PRD RF22). Sem cache entre telas.
+- **Task 8.0 — aviso único:** o aviso de números estimados (JOB-0035) foi ampliado para cobrir trocas de tecnologia e atividades implícitas, em vez de um segundo aviso. Continua aparecendo só com experiências estruturadas.
+- **Task 8.0 — lista de ajustes:** `AjusteTecnologiaLista` usa as cores do aviso de alerta e fica logo abaixo dele. Descreve o que a IA fez; não acompanha edições posteriores (decisão 6 da tech spec).
+- **Task 8.0 — E2E instável:** em uma execução, o teste "revisão do currículo adaptado: pede, aplica uma sugestão de IA e gera o PDF" estourou o tempo (1 min). Passou isolado e em duas execuções completas seguidas. Não reproduzido; não relacionado a esta task até onde verifiquei.

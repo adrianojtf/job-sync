@@ -15,9 +15,9 @@ A revisão mostra as trocas feitas pela IA, atualiza o aviso de conferência e e
 
 ## Subtarefas
 
-- [ ] 8.1 Testes da lista, do aviso e do contexto (Red).
-- [ ] 8.2 `AjusteTecnologiaLista`.
-- [ ] 8.3 `RevisaoCurriculoAdaptado` e `AjustarVagaPage`.
+- [x] 8.1 Testes da lista, do aviso e do contexto (Red).
+- [x] 8.2 `AjusteTecnologiaLista`.
+- [x] 8.3 `RevisaoCurriculoAdaptado` e `AjustarVagaPage`.
 
 ## Detalhes de Implementação
 
@@ -30,7 +30,7 @@ Ver "Experiência do Usuário" no PRD e componentes de frontend em `techspec-job
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `AjusteTecnologiaLista`, `RevisaoCurriculoAdaptado` e `AjustarVagaPage`; lint, `tsc` e build.
+- [x] Vitest de `AjusteTecnologiaLista`, `RevisaoCurriculoAdaptado` e `AjustarVagaPage`; lint, `tsc` e build.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

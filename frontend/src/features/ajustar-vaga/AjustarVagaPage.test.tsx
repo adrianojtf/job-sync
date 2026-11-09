@@ -441,6 +441,7 @@ describe("AjustarVagaPage", () => {
         descricao_vaga: "Java, Kafka e AWS.",
         idioma_alvo: "pt",
         analise_vaga: ANALISE_VAGA,
+        cargo_alvo: "Senior Java",
       },
       refino: { tentativa: 1, sugestoes_anteriores: [] },
     });

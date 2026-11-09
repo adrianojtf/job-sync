@@ -1,7 +1,13 @@
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
-import { AVALIACAO_VAGA, CURRICULO_SALVO, dimensao, servirDadosBase } from "../../test/fixtures";
+import { delay, http, HttpResponse } from "msw";
+import {
+  AVALIACAO_VAGA,
+  CANDIDATURA,
+  CURRICULO_SALVO,
+  dimensao,
+  servirDadosBase,
+} from "../../test/fixtures";
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 
@@ -486,5 +492,213 @@ describe("AjustarVagaPage", () => {
     expect(await screen.findByLabelText("Título da vaga")).toHaveValue("Backend");
     expect(screen.getByLabelText("Descrição da vaga")).toHaveValue("Vaga de backend.");
     await waitFor(() => expect(screen.queryByRole("meter")).not.toBeInTheDocument());
+  });
+});
+
+describe("Ajustar para uma vaga — confirmar candidatura", () => {
+  const ROTULO = "Confirmar candidatura";
+  const BIBLIOTECA_CHEIA =
+    "Sua biblioteca de currículos está cheia. Remova um currículo para confirmar a candidatura.";
+
+  function servirConfirmacao(
+    resposta: () => Response | Promise<Response> = () =>
+      HttpResponse.json(CANDIDATURA, { status: 201 }),
+  ) {
+    const corpos: Record<string, unknown>[] = [];
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/candidaturas-ajustadas`, async ({ request }) => {
+        corpos.push((await request.json()) as Record<string, unknown>);
+        return resposta();
+      }),
+    );
+    return corpos;
+  }
+
+  async function gerarPdfDaVaga() {
+    const app = renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await confirmarRevisao();
+    await screen.findByText(PDF_REVISADO.nome_arquivo);
+    return app;
+  }
+
+  const problema = (status: number, detail: string) =>
+    HttpResponse.json({ type: "t", title: "Erro", status, detail, instance: "i" }, { status });
+
+  it("o botão só aparece depois de o PDF ser gerado", async () => {
+    servirDadosBase();
+    servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    expect(screen.queryByRole("button", { name: ROTULO })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+    expect(screen.queryByRole("button", { name: ROTULO })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
+
+    expect(await screen.findByRole("button", { name: ROTULO })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Baixar PDF" })).toBeInTheDocument();
+  });
+
+  it("envia a vaga e o PDF gerado ao confirmar", async () => {
+    servirDadosBase();
+    servirIa();
+    const corpos = servirConfirmacao();
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+    expect(corpos).toEqual([
+      {
+        perfil_identificador: "adriano",
+        cargo: "Senior Java",
+        empresa: "Olist",
+        descricao_vaga: "Java, Kafka e AWS.",
+        nome_arquivo: PDF_REVISADO.nome_arquivo,
+        pdf_base64: PDF_REVISADO.pdf_base64,
+      },
+    ]);
+  });
+
+  it("envia a vaga do PDF gerado, não o que foi editado no formulário depois", async () => {
+    servirDadosBase();
+    servirIa();
+    const corpos = servirConfirmacao();
+    await gerarPdfDaVaga();
+    await userEvent.clear(screen.getByLabelText("Título da vaga"));
+    await userEvent.type(screen.getByLabelText("Título da vaga"), "Outro cargo");
+    await userEvent.clear(screen.getByLabelText("Empresa"));
+    await userEvent.type(screen.getByLabelText("Empresa"), "Outra empresa");
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+    expect(corpos[0]).toMatchObject({ cargo: "Senior Java", empresa: "Olist" });
+  });
+
+  it("enquanto envia, indica o andamento e não permite um segundo clique", async () => {
+    servirDadosBase();
+    servirIa();
+    const corpos = servirConfirmacao(async () => {
+      await delay(150);
+      return HttpResponse.json(CANDIDATURA, { status: 201 });
+    });
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+    const enviando = await screen.findByRole("button", { name: "Confirmando candidatura…" });
+    await userEvent.click(enviando);
+
+    expect(enviando).toHaveAttribute("aria-busy", "true");
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+    expect(corpos).toHaveLength(1);
+  });
+
+  it("em caso de sucesso mostra a confirmação com o link do board e desabilita o botão", async () => {
+    servirDadosBase();
+    servirIa();
+    const corpos = servirConfirmacao();
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+
+    const mensagem = await screen.findByText("Candidatura confirmada em Aplicado.");
+    expect(mensagem).toHaveAttribute("role", "status");
+    expect(screen.getByRole("link", { name: "Ver no board" })).toHaveAttribute(
+      "href",
+      "/candidaturas",
+    );
+    const confirmado = screen.getByRole("button", { name: "Candidatura confirmada" });
+    expect(confirmado).toBeDisabled();
+    await userEvent.click(confirmado);
+    expect(corpos).toHaveLength(1);
+  });
+
+  it("leva o foco para a confirmação quando o botão fica desabilitado", async () => {
+    servirDadosBase();
+    servirIa();
+    servirConfirmacao();
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+
+    expect(await screen.findByText("Candidatura confirmada em Aplicado.")).toHaveFocus();
+  });
+
+  it("biblioteca cheia mostra o aviso do servidor e permite tentar de novo", async () => {
+    servirDadosBase();
+    servirIa();
+    servirConfirmacao(() => problema(409, BIBLIOTECA_CHEIA));
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+
+    const aviso = await screen.findByText(BIBLIOTECA_CHEIA);
+    expect(aviso.parentElement).toHaveAttribute("role", "alert");
+    expect(screen.getByRole("button", { name: ROTULO })).toBeEnabled();
+    expect(screen.queryByText("Candidatura confirmada em Aplicado.")).not.toBeInTheDocument();
+  });
+
+  it("outro erro mostra a mensagem e a nova tentativa funciona", async () => {
+    servirDadosBase();
+    servirIa();
+    let tentativa = 0;
+    servirConfirmacao(() =>
+      ++tentativa === 1
+        ? problema(500, "Falha ao gravar a candidatura.")
+        : HttpResponse.json(CANDIDATURA, { status: 201 }),
+    );
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+    const aviso = await screen.findByText("Falha ao gravar a candidatura.");
+    expect(aviso.parentElement).toHaveAttribute("role", "alert");
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+
+    expect(await screen.findByText("Candidatura confirmada em Aplicado.")).toBeInTheDocument();
+    expect(screen.queryByText("Falha ao gravar a candidatura.")).not.toBeInTheDocument();
+  });
+
+  it("gerar um novo PDF depois de confirmar volta o botão ao estado inicial", async () => {
+    servirDadosBase();
+    servirIa();
+    const corpos = servirConfirmacao();
+    await gerarPdfDaVaga();
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await confirmarRevisao();
+    await screen.findByText(PDF_REVISADO.nome_arquivo);
+
+    expect(screen.queryByText("Candidatura confirmada em Aplicado.")).not.toBeInTheDocument();
+    const reiniciado = screen.getByRole("button", { name: ROTULO });
+    expect(reiniciado).toBeEnabled();
+    await userEvent.click(reiniciado);
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+    expect(corpos).toHaveLength(2);
+  });
+
+  it("atualiza as listas de candidaturas, currículos e vagas do perfil", async () => {
+    servirDadosBase();
+    servirIa();
+    servirConfirmacao();
+    const { queryClient } = await gerarPdfDaVaga();
+    const invalidar = vi.spyOn(queryClient, "invalidateQueries");
+
+    await userEvent.click(screen.getByRole("button", { name: ROTULO }));
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+
+    const chaves = invalidar.mock.calls.map(([filtro]) => filtro?.queryKey);
+    expect(chaves).toEqual(
+      expect.arrayContaining([
+        ["candidaturas", "adriano"],
+        ["curriculos", "adriano"],
+        ["vagas", "adriano"],
+      ]),
+    );
   });
 });

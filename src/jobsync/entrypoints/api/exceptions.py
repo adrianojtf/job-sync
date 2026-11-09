@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import JSONResponse
 
+from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import LimiteCurriculosSalvosExcedido
 from jobsync.vaga.service_layer.avaliar_descricao_vaga.exceptions import (
     AvaliacaoDescricaoVagaIndisponivel,
 )
@@ -76,6 +77,21 @@ def adicionar_handlers_excecao(app: FastAPI) -> None:
             title="Sugestão de IA indisponível",
             detail=str(exc),
             type_slug="sugestao-ia-indisponivel",
+        )
+
+    @app.exception_handler(LimiteCurriculosSalvosExcedido)
+    async def _limite_curriculos_salvos_excedido_handler(
+        request: Request, exc: LimiteCurriculosSalvosExcedido
+    ) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_409_CONFLICT,
+            title="Biblioteca de currículos cheia",
+            detail=(
+                "Sua biblioteca de currículos está cheia. "
+                "Remova um currículo para confirmar a candidatura."
+            ),
+            type_slug="limite-curriculos-salvos",
         )
 
     @app.exception_handler(HTTPException)

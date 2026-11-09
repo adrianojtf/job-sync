@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from jobsync.candidatura import Candidatura, MudancaStatus, StatusCandidatura
+from jobsync.candidatura.service_layer.confirmar_candidatura_ajustada import (
+    ConfirmarCandidaturaAjustadaInputDto,
+)
 from jobsync.candidatura.service_layer.criar_candidatura.dtos import (
     CriarCandidaturaInputDto,
 )
@@ -42,6 +47,46 @@ class CandidaturaCriarRequest(BaseModel):
             empresa=self.empresa,
             cargo=self.cargo,
         )
+
+
+class CandidaturaConfirmarRequest(BaseModel):
+    """Payload para confirmar a candidatura a partir do currículo ajustado para uma vaga."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "perfil_identificador": "matheus",
+                "cargo": "Engenheiro de Software",
+                "empresa": "TechCorp",
+                "descricao_vaga": "Texto da descrição da vaga.",
+                "nome_arquivo": "AnaSouza-2026-11-09-Engenheiro-TechCorp.pdf",
+                "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+            }
+        }
+    )
+
+    perfil_identificador: str = Field(description="Identificador do perfil candidato.")
+    cargo: str = Field(description="Cargo da vaga.")
+    empresa: str = Field(description="Nome da empresa da vaga.")
+    descricao_vaga: str = Field(description="Texto da descrição da vaga usada no ajuste.")
+    nome_arquivo: str = Field(description="Nome do arquivo do PDF gerado.")
+    pdf_base64: str = Field(description="Conteúdo do PDF gerado, codificado em base64.")
+
+    def to_dto(self) -> ConfirmarCandidaturaAjustadaInputDto:
+        return ConfirmarCandidaturaAjustadaInputDto(
+            perfil_identificador=self.perfil_identificador,
+            cargo=self.cargo,
+            empresa=self.empresa,
+            descricao_vaga=self.descricao_vaga,
+            nome_arquivo=self.nome_arquivo,
+            pdf_bytes=self._decodificar_pdf(),
+        )
+
+    def _decodificar_pdf(self) -> bytes:
+        try:
+            return base64.b64decode(self.pdf_base64.encode(), validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError("O conteúdo do PDF não é um base64 válido.") from None
 
 
 class CandidaturaSubmeterRequest(BaseModel):

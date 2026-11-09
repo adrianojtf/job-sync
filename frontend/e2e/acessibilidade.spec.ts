@@ -115,6 +115,37 @@ test.describe("telas autenticadas", () => {
   });
 });
 
+test("confirmar candidatura: botão, confirmação e detalhe com download sem violações graves", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-a11y-confirmar");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Staff Platform Engineer");
+  await page.getByLabel("Empresa").fill("Initech");
+  await page
+    .getByLabel("Descrição da vaga")
+    .fill("Staff Platform Engineer\nGo, Kubernetes e Kafka.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
+  await expect(page.getByRole("button", { name: "Confirmar candidatura" })).toBeVisible();
+
+  expect(await violacoesGraves(page)).toEqual([]);
+
+  await page.getByRole("button", { name: "Confirmar candidatura" }).click();
+  await expect(page.getByText("Candidatura confirmada em Aplicado.")).toBeFocused();
+
+  expect(await violacoesGraves(page)).toEqual([]);
+
+  await page.getByRole("link", { name: "Ver no board" }).click();
+  await page.getByRole("button", { name: "Detalhes de Staff Platform Engineer" }).click();
+  await expect(page.getByRole("button", { name: "Baixar PDF do currículo usado" })).toBeVisible();
+
+  expect(await violacoesGraves(page)).toEqual([]);
+});
+
 test("revisão com ajustes de tecnologia e foco da sugestão sem violações graves", async ({
   page,
   request,

@@ -31,6 +31,19 @@
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
+.acoesArquivo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.confirmacao {
+  margin: 0 0 16px;
+  font-weight: 650;
+}
+.confirmacao:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
 .nomeArquivo {
   font-weight: 650;
   word-break: break-all;

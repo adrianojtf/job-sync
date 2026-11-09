@@ -400,6 +400,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/candidaturas-ajustadas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar candidatura a partir do currículo ajustado
+         * @description Cria a vaga (já convertida), o currículo salvo com o PDF gerado e a candidatura com status APLICADO, em uma única operação.
+         */
+        post: operations["confirmar_candidatura_ajustada_v1_candidaturas_ajustadas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/candidaturas/{id}/submissao": {
         parameters: {
             query?: never;
@@ -955,6 +975,50 @@ export interface components {
              * @description URL da vaga original, para o candidato aplicar.
              */
             url_vaga: string;
+        };
+        /**
+         * CandidaturaConfirmarRequest
+         * @description Payload para confirmar a candidatura a partir do currículo ajustado para uma vaga.
+         * @example {
+         *       "cargo": "Engenheiro de Software",
+         *       "descricao_vaga": "Texto da descrição da vaga.",
+         *       "empresa": "TechCorp",
+         *       "nome_arquivo": "AnaSouza-2026-11-09-Engenheiro-TechCorp.pdf",
+         *       "pdf_base64": "JVBERi0xLjQgdGVzdA==",
+         *       "perfil_identificador": "matheus"
+         *     }
+         */
+        CandidaturaConfirmarRequest: {
+            /**
+             * Perfil Identificador
+             * @description Identificador do perfil candidato.
+             */
+            perfil_identificador: string;
+            /**
+             * Cargo
+             * @description Cargo da vaga.
+             */
+            cargo: string;
+            /**
+             * Empresa
+             * @description Nome da empresa da vaga.
+             */
+            empresa: string;
+            /**
+             * Descricao Vaga
+             * @description Texto da descrição da vaga usada no ajuste.
+             */
+            descricao_vaga: string;
+            /**
+             * Nome Arquivo
+             * @description Nome do arquivo do PDF gerado.
+             */
+            nome_arquivo: string;
+            /**
+             * Pdf Base64
+             * @description Conteúdo do PDF gerado, codificado em base64.
+             */
+            pdf_base64: string;
         };
         /**
          * CandidaturaCriarRequest
@@ -3176,6 +3240,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirmar_candidatura_ajustada_v1_candidaturas_ajustadas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CandidaturaConfirmarRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidaturaResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
                 };
             };
         };

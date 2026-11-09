@@ -40,5 +40,5 @@ export function renderizarApp({ caminho = "/", estado, perfil, apiClient }: Opco
       </AppProviders>
     </StrictMode>,
   );
-  return { router };
+  return { router, queryClient };
 }

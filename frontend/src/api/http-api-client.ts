@@ -13,6 +13,7 @@ import type {
   CandidaturasPorStatus,
   CapturarVagaEntrada,
   CartaApresentacao,
+  ConfirmarCandidaturaEntrada,
   CriarCandidaturaEntrada,
   CurriculoConteudo,
   CurriculoRevisado,
@@ -238,6 +239,10 @@ export class HttpApiClient implements ApiClient {
 
   criarCandidatura(dados: CriarCandidaturaEntrada): Promise<Candidatura> {
     return this.requisitar("POST", "/v1/candidaturas", { corpo: dados });
+  }
+
+  confirmarCandidaturaAjustada(dados: ConfirmarCandidaturaEntrada): Promise<Candidatura> {
+    return this.requisitar("POST", "/v1/candidaturas-ajustadas", { corpo: dados });
   }
 
   moverCandidatura(id: string, novoStatus: StatusCandidatura): Promise<Candidatura> {

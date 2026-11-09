@@ -6,6 +6,7 @@ não inclui uma tabela dedicada de histórico.
 """
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
@@ -41,6 +42,29 @@ class Candidatura:
     status: StatusCandidatura
     data_aplicacao: datetime
     historico_status: tuple[MudancaStatus, ...]
+
+    @classmethod
+    def nova(
+        cls,
+        perfil_identificador: str,
+        vaga_id: str,
+        curriculo_salvo_id: str,
+        empresa: str,
+        cargo: str,
+        agora: datetime,
+    ) -> Candidatura:
+        """Candidatura recém-criada: id novo, status APLICADO e histórico com a mudança inicial."""
+        return cls(
+            id=str(uuid.uuid4()),
+            perfil_identificador=perfil_identificador,
+            vaga_id=vaga_id,
+            curriculo_salvo_id=curriculo_salvo_id,
+            empresa=empresa,
+            cargo=cargo,
+            status=StatusCandidatura.APLICADO,
+            data_aplicacao=agora,
+            historico_status=(MudancaStatus(status=StatusCandidatura.APLICADO, data=agora),),
+        )
 
     def __post_init__(self) -> None:
         if not self.id or not self.id.strip():

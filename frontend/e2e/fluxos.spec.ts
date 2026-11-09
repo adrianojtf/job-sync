@@ -128,6 +128,66 @@ test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover 
   );
 });
 
+test("confirmar candidatura na tela de ajuste: Aplicado no board, PDF no detalhe e vaga fora de Vagas salvas", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-confirmar");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Staff Platform Engineer");
+  await page.getByLabel("Empresa").fill("Initech");
+  await page
+    .getByLabel("Descrição da vaga")
+    .fill("Staff Platform Engineer\nGo, Kubernetes e Kafka.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirmar candidatura" })).toBeHidden();
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Confirmar candidatura" }).click();
+
+  const confirmacao = page.getByText("Candidatura confirmada em Aplicado.");
+  await expect(confirmacao).toBeFocused();
+  await expect(page.getByRole("button", { name: "Candidatura confirmada" })).toBeDisabled();
+
+  await page.getByRole("link", { name: "Ver no board" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Candidaturas" })).toBeVisible();
+  const aplicado = page.getByRole("region", { name: /^Aplicado/ });
+  await expect(aplicado).toContainText("Staff Platform Engineer");
+  await expect(aplicado).toContainText("Initech");
+
+  await page.getByRole("button", { name: "Detalhes de Staff Platform Engineer" }).click();
+  const detalhe = page.getByRole("dialog", { name: "Staff Platform Engineer" });
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    detalhe.getByRole("button", { name: "Baixar PDF do currículo usado" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/-StaffPlatformEngineer-Initech\.pdf$/);
+  const conteudo = await readFile((await download.path())!);
+  expect(conteudo.subarray(0, 5).toString()).toBe("%PDF-");
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("link", { name: /Vagas salvas/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Detalhes da vaga Platform Engineer", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Detalhes da vaga Staff Platform Engineer", exact: true }),
+  ).toHaveCount(0);
+
+  await page.getByRole("link", { name: /Meus currículos/ }).click();
+  await expect(page.getByText(/-StaffPlatformEngineer-Initech\.pdf/)).toBeVisible();
+
+  await page.getByRole("link", { name: /Candidaturas/ }).click();
+  await page.reload();
+  await expect(page.getByRole("region", { name: /^Aplicado/ })).toContainText(
+    "Staff Platform Engineer",
+  );
+});
+
 test("revisão do currículo adaptado: pede, aplica uma sugestão de IA e gera o PDF", async ({
   page,
   request,

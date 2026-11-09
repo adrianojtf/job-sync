@@ -382,6 +382,103 @@ describe("HttpApiClient", () => {
     });
   });
 
+  describe("confirmação de candidatura a partir do ajuste", () => {
+    const dados = {
+      perfil_identificador: "ana",
+      cargo: "Engenheiro de Software",
+      empresa: "TechCorp",
+      descricao_vaga: "Vaga de backend.",
+      nome_arquivo: "Ana-Engenheiro-TechCorp.pdf",
+      pdf_base64: "JVBERg==",
+    };
+
+    it("envia a vaga e o PDF gerado e devolve a candidatura criada", async () => {
+      let corpoRecebido: unknown;
+      servidorApi.use(
+        http.post(`${BASE}/v1/candidaturas-ajustadas`, async ({ request }) => {
+          corpoRecebido = await request.json();
+          return HttpResponse.json(
+            { id: "c1", status: "APLICADO", empresa: "TechCorp", cargo: "Engenheiro de Software" },
+            { status: 201 },
+          );
+        }),
+      );
+
+      const candidatura = await criarCliente().confirmarCandidaturaAjustada(dados);
+
+      expect(corpoRecebido).toEqual(dados);
+      expect(candidatura.id).toBe("c1");
+      expect(candidatura.status).toBe("APLICADO");
+    });
+
+    it("converte 409 de biblioteca cheia em ApiError com a mensagem do servidor", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/candidaturas-ajustadas`, () =>
+          HttpResponse.json(
+            {
+              type: "https://jobsync.com/erros/limite-curriculos-salvos",
+              title: "Biblioteca de currículos cheia",
+              status: 409,
+              detail:
+                "Sua biblioteca de currículos está cheia. Remova um currículo para confirmar a candidatura.",
+              instance: "http://api.test/v1/candidaturas-ajustadas",
+            },
+            { status: 409 },
+          ),
+        ),
+      );
+
+      const erro = await capturarErro(criarCliente().confirmarCandidaturaAjustada(dados));
+
+      expect(erro.status).toBe(409);
+      expect(erro.title).toBe("Biblioteca de currículos cheia");
+      expect(erro.message).toBe(
+        "Sua biblioteca de currículos está cheia. Remova um currículo para confirmar a candidatura.",
+      );
+    });
+
+    it("converte 422 em ApiError com o detalhe do problema", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/candidaturas-ajustadas`, () =>
+          HttpResponse.json(
+            {
+              type: "https://jobsync.com/erros/422",
+              title: "A empresa da candidatura é obrigatória.",
+              status: 422,
+              detail: "A empresa da candidatura é obrigatória.",
+              instance: "http://api.test/v1/candidaturas-ajustadas",
+            },
+            { status: 422 },
+          ),
+        ),
+      );
+
+      const erro = await capturarErro(
+        criarCliente().confirmarCandidaturaAjustada({ ...dados, empresa: "" }),
+      );
+
+      expect(erro.status).toBe(422);
+      expect(erro.message).toBe("A empresa da candidatura é obrigatória.");
+    });
+
+    it("usa o timeout padrão, não o das rotas de IA", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/candidaturas-ajustadas`, async () => {
+          await delay(200);
+          return HttpResponse.json({ id: "c1", status: "APLICADO" }, { status: 201 });
+        }),
+      );
+
+      const erro = await capturarErro(
+        criarCliente({ timeoutPadraoMs: 20, timeoutIaMs: 5000 }).confirmarCandidaturaAjustada(
+          dados,
+        ),
+      );
+
+      expect(erro.title).toBe("Tempo esgotado");
+    });
+  });
+
   it("move a candidatura enviando o novo status", async () => {
     let corpoRecebido: unknown;
     servidorApi.use(

@@ -1,7 +1,7 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { CANDIDATURA, servirDadosBase } from "../../test/fixtures";
+import { CANDIDATURA, CURRICULO_SALVO, servirDadosBase } from "../../test/fixtures";
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 
@@ -118,6 +118,99 @@ describe("CandidaturasPage", () => {
     expect(await within(dialogo).findByText("CV LinkedIn")).toBeInTheDocument();
     const historico = within(dialogo).getByRole("list", { name: "Histórico de status" });
     expect(within(historico).getByText(/Aplicado · 02\/11\/2026/)).toBeInTheDocument();
+  });
+
+  describe("download do PDF usado na candidatura", () => {
+    function capturarDownloads() {
+      const nomes: string[] = [];
+      Object.assign(URL, { createObjectURL: vi.fn(() => "blob:x"), revokeObjectURL: vi.fn() });
+      vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        nomes.push(this.download);
+      });
+      return nomes;
+    }
+
+    async function abrirDetalhe(candidatura: Candidatura) {
+      servirCandidaturas([candidatura]);
+      renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+      await userEvent.click(
+        await screen.findByRole("button", { name: `Detalhes de ${candidatura.cargo}` }),
+      );
+      return screen.getByRole("dialog", { name: candidatura.cargo });
+    }
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("o detalhe baixa o PDF do currículo ligado à candidatura", async () => {
+      const downloads = capturarDownloads();
+      const idsBaixados: string[] = [];
+      const candidatura = { ...CANDIDATURA, curriculo_salvo_id: "pdf-gerado-9" };
+      servirCandidaturas([candidatura]);
+      servidorApi.use(
+        http.get(`${API_TESTE}/v1/curriculos/:id/conteudo`, ({ params }) => {
+          idsBaixados.push(String(params.id));
+          return HttpResponse.json({
+            id: params.id,
+            nome_referencia: "PDF gerado",
+            pdf_base64: btoa("%PDF-gerado"),
+          });
+        }),
+        http.get(`${API_TESTE}/v1/curriculos`, () =>
+          HttpResponse.json({
+            items: [{ ...CURRICULO_SALVO, id: "pdf-gerado-9", nome_referencia: "PDF gerado" }],
+            total: 1,
+          }),
+        ),
+      );
+      renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+      await userEvent.click(
+        await screen.findByRole("button", { name: `Detalhes de ${candidatura.cargo}` }),
+      );
+      const dialogo = screen.getByRole("dialog", { name: candidatura.cargo });
+
+      await userEvent.click(
+        await within(dialogo).findByRole("button", { name: "Baixar PDF do currículo usado" }),
+      );
+
+      await waitFor(() => expect(downloads).toEqual(["PDF gerado.pdf"]));
+      expect(idsBaixados).toEqual(["pdf-gerado-9"]);
+    });
+
+    it("sem o currículo na biblioteca avisa que foi removido e não oferece o download", async () => {
+      const dialogo = await abrirDetalhe({ ...CANDIDATURA, curriculo_salvo_id: "removido" });
+
+      expect(await within(dialogo).findByText("Removido da biblioteca")).toBeInTheDocument();
+      expect(
+        within(dialogo).queryByRole("button", { name: "Baixar PDF do currículo usado" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("mostra o erro quando o download falha", async () => {
+      capturarDownloads();
+      const dialogo = await abrirDetalhe(CANDIDATURA);
+      servidorApi.use(
+        http.get(`${API_TESTE}/v1/curriculos/:id/conteudo`, () =>
+          HttpResponse.json(
+            {
+              type: "t",
+              title: "Erro",
+              status: 404,
+              detail: "Currículo não encontrado.",
+              instance: "i",
+            },
+            { status: 404 },
+          ),
+        ),
+      );
+
+      await userEvent.click(
+        await within(dialogo).findByRole("button", { name: "Baixar PDF do currículo usado" }),
+      );
+
+      expect(await screen.findByText("Currículo não encontrado.")).toBeInTheDocument();
+    });
   });
 
   it("sem candidaturas, aponta para as vagas salvas", async () => {

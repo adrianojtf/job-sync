@@ -1,8 +1,10 @@
 import type { Candidatura, StatusCandidatura } from "../../api/tipos";
 import { formatarData, formatarDataHora } from "../../shared/formatacao";
+import { Button } from "../../shared/ui/Button";
 import { Modal } from "../../shared/ui/Modal";
 import { StatusBadge } from "../../shared/ui/StatusBadge";
-import { useCurriculos } from "../curriculos/use-curriculos";
+import { useToast } from "../../shared/ui/use-toast";
+import { useBaixarCurriculo, useCurriculos } from "../curriculos/use-curriculos";
 import estilos from "./CandidaturasPage.module.css";
 import { rotuloStatus, TOM_STATUS } from "./status";
 
@@ -14,6 +16,8 @@ interface Props {
 /** RF10.3 — dados da candidatura, currículo usado e histórico de status. */
 export function DetalheCandidaturaModal({ candidatura, aoFechar }: Props) {
   const curriculos = useCurriculos();
+  const download = useBaixarCurriculo();
+  const { notificar } = useToast();
   if (!candidatura) return null;
 
   const curriculo = curriculos.data?.find((item) => item.id === candidatura.curriculo_salvo_id);
@@ -36,7 +40,22 @@ export function DetalheCandidaturaModal({ candidatura, aoFechar }: Props) {
         <dt>Aplicada em</dt>
         <dd>{formatarData(candidatura.data_aplicacao)}</dd>
         <dt>Currículo usado</dt>
-        <dd>{nomeCurriculo}</dd>
+        <dd className={estilos.curriculoUsado}>
+          {nomeCurriculo}
+          {curriculo && (
+            <Button
+              aria-label="Baixar PDF do currículo usado"
+              carregando={download.isPending}
+              onClick={() =>
+                download.mutate(curriculo.id, {
+                  onError: (erro) => notificar(erro.message, "erro"),
+                })
+              }
+            >
+              Baixar PDF
+            </Button>
+          )}
+        </dd>
       </dl>
       <h3 style={{ fontSize: 13, margin: "0 0 6px" }}>Histórico</h3>
       <ul className={estilos.historico} aria-label="Histórico de status">

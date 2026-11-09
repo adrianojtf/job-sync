@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type {
   AdaptarCurriculoEntrada,
   CurriculoRevisado,
@@ -53,9 +53,11 @@ export function AjustarVagaPage() {
 
 function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const fontes = useFontesCurriculo();
-  const { avaliar, gerarRascunho, gerarPdf, ats, carta } = useAjustarVaga();
+  const { avaliar, gerarRascunho, gerarPdf, ats, carta, confirmarCandidatura } = useAjustarVaga();
   // Dados da vaga usados na adaptação em revisão; null fora da etapa de revisão.
   const [vagaEmRevisao, setVagaEmRevisao] = useState<AdaptarCurriculoEntrada | null>(null);
+  // Vaga que gerou o PDF atual: a candidatura leva esses dados, não o formulário (editável depois).
+  const [vagaDoPdf, setVagaDoPdf] = useState<AdaptarCurriculoEntrada | null>(null);
   const form = useForm<Formulario>({
     defaultValues: {
       cargo: estado.cargo ?? "",
@@ -118,6 +120,7 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const gerarCurriculo = async () => {
     if (!(await form.trigger(["cargo", "empresa", "descricao"]))) return;
     gerarPdf.reset();
+    confirmarCandidatura.reset();
     gerarRascunho.mutate(await montarEntrada(), {
       onSuccess: (_rascunho, entrada) => setVagaEmRevisao(entrada.dados),
     });
@@ -131,12 +134,28 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
         cargo_alvo: vaga.cargo_alvo,
         empresa_alvo: vaga.empresa_alvo,
       },
-      { onSuccess: () => setVagaEmRevisao(null) },
+      {
+        onSuccess: () => {
+          setVagaEmRevisao(null);
+          setVagaDoPdf(vaga);
+          confirmarCandidatura.reset();
+        },
+      },
     );
+
+  const confirmarCandidaturaDoPdf = (pdf: CurriculoRevisado, vaga: AdaptarCurriculoEntrada) =>
+    confirmarCandidatura.mutate({
+      cargo: vaga.cargo_alvo,
+      empresa: vaga.empresa_alvo,
+      descricao_vaga: vaga.descricao_vaga,
+      nome_arquivo: pdf.nome_arquivo,
+      pdf_base64: pdf.pdf_base64,
+    });
 
   const descartarRevisao = () => {
     gerarRascunho.reset();
     gerarPdf.reset();
+    confirmarCandidatura.reset();
     setVagaEmRevisao(null);
   };
 
@@ -269,7 +288,16 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
           <Panel titulo="Currículo adaptado">
             {gerarRascunho.isError && <Aviso tom="erro">{gerarRascunho.error.message}</Aviso>}
             {adaptado && gerarPdf.data ? (
-              <CurriculoGerado pdf={gerarPdf.data} adaptado={adaptado} />
+              <CurriculoGerado
+                pdf={gerarPdf.data}
+                adaptado={adaptado}
+                confirmacao={{
+                  pendente: confirmarCandidatura.isPending,
+                  confirmada: confirmarCandidatura.isSuccess,
+                  erro: confirmarCandidatura.error?.message,
+                }}
+                aoConfirmar={() => vagaDoPdf && confirmarCandidaturaDoPdf(gerarPdf.data, vagaDoPdf)}
+              />
             ) : (
               !gerarRascunho.isError && (
                 <p className={resultados.texto}>
@@ -334,24 +362,59 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   );
 }
 
+interface ConfirmacaoCandidatura {
+  pendente: boolean;
+  confirmada: boolean;
+  erro?: string;
+}
+
 function CurriculoGerado({
   pdf,
   adaptado,
+  confirmacao,
+  aoConfirmar,
 }: {
   pdf: CurriculoRevisado;
   adaptado: RascunhoAdaptado;
+  confirmacao: ConfirmacaoCandidatura;
+  aoConfirmar: () => void;
 }) {
   const idTitulo = useId();
   const baixar = () => baixarArquivo(base64ParaBlob(pdf.pdf_base64), pdf.nome_arquivo);
   const avaliacoes = adaptado.avaliacoes_experiencias ?? [];
+  // O botão confirmado fica desabilitado e perderia o foco: ele passa para a mensagem de sucesso.
+  const mensagemConfirmada = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (confirmacao.confirmada) mensagemConfirmada.current?.focus();
+  }, [confirmacao.confirmada]);
+  const rotuloConfirmar = confirmacao.pendente
+    ? "Confirmando candidatura…"
+    : confirmacao.confirmada
+      ? "Candidatura confirmada"
+      : "Confirmar candidatura";
   return (
     <div aria-live="polite">
       <div className={estilos.arquivo}>
         <span className={estilos.nomeArquivo}>{pdf.nome_arquivo}</span>
-        <Button variante="primary" onClick={baixar}>
-          Baixar PDF
-        </Button>
+        <div className={estilos.acoesArquivo}>
+          <Button
+            carregando={confirmacao.pendente}
+            disabled={confirmacao.confirmada}
+            onClick={aoConfirmar}
+          >
+            {rotuloConfirmar}
+          </Button>
+          <Button variante="primary" onClick={baixar}>
+            Baixar PDF
+          </Button>
+        </div>
       </div>
+      {confirmacao.confirmada && (
+        <p ref={mensagemConfirmada} role="status" tabIndex={-1} className={estilos.confirmacao}>
+          Candidatura confirmada em Aplicado. <Link to="/candidaturas">Ver no board</Link>
+        </p>
+      )}
+      {confirmacao.erro && <Aviso tom="erro">{confirmacao.erro}</Aviso>}
       {avaliacoes.length > 0 && (
         <section aria-labelledby={idTitulo}>
           <h3 id={idTitulo} className={resultados.subtitulo}>

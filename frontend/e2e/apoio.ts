@@ -26,6 +26,9 @@ export async function entrar(page: Page, perfil: string) {
   await page.goto("/entrar");
   await page.getByLabel("Identificador").fill(perfil);
   await page.getByRole("button", { name: "Entrar" }).click();
+  // A própria tela de login tem um h1: sem esperar a saída dela, o teste segue (e recarrega a
+  // página) antes de a sessão ser gravada e volta para o login.
+  await expect(page).not.toHaveURL(/\/entrar$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 }
 

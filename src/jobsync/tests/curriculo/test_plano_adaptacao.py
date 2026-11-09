@@ -122,3 +122,16 @@ class TestPlanoAdaptacao:
         assert plano.ajustes == ()
         assert plano.manutencoes == ()
         assert plano.diretrizes(0) == DiretrizesExperiencia()
+
+
+class TestPlanoAdaptacaoEquivalenciasAplicadas:
+    def test_lista_cada_equivalencia_trocada_uma_vez_na_ordem(self):
+        mysql_postgres = EquivalenciaTecnologia(original="MySQL", alvo="PostgreSQL")
+        experiencias = [_experiencia("React"), _experiencia("React e MySQL"), _experiencia("React")]
+
+        plano = PlanoAdaptacao.distribuir(experiencias, [REACT_ANGULAR, mysql_postgres])
+
+        assert plano.equivalencias_aplicadas == (REACT_ANGULAR, mysql_postgres)
+
+    def test_plano_vazio_nao_tem_equivalencias_aplicadas(self):
+        assert PlanoAdaptacao.vazio().equivalencias_aplicadas == ()

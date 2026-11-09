@@ -5,7 +5,7 @@
 - [x] 1.0 Cargo-alvo no ContextoVaga e portas com ContextoVaga
 - [x] 2.0 Equivalências e plano de adaptação no domínio
 - [x] 3.0 Identificador de equivalências (porta e adapter)
-- [ ] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
+- [x] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
 - [ ] 5.0 Refino variável no backend
 - [ ] 6.0 API, Postman e tipos do frontend
 - [ ] 7.0 SugestaoIA com histórico e foco
@@ -50,3 +50,9 @@
 - **Task 3.0 — dublê de E2E adiado:** o dublê do identificador entra na task 4.0, junto com a injeção em `AdaptarCurriculoParaVaga`. Criá-lo na 3.0 deixaria uma classe sem uso.
 - **Task 3.0 — sem chamada desnecessária:** o adapter não chama a IA quando a vaga não tem requisitos ou nenhuma experiência tem descrição; devolve lista vazia.
 - **Task 3.0 — formato inválido:** qualquer item fora do formato (inclusive original igual ao alvo) faz o adapter levantar `ValueError`. A task 4.0 trata essa falha como plano vazio, sem interromper a adaptação.
+- **Task 4.0 — Streamlit sem mudança:** o app Streamlit monta `AdaptarCurriculoParaVaga` sem ajustador de experiências, então não gera plano. Não precisou da injeção do identificador.
+- **Task 4.0 — `equivalencias_aplicadas`:** o plano expõe as equivalências trocadas em ao menos uma experiência (sem repetição). É o que as seções de texto recebem como `ajustes`.
+- **Task 4.0 — invariante do rascunho:** `ajustes_tecnologia` só aceita índices de experiências estruturadas existentes.
+- **Task 4.0 — exceção explícita no prompt de sistema do ajuste de texto:** "sem inventar tecnologia" passou a excluir as equivalências indicadas na instrução da seção.
+- **Task 4.0 — citação explícita genérica:** o prompt pede para citar a tecnologia "dizendo em que parte do trabalho foi usada", em vez do exemplo fixo "no front-end", para servir também a bancos, mensageria etc.
+- **Task 4.0 — E2E:** o Playwright completo (19 testes) rodou verde com os novos dublês, inclusive `IdentificadorEquivalenciasE2E` (React → Angular quando a vaga cita Angular).

@@ -4,7 +4,11 @@ from __future__ import annotations
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
 from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
-from jobsync.curriculo.adapters.prompt_contexto_vaga import linha_cargo_alvo
+from jobsync.curriculo.domain.equivalencia_tecnologia import DiretrizesExperiencia
+from jobsync.curriculo.adapters.prompt_contexto_vaga import (
+    REGRA_RESPONSABILIDADES_IMPLICITAS,
+    linha_cargo_alvo,
+)
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 from jobsync.vaga.domain.analise_vaga import AnaliseVaga, TipoRequisitoTecnico
@@ -16,10 +20,10 @@ _NOME_IDIOMA = {
 
 _ERRO_FORMATO = "O modelo devolveu conquistas e contexto fora do formato esperado."
 
-_PROMPT_SISTEMA = """\
+_PROMPT_SISTEMA = f"""\
 Você adapta experiências profissionais de um currículo para uma vaga específica, no padrão
 de conquistas e contexto. Responda somente em JSON no formato:
-{"conquistas": ["conquista 1", "conquista 2"], "contexto": "parágrafo de contexto"}
+{{"conquistas": ["conquista 1", "conquista 2"], "contexto": "parágrafo de contexto"}}
 
 Regras:
 - Conquistas: de 2 a 6 frases curtas, no idioma de saída, cada uma começando com verbo de ação
@@ -27,7 +31,9 @@ Regras:
 - Prefira sempre os números e fatos da descrição original. Quando ela não trouxer número,
   você pode propor métricas e volumes plausíveis e conservadores.
 - Contexto: de 1 a 3 frases sobre a empresa, a área e o papel, sem repetir as conquistas.
-- Destaque o que é mais relevante para a vaga, sem inventar tecnologias, empresas ou datas.
+- Destaque o que é mais relevante para a vaga. Use o cargo-alvo para escolher a ênfase e o vocabulário.
+- Não invente empresas nem datas. Não acrescente tecnologias além das que estão no texto e das trocas indicadas.
+- {REGRA_RESPONSABILIDADES_IMPLICITAS}
 - Não altere cargo, empresa nem período e não os repita no texto de saída.
 """
 
@@ -38,7 +44,12 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
     def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
         self._cliente_openai = cliente_openai or ClienteOpenAI()
 
-    def ajustar(self, experiencia: ExperienciaParaAvaliacao, contexto: ContextoVaga) -> ExperienciaAdaptada:
+    def ajustar(
+        self,
+        experiencia: ExperienciaParaAvaliacao,
+        contexto: ContextoVaga,
+        diretrizes: DiretrizesExperiencia,
+    ) -> ExperienciaAdaptada:
         if not experiencia.descricao.strip():
             return self._sem_conteudo(experiencia)
 
@@ -46,7 +57,9 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
-            texto_da_experiencia=f"- Descrição original: {experiencia.descricao}",
+            texto_da_experiencia=(
+                f"- Descrição original: {experiencia.descricao}{self._ajustes_de_tecnologia(diretrizes)}"
+            ),
             contexto=contexto,
         )
 
@@ -59,10 +72,25 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
             texto_da_experiencia=(
                 "- Conquistas atuais (reescreva a partir delas):\n"
                 f"{conquistas_atuais or '(nenhuma)'}\n"
-                f"- Contexto atual: {experiencia.contexto.strip() or '(nenhum)'}"
+                f"- Contexto atual: {experiencia.contexto.strip() or '(nenhum)'}\n"
+                "- Mantenha as tecnologias já citadas nas conquistas e no contexto atuais."
             ),
             contexto=contexto,
         )
+
+    @staticmethod
+    def _ajustes_de_tecnologia(diretrizes: DiretrizesExperiencia) -> str:
+        """Trocas e manutenções que o `PlanoAdaptacao` definiu para esta experiência."""
+        linhas = [
+            f"- Use {troca.alvo} no lugar de {troca.original} e cite {troca.alvo} de forma explícita "
+            "no contexto, dizendo em que parte do trabalho foi usada."
+            for troca in diretrizes.trocar
+        ] + [
+            f"- Mantenha {tecnologia} e cite {tecnologia} de forma explícita no contexto, "
+            "dizendo em que parte do trabalho foi usada."
+            for tecnologia in diretrizes.manter
+        ]
+        return "\n\nAjustes de tecnologia nesta experiência:\n" + "\n".join(linhas) if linhas else ""
 
     @staticmethod
     def _sem_conteudo(experiencia: ExperienciaParaAvaliacao) -> ExperienciaAdaptada:

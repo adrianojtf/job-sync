@@ -60,6 +60,11 @@ class PlanoAdaptacao:
 
         return cls(ajustes=tuple(ajustes), manutencoes=tuple(manutencoes))
 
+    @property
+    def equivalencias_aplicadas(self) -> tuple[EquivalenciaTecnologia, ...]:
+        """Equivalências trocadas em ao menos uma experiência, uma vez cada, na ordem do plano."""
+        return tuple(dict.fromkeys(ajuste.equivalencia for ajuste in self.ajustes))
+
     def diretrizes(self, indice_experiencia: int) -> DiretrizesExperiencia:
         return DiretrizesExperiencia(
             trocar=tuple(

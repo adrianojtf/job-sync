@@ -2,6 +2,8 @@
 import pytest
 
 from jobsync.curriculo import (
+    AjusteTecnologia,
+    EquivalenciaTecnologia,
     ExperienciaAdaptada,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
@@ -169,3 +171,27 @@ class TestRascunhoCurriculoAdaptado:
         )
 
         assert rascunho.titulo_experiencias == "Experience"
+
+
+class TestRascunhoCurriculoAdaptadoAjustesTecnologia:
+    def test_ajustes_de_tecnologia_sao_vazios_por_padrao(self):
+        assert _rascunho().ajustes_tecnologia == ()
+
+    def test_guarda_os_ajustes_das_experiencias_estruturadas(self):
+        ajuste = AjusteTecnologia(0, EquivalenciaTecnologia(original="React", alvo="Angular"))
+
+        rascunho = _rascunho(experiencias=(_experiencia(),), ajustes_tecnologia=(ajuste,))
+
+        assert rascunho.ajustes_tecnologia == (ajuste,)
+
+    def test_ajuste_fora_das_experiencias_gera_erro(self):
+        ajuste = AjusteTecnologia(1, EquivalenciaTecnologia(original="React", alvo="Angular"))
+
+        with pytest.raises(ValueError, match="ajuste de tecnologia"):
+            _rascunho(experiencias=(_experiencia(),), ajustes_tecnologia=(ajuste,))
+
+    def test_ajuste_sem_experiencias_estruturadas_gera_erro(self):
+        ajuste = AjusteTecnologia(0, EquivalenciaTecnologia(original="React", alvo="Angular"))
+
+        with pytest.raises(ValueError, match="ajuste de tecnologia"):
+            _rascunho(ajustes_tecnologia=(ajuste,))

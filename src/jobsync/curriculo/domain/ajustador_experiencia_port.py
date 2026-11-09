@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
 from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
+from jobsync.curriculo.domain.equivalencia_tecnologia import DiretrizesExperiencia
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 
 
@@ -15,8 +16,14 @@ class AjustadorExperienciaPort(ABC):
     """
 
     @abstractmethod
-    def ajustar(self, experiencia: ExperienciaParaAvaliacao, contexto: ContextoVaga) -> ExperienciaAdaptada:
-        """Adapta a descrição em texto livre do perfil para a vaga."""
+    def ajustar(
+        self,
+        experiencia: ExperienciaParaAvaliacao,
+        contexto: ContextoVaga,
+        diretrizes: DiretrizesExperiencia,
+    ) -> ExperienciaAdaptada:
+        """Adapta a descrição em texto livre do perfil para a vaga, seguindo as trocas e
+        manutenções de tecnologia definidas para esta experiência."""
         raise NotImplementedError
 
     @abstractmethod

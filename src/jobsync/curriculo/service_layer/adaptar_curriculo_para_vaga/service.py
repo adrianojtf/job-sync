@@ -16,6 +16,8 @@ from jobsync.curriculo import (
     ContextoVaga,
     Curriculo,
     ExperienciaAdaptada,
+    IdentificadorEquivalenciasPort,
+    PlanoAdaptacao,
     RascunhoCurriculoAdaptado,
     TipoSecao,
 )
@@ -57,6 +59,7 @@ class AdaptarCurriculoParaVaga:
         avaliador_descricao_vaga: AvaliadorDescricaoVagaPort | None = None,
         ajustador_experiencia: AjustadorExperienciaPort | None = None,
         avaliador_experiencia: AvaliadorExperienciaPort | None = None,
+        identificador_equivalencias: IdentificadorEquivalenciasPort | None = None,
     ) -> None:
         self._extrator = extrator
         self._analisador_vaga = analisador_vaga
@@ -64,6 +67,7 @@ class AdaptarCurriculoParaVaga:
         self._avaliador_descricao_vaga = avaliador_descricao_vaga
         self._ajustador_experiencia = ajustador_experiencia
         self._avaliador_experiencia = avaliador_experiencia
+        self._identificador_equivalencias = identificador_equivalencias
 
     def executar(self, input_dto: AdaptarCurriculoParaVagaInputDto) -> AdaptarCurriculoParaVagaOutputDto:
         AdaptarCurriculoParaVagaInputValidator.validar(input_dto)
@@ -133,12 +137,19 @@ class AdaptarCurriculoParaVaga:
             if ajustar_experiencias
             else curriculo.secoes
         )
+        plano = (
+            self._planejar(input_dto.experiencias_profissionais, contexto)
+            if ajustar_experiencias
+            else PlanoAdaptacao.vazio()
+        )
         secoes_ajustadas = tuple(
-            self._ajustador_texto.ajustar_secao(secao=secao, contexto=contexto)
+            self._ajustador_texto.ajustar_secao(
+                secao=secao, contexto=contexto, ajustes=plano.equivalencias_aplicadas
+            )
             for secao in secoes_de_texto
         )
         experiencias = (
-            self._ajustar_experiencias(input_dto.experiencias_profissionais, contexto)
+            self._ajustar_experiencias(input_dto.experiencias_profissionais, contexto, plano)
             if ajustar_experiencias
             else None
         )
@@ -154,20 +165,50 @@ class AdaptarCurriculoParaVaga:
                 if secao_experiencias is not None
                 else TITULO_EXPERIENCIAS_PADRAO
             ),
+            ajustes_tecnologia=plano.ajustes,
         )
+
+    def _planejar(
+        self,
+        experiencias: tuple[ExperienciaParaAvaliacao, ...],
+        contexto: ContextoVaga,
+    ) -> PlanoAdaptacao:
+        """Aponta equivalências via IA e as distribui no domínio; falha da IA vira plano vazio."""
+        if self._identificador_equivalencias is None:
+            return PlanoAdaptacao.vazio()
+        try:
+            equivalencias = self._identificador_equivalencias.identificar(experiencias, contexto)
+        except (RuntimeError, ValueError) as erro:
+            logger.warning(
+                "A identificação de tecnologias equivalentes ficou indisponível (%s).",
+                type(erro).__name__,
+            )
+            return PlanoAdaptacao.vazio()
+
+        plano = PlanoAdaptacao.distribuir(experiencias, equivalencias)
+        logger.info(
+            "Plano de tecnologias gerado (equivalencias=%d, trocas=%d, manutencoes=%d).",
+            len(equivalencias),
+            len(plano.ajustes),
+            len(plano.manutencoes),
+        )
+        return plano
 
     def _ajustar_experiencias(
         self,
         experiencias: tuple[ExperienciaParaAvaliacao, ...],
         contexto: ContextoVaga,
+        plano: PlanoAdaptacao,
     ) -> tuple[ExperienciaAdaptada, ...]:
         ajustador = self._ajustador_experiencia
         if ajustador is None:
             return ()
 
         return tuple(
-            ajustador.ajustar(experiencia=original, contexto=contexto)
-            for original in experiencias
+            ajustador.ajustar(
+                experiencia=original, contexto=contexto, diretrizes=plano.diretrizes(indice)
+            )
+            for indice, original in enumerate(experiencias)
         )
 
     def _avaliar_experiencias(

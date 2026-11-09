@@ -3,7 +3,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from jobsync.curriculo import ContextoVaga, ExperienciaAdaptada, ExperienciaParaAvaliacao
+from jobsync.curriculo import (
+    ContextoVaga,
+    DiretrizesExperiencia,
+    EquivalenciaTecnologia,
+    ExperienciaAdaptada,
+    ExperienciaParaAvaliacao,
+)
 from jobsync.curriculo.adapters.ajustador_experiencia_openai_client import (
     AjustadorExperienciaOpenAIClient,
 )
@@ -75,11 +81,16 @@ def _contexto(idioma: str = "pt", cargo_alvo: str = "") -> ContextoVaga:
 
 
 def _ajustar(
-    cliente: Mock, descricao: str = "Fiz APIs em Java.", idioma: str = "pt", cargo_alvo: str = ""
+    cliente: Mock,
+    descricao: str = "Fiz APIs em Java.",
+    idioma: str = "pt",
+    cargo_alvo: str = "",
+    diretrizes: DiretrizesExperiencia | None = None,
 ):
     return AjustadorExperienciaOpenAIClient(cliente).ajustar(
         experiencia=_original(descricao),
         contexto=_contexto(idioma, cargo_alvo),
+        diretrizes=diretrizes or DiretrizesExperiencia(),
     )
 
 
@@ -213,3 +224,53 @@ class TestAjustadorExperienciaOpenAIClientCargoAlvo:
 
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
         assert "Cargo-alvo" not in usuario
+
+
+class TestAjustadorExperienciaOpenAIClientDiretrizes:
+    def test_prompt_de_sistema_traz_as_regras_de_cargo_alvo_tecnologias_e_responsabilidades(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
+        assert "Use o cargo-alvo para escolher a ênfase e o vocabulário" in sistema
+        assert "Não acrescente tecnologias além das que estão no texto e das trocas indicadas" in sistema
+        assert "responsabilidade essencial da vaga" in sistema
+        assert "comum ao cargo desta experiência" in sistema
+        assert "atípicas para o cargo" in sistema
+        assert "não invente métricas para elas" in sistema
+
+    def test_troca_indica_a_tecnologia_nova_e_pede_citacao_explicita_no_contexto(self):
+        cliente = _cliente(RESPOSTA)
+        diretrizes = DiretrizesExperiencia(trocar=(EquivalenciaTecnologia(original="React", alvo="Angular"),))
+
+        _ajustar(cliente, diretrizes=diretrizes)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Use Angular no lugar de React" in usuario
+        assert "cite Angular de forma explícita no contexto" in usuario
+
+    def test_manutencao_pede_citacao_explicita_da_tecnologia_original(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, diretrizes=DiretrizesExperiencia(manter=("React",)))
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Mantenha React" in usuario
+        assert "cite React de forma explícita no contexto" in usuario
+
+    def test_sem_diretrizes_o_prompt_nao_traz_ajustes_de_tecnologia(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Ajustes de tecnologia" not in usuario
+
+    def test_refinar_mantem_as_tecnologias_ja_citadas(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Mantenha as tecnologias já citadas nas conquistas e no contexto atuais" in usuario

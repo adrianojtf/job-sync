@@ -13,8 +13,12 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
     StatusAvaliacaoAutomatica,
 )
 from jobsync.curriculo import (
+    AjusteTecnologia,
     AvaliacaoExperiencia,
     ContextoVaga,
+    DiretrizesExperiencia,
+    EquivalenciaTecnologia,
+    IdentificadorEquivalenciasPort,
     ExperienciaAdaptada,
     Curriculo,
     ExperienciaParaAvaliacao,
@@ -51,10 +55,14 @@ class ExtratorFake(ExtratorCurriculoPort):
 class AjustadorTextoFake(AjustadorTextoPort):
     def __init__(self, eventos: list[str] | None = None):
         self.chamadas: list[tuple[TipoSecao, ContextoVaga]] = []
+        self.ajustes: list[tuple[EquivalenciaTecnologia, ...]] = []
         self._eventos = eventos
 
-    def ajustar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga) -> SecaoCurriculo:
+    def ajustar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()
+    ) -> SecaoCurriculo:
         self.chamadas.append((secao.tipo, contexto))
+        self.ajustes.append(tuple(ajustes))
         if self._eventos is not None:
             self._eventos.append("ajustar_secao")
         return secao.com_novo_conteudo(f"[AJUSTADO-{contexto.idioma_alvo}] {secao.conteudo}")
@@ -95,11 +103,18 @@ class AjustadorExperienciaFake(AjustadorExperienciaPort):
     def __init__(self, eventos: list[str] | None = None):
         self.recebidas: list[ExperienciaParaAvaliacao] = []
         self.contextos: list[ContextoVaga] = []
+        self.diretrizes: list[DiretrizesExperiencia] = []
         self._eventos = eventos
 
-    def ajustar(self, experiencia: ExperienciaParaAvaliacao, contexto: ContextoVaga) -> ExperienciaAdaptada:
+    def ajustar(
+        self,
+        experiencia: ExperienciaParaAvaliacao,
+        contexto: ContextoVaga,
+        diretrizes: DiretrizesExperiencia,
+    ) -> ExperienciaAdaptada:
         self.recebidas.append(experiencia)
         self.contextos.append(contexto)
+        self.diretrizes.append(diretrizes)
         if self._eventos is not None:
             self._eventos.append("ajustar_experiencia")
         return ExperienciaAdaptada(
@@ -112,6 +127,23 @@ class AjustadorExperienciaFake(AjustadorExperienciaPort):
 
     def refinar(self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga) -> ExperienciaAdaptada:
         return experiencia
+
+
+class IdentificadorEquivalenciasFake(IdentificadorEquivalenciasPort):
+    def __init__(
+        self,
+        equivalencias: tuple[EquivalenciaTecnologia, ...] = (),
+        erro: Exception | None = None,
+    ):
+        self._equivalencias = equivalencias
+        self._erro = erro
+        self.chamadas: list[tuple[tuple[ExperienciaParaAvaliacao, ...], ContextoVaga]] = []
+
+    def identificar(self, experiencias, contexto: ContextoVaga) -> tuple[EquivalenciaTecnologia, ...]:
+        self.chamadas.append((tuple(experiencias), contexto))
+        if self._erro is not None:
+            raise self._erro
+        return self._equivalencias
 
 
 class AvaliadorExperienciaFake(AvaliadorExperienciaPort):
@@ -593,3 +625,74 @@ class TestAdaptarCurriculoParaVagaComAvaliacoes:
         assert resultado.avaliacoes_experiencias == ()
         assert avaliador_experiencia.recebidas == []
         assert len(ajustador_texto.chamadas) == 4
+
+
+PYTHON_KOTLIN = EquivalenciaTecnologia(original="Python", alvo="Kotlin")
+
+
+def _caso_com_identificador(
+    identificador: IdentificadorEquivalenciasFake | None,
+) -> tuple[AdaptarCurriculoParaVaga, AjustadorTextoFake, AjustadorExperienciaFake]:
+    ajustador_texto = AjustadorTextoFake()
+    ajustador_experiencia = AjustadorExperienciaFake()
+    caso_de_uso = AdaptarCurriculoParaVaga(
+        ExtratorFake(_curriculo_exemplo()),
+        JobDescriptionAnalyzerFake(AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga")),
+        ajustador_texto,
+        ajustador_experiencia=ajustador_experiencia,
+        identificador_equivalencias=identificador,
+    )
+    return caso_de_uso, ajustador_texto, ajustador_experiencia
+
+
+class TestAdaptarCurriculoParaVagaPlanoDeTecnologias:
+    def test_plano_orienta_cada_experiencia_as_secoes_e_o_rascunho(self):
+        identificador = IdentificadorEquivalenciasFake((PYTHON_KOTLIN,))
+        caso_de_uso, ajustador_texto, ajustador_experiencia = _caso_com_identificador(identificador)
+
+        resultado = caso_de_uso.executar(_input_estruturado())
+
+        experiencias_recebidas, contexto_recebido = identificador.chamadas[0]
+        assert experiencias_recebidas == _experiencias_exemplo()
+        assert contexto_recebido.cargo_alvo == "Engenheiro de Software Sênior"
+        assert ajustador_experiencia.diretrizes == [
+            DiretrizesExperiencia(trocar=(PYTHON_KOTLIN,)),
+            DiretrizesExperiencia(),
+        ]
+        assert all(ajustes == (PYTHON_KOTLIN,) for ajustes in ajustador_texto.ajustes)
+        assert resultado.rascunho.ajustes_tecnologia == (AjusteTecnologia(0, PYTHON_KOTLIN),)
+
+    def test_falha_do_identificador_segue_com_plano_vazio(self):
+        identificador = IdentificadorEquivalenciasFake(erro=ValueError("formato"))
+        caso_de_uso, ajustador_texto, ajustador_experiencia = _caso_com_identificador(identificador)
+
+        resultado = caso_de_uso.executar(_input_estruturado())
+
+        assert ajustador_experiencia.diretrizes == [DiretrizesExperiencia(), DiretrizesExperiencia()]
+        assert all(ajustes == () for ajustes in ajustador_texto.ajustes)
+        assert resultado.rascunho.ajustes_tecnologia == ()
+
+    def test_sem_identificador_adapta_sem_trocas(self):
+        caso_de_uso, _, ajustador_experiencia = _caso_com_identificador(None)
+
+        resultado = caso_de_uso.executar(_input_estruturado())
+
+        assert ajustador_experiencia.diretrizes == [DiretrizesExperiencia(), DiretrizesExperiencia()]
+        assert resultado.rascunho.ajustes_tecnologia == ()
+
+    def test_fonte_pdf_nao_identifica_equivalencias(self):
+        identificador = IdentificadorEquivalenciasFake((PYTHON_KOTLIN,))
+        caso_de_uso, ajustador_texto, _ = _caso_com_identificador(identificador)
+
+        caso_de_uso.executar(
+            AdaptarCurriculoParaVagaInputDto(
+                pdf_curriculo=b"%PDF",
+                descricao_vaga="vaga",
+                idioma_alvo="pt",
+                cargo_alvo="Cargo",
+                empresa_alvo="Empresa",
+            )
+        )
+
+        assert identificador.chamadas == []
+        assert all(ajustes == () for ajustes in ajustador_texto.ajustes)

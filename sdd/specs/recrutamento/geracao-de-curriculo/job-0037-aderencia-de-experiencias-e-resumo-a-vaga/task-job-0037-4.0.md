@@ -20,12 +20,12 @@ A adaptação passa a gerar o plano, a passar as diretrizes de cada experiência
 
 ## Subtarefas
 
-- [ ] 4.1 Testes dos prompts e da adaptação (Red).
-- [ ] 4.2 Porta e adapter de experiência.
-- [ ] 4.3 Porta e adapter de texto (TECNOLOGIAS, PERFIL, EXPERIENCIAS da fonte PDF).
-- [ ] 4.4 Rascunho com `ajustes_tecnologia`.
-- [ ] 4.5 `AdaptarCurriculoParaVaga` e injeção.
-- [ ] 4.6 Dublês de E2E, incluindo o do identificador de equivalências (vindo da task 3.0).
+- [x] 4.1 Testes dos prompts e da adaptação (Red).
+- [x] 4.2 Porta e adapter de experiência.
+- [x] 4.3 Porta e adapter de texto (TECNOLOGIAS, PERFIL, EXPERIENCIAS da fonte PDF).
+- [x] 4.4 Rascunho com `ajustes_tecnologia`.
+- [x] 4.5 `AdaptarCurriculoParaVaga` e injeção.
+- [x] 4.6 Dublês de E2E, incluindo o do identificador de equivalências (vindo da task 3.0).
 
 ## Detalhes de Implementação
 
@@ -39,7 +39,7 @@ Ver "Fluxo da adaptação" e "Regras dos prompts" em `techspec-job-0037.md`.
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos adapters, do rascunho e de `AdaptarCurriculoParaVaga`.
+- [x] Testes de unidade dos adapters, do rascunho e de `AdaptarCurriculoParaVaga`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

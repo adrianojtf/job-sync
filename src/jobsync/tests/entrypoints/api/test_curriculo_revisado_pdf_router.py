@@ -44,7 +44,7 @@ def test_pdf_traz_as_conquistas_e_o_contexto_editados_no_rotulo_do_idioma(client
     texto, _ = _pagina(response)
 
     assert response.status_code == 200
-    assert "Dev — TechCorp (2024)" in texto
+    assert "TechCorp 2024\nDev\n" in texto
     assert "Criei APIs." in texto
     assert "Reduzi custos." in texto
     assert f"{rotulo}: Empresa de pagamentos." in texto

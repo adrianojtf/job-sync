@@ -51,6 +51,26 @@ class TestEstiloCurriculoPdf:
         assert estilo.contexto.fontName == "Carlito-Italic"
         assert estilo.contexto.textColor == HexColor("#595959")
 
+    def test_titulo_empresa_e_cargo_ficam_junto_do_elemento_seguinte(self):
+        estilo = _estilo()
+
+        assert estilo.titulo_secao.keepWithNext == 1
+        assert estilo.empresa.keepWithNext == 1
+        assert estilo.cargo.keepWithNext == 1
+
+    def test_perfil_e_empresa_seguem_o_espacamento_do_modelo(self):
+        estilo = _estilo()
+
+        assert estilo.perfil.spaceAfter == 4
+        assert estilo.empresa.spaceBefore == 10
+        assert estilo.cargo.spaceAfter == 4
+
+    def test_idioma_usa_o_espacamento_das_linhas_com_rotulo(self):
+        estilo = _estilo()
+
+        assert estilo.idioma.spaceAfter == estilo.tecnologia.spaceAfter == 2
+        assert estilo.idioma.fontName == estilo.corpo.fontName
+
     def test_corpo_e_regular_10_5_preto_com_entrelinha_do_modelo(self):
         corpo = _estilo().corpo
 
@@ -67,6 +87,9 @@ class TestEstiloCurriculoPdf:
         assert estilo.cor_secundaria == HexColor("#595959")
         assert estilo.cor_link == HexColor("#0563C1")
         assert estilo.espessura_linha_secao == 0.75
+        assert estilo.recuo_direito_periodo == 54
+        assert estilo.largura_periodo == 140
+        assert estilo.espaco_antes_da_empresa == 10
 
     def test_usa_a_familia_de_fontes_informada(self):
         familia = FamiliaFonte("Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique")

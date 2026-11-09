@@ -5,16 +5,17 @@
 - [x] 1.0 Fontes Carlito, `RegistradorFontesPdf` e `EstiloCurriculoPdf`
 - [x] 2.0 `InterpretadorExperiencias` e `BlocoExperiencia`
 - [x] 3.0 `CatalogoLocalizacao`: título "Technical Skills"
-- [ ] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
-- [ ] 5.0 `GeradorPdfClient`: experiências com empresa/período, cargo, tópicos e contexto
-- [ ] 6.0 `GeradorPdfClient`: formação, certificações e idiomas
+- [x] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
+- [x] 5.0 `GeradorPdfClient`: experiências com empresa/período, cargo, tópicos e contexto
+- [x] 6.0 `GeradorPdfClient`: formação, certificações e idiomas
 - [x] 7.0 Prompts de IA: preservar quebras de linha e tópicos `-`
-- [ ] 8.0 Validação visual contra o modelo, suíte completa e `lint-imports`
+- [x] 8.0 Validação visual contra o modelo, suíte completa e `lint-imports`
 
 ## Status
 
 - Tarefa 1.0 concluída.
 - JOB-0035 integrado à `main` (PR 47) e a `main` integrada a esta branch. Escopo ajustado ao que o JOB-0035 entregou (ver `techspec-job-0016.md`, seção "Relação com o JOB-0035").
+- Todas as tarefas implementadas. Falta a aprovação visual do candidato (critério de aceite do PRD): ver `comparacao-modelo-vs-gerado.png`, nesta pasta.
 
 ## Dependências
 

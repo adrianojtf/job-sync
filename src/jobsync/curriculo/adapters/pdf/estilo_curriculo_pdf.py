@@ -27,6 +27,9 @@ class EstiloCurriculoPdf:
     cor_secundaria: Color = _CINZA
     cor_link: Color = _AZUL_LINK
     espessura_linha_secao: float = 0.75
+    recuo_direito_periodo: float = 54
+    largura_periodo: float = 140
+    espaco_antes_da_empresa: float = 10
 
     @property
     def nome(self) -> ParagraphStyle:
@@ -46,7 +49,7 @@ class EstiloCurriculoPdf:
     def titulo_secao(self) -> ParagraphStyle:
         return ParagraphStyle(
             "TituloSecao", fontName=self.familia.bold, fontSize=11, leading=13,
-            alignment=TA_LEFT, textColor=self.cor_destaque, spaceBefore=14, spaceAfter=2,
+            alignment=TA_LEFT, textColor=self.cor_destaque, spaceBefore=15, spaceAfter=2, keepWithNext=1,
         )
 
     @property
@@ -57,13 +60,22 @@ class EstiloCurriculoPdf:
         )
 
     @property
+    def perfil(self) -> ParagraphStyle:
+        return ParagraphStyle("Perfil", parent=self.corpo, spaceAfter=4)
+
+    @property
     def tecnologia(self) -> ParagraphStyle:
         return ParagraphStyle("Tecnologia", parent=self.corpo, spaceAfter=2)
 
     @property
+    def idioma(self) -> ParagraphStyle:
+        return ParagraphStyle("Idioma", parent=self.tecnologia)
+
+    @property
     def empresa(self) -> ParagraphStyle:
         return ParagraphStyle(
-            "Empresa", fontName=self.familia.bold, fontSize=11.5, leading=14, textColor=_PRETO,
+            "Empresa", fontName=self.familia.bold, fontSize=11.5, leading=14, textColor=_PRETO, keepWithNext=1,
+            spaceBefore=self.espaco_antes_da_empresa,
         )
 
     @property
@@ -77,7 +89,7 @@ class EstiloCurriculoPdf:
     def cargo(self) -> ParagraphStyle:
         return ParagraphStyle(
             "Cargo", fontName=self.familia.italic, fontSize=_TAMANHO_CORPO,
-            leading=_ENTRELINHA_CORPO, textColor=self.cor_destaque, spaceAfter=2,
+            leading=_ENTRELINHA_CORPO, textColor=self.cor_destaque, spaceAfter=4, keepWithNext=1,
         )
 
     @property

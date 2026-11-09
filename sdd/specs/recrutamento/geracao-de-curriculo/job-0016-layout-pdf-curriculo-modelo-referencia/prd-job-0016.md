@@ -75,13 +75,13 @@ Requisitos funcionais:
 Requisitos funcionais:
 8. Cada título de seção deve aparecer em **caixa alta**, negrito, 11 pt, azul-marinho, alinhado à esquerda.
 9. Abaixo de cada título deve haver uma linha horizontal azul-marinho de 0,75 pt, ocupando toda a largura útil.
-10. Os títulos devem respeitar o idioma alvo (ex.: `TECHNICAL SKILLS`, `PROFILE`, `EXPERIENCE`, `EDUCATION` em inglês; `TECNOLOGIAS`, `PERFIL`, `EXPERIÊNCIA`, `FORMAÇÃO ACADÊMICA` em português).
+10. Os títulos devem respeitar o idioma alvo (ex.: `TECHNICAL SKILLS`, `PROFILE`, `EXPERIENCE`, `EDUCATION` em inglês; `TECNOLOGIAS`, `PERFIL`, `EXPERIÊNCIAS`, `FORMAÇÃO` em português, conforme o catálogo de localização).
 11. A ordem das seções deve seguir o modelo: Tecnologias → Perfil → Experiências → Formação → Certificações → Idiomas.
 
 ### 4. Seção de Tecnologias
 
 Requisitos funcionais:
-12. Cada categoria deve ocupar **uma linha própria**, no formato `**Rótulo:** itens`, com rótulo em negrito e itens em regular, 10,5 pt.
+12. Cada categoria deve ocupar **uma linha própria**, no formato `**Rótulo:** itens`, com o rótulo e os dois-pontos em negrito (como no modelo) e os itens em regular, 10,5 pt.
 13. As linhas de categoria não devem ter marcador nem recuo.
 14. O sistema não deve juntar categorias diferentes em um único parágrafo.
 

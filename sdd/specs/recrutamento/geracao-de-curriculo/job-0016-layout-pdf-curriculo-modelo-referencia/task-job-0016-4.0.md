@@ -21,13 +21,13 @@ Aplicar o novo layout à parte superior do currículo: margens da página, cabe�
 
 ## Subtarefas
 
-- [ ] 4.1 Escrever testes que geram o PDF via `gerar()` e inspecionam com `pdfplumber` (red).
-- [ ] 4.2 Injetar estilo e registrador de fontes no construtor.
-- [ ] 4.3 Implementar margens e cabeçalho com link.
-- [ ] 4.4 Implementar títulos de seção com linha.
-- [ ] 4.5 Implementar a seção de tecnologias (uma linha por categoria + quebra de linha única).
-- [ ] 4.6 Implementar a seção de perfil.
-- [ ] 4.7 Ajustar testes existentes de tecnologias que dependam da estrutura antiga.
+- [x] 4.1 Escrever testes que geram o PDF via `gerar()` e inspecionam com `pdfplumber` (red).
+- [x] 4.2 Injetar estilo e registrador de fontes no construtor.
+- [x] 4.3 Implementar margens e cabeçalho com link.
+- [x] 4.4 Implementar títulos de seção com linha.
+- [x] 4.5 Implementar a seção de tecnologias (uma linha por categoria + quebra de linha única).
+- [x] 4.6 Implementar a seção de perfil.
+- [x] 4.7 Ajustar testes existentes de tecnologias que dependam da estrutura antiga.
 
 ## Detalhes de Implementação
 
@@ -42,12 +42,12 @@ Consultar em `techspec-job-0016.md`:
 
 ## Testes da Tarefa
 
-- [ ] Nome em caixa alta, centralizado, `Carlito-Bold` 16 pt, cor `#1F3864`.
-- [ ] Anotação de link do LinkedIn presente na página.
-- [ ] Título `TECHNICAL SKILLS` em caixa alta, com linha horizontal abaixo.
-- [ ] Tecnologias em várias linhas geram uma linha por categoria no PDF.
-- [ ] Tecnologias em linha única com várias categorias geram uma linha por categoria.
-- [ ] Ambiente sem fontes Carlito ainda gera PDF válido.
+- [x] Nome em caixa alta, centralizado, `Carlito-Bold` 16 pt, cor `#1F3864`.
+- [x] Anotação de link do LinkedIn presente na página.
+- [x] Título `TECHNICAL SKILLS` em caixa alta, com linha horizontal abaixo.
+- [x] Tecnologias em várias linhas geram uma linha por categoria no PDF.
+- [x] Tecnologias em linha única com várias categorias geram uma linha por categoria.
+- [x] Ambiente sem fontes Carlito ainda gera PDF válido.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

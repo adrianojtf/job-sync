@@ -25,7 +25,7 @@ Medidas extraídas do modelo com `pdfplumber` (fonte da verdade do layout):
 | Nome | Carlito Bold 16 | `#1F3864` | Centralizado, caixa alta |
 | Contato | Carlito Regular 10 | `#595959` (link `#0563C1`, sublinhado) | Centralizado |
 | Título de seção | Carlito Bold 11 | `#1F3864` | Caixa alta; linha 0,75 pt `#1F3864` ~13 pt abaixo |
-| Rótulo de tecnologia | Carlito Bold 10,5 | `#000000` | Uma categoria por linha, passo ~14,8 pt |
+| Rótulo de tecnologia | Carlito Bold 10,5 (inclui os dois-pontos) | `#000000` | Uma categoria por linha, passo ~14,8 pt |
 | Corpo / perfil | Carlito Regular 10,5 | `#000000` | Entrelinha 12,8 pt |
 | Empresa | Carlito Bold 11,5 | `#000000` | Esquerda |
 | Período | Carlito Regular 10,5 | `#595959` | Alinhado à direita, termina em x = 513 pt |
@@ -108,8 +108,12 @@ Entrada: texto da seção, blocos separados por linha em branco.
 - **Empresa + período:** `Table([[Paragraph(empresa), Paragraph(periodo)]], colWidths=[largura_util - 54 - L, L])`, com `L = 140 pt`, coluna 2 `ALIGN=RIGHT` e paddings zerados. A largura do período termina em 468 pt a partir da margem (513 pt absoluto), igual ao modelo (ver Questão 2 do PRD). A tabela mantém a ordem de leitura "empresa → período" na extração de texto (ATS).
 - **Tópicos:** `Paragraph(texto, estilo.topico, bulletText="●")`, com `leftIndent=36`, `bulletIndent=18`, `bulletFontName` = Carlito e `bulletFontSize=10`. O recuo pendente vem do próprio `leftIndent` (RF 19). `spaceAfter=3` entre tópicos (RF 20).
 - **Contexto:** `Paragraph(texto, estilo.contexto)` em itálico cinza.
-- **Bloco de experiência:** `KeepTogether([tabela_cabecalho, cargo, primeiro_topico_ou_contexto])` para evitar cabeçalho órfão no fim da página. `Spacer(1, 8)` entre blocos (RF 22).
-- **Formação/Certificações:** mesmo `InterpretadorExperiencias` (instituição + período, depois curso/grau em itálico azul). Reaproveita a tabela de cabeçalho. Idiomas: `<b>idioma</b> — nível`, uma linha por item.
+- **Ordem dos itens do bloco:** empresa e período, cargo, tópicos, texto solto (`descricao`) e contexto. O texto solto fica depois dos tópicos porque, na prática, é a continuação de um tópico quebrado em linha.
+- **Bloco de experiência:** `keepWithNext` na empresa, no cargo, no título da seção e na linha da seção, para o cabeçalho nunca ficar órfão no fim da página. Não usar `KeepTogether` aninhado: o ReportLab empurra o conteúdo inteiro para a página seguinte. O espaço entre blocos vem do `spaceBefore` da empresa (10 pt), sem `Spacer` (RF 22).
+- **Espaçamentos medidos no modelo:** o ReportLab usa o maior entre o `spaceAfter` do elemento anterior e o `spaceBefore` do próximo, sem somar. Valores: título da seção `spaceBefore` 15; linha da seção `spaceAfter` 6,5; cargo `spaceAfter` 4; tópico `spaceAfter` 3; perfil `spaceAfter` 4; margem superior 29,5 pt (mais 6 pt de folga do frame, o nome começa em 39,5 pt). Com esses valores, as linhas ficam a menos de 0,5 pt das posições do modelo.
+- **Formação/Certificações:** mesmo `InterpretadorExperiencias` e o mesmo desenho de bloco das experiências (instituição em negrito + período à direita, depois curso/grau em itálico azul).
+- **Idiomas:** uma linha por idioma, sem marcador. Com travessão (`English — Fluent`), só o idioma fica em negrito. Com dois-pontos (`English: Fluent`), o idioma e os dois-pontos ficam em negrito, como nas tecnologias. Sem nível, a linha inteira fica em negrito.
+- **Código removido:** o negrito parcial de formação do JOB-0002 (`_negritar_formacao` e auxiliares) deixou de existir, porque o padrão do modelo o substitui. Um texto no formato antigo (`Education: Estácio, Jun 2022 - Jun 2024, Associate Degree ...`) não tem período no fim da linha e sai como uma única linha em negrito, sem perda de texto.
 - **Escape:** manter `_escape_text` antes de aplicar qualquer markup.
 
 ### Modelos de Dados
@@ -231,7 +235,7 @@ Testes de prompt (`AjustadorTextoClient` e `ExtratorCurriculoClient`, com `unitt
 
 - **IA ainda devolver prosa:** mitigado pelas regras de prompt e pela proteção no gerador (quebra de categorias de tecnologia). Para experiências, prosa vira contexto, sem perda de texto.
 - **Regex de período com falso positivo** (ex.: nome de empresa com ano): exigir que o período esteja no fim da linha e tenha o separador de intervalo.
-- **Diferença de paginação** em relação ao modelo: aceitável, desde que estilos e espaçamentos batam. `KeepTogether` evita cabeçalho órfão.
+- **Diferença de paginação** em relação ao modelo: aceitável, desde que estilos e espaçamentos batam. `keepWithNext` evita cabeçalho órfão.
 - **Tamanho do repositório:** os 4 TTF somam cerca de 2,7 MB (medido no pacote `fonts-crosextra-carlito`).
 - **Regressão nos comportamentos do JOB-0035:** este JOB reescreve `_formatar_conteudo_experiencias`, onde o JOB-0035 colocou o reconhecimento do contexto. Mitigação: manter as asserções dos testes dele e trocar só fonte e cor.
 - **Travessão em nome de empresa:** um nome com ` — ` e parênteses no fim seria separado de forma errada. Caso raro, e o resultado é só visual (nenhum texto se perde).

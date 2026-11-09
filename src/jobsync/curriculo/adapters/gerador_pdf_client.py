@@ -1,28 +1,34 @@
 """Adapter (implementa GeradorPdfPort) que gera o PDF final do currículo com ReportLab.
 
-O layout segue o modelo de referência observado: cabeçalho com nome em
-destaque e contatos, seções com título em negrito e linha divisória, e corpo
-em parágrafos/bullets conforme o conteúdo de cada seção.
+O layout segue o modelo de referência do JOB-0016: cabeçalho centralizado com o nome em
+caixa alta e o contato com link, seções com título em caixa alta e linha azul-marinho,
+tecnologias uma categoria por linha e corpo em parágrafos conforme o conteúdo de cada seção.
+Cores, tamanhos e fontes vêm de `EstiloCurriculoPdf`.
 """
 from __future__ import annotations
 
 import io
+import logging
 import re
 
-from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm
 from reportlab.platypus import (
     HRFlowable,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
+    Table,
+    TableStyle,
 )
 
 from jobsync.curriculo import Curriculo, TipoSecao
+from jobsync.curriculo.adapters.pdf.estilo_curriculo_pdf import EstiloCurriculoPdf
+from jobsync.curriculo.adapters.pdf.interpretador_experiencias import (
+    BlocoExperiencia,
+    InterpretadorExperiencias,
+)
+from jobsync.curriculo.adapters.pdf.registrador_fontes_pdf import RegistradorFontesPdf
 from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
-from jobsync.curriculo.domain.rotulos_experiencia import ROTULOS_CONTEXTO_RECONHECIDOS
 from jobsync.shared_kernel.domain import CatalogoLocalizacao
 
 _ORDEM_SECOES = (
@@ -33,76 +39,90 @@ _ORDEM_SECOES = (
     TipoSecao.CERTIFICACOES,
     TipoSecao.IDIOMAS,
 )
+logger = logging.getLogger(__name__)
 
-
-def _criar_estilos() -> dict[str, ParagraphStyle]:
-    base = getSampleStyleSheet()
-    return {
-        "nome": ParagraphStyle("Nome", parent=base["Title"], fontSize=18, alignment=0, spaceAfter=4),
-        "contato": ParagraphStyle("Contato", parent=base["Normal"], fontSize=9, textColor="#333333"),
-        "titulo_secao": ParagraphStyle(
-            "TituloSecao",
-            parent=base["Heading2"],
-            fontSize=12,
-            spaceBefore=10,
-            spaceAfter=4,
-        ),
-        "corpo": ParagraphStyle("Corpo", parent=base["Normal"], fontSize=10, leading=14),
-    }
+_MARGEM_SUPERIOR = 29.5  # com a folga do frame, o topo do nome fica em 39,5 pt, como no modelo
+_MARGEM_INFERIOR = 36
+_MARCADOR_DA_LISTA = "●"
+_LINHA_DE_IDIOMA = re.compile(r"^(?P<idioma>.+?)(?:(?P<travessao>\s+[—–-]\s+)|\s*:\s*)(?P<nivel>.+)$")
+_SEPARADOR_DO_CONTATO = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;"  # mais largo que um espaço, como no modelo
+_FOLGA_LATERAL_DO_FRAME = 6  # padding interno do Frame do ReportLab, somado à margem do documento
+_MARCADORES_DE_TOPICO = ("-", "•", "*")
 
 
 class GeradorPdfClient(GeradorPdfPort):
     """Gera os bytes de um PDF a partir de um Curriculo, no layout padrão do sistema."""
 
-    def __init__(self, catalogo: CatalogoLocalizacao | None = None) -> None:
+    def __init__(
+        self,
+        catalogo: CatalogoLocalizacao | None = None,
+        estilo: EstiloCurriculoPdf | None = None,
+        registrador_fontes: RegistradorFontesPdf | None = None,
+    ) -> None:
         self._catalogo = catalogo or CatalogoLocalizacao()
+        self._estilo = estilo or EstiloCurriculoPdf(
+            familia=(registrador_fontes or RegistradorFontesPdf()).registrar()
+        )
+        self._interpretador = InterpretadorExperiencias()
 
     def gerar(self, curriculo: Curriculo, idioma_alvo: str) -> bytes:
         buffer = io.BytesIO()
         documento = SimpleDocTemplate(
             buffer,
             pagesize=letter,
-            leftMargin=2 * cm,
-            rightMargin=2 * cm,
-            topMargin=1.5 * cm,
-            bottomMargin=1.5 * cm,
+            leftMargin=self._estilo.margem_lateral - _FOLGA_LATERAL_DO_FRAME,
+            rightMargin=self._estilo.margem_lateral - _FOLGA_LATERAL_DO_FRAME,
+            topMargin=_MARGEM_SUPERIOR,
+            bottomMargin=_MARGEM_INFERIOR,
         )
-        estilos = _criar_estilos()
 
         elementos = []
-        elementos.extend(self._montar_cabecalho(curriculo, estilos))
-        elementos.extend(self._montar_secoes(curriculo, estilos, idioma_alvo))
+        elementos.extend(self._montar_cabecalho(curriculo))
+        elementos.extend(self._montar_secoes(curriculo, idioma_alvo))
 
         documento.build(elementos)
         return buffer.getvalue()
 
-    def _montar_cabecalho(self, curriculo: Curriculo, estilos: dict) -> list:
-        elementos = [Paragraph(curriculo.nome_completo, estilos["nome"])]
+    def _montar_cabecalho(self, curriculo: Curriculo) -> list:
+        elementos = [Paragraph(self._escape_text(curriculo.nome_completo.upper()), self._estilo.nome)]
 
-        linha_contato_partes = []
+        partes_do_contato = []
         if curriculo.linkedin:
-            linha_contato_partes.append(f"LinkedIn: {curriculo.linkedin}")
+            partes_do_contato.append(f"LinkedIn: {self._link_do_linkedin(curriculo.linkedin)}")
         if curriculo.email:
-            linha_contato_partes.append(f"Email: {curriculo.email}")
-        if linha_contato_partes:
-            elementos.append(Paragraph(" | ".join(linha_contato_partes), estilos["contato"]))
-
-        elementos.append(Spacer(1, 8))
-        elementos.append(HRFlowable(width="100%", thickness=1, color="#000000"))
+            partes_do_contato.append(f"Email: {self._escape_text(curriculo.email)}")
+        if partes_do_contato:
+            elementos.append(Paragraph(_SEPARADOR_DO_CONTATO.join(partes_do_contato), self._estilo.contato))
         return elementos
 
-    def _montar_secoes(self, curriculo: Curriculo, estilos: dict, idioma_alvo: str) -> list:
+    def _link_do_linkedin(self, linkedin: str) -> str:
+        destino = linkedin if linkedin.startswith(("http://", "https://")) else f"https://{linkedin}"
+        cor = "#" + self._estilo.cor_link.hexval()[2:]
+        destino_escapado = self._escape_text(destino).replace('"', "&quot;")
+        return f'<link href="{destino_escapado}" color="{cor}"><u>{self._escape_text(linkedin)}</u></link>'
+
+    def _montar_secoes(self, curriculo: Curriculo, idioma_alvo: str) -> list:
         elementos = []
         for tipo in _ORDEM_SECOES:
             secao = curriculo.obter_secao(tipo)
             if secao is None:
                 continue
             titulo_localizado = self._obter_titulo_secao(tipo, secao.titulo, idioma_alvo)
-            elementos.append(Paragraph(titulo_localizado, estilos["titulo_secao"]))
-            elementos.append(HRFlowable(width="100%", thickness=0.5, color="#666666"))
-            elementos.append(Spacer(1, 4))
-            elementos.extend(self._formatar_conteudo(secao.conteudo, estilos["corpo"], tipo, idioma_alvo))
+            elementos.append(Paragraph(self._escape_text(titulo_localizado.upper()), self._estilo.titulo_secao))
+            elementos.append(self._linha_da_secao())
+            elementos.extend(self._formatar_conteudo(secao.conteudo, tipo, idioma_alvo))
         return elementos
+
+    def _linha_da_secao(self) -> HRFlowable:
+        linha = HRFlowable(
+            width="100%",
+            thickness=self._estilo.espessura_linha_secao,
+            color=self._estilo.cor_destaque,
+            spaceBefore=2,
+            spaceAfter=6.5,
+        )
+        linha.keepWithNext = 1  # o título, a linha e o começo do conteúdo não se separam entre páginas
+        return linha
 
     def _obter_titulo_secao(self, tipo_secao: TipoSecao, titulo_original: str, idioma_alvo: str) -> str:
         chave = {
@@ -130,10 +150,6 @@ class GeradorPdfClient(GeradorPdfPort):
         conteudo = GeradorPdfClient._escape_text(conteudo)
         if tipo_secao == TipoSecao.TECNOLOGIAS:
             return GeradorPdfClient._negritar_categorias_tecnologia(conteudo, idioma_alvo, catalogo)
-        if tipo_secao == TipoSecao.EXPERIENCIAS:
-            return conteudo
-        if tipo_secao == TipoSecao.FORMACAO:
-            return GeradorPdfClient._negritar_formacao(conteudo)
         return conteudo
 
     @staticmethod
@@ -169,203 +185,144 @@ class GeradorPdfClient(GeradorPdfPort):
             for mapeamento in catalogo.categorias_tecnologia.values()
         ]
         padrao = re.compile(rf"(?P<prefixo>^|[-•*]\s*)(?P<label>{'|'.join(re.escape(c) for c in categorias)})(?P<separador>\s*:)", re.MULTILINE)
-        return padrao.sub(lambda m: f"{m.group('prefixo')}<b>{m.group('label')}</b>{m.group('separador')}", texto_localizado)
-
-    @staticmethod
-    def _negritar_experiencia(conteudo: str) -> str:
-        return f"<b>{GeradorPdfClient._escape_text(conteudo)}</b>"
-
-    @staticmethod
-    def _negritar_formacao(conteudo: str) -> str:
-        def formatar_linha(linha: str) -> str:
-            prefixo, texto = GeradorPdfClient._separar_rotulo_formacao(linha)
-            if ";" in texto:
-                partes = [parte.strip() for parte in texto.split(";")]
-                texto_formatado = "; ".join(GeradorPdfClient._formatar_bloco_formacao(parte) for parte in partes)
-            else:
-                texto_formatado = GeradorPdfClient._formatar_bloco_formacao(texto)
-            return f"{prefixo}{texto_formatado}"
-
-        linhas = conteudo.split("\n")
-        return "\n".join(formatar_linha(linha) for linha in linhas)
-
-    @staticmethod
-    def _separar_rotulo_formacao(conteudo: str) -> tuple[str, str]:
-        padrao = re.compile(
-            r"^(?P<label>Languages|Frameworks|Web Development|DevOps|Databases|Version Control|Other|Education|Educação|Formação|Academic)\s*:\s*(?P<rest>.*)$",
-            re.IGNORECASE,
-        )
-        correspondencia = padrao.match(conteudo)
-        if not correspondencia:
-            return "", conteudo
-        return f"<b>{correspondencia.group('label').strip()}</b>: ", correspondencia.group("rest")
-
-    @staticmethod
-    def _formatar_bloco_formacao(conteudo: str) -> str:
-        texto = conteudo.strip()
-        if " - " in texto:
-            nome, resto = texto.split(" - ", 1)
-            if "," in nome:
-                primeiro, complemento = nome.split(",", 1)
-                nome_formatado = f"<b>{primeiro.strip()}</b>, {complemento.strip()}"
-            else:
-                nome_formatado = GeradorPdfClient._negritar_instituicao_ou_titulo(nome)
-
-            resto_bruto = resto.strip()
-            resto_formatado = GeradorPdfClient._negritar_grau_formacao(resto_bruto)
-            if resto_formatado == resto_bruto:
-                resto_formatado = GeradorPdfClient._negritar_instituicao_ou_titulo(resto_bruto)
-            return f"{nome_formatado} - {resto_formatado}"
-        if "," in texto:
-            primeiro, resto = texto.split(",", 1)
-            primeiro_formatado = GeradorPdfClient._negritar_instituicao_ou_titulo(primeiro)
-            resto_formatado = GeradorPdfClient._negritar_grau_formacao(resto)
-            return f"{primeiro_formatado}, {resto_formatado.lstrip()}"
-        return GeradorPdfClient._negritar_grau_formacao(texto)
-
-    @staticmethod
-    def _negritar_instituicao_ou_titulo(texto: str) -> str:
-        texto = texto.strip()
-        if not texto:
-            return texto
-        if texto.startswith("<b>") and texto.endswith("</b>"):
-            return texto
-        return f"<b>{texto}</b>"
-
-    @staticmethod
-    def _negritar_grau_formacao(conteudo: str) -> str:
-        padrao = re.compile(
-            r"(?P<grau>\b(?:Associate Degree|Bachelor(?:'s)? Degree|Master(?:'s)? Degree|Technical Degree|Diploma|Certificate|Certification|Technical Diploma|Técnico|Bacharelado|Mestrado|Graduação)(?:\s+in\b[^,;]*)?)",
-            re.IGNORECASE,
-        )
-
-        def substituir(m: re.Match[str]) -> str:
-            grau = m.group("grau").strip()
-            if grau.startswith("<b>") and grau.endswith("</b>"):
-                return grau
-            return f"<b>{grau}</b>"
-
-        return padrao.sub(substituir, conteudo)
+        return padrao.sub(lambda m: f"{m.group('prefixo')}<b>{m.group('label')}:</b>", texto_localizado)
 
     def _formatar_conteudo(
         self,
         conteudo: str,
-        estilo_corpo: ParagraphStyle,
         tipo_secao: TipoSecao,
         idioma_alvo: str = "en",
     ) -> list:
-        """Converte o texto em parágrafos, tratando linhas iniciadas com marcador como bullets."""
-        if tipo_secao == TipoSecao.EXPERIENCIAS:
-            return self._formatar_conteudo_experiencias(conteudo, estilo_corpo)
+        """Despacha para o formatador da seção; experiências, formação e certificações usam blocos."""
         if tipo_secao == TipoSecao.TECNOLOGIAS:
-            return self._formatar_conteudo_tecnologias(conteudo, estilo_corpo, idioma_alvo)
+            return self._formatar_conteudo_tecnologias(conteudo, idioma_alvo)
+        if tipo_secao == TipoSecao.PERFIL:
+            return self._formatar_conteudo_perfil(conteudo)
+        if tipo_secao == TipoSecao.IDIOMAS:
+            return self._formatar_conteudo_idiomas(conteudo)
+        return self._formatar_conteudo_em_blocos(conteudo)
 
+    def _formatar_conteudo_perfil(self, conteudo: str) -> list:
+        """Junta linhas consecutivas em um parágrafo; linha em branco separa parágrafos."""
         elementos = []
-        for linha in conteudo.split("\n"):
-            linha_tratada = linha.strip()
-            if not linha_tratada:
-                continue
-            if linha_tratada.startswith(("-", "•", "*")):
-                texto = linha_tratada.lstrip("-•* ").strip()
-                elementos.append(
-                    Paragraph(f"&bull;&nbsp;&nbsp;{self._aplicar_enfase(texto, tipo_secao, idioma_alvo, self._catalogo)}", estilo_corpo)
-                )
-            else:
-                elementos.append(Paragraph(self._aplicar_enfase(linha_tratada, tipo_secao, idioma_alvo, self._catalogo), estilo_corpo))
-            elementos.append(Spacer(1, 2))
-        return elementos
+        prosa: list[str] = []
 
-    def _formatar_conteudo_tecnologias(
-        self,
-        conteudo: str,
-        estilo_corpo: ParagraphStyle,
-        idioma_alvo: str = "en",
-    ) -> list:
-        linhas = [linha.strip() for linha in conteudo.split("\n") if linha.strip()]
-        elementos = []
-
-        for indice, linha in enumerate(linhas):
-            linha_tratada = linha.strip()
-            if linha_tratada.startswith(("-", "•", "*")):
-                texto = linha_tratada.lstrip("-•* ").strip()
-                texto_formatado = self._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS, idioma_alvo, self._catalogo)
-                elementos.append(Paragraph(f"&bull;&nbsp;&nbsp;{texto_formatado}", estilo_corpo))
-            else:
-                texto_formatado = self._aplicar_enfase(linha_tratada, TipoSecao.TECNOLOGIAS, idioma_alvo, self._catalogo)
-                elementos.append(Paragraph(texto_formatado, estilo_corpo))
-            if indice < len(linhas) - 1:
-                elementos.append(Spacer(1, 2))
-
-        return elementos
-
-    def _formatar_conteudo_experiencias(self, conteudo: str, estilo_corpo: ParagraphStyle) -> list:
-        blocos = self._separar_blocos_experiencias(conteudo)
-        estilo_contexto = self._estilo_contexto(estilo_corpo)
-        elementos = []
-
-        for indice_bloco, bloco in enumerate(blocos):
-            for index, linha in enumerate(bloco):
-                linha_tratada = linha.strip()
-                if linha_tratada.startswith(("-", "•", "*")):
-                    texto = linha_tratada.lstrip("-•* ").strip()
-                    elementos.append(Paragraph(f"&bull;&nbsp;&nbsp;{self._escape_text(texto)}", estilo_corpo))
-                    elementos.append(Spacer(1, 2))
-                elif index > 0 and self._eh_linha_de_contexto(linha_tratada):
-                    elementos.append(Paragraph(self._escape_text(linha_tratada), estilo_contexto))
-                    elementos.append(Spacer(1, 2))
-                elif index == 0:
-                    elementos.append(Paragraph(self._negritar_experiencia(linha_tratada), estilo_corpo))
-                    elementos.append(Spacer(1, 2))
-                elif index == 1 and self._parece_posicao_experiencia(linha_tratada):
-                    elementos.append(Paragraph(self._negritar_experiencia(linha_tratada), estilo_corpo))
-                    elementos.append(Spacer(1, 2))
-                else:
-                    elementos.append(Paragraph(self._escape_text(linha_tratada), estilo_corpo))
-                    elementos.append(Spacer(1, 2))
-
-            if indice_bloco < len(blocos) - 1:
-                elementos.append(Spacer(1, 6))
-
-        return elementos
-
-    @staticmethod
-    def _estilo_contexto(estilo_corpo: ParagraphStyle) -> ParagraphStyle:
-        return ParagraphStyle(
-            "ContextoExperiencia",
-            parent=estilo_corpo,
-            fontName="Helvetica-Oblique",
-            textColor=HexColor("#666666"),
-        )
-
-    @staticmethod
-    def _eh_linha_de_contexto(linha: str) -> bool:
-        """Linha final da experiência no padrão "Contexto: ..." ou "Context: ..."."""
-        rotulo, separador, _ = linha.partition(":")
-        return bool(separador) and rotulo.strip().lower() in ROTULOS_CONTEXTO_RECONHECIDOS
-
-    @staticmethod
-    def _separar_blocos_experiencias(conteudo: str) -> list[list[str]]:
-        blocos: list[list[str]] = []
-        bloco_atual: list[str] = []
+        def fechar_paragrafo() -> None:
+            if prosa:
+                elementos.append(Paragraph(self._escape_text(" ".join(prosa)), self._estilo.perfil))
+                prosa.clear()
 
         for linha in conteudo.splitlines():
             linha_tratada = linha.strip()
             if not linha_tratada:
-                if bloco_atual:
-                    blocos.append(bloco_atual)
-                    bloco_atual = []
-                continue
-            bloco_atual.append(linha_tratada)
+                fechar_paragrafo()
+            elif linha_tratada.startswith(_MARCADORES_DE_TOPICO):
+                fechar_paragrafo()
+                texto = linha_tratada.lstrip("-•* ").strip()
+                elementos.append(Paragraph(f"&bull;&nbsp;&nbsp;{self._escape_text(texto)}", self._estilo.corpo))
+                elementos.append(Spacer(1, 2))
+            else:
+                prosa.append(linha_tratada)
+        fechar_paragrafo()
+        return elementos
 
-        if bloco_atual:
-            blocos.append(bloco_atual)
+    def _formatar_conteudo_tecnologias(self, conteudo: str, idioma_alvo: str = "en") -> list:
+        """Uma categoria por linha, sem marcador; o rótulo vai em negrito."""
+        return [
+            Paragraph(
+                self._aplicar_enfase(linha, TipoSecao.TECNOLOGIAS, idioma_alvo, self._catalogo),
+                self._estilo.tecnologia,
+            )
+            for linha in self._linhas_de_tecnologias(conteudo)
+        ]
 
-        return blocos
+    def _linhas_de_tecnologias(self, conteudo: str) -> list[str]:
+        linhas: list[str] = []
+        for linha in conteudo.splitlines():
+            texto = linha.strip().lstrip("-•* ").strip()
+            if texto:
+                linhas.extend(self._quebrar_categorias(texto))
+        return linhas
 
-    @staticmethod
-    def _parece_posicao_experiencia(linha: str) -> bool:
-        if len(linha) > 80:
-            return False
-        if re.search(r"\d{4}", linha):
-            return False
-        return True
+    def _quebrar_categorias(self, texto: str) -> list[str]:
+        """Separa 'A: x, B: y' em uma linha por categoria conhecida, sem a vírgula de ligação."""
+        rotulos = {
+            rotulo for traducoes in self._catalogo.categorias_tecnologia.values() for rotulo in traducoes.values()
+        }
+        alternativas = "|".join(re.escape(rotulo) for rotulo in sorted(rotulos, key=len, reverse=True))
+        antes_de_rotulo = re.compile(rf",?\s*(?=\b(?:{alternativas})\s*:)", re.IGNORECASE)
+        partes = (parte.strip().rstrip(",").strip() for parte in antes_de_rotulo.split(texto))
+        return [parte for parte in partes if parte]
+
+    def _formatar_conteudo_idiomas(self, conteudo: str) -> list:
+        """Uma linha por idioma: o idioma em negrito e o nível em texto regular."""
+        linhas = (linha.strip().lstrip("-•* ").strip() for linha in conteudo.splitlines())
+        return [Paragraph(self._linha_de_idioma(linha), self._estilo.idioma) for linha in linhas if linha]
+
+    def _linha_de_idioma(self, linha: str) -> str:
+        correspondencia = _LINHA_DE_IDIOMA.match(linha)
+        if not correspondencia:
+            return f"<b>{self._escape_text(linha)}</b>"
+        idioma = self._escape_text(correspondencia.group("idioma"))
+        nivel = self._escape_text(correspondencia.group("nivel"))
+        if correspondencia.group("travessao"):
+            separador = correspondencia.group("travessao").strip()
+            return f"<b>{idioma}</b> {separador} {nivel}"
+        return f"<b>{idioma}:</b> {nivel}"
+
+    def _formatar_conteudo_em_blocos(self, conteudo: str) -> list:
+        blocos = self._interpretador.interpretar(conteudo)
+        logger.debug(
+            "Blocos interpretados: blocos=%d topicos=%d sem_periodo=%d",
+            len(blocos),
+            sum(len(bloco.topicos) for bloco in blocos),
+            sum(1 for bloco in blocos if not bloco.periodo),
+        )
+        elementos = []
+        for bloco in blocos:
+            elementos.extend(self._montar_bloco_de_experiencia(bloco))
+        return elementos
+
+    def _montar_bloco_de_experiencia(self, bloco: BlocoExperiencia) -> list:
+        """Empresa e período, cargo, tópicos, texto solto e contexto, nesta ordem (também para formação)."""
+        itens = []
+        if bloco.cargo:
+            itens.append(Paragraph(self._escape_text(bloco.cargo), self._estilo.cargo))
+        itens.extend(
+            Paragraph(self._escape_text(topico), self._estilo.topico, bulletText=_MARCADOR_DA_LISTA)
+            for topico in bloco.topicos
+        )
+        itens.extend(Paragraph(self._escape_text(linha), self._estilo.corpo) for linha in bloco.descricao)
+        if bloco.contexto:
+            itens.append(Paragraph(self._escape_text(bloco.contexto), self._estilo.contexto))
+
+        return [self._linha_de_empresa_e_periodo(bloco), *itens]
+
+    def _linha_de_empresa_e_periodo(self, bloco: BlocoExperiencia):
+        empresa = Paragraph(self._escape_text(bloco.empresa), self._estilo.empresa)
+        if not bloco.periodo:
+            return empresa
+
+        periodo = Paragraph(self._escape_text(bloco.periodo), self._estilo.periodo)
+        largura_util = letter[0] - 2 * self._estilo.margem_lateral
+        largura_da_linha = largura_util - self._estilo.recuo_direito_periodo
+        tabela = Table(
+            [[empresa, periodo]],
+            colWidths=[largura_da_linha - self._estilo.largura_periodo, self._estilo.largura_periodo],
+            hAlign="LEFT",
+            spaceBefore=self._estilo.espaco_antes_da_empresa,
+        )
+        tabela.setStyle(
+            TableStyle(
+                [
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (1, 0), (1, 0), 1),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ]
+            )
+        )
+        tabela.keepWithNext = 1
+        return tabela

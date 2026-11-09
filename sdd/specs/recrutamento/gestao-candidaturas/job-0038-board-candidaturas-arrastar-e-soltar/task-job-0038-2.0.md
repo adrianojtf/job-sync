@@ -17,11 +17,11 @@ O caso de uso passa a aceitar a posição de destino e o endpoint existente exp�
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes do caso de uso com repositório fake (red).
-- [ ] 2.2 Implementar `executar` com `posicao` opcional e os logs.
-- [ ] 2.3 Escrever os testes de schema e de router (`posicao` opcional, 422, resposta com `posicao`).
-- [ ] 2.4 Ajustar schema, resposta e router.
-- [ ] 2.5 Atualizar `job-sync.postman_collection.json`.
+- [x] 2.1 Escrever os testes do caso de uso com repositório fake (red).
+- [x] 2.2 Implementar `executar` com `posicao` opcional e os logs.
+- [x] 2.3 Escrever os testes de schema e de router (`posicao` opcional, 422, resposta com `posicao`).
+- [x] 2.4 Ajustar schema, resposta e router.
+- [x] 2.5 Atualizar `job-sync.postman_collection.json`.
 
 ## Detalhes de Implementação
 
@@ -35,10 +35,10 @@ Techspec: "Interfaces Principais" (service), "Endpoints de API" e "Monitoramento
 
 ## Testes da Tarefa
 
-- [ ] Caso de uso: mudança de coluna com posição, mesma coluna, posição omitida (topo), id inexistente.
-- [ ] Router: 200 com `posicao`, 200 sem `posicao`, 404, 422 (posição negativa ou status inválido).
-- [ ] Schemas: `posicao` opcional e presente na resposta.
-- [ ] Regressão: `test_mover_candidatura_service.py`, `test_routers.py`, `test_schemas.py`.
+- [x] Caso de uso: mudança de coluna com posição, mesma coluna, posição omitida (topo), id inexistente.
+- [x] Router: 200 com `posicao`, 200 sem `posicao`, 404, 422 (posição negativa ou status inválido).
+- [x] Schemas: `posicao` opcional e presente na resposta.
+- [x] Regressão: `test_mover_candidatura_service.py`, `test_routers.py`, `test_schemas.py`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

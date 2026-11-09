@@ -6,6 +6,9 @@ import base64
 import uuid
 from datetime import date, datetime
 
+import pytest
+from pydantic import ValidationError
+
 from jobsync.ats_score import ResultadoAtsScore
 from jobsync.candidatura import Candidatura, MudancaStatus, StatusCandidatura
 from jobsync.curriculo import Curriculo, SecaoCurriculo, TipoSecao
@@ -342,6 +345,35 @@ class TestCandidaturaSchemas:
         dto = request.to_dto()
 
         assert dto["novo_status"] == StatusCandidatura.ENTREVISTA
+
+    def test_candidatura_submeter_request_posicao_eh_opcional(self):
+        assert CandidaturaSubmeterRequest(novo_status="entrevista").posicao is None
+
+    def test_candidatura_submeter_request_aceita_posicao(self):
+        request = CandidaturaSubmeterRequest(novo_status="entrevista", posicao=2)
+
+        assert request.to_dto()["posicao"] == 2
+
+    def test_candidatura_submeter_request_rejeita_posicao_negativa(self):
+        with pytest.raises(ValidationError):
+            CandidaturaSubmeterRequest(novo_status="entrevista", posicao=-1)
+
+    def test_candidatura_response_inclui_posicao(self):
+        agora = datetime(2025, 1, 1, 12, 0)
+        candidatura = Candidatura(
+            id="candidatura-1",
+            perfil_identificador="matheus",
+            vaga_id="vaga-1",
+            curriculo_salvo_id="curriculo-1",
+            empresa="TechCorp",
+            cargo="Engenheiro",
+            status=StatusCandidatura.APLICADO,
+            data_aplicacao=agora,
+            historico_status=(MudancaStatus(status=StatusCandidatura.APLICADO, data=agora),),
+            posicao=3,
+        )
+
+        assert CandidaturaResponse.from_dto(candidatura).posicao == 3
 
     def test_candidatura_response_from_dto(self):
         agora = datetime(2025, 1, 1, 12, 0)

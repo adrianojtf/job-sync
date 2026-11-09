@@ -8,7 +8,7 @@ Antes de montar a UI final, validar duas dúvidas da Tech Spec: o arrasto por te
 
 <requirements>
 - Instalar `@dnd-kit/core@6.3.1`, `@dnd-kit/sortable@10.0.0` e `@dnd-kit/utilities@3.2.2` com versões fixas e atualizar o lockfile.
-- Protótipo descartável (ou teste) com `PointerSensor` (distância 6), `TouchSensor` (atraso 200 ms, tolerância 8) e `KeyboardSensor`.
+- Protótipo descartável (ou teste) com `MouseSensor` (distância 6; o `PointerSensor` conflita com o `TouchSensor`, ver Resultado do spike), `TouchSensor` (atraso 200 ms, tolerância 8) e `KeyboardSensor`.
 - Confirmar: Espaço no cartão inicia o arrasto; Enter no título abre o detalhe sem iniciar arrasto; clique no título não vira arrasto.
 - Confirmar em Chrome e, quando possível, em Safari iOS e Chrome Android que a rolagem por toque continua funcionando.
 - Registrar a decisão (ativador no cartão ou alça) em uma nota no fim do `techspec-job-0038.md`.
@@ -16,11 +16,11 @@ Antes de montar a UI final, validar duas dúvidas da Tech Spec: o arrasto por te
 
 ## Subtarefas
 
-- [ ] 4.1 Instalar as dependências.
-- [ ] 4.2 Montar o protótipo com os três sensores.
-- [ ] 4.3 Testar teclado, clique e toque, e anotar os resultados.
-- [ ] 4.4 Registrar a decisão e o plano B na Tech Spec.
-- [ ] 4.5 Remover o protótipo do código final.
+- [x] 4.1 Instalar as dependências.
+- [x] 4.2 Montar o protótipo com os três sensores.
+- [x] 4.3 Testar teclado, clique e toque, e anotar os resultados.
+- [x] 4.4 Registrar a decisão e o plano B na Tech Spec.
+- [x] 4.5 Remover o protótipo do código final.
 
 ## Detalhes de Implementação
 
@@ -33,8 +33,8 @@ Techspec: "Interfaces Principais" (sensores), "Riscos Conhecidos" (botão dentro
 
 ## Testes da Tarefa
 
-- [ ] Teste manual registrado para teclado, clique e toque.
-- [ ] `npm run build` e `npm run lint` passam com as dependências novas.
+- [x] Teste manual registrado para teclado, clique e toque.
+- [x] `npm run build` e `npm run lint` passam com as dependências novas.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

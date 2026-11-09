@@ -95,7 +95,7 @@ export function aplicarMovimento(quadro: CandidaturasPorStatus, ativoId: string,
 
 Sensores do `DndContext`:
 
-- `PointerSensor` com `activationConstraint: { distance: 6 }`: o clique no título não vira arrasto (RF14).
+- `MouseSensor` com `activationConstraint: { distance: 6 }`: o clique no título não vira arrasto (RF14). Não usar `PointerSensor` junto com `TouchSensor` (ver Resultado do spike).
 - `TouchSensor` com `activationConstraint: { delay: 200, tolerance: 8 }`: a rolagem por toque continua funcionando (RF1, RF20).
 - `KeyboardSensor` com `sortableKeyboardCoordinates` (RF17).
 - `autoScroll` do dnd-kit habilitado nas áreas rolantes (RF22).
@@ -103,7 +103,7 @@ Sensores do `DndContext`:
 
 Movimento pelo modal (RF18a, RF18b): o `select` do detalhe chama `mover({ id, novoStatus, posicao: 0 })`. Como usa a mesma mutation, ganha a atualização otimista e o retorno ao estado anterior. O valor do `select` vem da candidatura no cache, então volta sozinho ao status anterior em caso de erro.
 
-O nó de ativação do arrasto por teclado é o próprio cartão (`setActivatorNodeRef`). O dnd-kit só inicia o arrasto quando o foco está nesse nó, então o título (botão interno) continua com Enter para abrir o detalhe. Esse comportamento precisa ser confirmado na primeira tarefa (ver Riscos).
+O nó de ativação do arrasto por teclado é o próprio cartão (`setActivatorNodeRef`). O dnd-kit só inicia o arrasto quando o foco está nesse nó, então o título (botão interno) continua com Enter e Espaço para abrir o detalhe. Comportamento confirmado no spike da tarefa 4.0 (ver Resultado do spike).
 
 ### Modelos de Dados
 
@@ -240,3 +240,23 @@ Desvio: nova dependência de frontend (`@dnd-kit`), justificada acima. Sem outro
 
 1. A cor de cada coluna precisa de aprovação de design; o valor entra em `status.ts`.
 2. Confirmar se o Streamlit deve mostrar a nova ordem. Hoje ele só usa `MoverCandidatura`, sem posição, então o movimento dele coloca o cartão no topo.
+
+## Resultado do spike (tarefa 4.0)
+
+Protótipo descartável testado em Chromium real (Playwright, com toque emulado por CDP), com `@dnd-kit/core@6.3.1`, `@dnd-kit/sortable@10.0.0` e `@dnd-kit/utilities@3.2.2`. O protótipo foi removido do repositório.
+
+**Decisão:** o ativador do arrasto é o cartão inteiro (`li`), sem alça de arraste. O plano B não é necessário.
+
+Cenários verificados (todos passaram):
+
+- Mouse: clique no título abre o detalhe; arrastar pela área livre move entre colunas; arrastar começando no título inicia o arrasto e não abre o detalhe.
+- Teclado: Espaço no cartão inicia, seta move, Espaço solta e Esc cancela; seta lateral move para a coluna vizinha; Enter e Espaço no título abrem o detalhe sem iniciar arrasto; Tab passa pelo cartão e depois pelo título (duas paradas).
+- Toque: deslizar rápido rola a página sem iniciar arrasto; toque longo (200 ms) e mover conclui o arrasto; toque simples no título abre o detalhe.
+- axe (WCAG 2.0 a 2.2 AA): sem violações com o ajuste de `role` abaixo.
+
+**Dois ajustes obrigatórios para a tarefa 6.0:**
+
+1. **Sensores.** Com `PointerSensor` e `TouchSensor` juntos, o toque longo falhava: o `PointerSensor` também reage aos eventos de ponteiro gerados pelo dedo, disputa a ativação e o navegador cancela o gesto. Usar `MouseSensor` + `TouchSensor` + `KeyboardSensor`.
+2. **Papel do cartão.** O `useSortable` define `role="button"` no cartão. Com o título (botão) dentro, o axe aponta `nested-interactive` e `list`. Sobrescrever o `role` do `li` depois de espalhar `attributes` (por exemplo, `role={undefined}`), mantendo `tabIndex`, `aria-roledescription` e `aria-describedby`. O texto de `aria-roledescription` e as instruções para leitor de tela devem ser traduzidos para português em `anuncios.ts`.
+
+**Limites do spike:** o toque foi emulado no Chromium; Safari iOS e Chrome Android reais não foram testados. O tempo de 200 ms deve ser validado em aparelho antes da entrega (tarefa 8.0). Nos testes de teclado é preciso esperar cerca de 100 ms entre o Espaço inicial e a tecla seguinte, porque o `KeyboardSensor` registra o ouvinte de teclas de forma assíncrona; isso afeta os testes automatizados, não o uso real.

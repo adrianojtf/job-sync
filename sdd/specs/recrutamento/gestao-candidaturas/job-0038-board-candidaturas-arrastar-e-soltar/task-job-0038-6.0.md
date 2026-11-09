@@ -8,7 +8,8 @@ Monta o board com `DndContext`: coluna, cartão ordenável, overlay de arrasto, 
 
 <requirements>
 - `ColunaKanban.tsx` (cabeçalho, contagem, `useDroppable` e `SortableContext`) e `CartaoCandidatura.tsx` (`useSortable`, título em botão), conforme a decisão da tarefa 4.0.
-- `CandidaturasPage.tsx` com sensores, `closestCorners`, `DragOverlay` e `autoScroll`; Esc ou soltar fora cancela o movimento.
+- `CandidaturasPage.tsx` com `MouseSensor` + `TouchSensor` + `KeyboardSensor` (sem `PointerSensor`), `closestCorners`, `DragOverlay` e `autoScroll`; Esc ou soltar fora cancela o movimento.
+- O `li` do cartão sobrescreve o `role` que o `useSortable` define (evita botão dentro de botão no axe), conforme "Resultado do spike" da Tech Spec.
 - `anuncios.ts` com os textos de acessibilidade em pt-BR.
 - A página guarda só o `id` da candidatura em detalhe e a lê do cache.
 - `DetalheCandidaturaModal` ganha o `select` "Mover para" (quatro status), que chama `mover` com `posicao: 0` pelo hook `use-mover-com-aviso`.

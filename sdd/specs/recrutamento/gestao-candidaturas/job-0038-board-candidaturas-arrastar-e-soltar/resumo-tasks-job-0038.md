@@ -5,7 +5,7 @@
 - [x] 1.0 Domínio e persistência da ordem dos cartões
 - [x] 2.0 Caso de uso MoverCandidatura com posição e endpoint de submissão
 - [x] 3.0 Contrato e cliente de API no frontend
-- [ ] 4.0 Spike do @dnd-kit: teclado, toque e ativador
+- [x] 4.0 Spike do @dnd-kit: teclado, toque e ativador
 - [ ] 5.0 Lógica do board no frontend e atualização otimista
 - [ ] 6.0 Componentes do board e interações
 - [ ] 7.0 Layout responsivo e visual estilo Jira

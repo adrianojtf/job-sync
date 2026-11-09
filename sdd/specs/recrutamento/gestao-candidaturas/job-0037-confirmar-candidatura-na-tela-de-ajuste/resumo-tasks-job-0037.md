@@ -8,7 +8,7 @@
 - [x] 4.0 Endpoint `POST /v1/candidaturas-ajustadas`, handler 409 e coleção Postman
 - [x] 5.0 Cliente de API e tipos do frontend
 - [x] 6.0 Botão "Confirmar candidatura" e estados na tela de ajuste
-- [ ] 7.0 E2E, acessibilidade, suíte completa e `lint-imports`
+- [x] 7.0 E2E, acessibilidade, suíte completa e `lint-imports`
 
 ## Dependências
 

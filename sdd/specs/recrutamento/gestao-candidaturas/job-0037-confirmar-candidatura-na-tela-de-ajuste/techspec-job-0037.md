@@ -223,5 +223,5 @@ Nenhuma bloqueante. As tarefas 1 e 2 não dependem uma da outra.
 - `src/jobsync/entrypoints/streamlit_app.py` (importa `LimiteCurriculosSalvosExcedido`)
 - `src/jobsync/shared_kernel/adapters/persistence/_conexao_sqlite.py` (chaves estrangeiras)
 - `frontend/src/features/ajustar-vaga/{AjustarVagaPage.tsx,use-ajustar-vaga.ts}`
-- `frontend/src/features/candidaturas/DetalheCandidaturaModal.tsx` (já baixa o PDF do currículo salvo)
+- `frontend/src/features/candidaturas/DetalheCandidaturaModal.tsx` e `CandidaturasPage.module.css` (ganham o botão "Baixar PDF do currículo usado", reaproveitando `useBaixarCurriculo`; antes o detalhe só mostrava o nome do currículo)
 - `frontend/src/api/*`, `frontend/e2e/*`, `job-sync.postman_collection.json`

@@ -71,7 +71,7 @@ Requisitos funcionais:
 Requisitos funcionais:
 
 13. A candidatura deve aparecer no board, na coluna Aplicado, com empresa e cargo.
-14. O detalhe da candidatura deve permitir baixar o PDF ligado a ela, como já faz para currículos salvos.
+14. O detalhe da candidatura deve oferecer o botão "Baixar PDF" do currículo ligado a ela. Se o currículo foi removido da biblioteca, o detalhe avisa "Removido da biblioteca" e não oferece o download.
 
 ## Experiência do Usuário
 

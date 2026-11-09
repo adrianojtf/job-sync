@@ -21,7 +21,7 @@ Backend (`src/jobsync`):
 | `candidatura/service_layer/confirmar_candidatura_ajustada/` (`service.py`, `dtos.py`, `validator.py`, `__init__.py`) | **Novo** | Caso de uso `ConfirmarCandidaturaAjustada` |
 | `curriculo_salvo/domain/limite_curriculos_salvos.py` | **Novo** | `LIMITE_CURRICULOS_POR_PERFIL`, `LimiteCurriculosSalvosExcedido` e `garantir_espaco(quantidade_atual)` |
 | `curriculo_salvo/service_layer/salvar_curriculo/service.py` e `__init__.py` | **Modificado** | Usa a regra do domínio e continua exportando os mesmos nomes (o Streamlit importa daqui) |
-| `candidatura/__init__.py` | **Modificado** | Exporta o novo caso de uso |
+| `candidatura/service_layer/confirmar_candidatura_ajustada/__init__.py` | **Novo** | Exporta o caso de uso, o DTO e o validador (o `candidatura/__init__.py` exporta só o domínio, como já acontece com `CriarCandidatura`) |
 | `entrypoints/api/schemas/candidatura.py` | **Modificado** | `CandidaturaConfirmarRequest` |
 | `entrypoints/api/routers/candidatura_router.py` | **Modificado** | Endpoint novo |
 | `entrypoints/api/dependencies.py` | **Modificado** | `ServiceConfirmarCandidaturaAjustadaDep` com os 3 repositórios |
@@ -79,10 +79,12 @@ Ordem de `executar`, exigida pelas chaves estrangeiras da tabela `candidatura` (
 2. `contar_por_perfil` e `garantir_espaco`. Sem espaço, nada foi gravado.
 3. Salvar o `CurriculoSalvo` (`nome_referencia` = nome do arquivo gerado).
 4. Salvar a `Vaga` com a descrição.
-5. Salvar a `Candidatura` com status `APLICADO` e histórico inicial, como em `CriarCandidatura`.
-6. `marcar_como_convertida(vaga_id)`.
+5. `marcar_como_convertida(vaga_id)`.
+6. Salvar a `Candidatura` com `Candidatura.nova` (status `APLICADO` e histórico inicial).
 
-Compensação: se o passo 4 ou o 5 falhar, o caso de uso remove o currículo salvo (`remover`) e relança o erro. Se o passo 6 falhar, a candidatura já existe e a vaga fica pendente em "Vagas salvas", com um `WARNING` no log. Não há `remover` de vaga na porta, e criar um não faz parte deste JOB.
+A vaga é marcada como convertida **antes** da candidatura (ajuste feito na implementação, em relação ao desenho inicial). Assim, se a candidatura falhar, a vaga já está convertida e não aparece em "Vagas salvas", o que atende o RF 7 do PRD.
+
+Compensação: se o passo 4, 5 ou 6 falhar, o caso de uso remove o currículo salvo (`remover`), registra um `WARNING` com os identificadores e o tipo do erro (sem dados pessoais) e relança o erro original. Se a própria remoção falhar, registra outro `WARNING` e o erro original continua sendo o relançado. Não há `remover` de vaga na porta, e criar um não faz parte deste JOB: uma vaga já convertida pode sobrar, sem aparecer ao usuário.
 
 Reaproveitamento: a montagem da `Candidatura` repete a de `CriarCandidatura`. Para não duplicar (DRY), extrair uma fábrica `Candidatura.nova(...)` no domínio, usada pelos dois casos de uso.
 
@@ -137,8 +139,8 @@ Backend:
 
 - `ConfirmarCandidaturaAjustada` (com repositórios fake): cria currículo, vaga e candidatura `APLICADO` com empresa, cargo e `curriculo_salvo_id` corretos; marca a vaga como convertida; a vaga não aparece em `listar_nao_convertidas`.
 - Biblioteca com 10 currículos: levanta `LimiteCurriculosSalvosExcedido` e não grava nada (verificar os três repositórios).
-- Falha ao salvar a vaga ou a candidatura remove o currículo salvo.
-- Falha em `marcar_como_convertida` mantém a candidatura e registra `WARNING`.
+- Falha ao salvar a vaga, ao marcá-la como convertida ou ao salvar a candidatura remove o currículo salvo; na falha da candidatura, a vaga fica convertida e fora de "Vagas salvas".
+- Falha ao remover o currículo na compensação não esconde o erro original e registra `WARNING`.
 - Validação: campos vazios e PDF sem `%PDF`.
 - `garantir_espaco` no limite e abaixo dele; `SalvarCurriculo` continua com o mesmo comportamento e as mesmas exceções.
 - Fábrica `Candidatura.nova`: status e histórico iniciais; `CriarCandidatura` segue passando.
@@ -197,7 +199,7 @@ Nenhuma bloqueante. As tarefas 1 e 2 não dependem uma da outra.
 
 ### Riscos Conhecidos
 
-- **Sem transação única:** cada repositório SQLite grava por conta própria. A compensação cobre currículo e vaga, mas uma falha no passo 6 deixa a vaga pendente em "Vagas salvas". Verificar na implementação se uma conexão compartilhada permite uma transação só.
+- **Sem transação única:** cada repositório SQLite grava por conta própria. A compensação cobre currículo e vaga, mas uma falha no passo 5 (marcar a vaga como convertida) deixa a vaga pendente em "Vagas salvas", e uma falha no passo 6 deixa uma vaga convertida sem candidatura, invisível ao usuário. Verificar na implementação se uma conexão compartilhada permite uma transação só.
 - **Biblioteca poluída:** os PDFs confirmados entram na lista de currículos-base (questões 1 e 2 do PRD).
 - **Duplicidade:** dois cliques rápidos podem criar duas candidaturas. O botão desabilita ao enviar, mas o servidor não é idempotente.
 - **Tamanho do corpo:** o PDF em base64 cresce cerca de um terço. Verificar o limite de corpo do servidor e do Nginx para um PDF de 2 páginas (o gerado hoje tem cerca de 55 KB).

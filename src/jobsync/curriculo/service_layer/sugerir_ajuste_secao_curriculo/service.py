@@ -46,9 +46,4 @@ class SugerirAjusteSecaoCurriculo:
     def _sugerir(self, secao: SecaoCurriculo, contexto: ContextoVaga | None) -> SecaoCurriculo:
         if contexto is None:
             return self._melhorador.melhorar_secao(secao)
-        return self._ajustador_texto.ajustar_secao(
-            secao=secao,
-            descricao_vaga=contexto.descricao_vaga,
-            idioma_alvo=contexto.idioma_alvo,
-            analise_vaga=contexto.analise_vaga,
-        )
+        return self._ajustador_texto.ajustar_secao(secao=secao, contexto=contexto)

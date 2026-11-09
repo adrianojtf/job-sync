@@ -2,7 +2,7 @@
 
 ## Tarefas
 
-- [ ] 1.0 Cargo-alvo no ContextoVaga e portas com ContextoVaga
+- [x] 1.0 Cargo-alvo no ContextoVaga e portas com ContextoVaga
 - [ ] 2.0 Equivalências e plano de adaptação no domínio
 - [ ] 3.0 Identificador de equivalências (porta e adapter)
 - [ ] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
@@ -39,3 +39,8 @@
 - Falha do identificador de equivalências não interrompe a adaptação (plano vazio).
 - Regenerar o `schema.d.ts` com Python 3.12, o mesmo do CI.
 - Fonte PDF: só cargo-alvo e regra de responsabilidades implícitas; sem trocas.
+
+## Desvios em relação à Tech Spec
+
+- **Task 1.0 — vaga externa:** `CandidatarNaVagaExterna` também chamava `ajustar_secao` e não estava listado. Passou a montar um `ContextoVaga` com o `cargo_alvo`. Efeito colateral: como `ContextoVaga` valida o idioma, um idioma diferente de "pt" ou "en" nesse fluxo agora gera 422 (o router já converte `ValueError`). Antes, a adaptação seguia com um nome de idioma desconhecido no prompt.
+- **Task 1.0 — linha do cargo-alvo no prompt:** fica em `curriculo/adapters/prompt_contexto_vaga.py` (`linha_cargo_alvo`), usada pelos dois adapters. Sem cargo-alvo, o prompt não muda.

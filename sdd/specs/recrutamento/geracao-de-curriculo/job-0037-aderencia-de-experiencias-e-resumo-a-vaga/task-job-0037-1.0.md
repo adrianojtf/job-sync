@@ -19,10 +19,10 @@ Refatoração sem mudança de comportamento. `ContextoVaga` ganha `cargo_alvo`, 
 
 ## Subtarefas
 
-- [ ] 1.1 Testes de `ContextoVaga` com `cargo_alvo` e dos adapters com o cargo no prompt (Red).
-- [ ] 1.2 `ContextoVaga`.
-- [ ] 1.3 Assinaturas das portas, adapters e casos de uso.
-- [ ] 1.4 Dublês de teste e de E2E.
+- [x] 1.1 Testes de `ContextoVaga` com `cargo_alvo` e dos adapters com o cargo no prompt (Red).
+- [x] 1.2 `ContextoVaga`.
+- [x] 1.3 Assinaturas das portas, adapters e casos de uso.
+- [x] 1.4 Dublês de teste e de E2E.
 
 ## Detalhes de Implementação
 
@@ -35,7 +35,7 @@ Ver "Interfaces Principais" e decisão 3 ("Portas recebem `ContextoVaga`") em `t
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade de `ContextoVaga`, dos adapters e de `AdaptarCurriculoParaVaga`.
+- [x] Testes de unidade de `ContextoVaga`, dos adapters e de `AdaptarCurriculoParaVaga`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -14,13 +14,15 @@ IDIOMAS_ALVO_SUPORTADOS = ("pt", "en")
 
 @dataclass(frozen=True)
 class ContextoVaga:
-    """Descrição, idioma alvo e análise estruturada da vaga."""
+    """Descrição, idioma alvo, análise estruturada e cargo-alvo (título) da vaga."""
 
     descricao_vaga: str
     idioma_alvo: str
     analise_vaga: AnaliseVaga
+    cargo_alvo: str = ""
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "cargo_alvo", (self.cargo_alvo or "").strip())
         if not self.descricao_vaga or not self.descricao_vaga.strip():
             raise ValueError("A descrição da vaga é obrigatória.")
         if self.idioma_alvo not in IDIOMAS_ALVO_SUPORTADOS:

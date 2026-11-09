@@ -12,7 +12,13 @@ from __future__ import annotations
 
 import logging
 
-from jobsync.curriculo import Curriculo, ExperienciaAdaptada, RascunhoCurriculoAdaptado, TipoSecao
+from jobsync.curriculo import (
+    ContextoVaga,
+    Curriculo,
+    ExperienciaAdaptada,
+    RascunhoCurriculoAdaptado,
+    TipoSecao,
+)
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
@@ -28,7 +34,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.validator import (
     AdaptarCurriculoParaVagaInputValidator,
 )
-from jobsync.vaga import AnaliseVaga, AvaliacaoDescricaoVaga
+from jobsync.vaga import AvaliacaoDescricaoVaga
 from jobsync.vaga.domain.avaliador_descricao_vaga_port import AvaliadorDescricaoVagaPort
 from jobsync.vaga.domain.job_description_analyzer_port import JobDescriptionAnalyzerPort
 
@@ -68,8 +74,13 @@ class AdaptarCurriculoParaVaga:
             if input_dto.curriculo_pre_montado is not None
             else self._extrator.extrair(input_dto.pdf_curriculo)
         )
-        analise_vaga = self._analisador_vaga.analisar(input_dto.descricao_vaga)
-        rascunho = self._montar_rascunho(curriculo_original, input_dto, analise_vaga)
+        contexto = ContextoVaga(
+            descricao_vaga=input_dto.descricao_vaga,
+            idioma_alvo=input_dto.idioma_alvo,
+            analise_vaga=self._analisador_vaga.analisar(input_dto.descricao_vaga),
+            cargo_alvo=input_dto.cargo_alvo,
+        )
+        rascunho = self._montar_rascunho(curriculo_original, input_dto, contexto)
         avaliacoes_experiencias = self._avaliar_experiencias(
             tuple(experiencia.para_avaliacao() for experiencia in rascunho.experiencias or ()),
             input_dto.descricao_vaga,
@@ -84,7 +95,7 @@ class AdaptarCurriculoParaVaga:
         return AdaptarCurriculoParaVagaOutputDto(
             rascunho=rascunho,
             curriculo_adaptado=rascunho.para_curriculo(input_dto.idioma_alvo),
-            analise_vaga=analise_vaga,
+            analise_vaga=contexto.analise_vaga,
             avaliacao_vaga=avaliacao_vaga,
             status_avaliacao_vaga=status_avaliacao_vaga,
             avaliacoes_experiencias=avaliacoes_experiencias,
@@ -111,7 +122,7 @@ class AdaptarCurriculoParaVaga:
         self,
         curriculo: Curriculo,
         input_dto: AdaptarCurriculoParaVagaInputDto,
-        analise_vaga: AnaliseVaga,
+        contexto: ContextoVaga,
     ) -> RascunhoCurriculoAdaptado:
         ajustar_experiencias = bool(
             input_dto.experiencias_profissionais and self._ajustador_experiencia
@@ -123,18 +134,11 @@ class AdaptarCurriculoParaVaga:
             else curriculo.secoes
         )
         secoes_ajustadas = tuple(
-            self._ajustador_texto.ajustar_secao(
-                secao=secao,
-                descricao_vaga=input_dto.descricao_vaga,
-                idioma_alvo=input_dto.idioma_alvo,
-                analise_vaga=analise_vaga,
-            )
+            self._ajustador_texto.ajustar_secao(secao=secao, contexto=contexto)
             for secao in secoes_de_texto
         )
         experiencias = (
-            self._ajustar_experiencias(
-                input_dto.experiencias_profissionais, input_dto, analise_vaga
-            )
+            self._ajustar_experiencias(input_dto.experiencias_profissionais, contexto)
             if ajustar_experiencias
             else None
         )
@@ -155,20 +159,14 @@ class AdaptarCurriculoParaVaga:
     def _ajustar_experiencias(
         self,
         experiencias: tuple[ExperienciaParaAvaliacao, ...],
-        input_dto: AdaptarCurriculoParaVagaInputDto,
-        analise_vaga: AnaliseVaga,
+        contexto: ContextoVaga,
     ) -> tuple[ExperienciaAdaptada, ...]:
         ajustador = self._ajustador_experiencia
         if ajustador is None:
             return ()
 
         return tuple(
-            ajustador.ajustar(
-                experiencia=original,
-                descricao_vaga=input_dto.descricao_vaga,
-                idioma_alvo=input_dto.idioma_alvo,
-                analise_vaga=analise_vaga,
-            )
+            ajustador.ajustar(experiencia=original, contexto=contexto)
             for original in experiencias
         )
 

@@ -46,12 +46,7 @@ class TestSugerirAjusteExperienciaAdaptada:
 
         resultado = caso_de_uso.executar(_experiencia(), contexto)
 
-        ajustador.refinar.assert_called_once_with(
-            experiencia=_experiencia(),
-            descricao_vaga="Vaga Python",
-            idioma_alvo="en",
-            analise_vaga=contexto.analise_vaga,
-        )
+        ajustador.refinar.assert_called_once_with(experiencia=_experiencia(), contexto=contexto)
         assert resultado.conquistas == ("Sugestão A.", "Sugestão B.")
         assert resultado.contexto == "Contexto sugerido."
 

@@ -7,10 +7,11 @@ para o idioma solicitado, sem inventar fatos que não constam no original.
 """
 from __future__ import annotations
 
+from jobsync.curriculo.adapters.prompt_contexto_vaga import linha_cargo_alvo
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.rotulos_experiencia import ROTULO_CONTEXTO
-from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
-from jobsync.curriculo import SecaoCurriculo, TipoSecao
+from jobsync.vaga import TipoRequisitoTecnico
+from jobsync.curriculo import ContextoVaga, SecaoCurriculo, TipoSecao
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 _NOME_IDIOMA = {"pt": "português do Brasil", "en": "inglês (formato americano de currículo)"}
@@ -69,13 +70,9 @@ class AjustadorTextoClient(AjustadorTextoPort):
     def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
         self._cliente_openai = cliente_openai or ClienteOpenAI()
 
-    def ajustar_secao(
-        self,
-        secao: SecaoCurriculo,
-        descricao_vaga: str,
-        idioma_alvo: str,
-        analise_vaga: AnaliseVaga,
-    ) -> SecaoCurriculo:
+    def ajustar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga) -> SecaoCurriculo:
+        idioma_alvo = contexto.idioma_alvo
+        analise_vaga = contexto.analise_vaga
         instrucao_especifica = (
             _instrucao_experiencias(ROTULO_CONTEXTO.get(idioma_alvo, ROTULO_CONTEXTO["pt"]))
             if secao.tipo == TipoSecao.EXPERIENCIAS
@@ -98,7 +95,8 @@ class AjustadorTextoClient(AjustadorTextoPort):
         prompt_usuario = (
             f"Seção do currículo: {secao.titulo}\n\n"
             f"Conteúdo original:\n{secao.conteudo}\n\n"
-            f"Descrição da vaga-alvo:\n{descricao_vaga}\n\n"
+            f"{linha_cargo_alvo(contexto)}"
+            f"Descrição da vaga-alvo:\n{contexto.descricao_vaga}\n\n"
             f"Análise de vaga estruturada:\n"
             f"- Requisitos explícitos: {', '.join(requisitos_explicitos) or 'nenhum'}\n"
             f"- Requisitos implícitos: {', '.join(requisitos_implicitos) or 'nenhum'}\n"

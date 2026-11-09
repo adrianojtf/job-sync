@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
+from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
+from jobsync.curriculo.adapters.prompt_contexto_vaga import linha_cargo_alvo
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 from jobsync.vaga.domain.analise_vaga import AnaliseVaga, TipoRequisitoTecnico
@@ -36,13 +38,7 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
     def __init__(self, cliente_openai: ClienteOpenAI | None = None) -> None:
         self._cliente_openai = cliente_openai or ClienteOpenAI()
 
-    def ajustar(
-        self,
-        experiencia: ExperienciaParaAvaliacao,
-        descricao_vaga: str,
-        idioma_alvo: str,
-        analise_vaga: AnaliseVaga,
-    ) -> ExperienciaAdaptada:
+    def ajustar(self, experiencia: ExperienciaParaAvaliacao, contexto: ContextoVaga) -> ExperienciaAdaptada:
         if not experiencia.descricao.strip():
             return self._sem_conteudo(experiencia)
 
@@ -51,18 +47,10 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
             texto_da_experiencia=f"- Descrição original: {experiencia.descricao}",
-            descricao_vaga=descricao_vaga,
-            idioma_alvo=idioma_alvo,
-            analise_vaga=analise_vaga,
+            contexto=contexto,
         )
 
-    def refinar(
-        self,
-        experiencia: ExperienciaAdaptada,
-        descricao_vaga: str,
-        idioma_alvo: str,
-        analise_vaga: AnaliseVaga,
-    ) -> ExperienciaAdaptada:
+    def refinar(self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga) -> ExperienciaAdaptada:
         conquistas_atuais = "\n".join(f"- {conquista}" for conquista in experiencia.conquistas)
         return self._solicitar(
             cargo=experiencia.cargo,
@@ -73,9 +61,7 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
                 f"{conquistas_atuais or '(nenhuma)'}\n"
                 f"- Contexto atual: {experiencia.contexto.strip() or '(nenhum)'}"
             ),
-            descricao_vaga=descricao_vaga,
-            idioma_alvo=idioma_alvo,
-            analise_vaga=analise_vaga,
+            contexto=contexto,
         )
 
     @staticmethod
@@ -94,9 +80,7 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
         empresa: str,
         periodo: str,
         texto_da_experiencia: str,
-        descricao_vaga: str,
-        idioma_alvo: str,
-        analise_vaga: AnaliseVaga,
+        contexto: ContextoVaga,
     ) -> ExperienciaAdaptada:
         resposta = self._cliente_openai.solicitar_json(
             prompt_sistema=_PROMPT_SISTEMA,
@@ -106,9 +90,10 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
                 f"- Empresa: {empresa or 'não informada'}\n"
                 f"- Período: {periodo or 'não informado'}\n"
                 f"{texto_da_experiencia}\n\n"
-                f"Descrição da vaga-alvo:\n{descricao_vaga}\n\n"
-                f"{self._requisitos(analise_vaga)}\n\n"
-                f"Idioma de saída obrigatório: {_NOME_IDIOMA.get(idioma_alvo, idioma_alvo)}"
+                f"{linha_cargo_alvo(contexto)}"
+                f"Descrição da vaga-alvo:\n{contexto.descricao_vaga}\n\n"
+                f"{self._requisitos(contexto.analise_vaga)}\n\n"
+                f"Idioma de saída obrigatório: {_NOME_IDIOMA.get(contexto.idioma_alvo, contexto.idioma_alvo)}"
             ),
         )
         return ExperienciaAdaptada(

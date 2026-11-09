@@ -28,3 +28,18 @@ class TestContextoVaga:
     def test_idioma_nao_suportado_gera_erro(self):
         with pytest.raises(ValueError, match="idioma"):
             ContextoVaga(descricao_vaga="Vaga", idioma_alvo="fr", analise_vaga=_analise())
+
+    def test_cargo_alvo_e_opcional_e_vazio_por_padrao(self):
+        contexto = ContextoVaga(descricao_vaga="Vaga", idioma_alvo="pt", analise_vaga=_analise())
+
+        assert contexto.cargo_alvo == ""
+
+    def test_cargo_alvo_e_aparado(self):
+        contexto = ContextoVaga(
+            descricao_vaga="Vaga",
+            idioma_alvo="pt",
+            analise_vaga=_analise(),
+            cargo_alvo="  Code Reviewer  ",
+        )
+
+        assert contexto.cargo_alvo == "Code Reviewer"

@@ -29,12 +29,7 @@ class SugerirAjusteExperienciaAdaptada:
         SugerirAjusteExperienciaAdaptadaInputValidator.validar(experiencia)
         inicio = perf_counter()
         try:
-            sugerida = self._ajustador_experiencia.refinar(
-                experiencia=experiencia,
-                descricao_vaga=contexto.descricao_vaga,
-                idioma_alvo=contexto.idioma_alvo,
-                analise_vaga=contexto.analise_vaga,
-            )
+            sugerida = self._ajustador_experiencia.refinar(experiencia=experiencia, contexto=contexto)
         except (RuntimeError, ValueError) as erro:
             raise SugestaoIAIndisponivel() from erro
         registrar_sugestao(

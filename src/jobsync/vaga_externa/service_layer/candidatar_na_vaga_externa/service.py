@@ -10,6 +10,7 @@ from __future__ import annotations
 from jobsync.ats_score import CalcularAtsScore
 from jobsync.curriculo import (
     AjustadorTextoPort,
+    ContextoVaga,
     Curriculo,
     ExtratorCurriculoPort,
     GeradorPdfPort,
@@ -82,13 +83,14 @@ class CandidatarNaVagaExterna:
         input_dto: CandidatarNaVagaExternaInputDto,
         analise_vaga: AnaliseVaga,
     ) -> Curriculo:
+        contexto = ContextoVaga(
+            descricao_vaga=input_dto.vaga.descricao,
+            idioma_alvo=input_dto.idioma_alvo,
+            analise_vaga=analise_vaga,
+            cargo_alvo=input_dto.cargo_alvo,
+        )
         curriculo_atualizado = curriculo
         for secao_original in curriculo.secoes:
-            secao_ajustada = self._ajustador_texto.ajustar_secao(
-                secao=secao_original,
-                descricao_vaga=input_dto.vaga.descricao,
-                idioma_alvo=input_dto.idioma_alvo,
-                analise_vaga=analise_vaga,
-            )
+            secao_ajustada = self._ajustador_texto.ajustar_secao(secao=secao_original, contexto=contexto)
             curriculo_atualizado = curriculo_atualizado.substituir_secao(secao_ajustada)
         return curriculo_atualizado

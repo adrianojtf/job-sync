@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from jobsync.curriculo import ExperienciaAdaptada, ExperienciaParaAvaliacao
+from jobsync.curriculo import ContextoVaga, ExperienciaAdaptada, ExperienciaParaAvaliacao
 from jobsync.curriculo.adapters.ajustador_experiencia_openai_client import (
     AjustadorExperienciaOpenAIClient,
 )
@@ -65,21 +65,28 @@ def _atual() -> ExperienciaAdaptada:
     )
 
 
-def _ajustar(cliente: Mock, descricao: str = "Fiz APIs em Java.", idioma: str = "pt"):
-    return AjustadorExperienciaOpenAIClient(cliente).ajustar(
-        experiencia=_original(descricao),
+def _contexto(idioma: str = "pt", cargo_alvo: str = "") -> ContextoVaga:
+    return ContextoVaga(
         descricao_vaga="Vaga Java sênior",
         idioma_alvo=idioma,
         analise_vaga=_analise(),
+        cargo_alvo=cargo_alvo,
     )
 
 
-def _refinar(cliente: Mock, idioma: str = "pt"):
+def _ajustar(
+    cliente: Mock, descricao: str = "Fiz APIs em Java.", idioma: str = "pt", cargo_alvo: str = ""
+):
+    return AjustadorExperienciaOpenAIClient(cliente).ajustar(
+        experiencia=_original(descricao),
+        contexto=_contexto(idioma, cargo_alvo),
+    )
+
+
+def _refinar(cliente: Mock, idioma: str = "pt", cargo_alvo: str = ""):
     return AjustadorExperienciaOpenAIClient(cliente).refinar(
         experiencia=_atual(),
-        descricao_vaga="Vaga Java sênior",
-        idioma_alvo=idioma,
-        analise_vaga=_analise(),
+        contexto=_contexto(idioma, cargo_alvo),
     )
 
 
@@ -180,3 +187,29 @@ class TestAjustadorExperienciaOpenAIClientRefinar:
     def test_resposta_fora_do_formato_gera_erro(self):
         with pytest.raises(ValueError, match="conquistas"):
             _refinar(_cliente({"conquistas": []}))
+
+
+class TestAjustadorExperienciaOpenAIClientCargoAlvo:
+    def test_ajustar_envia_o_cargo_alvo_no_prompt_do_usuario(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, cargo_alvo="Code Reviewer")
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Cargo-alvo (título da vaga): Code Reviewer" in usuario
+
+    def test_refinar_envia_o_cargo_alvo_no_prompt_do_usuario(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente, cargo_alvo="Code Reviewer")
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Cargo-alvo (título da vaga): Code Reviewer" in usuario
+
+    def test_sem_cargo_alvo_o_prompt_nao_cita_o_cargo_alvo(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Cargo-alvo" not in usuario

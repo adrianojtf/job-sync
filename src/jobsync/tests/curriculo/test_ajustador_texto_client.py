@@ -8,7 +8,7 @@ from jobsync.vaga import (
     RequisitoTecnico,
     TipoRequisitoTecnico,
 )
-from jobsync.curriculo import SecaoCurriculo, TipoSecao
+from jobsync.curriculo import ContextoVaga, SecaoCurriculo, TipoSecao
 
 from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClient
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
@@ -50,9 +50,11 @@ def test_ajustador_texto_openai_usa_analise_vaga_estruturada_no_prompt() -> None
     secao = SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Python, Django")
     secao_ajustada = ajustador.ajustar_secao(
         secao,
-        descricao_vaga="Vaga para desenvolvedor backend com Python.",
-        idioma_alvo="pt",
-        analise_vaga=analise_vaga,
+        ContextoVaga(
+            descricao_vaga="Vaga para desenvolvedor backend com Python.",
+            idioma_alvo="pt",
+            analise_vaga=analise_vaga,
+        ),
     )
 
     assert secao_ajustada.conteudo == "Conteúdo ajustado"
@@ -73,20 +75,26 @@ def test_ajustador_texto_openai_resposta_estruturada_em_dict_nao_quebra() -> Non
     secao = SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Python, Django")
 
     secao_ajustada = ajustador.ajustar_secao(
-        secao, descricao_vaga="vaga qualquer", idioma_alvo="pt", analise_vaga=analise_vaga
+        secao, ContextoVaga(descricao_vaga="vaga qualquer", idioma_alvo="pt", analise_vaga=analise_vaga)
     )
 
     assert "Python" in secao_ajustada.conteudo
 
 
-def _prompt_da_secao(tipo: TipoSecao, idioma: str) -> str:
+def _prompt_da_secao(tipo: TipoSecao, idioma: str, cargo_alvo: str = "") -> str:
     cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": "Conteúdo ajustado"})
     ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
     analise_vaga = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
     secao = SecaoCurriculo(tipo, "Seção", "Starian - Engenheiro\nCriei APIs.")
 
     ajustador.ajustar_secao(
-        secao, descricao_vaga="vaga qualquer", idioma_alvo=idioma, analise_vaga=analise_vaga
+        secao,
+        ContextoVaga(
+            descricao_vaga="vaga qualquer",
+            idioma_alvo=idioma,
+            analise_vaga=analise_vaga,
+            cargo_alvo=cargo_alvo,
+        ),
     )
 
     assert cliente_fake.prompt_usuario is not None
@@ -133,11 +141,25 @@ def test_prompt_de_sistema_nao_proibe_resultados_que_a_instrucao_de_experiencias
 
     AjustadorTextoClient(cliente_openai=cliente).ajustar_secao(
         secao,
-        descricao_vaga="vaga",
-        idioma_alvo="pt",
-        analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga"),
+        ContextoVaga(
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga"),
+        ),
     )
 
     sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
     assert "inventar experiência, empresa ou tecnologia" in sistema
     assert "resultado que não exista" not in sistema
+
+
+def test_prompt_traz_o_cargo_alvo_quando_informado() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", cargo_alvo="Code Reviewer")
+
+    assert "Cargo-alvo (título da vaga): Code Reviewer" in prompt
+
+
+def test_prompt_omite_o_cargo_alvo_quando_vazio() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "Cargo-alvo" not in prompt

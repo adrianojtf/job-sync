@@ -44,12 +44,7 @@ class TestSugerirAjusteSecaoCurriculo:
 
         resultado = caso_de_uso.executar(_secao(), contexto)
 
-        ajustador.ajustar_secao.assert_called_once_with(
-            secao=_secao(),
-            descricao_vaga="Vaga Python",
-            idioma_alvo="en",
-            analise_vaga=contexto.analise_vaga,
-        )
+        ajustador.ajustar_secao.assert_called_once_with(secao=_secao(), contexto=contexto)
         melhorador.melhorar_secao.assert_not_called()
         assert resultado == sugerida
 

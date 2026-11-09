@@ -51,6 +51,8 @@ Responda ESTRITAMENTE em JSON no seguinte formato:
 
 Regras:
 - Preserve o texto original de cada seção o máximo possível (não parafraseie).
+- Preserve as quebras de linha originais de cada seção (use \\n no texto JSON).
+- Converta marcadores de tópico no início da linha ('●', '•' ou '*') em '- ', sem alterar o texto do tópico.
 - Se uma seção não existir no currículo, retorne string vazia para ela.
 - Não invente informações que não estão no texto original.
 """

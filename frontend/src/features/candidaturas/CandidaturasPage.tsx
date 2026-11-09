@@ -34,6 +34,9 @@ import { useMoverComAviso } from "./use-mover-com-aviso";
 const ATIVACAO_MOUSE = { distance: 6 };
 const ATIVACAO_TOQUE = { delay: 200, tolerance: 8 };
 
+const prefereMenosMovimento = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
 /** Kanban de candidaturas (JOB-0006, JOB-0038): arrastar e soltar, reordenar e abrir o detalhe pelo título. */
 export function CandidaturasPage() {
   const candidaturas = useCandidaturas();
@@ -109,18 +112,26 @@ export function CandidaturasPage() {
           onDragEnd={aoSoltar}
           onDragCancel={encerrarArrasto}
         >
-          <div className={estilos.quadro}>
+          <div className={`${estilos.quadro} ${idArrastado ? estilos.quadroArrastando : ""}`}>
             {ORDEM_STATUS.map((status) => (
               <ColunaKanban
                 key={status}
                 status={status}
                 candidaturas={porStatus[status] ?? []}
                 destacada={statusSobre === status && idArrastado !== null}
+                deslocarCartoes={
+                  !(
+                    statusSobre &&
+                    arrastada &&
+                    arrastada.status === status &&
+                    statusSobre !== status
+                  )
+                }
                 aoAbrir={(candidatura) => setIdEmDetalhe(candidatura.id)}
               />
             ))}
           </div>
-          <DragOverlay>
+          <DragOverlay dropAnimation={prefereMenosMovimento() ? null : undefined}>
             {arrastada ? <CartaoFlutuante candidatura={arrastada} /> : null}
           </DragOverlay>
         </DndContext>

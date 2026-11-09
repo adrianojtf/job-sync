@@ -17,11 +17,11 @@ Troca a grade de 4 colunas por colunas de largura fixa em uma área com rolagem,
 
 ## Subtarefas
 
-- [ ] 7.1 Estilizar o contêiner do board e as colunas (largura fixa, rolagem, sticky).
-- [ ] 7.2 Estilizar o cartão e o cabeçalho com os dados do PRD.
-- [ ] 7.3 Estilizar os estados de arrasto e de coluna vazia.
-- [ ] 7.4 Cobrir `prefers-reduced-motion` e foco visível.
-- [ ] 7.5 Conferir as larguras 375, 768 e 1280 px no navegador.
+- [x] 7.1 Estilizar o contêiner do board e as colunas (largura fixa, rolagem, sticky).
+- [x] 7.2 Estilizar o cartão e o cabeçalho com os dados do PRD.
+- [x] 7.3 Estilizar os estados de arrasto e de coluna vazia.
+- [x] 7.4 Cobrir `prefers-reduced-motion` e foco visível.
+- [x] 7.5 Conferir as larguras 375, 768 e 1280 px no navegador.
 
 ## Detalhes de Implementação
 
@@ -35,8 +35,8 @@ Techspec: "Decisões Principais" (Layout). PRD: RF19–RF29.
 
 ## Testes da Tarefa
 
-- [ ] Verificação visual manual nas três larguras (o jsdom não calcula layout).
-- [ ] Cobertura automática do layout fica na tarefa 8.0 (E2E).
+- [x] Verificação visual manual nas três larguras (o jsdom não calcula layout).
+- [x] Cobertura automática do layout fica na tarefa 8.0 (E2E).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

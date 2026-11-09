@@ -104,7 +104,14 @@ describe("CandidaturasPage", () => {
     expect(coluna("Oferta")).toHaveAccessibleName("Oferta, 0 candidaturas");
     expect(within(coluna("Rejeitado")).getByText("Nenhuma candidatura")).toBeInTheDocument();
     expect(within(coluna("Entrevista")).getByText("Thoughtworks")).toBeInTheDocument();
-    expect(within(coluna("Aplicado")).getByText("Aplicada em 02/11/2026")).toBeInTheDocument();
+    const quando = within(coluna("Aplicado")).getByTitle("Aplicada em 02/11/2026");
+    expect(quando.tagName).toBe("TIME");
+    expect(quando).toHaveAttribute("datetime", "2026-11-02T09:00:00");
+    expect(quando).toHaveTextContent(
+      /^(hoje|há \d+ (dia|dias|semana|semanas|mês|meses|ano|anos))$/,
+    );
+    expect(within(coluna("Aplicado")).getByText("N")).toHaveAttribute("aria-hidden", "true");
+    expect(within(coluna("Rejeitado")).getByText("Arraste um cartão até aqui")).toBeInTheDocument();
   });
 
   it("não tem mais caixa de seleção nem botão Detalhes nos cartões", async () => {

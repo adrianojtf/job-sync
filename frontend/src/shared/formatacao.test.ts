@@ -3,6 +3,7 @@ import {
   formatarData,
   formatarDataHora,
   formatarTempoRelativo,
+  inicialDe,
   paraSlug,
   primeiraLinha,
 } from "./formatacao";
@@ -65,5 +66,19 @@ describe("formatarTempoRelativo", () => {
 
   it("trata datas futuras como hoje", () => {
     expect(formatarTempoRelativo("2026-11-12T10:00:00", agora)).toBe("hoje");
+  });
+});
+
+describe("inicialDe", () => {
+  it("devolve a primeira letra em maiúscula, ignorando espaços", () => {
+    expect(inicialDe("  neoway")).toBe("N");
+  });
+
+  it("devolve a primeira letra de nomes com acento", () => {
+    expect(inicialDe("érica Ltda")).toBe("É");
+  });
+
+  it("devolve interrogação para texto vazio", () => {
+    expect(inicialDe("   ")).toBe("?");
   });
 });

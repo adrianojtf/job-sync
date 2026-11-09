@@ -68,3 +68,8 @@ export function formatarTempoRelativo(iso: string, agora: Date = new Date()): st
   if (dias < 365) return plural(Math.floor(dias / 30), "mês", "meses");
   return plural(Math.floor(dias / 365), "ano", "anos");
 }
+
+/** Primeira letra, em maiúscula, para avatares (ex.: empresa); "?" se o texto estiver vazio. */
+export function inicialDe(texto: string): string {
+  return texto.trim().charAt(0).toLocaleUpperCase("pt-BR") || "?";
+}

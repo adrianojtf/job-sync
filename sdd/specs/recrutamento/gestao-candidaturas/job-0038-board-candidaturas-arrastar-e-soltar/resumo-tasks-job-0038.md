@@ -8,7 +8,7 @@
 - [x] 4.0 Spike do @dnd-kit: teclado, toque e ativador
 - [x] 5.0 Lógica do board no frontend e atualização otimista
 - [x] 6.0 Componentes do board e interações
-- [ ] 7.0 Layout responsivo e visual estilo Jira
+- [x] 7.0 Layout responsivo e visual estilo Jira
 - [ ] 8.0 E2E, acessibilidade e fechamento
 
 ## Dependências

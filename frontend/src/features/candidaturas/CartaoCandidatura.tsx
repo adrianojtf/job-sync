@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Candidatura } from "../../api/tipos";
-import { formatarData } from "../../shared/formatacao";
+import { formatarData, formatarTempoRelativo, inicialDe } from "../../shared/formatacao";
 import { DESCRICAO_CARTAO } from "./anuncios";
 import estilos from "./CandidaturasPage.module.css";
 
@@ -65,9 +65,18 @@ export function CartaoFlutuante({ candidatura }: { candidatura: Candidatura }) {
 
 function DadosDoCartao({ candidatura }: { candidatura: Candidatura }) {
   return (
-    <>
+    <div className={estilos.rodapeCartao}>
+      <span className={estilos.avatar} aria-hidden="true">
+        {inicialDe(candidatura.empresa)}
+      </span>
       <span className={estilos.empresa}>{candidatura.empresa}</span>
-      <span className={estilos.data}>Aplicada em {formatarData(candidatura.data_aplicacao)}</span>
-    </>
+      <time
+        className={estilos.data}
+        dateTime={candidatura.data_aplicacao}
+        title={`Aplicada em ${formatarData(candidatura.data_aplicacao)}`}
+      >
+        {formatarTempoRelativo(candidatura.data_aplicacao)}
+      </time>
+    </div>
   );
 }

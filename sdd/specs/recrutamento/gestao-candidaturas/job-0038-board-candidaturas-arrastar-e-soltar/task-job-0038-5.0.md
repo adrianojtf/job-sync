@@ -16,11 +16,11 @@ Funções puras que calculam o destino do arrasto e o novo quadro, mais o hook d
 
 ## Subtarefas
 
-- [ ] 5.1 Escrever os testes de `movimento.ts` e de `formatarTempoRelativo` (red).
-- [ ] 5.2 Implementar as funções puras.
-- [ ] 5.3 Escrever os testes do hook (sucesso, erro com restauração, dois movimentos seguidos).
-- [ ] 5.4 Implementar `useMoverCandidatura` otimista e `use-mover-com-aviso.ts`.
-- [ ] 5.5 Adicionar `COR_STATUS`.
+- [x] 5.1 Escrever os testes de `movimento.ts` e de `formatarTempoRelativo` (red).
+- [x] 5.2 Implementar as funções puras.
+- [x] 5.3 Escrever os testes do hook (sucesso, erro com restauração, dois movimentos seguidos).
+- [x] 5.4 Implementar `useMoverCandidatura` otimista e `use-mover-com-aviso.ts`.
+- [x] 5.5 Adicionar `COR_STATUS`.
 
 ## Detalhes de Implementação
 
@@ -33,9 +33,9 @@ Techspec: "Interfaces Principais" (`movimento.ts`), "Fluxo de dados" e "Decisõe
 
 ## Testes da Tarefa
 
-- [ ] `movimento.test.ts`: entre colunas, mesma coluna, coluna vazia, soltar sobre a própria posição.
-- [ ] `formatacao.test.ts`: tempo relativo.
-- [ ] Hook: sucesso, erro com restauração do cache e toast, dois movimentos seguidos.
+- [x] `movimento.test.ts`: entre colunas, mesma coluna, coluna vazia, soltar sobre a própria posição.
+- [x] `formatacao.test.ts`: tempo relativo.
+- [x] Hook: sucesso, erro com restauração do cache e toast, dois movimentos seguidos.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

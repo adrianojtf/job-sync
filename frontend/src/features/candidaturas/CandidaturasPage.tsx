@@ -7,11 +7,11 @@ import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { EmptyState } from "../../shared/ui/EmptyState";
 import { Panel } from "../../shared/ui/Panel";
-import { useToast } from "../../shared/ui/use-toast";
 import estilos from "./CandidaturasPage.module.css";
 import { DetalheCandidaturaModal } from "./DetalheCandidaturaModal";
 import { ORDEM_STATUS, ROTULO_STATUS } from "./status";
-import { useCandidaturas, useMoverCandidatura } from "./use-candidaturas";
+import { useCandidaturas } from "./use-candidaturas";
+import { useMoverComAviso } from "./use-mover-com-aviso";
 
 const contar = (quantidade: number) =>
   `${quantidade} ${quantidade === 1 ? "candidatura" : "candidaturas"}`;
@@ -19,20 +19,12 @@ const contar = (quantidade: number) =>
 /** T9 — Kanban de candidaturas (JOB-0006, RF10.1–RF10.3). */
 export function CandidaturasPage() {
   const candidaturas = useCandidaturas();
-  const mover = useMoverCandidatura();
-  const { notificar } = useToast();
+  const mover = useMoverComAviso();
   const [emDetalhe, setEmDetalhe] = useState<Candidatura | null>(null);
   const porStatus = candidaturas.data?.por_status ?? {};
 
   const moverPara = (candidatura: Candidatura, novoStatus: StatusCandidatura) =>
-    mover.mutate(
-      { id: candidatura.id, novoStatus },
-      {
-        onSuccess: () =>
-          notificar(`Candidatura movida para ${ROTULO_STATUS[novoStatus]}.`, "sucesso"),
-        onError: (erro) => notificar(erro.message, "erro"),
-      },
-    );
+    mover(candidatura.id, novoStatus);
 
   return (
     <>

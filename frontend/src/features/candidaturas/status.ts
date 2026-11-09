@@ -18,6 +18,14 @@ export const TOM_STATUS: Record<StatusCandidatura, TomStatus> = {
   REJEITADO: "neutro",
 };
 
+/** Cor de destaque de cada coluna (marca no cabeçalho do quadro), baseada nos tokens do design system. */
+export const COR_STATUS: Record<StatusCandidatura, string> = {
+  APLICADO: "var(--accent)",
+  ENTREVISTA: "var(--amber)",
+  OFERTA: "var(--green)",
+  REJEITADO: "var(--muted)",
+};
+
 export function rotuloStatus(status: string): string {
   return ROTULO_STATUS[status as StatusCandidatura] ?? status;
 }

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { entrar, novoPerfil, semearPerfilCompleto } from "./apoio";
+import { entrar, EXPERIENCIAS_COM_REACT, novoPerfil, semearPerfilCompleto } from "./apoio";
 
 const TELAS = [
   "/",
@@ -113,4 +113,25 @@ test.describe("telas autenticadas", () => {
 
     expect(await violacoesGraves(page)).toEqual([]);
   });
+});
+
+test("revisão com ajustes de tecnologia e foco da sugestão sem violações graves", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-a11y-ajustes");
+  await semearPerfilCompleto(request, perfil, EXPERIENCIAS_COM_REACT);
+  await entrar(page, perfil);
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Desenvolvedor Angular");
+  await page.getByLabel("Empresa").fill("Globex");
+  await page.getByLabel("Descrição da vaga").fill("Java e Angular.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("list", { name: "Ajustes de tecnologia" })).toBeVisible();
+  await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
+  await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toContainText(
+    "Foco:",
+  );
+
+  expect(await violacoesGraves(page)).toEqual([]);
 });

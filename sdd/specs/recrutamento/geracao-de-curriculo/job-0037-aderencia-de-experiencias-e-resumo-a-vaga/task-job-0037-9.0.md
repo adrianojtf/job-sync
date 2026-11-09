@@ -16,10 +16,10 @@ Validar o fluxo completo com os dublês determinísticos e rodar todas as suíte
 
 ## Subtarefas
 
-- [ ] 9.1 Cenários em `fluxos.spec.ts`.
-- [ ] 9.2 Cenários em `acessibilidade.spec.ts`.
-- [ ] 9.3 Suíte completa.
-- [ ] 9.4 Resumo de tarefas atualizado.
+- [x] 9.1 Cenários em `fluxos.spec.ts`.
+- [x] 9.2 Cenários em `acessibilidade.spec.ts`.
+- [x] 9.3 Suíte completa.
+- [x] 9.4 Resumo de tarefas atualizado.
 
 ## Detalhes de Implementação
 
@@ -32,7 +32,7 @@ Ver "Testes de Serviço" em `techspec-job-0037.md`.
 
 ## Testes da Tarefa
 
-- [ ] E2E e acessibilidade (Playwright); suítes de backend e frontend.
+- [x] E2E e acessibilidade (Playwright); suítes de backend e frontend.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

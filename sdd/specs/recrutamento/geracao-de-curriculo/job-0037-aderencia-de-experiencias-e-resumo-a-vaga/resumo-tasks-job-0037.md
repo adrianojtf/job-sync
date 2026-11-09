@@ -10,7 +10,7 @@
 - [x] 6.0 API, Postman e tipos do frontend
 - [x] 7.0 SugestaoIA com histórico e foco
 - [x] 8.0 Tela de revisão: ajustes de tecnologia, aviso e cargo-alvo
-- [ ] 9.0 E2E, acessibilidade e suíte completa
+- [x] 9.0 E2E, acessibilidade e suíte completa
 
 ## Dependências
 
@@ -72,3 +72,25 @@
 - **Task 8.0 — aviso único:** o aviso de números estimados (JOB-0035) foi ampliado para cobrir trocas de tecnologia e atividades implícitas, em vez de um segundo aviso. Continua aparecendo só com experiências estruturadas.
 - **Task 8.0 — lista de ajustes:** `AjusteTecnologiaLista` usa as cores do aviso de alerta e fica logo abaixo dele. Descreve o que a IA fez; não acompanha edições posteriores (decisão 6 da tech spec).
 - **Task 8.0 — E2E instável:** em uma execução, o teste "revisão do currículo adaptado: pede, aplica uma sugestão de IA e gera o PDF" estourou o tempo (1 min). Passou isolado e em duas execuções completas seguidas. Não reproduzido; não relacionado a esta task até onde verifiquei.
+- **Task 9.0 — perfil de E2E com React:** `semearPerfilCompleto` aceita experiências próprias; `EXPERIENCIAS_COM_REACT` traz duas experiências com React para o dublê apontar React → Angular.
+- **Task 9.0 — ordem do TDD nos E2E:** os cenários de Playwright foram escritos depois das tasks 4.0 a 8.0, como previsto na sequência; não houve fase "Red" para eles.
+
+## Validação realizada
+
+- Backend (Python 3.12, o mesmo do CI): 571 testes de pytest (eram 486 antes da JOB) e `lint-imports` com os 3 contratos mantidos.
+- Frontend: 227 testes de Vitest (eram 217), lint (ESLint e Prettier), `tsc` e build.
+- Contrato: `schema.d.ts` regenerado do OpenAPI atual sem diferença (o mesmo passo do CI).
+- E2E e acessibilidade (Playwright + axe): 22 testes (eram 19). Novos cenários:
+  - a revisão lista "React → Angular em Front-end — Acme", troca só na experiência mais recente e mantém React na outra;
+  - dois pedidos seguidos de sugestão do resumo mostram "Foco: aderência à vaga" e depois "Foco: impacto e resultados";
+  - a revisão com a lista de ajustes e o foco aberto não tem violações graves de acessibilidade.
+
+## Pontos em aberto
+
+- **IA real não validada:** todos os testes usam dublês. Não se sabe se o modelo aponta equivalências corretas, segue as diretrizes de troca e de citação explícita, cita só responsabilidades típicas do cargo ou muda de fato a abordagem a cada foco.
+- **Questões do PRD sem decisão final:** regra de distribuição (todas menos a última, adotada) e ordem das experiências (ordem do cadastro, sem ordenar por período).
+- **Fonte PDF:** sem trocas de tecnologia; só cargo-alvo e regra de responsabilidades implícitas, por instrução no prompt.
+- **"React Native":** a busca por palavra inteira reconhece "React" dentro de "React Native".
+- **Lista de ajustes estática:** não acompanha edições do usuário na revisão.
+- **E2E intermitente:** um timeout isolado na task 8.0, não reproduzido em quatro execuções completas depois.
+- **Imports sem uso anteriores à JOB:** `SalvarCurriculo` em `curriculo_router.py`; `Curriculo` e `StatusAvaliacaoAutomatica` em `schemas/curriculo.py`.

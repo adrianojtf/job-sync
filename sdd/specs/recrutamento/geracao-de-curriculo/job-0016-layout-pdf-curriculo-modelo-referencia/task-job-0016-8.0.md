@@ -17,12 +17,12 @@ Fechar o JOB: comparar o PDF gerado com o modelo de referência, ajustar espaça
 
 ## Subtarefas
 
-- [ ] 8.1 Criar script descartável (no scratchpad, fora do repositório) que gera o PDF com o conteúdo do modelo.
-- [ ] 8.2 Gerar as imagens do modelo e do PDF novo e comparar.
-- [ ] 8.3 Ajustar espaçamentos finos, se necessário, mantendo os testes verdes.
-- [ ] 8.4 Rodar `pytest` e `lint-imports`.
-- [ ] 8.5 Verificar a geração pela API (`POST` de adaptação de currículo) e pelo Streamlit, se o ambiente permitir.
-- [ ] 8.6 Marcar as tarefas concluídas no resumo.
+- [x] 8.1 Criar script descartável (no scratchpad, fora do repositório) que gera o PDF com o conteúdo do modelo.
+- [x] 8.2 Gerar as imagens do modelo e do PDF novo e comparar.
+- [x] 8.3 Ajustar espaçamentos finos, se necessário, mantendo os testes verdes.
+- [x] 8.4 Rodar `pytest` e `lint-imports`.
+- [x] 8.5 Verificar a geração pela API (`POST` de adaptação de currículo) e pelo Streamlit, se o ambiente permitir. API verificada pelos testes de rota (`TestClient`); Streamlit não foi executado.
+- [x] 8.6 Marcar as tarefas concluídas no resumo.
 
 ## Detalhes de Implementação
 
@@ -36,10 +36,10 @@ Consultar em `techspec-job-0016.md` a seção "Testes de Serviço" e a tabela de
 
 ## Testes da Tarefa
 
-- [ ] `pytest` completo.
-- [ ] `lint-imports`.
-- [ ] Comparação visual en e pt.
-- [ ] Medição de tempo de geração do PDF.
+- [x] `pytest` completo.
+- [x] `lint-imports`.
+- [x] Comparação visual en e pt.
+- [x] Medição de tempo de geração do PDF.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

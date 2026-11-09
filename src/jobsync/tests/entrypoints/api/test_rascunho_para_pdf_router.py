@@ -138,13 +138,13 @@ def test_o_rascunho_devolvido_e_aceito_como_veio_e_o_pdf_traz_o_padrao(client):
 
     texto, pagina = _confirmar(client, rascunho)
 
-    assert "Engenheira de Software — TechCorp (2022 - Atual)" in texto
+    assert "TechCorp 2022 - Atual\nEngenheira de Software\n" in texto
     assert "Criei APIs em Python." in texto
     assert "Reduzi custos em 30%." in texto
     assert f"Context: {CONTEXTO_DA_IA}" in texto
     palavra = next(p for p in pagina.extract_words() if p["text"] == "Context:")
     letras = [c for c in pagina.chars if c["text"].strip() and abs(c["top"] - palavra["top"]) < 1]
-    assert all("Oblique" in c["fontname"] for c in letras)
+    assert all(c["fontname"].endswith("Carlito-Italic") for c in letras)
 
 
 def test_o_pdf_reflete_o_que_o_usuario_revisou_e_nao_o_texto_bruto_da_ia(client):

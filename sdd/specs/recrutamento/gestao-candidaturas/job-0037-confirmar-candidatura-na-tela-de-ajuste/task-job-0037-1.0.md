@@ -16,10 +16,10 @@ Hoje a regra do limite de 10 currículos por perfil vive dentro do caso de uso `
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de `garantir_espaco` (red).
-- [ ] 1.2 Criar o módulo de domínio com a constante, a exceção e a função.
-- [ ] 1.3 Fazer `SalvarCurriculo` usar a regra do domínio e reexportar os nomes.
-- [ ] 1.4 Confirmar que os testes existentes de `SalvarCurriculo` e o import do Streamlit continuam válidos.
+- [x] 1.1 Escrever os testes de `garantir_espaco` (red).
+- [x] 1.2 Criar o módulo de domínio com a constante, a exceção e a função.
+- [x] 1.3 Fazer `SalvarCurriculo` usar a regra do domínio e reexportar os nomes.
+- [x] 1.4 Confirmar que os testes existentes de `SalvarCurriculo` e o import do Streamlit continuam válidos.
 
 ## Detalhes de Implementação
 
@@ -32,10 +32,10 @@ Consultar em `techspec-job-0037.md` as seções "Componentes" (linhas de `curric
 
 ## Testes da Tarefa
 
-- [ ] `garantir_espaco` com 9 currículos não levanta.
-- [ ] `garantir_espaco` com 10 currículos levanta `LimiteCurriculosSalvosExcedido` com a mensagem atual.
-- [ ] `LimiteCurriculosSalvosExcedido` continua sendo `ValueError`.
-- [ ] `SalvarCurriculo` continua recusando o 11º currículo e aceitando até o 10º.
+- [x] `garantir_espaco` com 9 currículos não levanta.
+- [x] `garantir_espaco` com 10 currículos levanta `LimiteCurriculosSalvosExcedido` com a mensagem atual.
+- [x] `LimiteCurriculosSalvosExcedido` continua sendo `ValueError`.
+- [x] `SalvarCurriculo` continua recusando o 11º currículo e aceitando até o 10º.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

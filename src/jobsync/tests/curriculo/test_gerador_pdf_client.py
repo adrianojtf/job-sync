@@ -8,7 +8,6 @@ import io
 import pdfplumber
 import pytest
 from reportlab.lib.colors import HexColor
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Spacer
 
 from jobsync.curriculo import (
@@ -19,45 +18,46 @@ from jobsync.curriculo import (
     TipoSecao,
 )
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
+from jobsync.curriculo.adapters.pdf.registrador_fontes_pdf import RegistradorFontesPdf
 
 
 def test_aplica_enfase_tecnologias():
     texto = "Languages: Python, Java, Go"
     resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS)
 
-    assert resultado == "<b>Languages</b>: Python, Java, Go"
+    assert resultado == "<b>Languages:</b> Python, Java, Go"
 
 
 def test_aplica_enfase_tecnologias_multiplas_categorias():
     texto = "Languages: Python, Java\nDatabases: PostgreSQL\nDevOps: Docker"
     resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS)
 
-    assert "<b>Languages</b>: Python, Java" in resultado
-    assert "<b>Databases</b>: PostgreSQL" in resultado
-    assert "<b>DevOps</b>: Docker" in resultado
+    assert "<b>Languages:</b> Python, Java" in resultado
+    assert "<b>Databases:</b> PostgreSQL" in resultado
+    assert "<b>DevOps:</b> Docker" in resultado
 
 
 def test_aplica_enfase_tecnologias_em_portugues():
     texto = "Linguagens: Python, Java\nDesenvolvimento Web: Django"
     resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS, "pt")
 
-    assert "<b>Linguagens</b>: Python, Java" in resultado
-    assert "<b>Desenvolvimento Web</b>: Django" in resultado
+    assert "<b>Linguagens:</b> Python, Java" in resultado
+    assert "<b>Desenvolvimento Web:</b> Django" in resultado
 
 
 def test_aplica_enfase_tecnologias_com_idioma_desconhecido_usa_fallback_portugues():
     texto = "Languages: Python, Java\nDatabases: PostgreSQL"
     resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS, "fr")
 
-    assert "<b>Linguagens</b>: Python, Java" in resultado
-    assert "<b>Bancos de Dados</b>: PostgreSQL" in resultado
+    assert "<b>Linguagens:</b> Python, Java" in resultado
+    assert "<b>Bancos de Dados:</b> PostgreSQL" in resultado
 
 
 def test_aplica_enfase_tecnologias_preserva_conteudo_factual_em_portugues():
     texto = "Languages: Python, Java, Go"
     resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS, "pt")
 
-    assert "<b>Linguagens</b>: Python, Java, Go" in resultado
+    assert "<b>Linguagens:</b> Python, Java, Go" in resultado
     assert "Python, Java, Go" in resultado
     assert "Languages" not in resultado
 
@@ -76,23 +76,20 @@ def test_aplica_enfase_formacao():
 
 
 def test_formatar_conteudo_tecnologias_separa_categorias_com_espacamento():
-    estilo = getSampleStyleSheet()["Normal"]
     conteudo = "Languages: Python, Java\nDatabases: PostgreSQL"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.TECNOLOGIAS, "en")
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.TECNOLOGIAS, "en")
 
     paragrafos = [elemento for elemento in elementos if hasattr(elemento, "text")]
-    spacers = [elemento for elemento in elementos if isinstance(elemento, Spacer)]
 
     assert len(paragrafos) == 2
-    assert "<b>Languages</b>: Python, Java" in paragrafos[0].text
-    assert "<b>Databases</b>: PostgreSQL" in paragrafos[1].text
-    assert any(getattr(elemento, "height", None) == 2 for elemento in spacers)
+    assert "<b>Languages:</b> Python, Java" in paragrafos[0].text
+    assert "<b>Databases:</b> PostgreSQL" in paragrafos[1].text
+    assert all(paragrafo.style.spaceAfter == 2 for paragrafo in paragrafos)
 
 
 def test_formatar_conteudo_tecnologias_sem_categorias_explicitas_preserva_texto():
-    estilo = getSampleStyleSheet()["Normal"]
     conteudo = "Python, Java, Go"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.TECNOLOGIAS, "en")
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.TECNOLOGIAS, "en")
 
     paragrafos = [elemento for elemento in elementos if hasattr(elemento, "text")]
 
@@ -101,9 +98,8 @@ def test_formatar_conteudo_tecnologias_sem_categorias_explicitas_preserva_texto(
 
 
 def test_formatar_experiencias_com_cabecalho_e_posicao():
-    estilo = getSampleStyleSheet()["Normal"]
     conteudo = "Starian Mar 2026 - Present\nSoftware Engineer\n- Desenvolvi APIs REST\n\nIFSC - Técnico em Telecomunicações"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.EXPERIENCIAS)
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
 
     paragrafos = [elemento for elemento in elementos if hasattr(elemento, "text")]
 
@@ -114,9 +110,8 @@ def test_formatar_experiencias_com_cabecalho_e_posicao():
 
 
 def test_nao_aplica_negrito_em_descricao_de_experiencia():
-    estilo = getSampleStyleSheet()["Normal"]
     conteudo = "Starian Mar 2026 - Present\nSoftware Engineer\n- Conduzi integração com APIs\n- Reduzi tempo de deploy"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.EXPERIENCIAS)
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
 
     paragrafos = [elemento for elemento in elementos if hasattr(elemento, "text")]
     assert paragrafos[2].text == "&bull;&nbsp;&nbsp;Conduzi integração com APIs"
@@ -124,9 +119,8 @@ def test_nao_aplica_negrito_em_descricao_de_experiencia():
 
 
 def test_adiciona_espacamento_extra_entre_blocos_de_experiencia():
-    estilo = getSampleStyleSheet()["Normal"]
     conteudo = "Starian Mar 2026 - Present\nSoftware Engineer\n- Desenvolvi APIs REST\n\nIFSC - Técnico em Telecomunicações"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.EXPERIENCIAS)
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
 
     spacers = [elemento for elemento in elementos if isinstance(elemento, Spacer)]
     assert sum(1 for elemento in spacers if getattr(elemento, "height", None) == 6) == 1
@@ -164,8 +158,7 @@ def test_gera_pdf_valido_com_todas_as_secoes():
 
 
 def _paragrafos_de_experiencias(conteudo: str) -> list:
-    estilo = getSampleStyleSheet()["Normal"]
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, estilo, TipoSecao.EXPERIENCIAS)
+    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
     return [elemento for elemento in elementos if hasattr(elemento, "text")]
 
 
@@ -260,7 +253,7 @@ def test_pdf_desenha_o_contexto_em_fonte_obliqua_cinza_depois_dos_bullets():
         ]
 
     assert linhas.index("Contexto: Atuei na plataforma de comunicação.") > linhas.index(
-        "(cid:127) Developed a VoIP billing system."
+        "• Developed a VoIP billing system."
     )
     assert letras_da_linha
     assert all("Oblique" in c["fontname"] for c in letras_da_linha)
@@ -299,3 +292,187 @@ def test_pdf_de_um_rascunho_desenha_o_contexto_no_rotulo_do_idioma(idioma, rotul
 
     assert f"{rotulo} Empresa de pagamentos." in texto
     assert all("Oblique" in c["fontname"] for c in letras)
+
+
+def _hex(cor) -> str:
+    return "#%02X%02X%02X" % tuple(round(c * 255) for c in cor)
+
+
+def _pagina_do_pdf(curriculo: Curriculo, idioma: str = "en", gerador: GeradorPdfClient | None = None):
+    pdf_bytes = (gerador or GeradorPdfClient()).gerar(curriculo, idioma)
+    return pdfplumber.open(io.BytesIO(pdf_bytes)).pages[0]
+
+
+def _curriculo_com(*secoes: SecaoCurriculo, linkedin: str = "linkedin.com/in/adriano") -> Curriculo:
+    return Curriculo(
+        nome_completo="Adriano João Teixeira Filho",
+        email="adriano@example.com",
+        linkedin=linkedin,
+        secoes=tuple(secoes),
+    )
+
+
+def _tecnologias(conteudo: str) -> SecaoCurriculo:
+    return SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", conteudo)
+
+
+def _perfil(conteudo: str) -> SecaoCurriculo:
+    return SecaoCurriculo(TipoSecao.PERFIL, "Perfil", conteudo)
+
+
+def _divisorias_de_secao(pagina) -> list[dict]:
+    return [linha for linha in pagina.lines if linha["x1"] - linha["x0"] > 400]
+
+
+def _linhas_de_texto(pagina) -> list[str]:
+    return [linha["text"] for linha in pagina.extract_text_lines()]
+
+
+def test_layout_nome_centralizado_em_caixa_alta_bold_16_azul_marinho():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto")))
+
+    linha = pagina.extract_text_lines()[0]
+    primeiro_caractere = linha["chars"][0]
+    assert linha["text"] == "ADRIANO JOÃO TEIXEIRA FILHO"
+    assert primeiro_caractere["fontname"].endswith("Carlito-Bold")
+    assert round(primeiro_caractere["size"]) == 16
+    assert _hex(primeiro_caractere["non_stroking_color"]) == "#1F3864"
+    assert abs((linha["x0"] + linha["x1"]) / 2 - 306) < 2
+
+
+def test_layout_contato_centralizado_cinza_com_linkedin_clicavel_em_azul():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto")))
+
+    linha = pagina.extract_text_lines()[1]
+    caracteres = linha["chars"]
+    assert linha["text"] == "LinkedIn: linkedin.com/in/adriano | Email: adriano@example.com"
+    assert round(caracteres[0]["size"]) == 10
+    assert _hex(caracteres[0]["non_stroking_color"]) == "#595959"
+    assert _hex(caracteres[len("LinkedIn: ") + 1]["non_stroking_color"]) == "#0563C1"
+    assert abs((linha["x0"] + linha["x1"]) / 2 - 306) < 2
+    assert [link["uri"] for link in pagina.hyperlinks] == ["https://linkedin.com/in/adriano"]
+
+
+def test_layout_link_do_linkedin_ja_com_protocolo_nao_duplica_https():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto"), linkedin="https://linkedin.com/in/adriano"))
+
+    assert [link["uri"] for link in pagina.hyperlinks] == ["https://linkedin.com/in/adriano"]
+
+
+def test_layout_contato_sem_linkedin_mostra_apenas_o_email():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto"), linkedin=""))
+
+    assert _linhas_de_texto(pagina)[1] == "Email: adriano@example.com"
+    assert pagina.hyperlinks == []
+
+
+def test_layout_nao_tem_linha_divisoria_abaixo_do_cabecalho():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto")))
+
+    topo_do_titulo = next(linha["top"] for linha in pagina.extract_text_lines() if linha["text"] == "PROFILE")
+    divisorias = _divisorias_de_secao(pagina)
+    assert len(divisorias) == 1
+    assert divisorias[0]["top"] > topo_do_titulo
+
+
+def test_layout_titulo_de_secao_em_caixa_alta_bold_11_azul_com_linha_de_largura_total():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Languages: Java"), _perfil("Texto")))
+
+    titulos = [linha for linha in pagina.extract_text_lines() if linha["text"] in ("TECHNICAL SKILLS", "PROFILE")]
+    assert [titulo["text"] for titulo in titulos] == ["TECHNICAL SKILLS", "PROFILE"]
+    caractere = titulos[0]["chars"][0]
+    assert caractere["fontname"].endswith("Carlito-Bold")
+    assert round(caractere["size"]) == 11
+    assert _hex(caractere["non_stroking_color"]) == "#1F3864"
+    divisorias = _divisorias_de_secao(pagina)
+    assert len(divisorias) == 2
+    for linha in divisorias:
+        assert linha["linewidth"] == 0.75
+        assert _hex(linha["stroking_color"]) == "#1F3864"
+        assert abs(linha["x0"] - 45) < 0.5
+        assert abs(linha["x1"] - 567) < 0.5
+
+
+def test_layout_titulos_de_secao_seguem_o_idioma_alvo():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Linguagens: Java"), _perfil("Texto")), idioma="pt")
+
+    assert "TECNOLOGIAS" in _linhas_de_texto(pagina)
+    assert "PERFIL" in _linhas_de_texto(pagina)
+
+
+def test_layout_tecnologias_uma_categoria_por_linha_com_rotulo_em_negrito():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Languages: Java, Go\nFrameworks: Spring Boot\nOther: Linux")))
+
+    linhas = {linha["text"]: linha for linha in pagina.extract_text_lines()}
+    for texto in ("Languages: Java, Go", "Frameworks: Spring Boot", "Other: Linux"):
+        assert texto in linhas
+        caracteres = linhas[texto]["chars"]
+        assert caracteres[0]["fontname"].endswith("Carlito-Bold")
+        assert caracteres[-1]["fontname"].endswith("Carlito-Regular")
+        assert round(caracteres[0]["size"], 1) == 10.5
+        assert _hex(caracteres[0]["non_stroking_color"]) == "#000000"
+        assert abs(linhas[texto]["x0"] - 45) < 1
+
+
+def test_layout_tecnologias_em_linha_unica_com_varias_categorias_vira_uma_linha_por_categoria():
+    conteudo = "Languages: Java, Go, Frameworks: Hibernate, Web Development: RESTful APIs, JSF, DevOps: Docker"
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias(conteudo)))
+
+    linhas = _linhas_de_texto(pagina)
+    assert "Languages: Java, Go" in linhas
+    assert "Frameworks: Hibernate" in linhas
+    assert "Web Development: RESTful APIs, JSF" in linhas
+    assert "DevOps: Docker" in linhas
+
+
+def test_layout_tecnologias_remove_marcador_das_linhas_de_categoria():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("- Languages: Java\n• Databases: MySQL")))
+
+    linhas = _linhas_de_texto(pagina)
+    assert "Languages: Java" in linhas
+    assert "Databases: MySQL" in linhas
+    assert not any("●" in linha or "•" in linha for linha in linhas)
+
+
+def test_layout_perfil_junta_linhas_consecutivas_em_um_paragrafo():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Engenheiro de software\nbackend com foco em APIs.")))
+
+    assert "Engenheiro de software backend com foco em APIs." in _linhas_de_texto(pagina)
+
+
+def test_layout_perfil_separa_paragrafos_por_linha_em_branco():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Primeiro paragrafo.\n\nSegundo paragrafo.")))
+
+    linhas = _linhas_de_texto(pagina)
+    assert "Primeiro paragrafo." in linhas
+    assert "Segundo paragrafo." in linhas
+
+
+def test_layout_perfil_em_regular_10_5_preto_alinhado_a_margem_de_45_pt():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Resumo profissional.")))
+
+    linha = next(linha for linha in pagina.extract_text_lines() if linha["text"] == "Resumo profissional.")
+    caractere = linha["chars"][0]
+    assert caractere["fontname"].endswith("Carlito-Regular")
+    assert round(caractere["size"], 1) == 10.5
+    assert _hex(caractere["non_stroking_color"]) == "#000000"
+    assert abs(linha["x0"] - 45) < 1
+
+
+def test_layout_sem_arquivos_de_fonte_usa_helvetica_e_ainda_gera_pdf_valido(tmp_path):
+    registrador = RegistradorFontesPdf(diretorio_fontes=tmp_path / "inexistente")
+    gerador = GeradorPdfClient(registrador_fontes=registrador)
+
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto")), gerador=gerador)
+
+    nomes = {caractere["fontname"] for caractere in pagina.chars}
+    assert any("Helvetica" in nome for nome in nomes)
+    assert not any("Carlito" in nome for nome in nomes)
+
+
+def test_layout_dois_pontos_do_rotulo_de_tecnologia_tambem_ficam_em_negrito():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Languages: Java")))
+
+    linha = next(linha for linha in pagina.extract_text_lines() if linha["text"] == "Languages: Java")
+    negrito = "".join(c["text"] for c in linha["chars"] if c["fontname"].endswith("Carlito-Bold"))
+    assert negrito == "Languages:"

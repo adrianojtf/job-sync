@@ -5,7 +5,7 @@
 - [x] 1.0 Fontes Carlito, `RegistradorFontesPdf` e `EstiloCurriculoPdf`
 - [x] 2.0 `InterpretadorExperiencias` e `BlocoExperiencia`
 - [x] 3.0 `CatalogoLocalizacao`: título "Technical Skills"
-- [ ] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
+- [x] 4.0 `GeradorPdfClient`: página, cabeçalho, títulos de seção, tecnologias e perfil
 - [ ] 5.0 `GeradorPdfClient`: experiências com empresa/período, cargo, tópicos e contexto
 - [ ] 6.0 `GeradorPdfClient`: formação, certificações e idiomas
 - [x] 7.0 Prompts de IA: preservar quebras de linha e tópicos `-`

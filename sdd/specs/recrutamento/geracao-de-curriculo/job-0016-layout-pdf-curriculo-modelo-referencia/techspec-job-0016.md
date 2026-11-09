@@ -25,7 +25,7 @@ Medidas extraídas do modelo com `pdfplumber` (fonte da verdade do layout):
 | Nome | Carlito Bold 16 | `#1F3864` | Centralizado, caixa alta |
 | Contato | Carlito Regular 10 | `#595959` (link `#0563C1`, sublinhado) | Centralizado |
 | Título de seção | Carlito Bold 11 | `#1F3864` | Caixa alta; linha 0,75 pt `#1F3864` ~13 pt abaixo |
-| Rótulo de tecnologia | Carlito Bold 10,5 | `#000000` | Uma categoria por linha, passo ~14,8 pt |
+| Rótulo de tecnologia | Carlito Bold 10,5 (inclui os dois-pontos) | `#000000` | Uma categoria por linha, passo ~14,8 pt |
 | Corpo / perfil | Carlito Regular 10,5 | `#000000` | Entrelinha 12,8 pt |
 | Empresa | Carlito Bold 11,5 | `#000000` | Esquerda |
 | Período | Carlito Regular 10,5 | `#595959` | Alinhado à direita, termina em x = 513 pt |

@@ -17,6 +17,7 @@ import { ConfirmacaoModal } from "../../shared/ui/ConfirmacaoModal";
 import { Field } from "../../shared/ui/Field";
 import { Panel } from "../../shared/ui/Panel";
 import { AvaliarExperienciaModal } from "../perfil/AvaliarExperienciaModal";
+import { AjusteTecnologiaLista } from "./AjusteTecnologiaLista";
 import { SugestaoExperienciaAdaptada } from "./SugestaoExperienciaAdaptada";
 import {
   experienciaAdaptadaParaAvaliacao,
@@ -97,10 +98,13 @@ export function RevisaoCurriculoAdaptado({
       <Aviso>Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar.</Aviso>
       {experienciasEstruturadas && (
         <Aviso tom="alerta">
-          A IA pode ter estimado métricas e volumes nas experiências. Confirme que os números são
-          verdadeiros antes de gerar o PDF.
+          A IA pode ter estimado métricas e volumes nas experiências, trocado tecnologias por
+          equivalentes pedidas na vaga e citado atividades comuns ao seu cargo. Confirme que os
+          números são verdadeiros e que você consegue defender em entrevista o que a IA ajustou
+          antes de gerar o PDF.
         </Aviso>
       )}
+      <AjusteTecnologiaLista ajustes={rascunho.ajustes_tecnologia ?? []} />
 
       <form onSubmit={confirmar} noValidate className={estilos.secoes}>
         <PainelDadosPessoais

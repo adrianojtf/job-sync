@@ -14,9 +14,12 @@ from jobsync.curriculo import (
     Curriculo,
     ExperienciaAdaptada,
     ExperienciaParaAvaliacao,
+    FocoRefino,
+    PedidoRefino,
     RascunhoCurriculoAdaptado,
     TipoSecao,
 )
+from jobsync.curriculo.domain.refino import MAXIMO_SUGESTOES_ANTERIORES
 from jobsync.curriculo.domain.rascunho_curriculo_adaptado import (
     TITULO_EXPERIENCIAS_PADRAO,
     ExperienciaEditada,
@@ -397,6 +400,16 @@ class ExperienciaAdaptadaSchema(BaseModel):
         return experiencia
 
 
+class AjusteTecnologiaSchema(BaseModel):
+    """Troca de tecnologia feita pela IA em uma experiência, para o usuário conferir."""
+
+    indice_experiencia: int = Field(description="Posição da experiência em `experiencias`.")
+    cargo: str = Field(description="Cargo da experiência que recebeu a troca.")
+    empresa: str = Field(description="Empresa da experiência que recebeu a troca.")
+    original: str = Field(description="Tecnologia do perfil substituída.")
+    alvo: str = Field(description="Tecnologia equivalente pedida pela vaga.")
+
+
 class RascunhoCurriculoAdaptadoSchema(BaseModel):
     """Rascunho do currículo adaptado, revisado pelo usuário antes do PDF."""
 
@@ -412,10 +425,20 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                         "cargo": "Dev Backend",
                         "empresa": "TechCorp",
                         "periodo": "2022 - Atual",
-                        "descricao": "Desenvolvi APIs em Python.",
+                        "conquistas": ["Desenvolvi APIs em Angular e Java."],
+                        "contexto": "Na TechCorp, atuei no front-end com Angular.",
                     }
                 ],
                 "titulo_experiencias": "Experiências",
+                "ajustes_tecnologia": [
+                    {
+                        "indice_experiencia": 0,
+                        "cargo": "Dev Backend",
+                        "empresa": "TechCorp",
+                        "original": "React",
+                        "alvo": "Angular",
+                    }
+                ],
             }
         }
     )
@@ -435,9 +458,17 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
         default=TITULO_EXPERIENCIAS_PADRAO,
         description="Título da seção de experiências estruturadas.",
     )
+    ajustes_tecnologia: list[AjusteTecnologiaSchema] = Field(
+        default_factory=list,
+        description=(
+            "Trocas de tecnologia feitas pela IA nas experiências (informativo). "
+            "Ignorado na geração do PDF revisado."
+        ),
+    )
 
     @classmethod
     def from_domain(cls, rascunho: RascunhoCurriculoAdaptado) -> RascunhoCurriculoAdaptadoSchema:
+        experiencias = rascunho.experiencias or ()
         return cls(
             nome_completo=rascunho.nome_completo,
             email=rascunho.email,
@@ -457,6 +488,16 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 ]
             ),
             titulo_experiencias=rascunho.titulo_experiencias,
+            ajustes_tecnologia=[
+                AjusteTecnologiaSchema(
+                    indice_experiencia=ajuste.indice_experiencia,
+                    cargo=experiencias[ajuste.indice_experiencia].cargo,
+                    empresa=experiencias[ajuste.indice_experiencia].empresa,
+                    original=ajuste.equivalencia.original,
+                    alvo=ajuste.equivalencia.alvo,
+                )
+                for ajuste in rascunho.ajustes_tecnologia
+            ],
         )
 
     def to_domain(self) -> RascunhoCurriculoAdaptado:
@@ -712,6 +753,9 @@ class ContextoVagaSchema(BaseModel):
     analise_vaga: AnaliseVagaSchema = Field(
         description="Análise da vaga devolvida junto com o rascunho."
     )
+    cargo_alvo: str = Field(
+        default="", description="Cargo-alvo (título da vaga); orienta a ênfase da sugestão."
+    )
 
     def to_domain(self) -> ContextoVaga:
         """Converte para o domínio; levanta ValueError se o contexto for inválido."""
@@ -719,7 +763,35 @@ class ContextoVagaSchema(BaseModel):
             descricao_vaga=self.descricao_vaga,
             idioma_alvo=self.idioma_alvo,
             analise_vaga=self.analise_vaga.to_domain(),
+            cargo_alvo=self.cargo_alvo,
         )
+
+
+class PedidoRefinoSchema(BaseModel):
+    """Histórico do campo na tela: cada tentativa muda o foco e não repete as anteriores."""
+
+    tentativa: int = Field(default=1, ge=1, description="Número do pedido para o mesmo campo, a partir de 1.")
+    sugestoes_anteriores: list[str] = Field(
+        default_factory=list,
+        max_length=MAXIMO_SUGESTOES_ANTERIORES,
+        description="Últimas sugestões já mostradas para o campo, para a IA não repeti-las.",
+    )
+
+    def to_domain(self) -> PedidoRefino:
+        return PedidoRefino(
+            tentativa=self.tentativa, sugestoes_anteriores=tuple(self.sugestoes_anteriores)
+        )
+
+
+def _campo_refino():
+    return Field(
+        default_factory=PedidoRefinoSchema,
+        description="Tentativa e sugestões anteriores; sem ele, vale a primeira tentativa.",
+    )
+
+
+def _campo_foco():
+    return Field(description="Foco usado nesta sugestão, em rodízio pela tentativa.")
 
 
 class SugerirAjusteSecaoRequest(BaseModel):
@@ -738,12 +810,14 @@ class SugerirAjusteSecaoRequest(BaseModel):
         default=None,
         description="Contexto da vaga; sem ele, a IA apenas melhora a escrita.",
     )
+    refino: PedidoRefinoSchema = _campo_refino()
 
 
 class SugerirAjusteSecaoResponse(BaseModel):
     """Texto sugerido para a seção; nada é alterado ou persistido."""
 
     conteudo_sugerido: str = Field(description="Nova versão do conteúdo da seção.")
+    foco: FocoRefino = _campo_foco()
 
 
 class SugerirAjusteExperienciaRequest(BaseModel):
@@ -758,12 +832,14 @@ class SugerirAjusteExperienciaRequest(BaseModel):
     experiencia: ExperienciaParaAvaliacaoRequest = Field(
         description="Experiência com a descrição atual, incluindo edições."
     )
+    refino: PedidoRefinoSchema = _campo_refino()
 
 
 class SugerirAjusteExperienciaResponse(BaseModel):
     """Descrição sugerida; cargo, empresa e período não são alterados."""
 
     descricao_sugerida: str = Field(description="Nova versão da descrição da experiência.")
+    foco: FocoRefino = _campo_foco()
 
 
 class SugerirAjusteExperienciaAdaptadaRequest(BaseModel):
@@ -775,6 +851,7 @@ class SugerirAjusteExperienciaAdaptadaRequest(BaseModel):
     contexto_vaga: ContextoVagaSchema = Field(
         description="Vaga que orienta a sugestão: descrição, idioma e análise devolvida com o rascunho."
     )
+    refino: PedidoRefinoSchema = _campo_refino()
 
 
 class SugerirAjusteExperienciaAdaptadaResponse(BaseModel):
@@ -782,3 +859,4 @@ class SugerirAjusteExperienciaAdaptadaResponse(BaseModel):
 
     conquistas: list[str] = Field(description="Conquistas sugeridas, uma por item.")
     contexto: str = Field(description="Contexto sugerido.")
+    foco: FocoRefino = _campo_foco()

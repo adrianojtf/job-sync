@@ -15,6 +15,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
+from jobsync.curriculo.domain.equivalencia_tecnologia import AjusteTecnologia
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.curriculo.domain.rotulos_experiencia import rotulo_contexto
 
@@ -38,6 +39,8 @@ class RascunhoCurriculoAdaptado:
     secoes: tuple[SecaoCurriculo, ...]
     experiencias: tuple[ExperienciaAdaptada, ...] | None = None
     titulo_experiencias: str = TITULO_EXPERIENCIAS_PADRAO
+    ajustes_tecnologia: tuple[AjusteTecnologia, ...] = ()
+    """Trocas de tecnologia que a IA fez nas experiências, para o usuário conferir na revisão."""
 
     def __post_init__(self) -> None:
         if not _preenchido(self.nome_completo):
@@ -50,6 +53,12 @@ class RascunhoCurriculoAdaptado:
             raise ValueError(
                 "As experiências devem vir estruturadas ou como seção de texto, não ambos."
             )
+        quantidade_experiencias = len(self.experiencias or ())
+        if any(
+            not 0 <= ajuste.indice_experiencia < quantidade_experiencias
+            for ajuste in self.ajustes_tecnologia
+        ):
+            raise ValueError("Cada ajuste de tecnologia precisa apontar uma experiência estruturada.")
 
     @classmethod
     def revisado(

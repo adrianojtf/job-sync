@@ -3,7 +3,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from jobsync.curriculo import AjustadorExperienciaPort, ContextoVaga, ExperienciaAdaptada
+from jobsync.curriculo import (
+    AjustadorExperienciaPort,
+    ContextoVaga,
+    ExperienciaAdaptada,
+    FocoRefino,
+    PedidoRefino,
+)
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada import (
     SugerirAjusteExperienciaAdaptada,
 )
@@ -47,13 +53,11 @@ class TestSugerirAjusteExperienciaAdaptada:
         resultado = caso_de_uso.executar(_experiencia(), contexto)
 
         ajustador.refinar.assert_called_once_with(
-            experiencia=_experiencia(),
-            descricao_vaga="Vaga Python",
-            idioma_alvo="en",
-            analise_vaga=contexto.analise_vaga,
+            experiencia=_experiencia(), contexto=contexto, refino=PedidoRefino()
         )
-        assert resultado.conquistas == ("Sugestão A.", "Sugestão B.")
-        assert resultado.contexto == "Contexto sugerido."
+        assert resultado.valor.conquistas == ("Sugestão A.", "Sugestão B.")
+        assert resultado.valor.contexto == "Contexto sugerido."
+        assert resultado.foco == FocoRefino.ADERENCIA_VAGA
 
     def test_preserva_cargo_empresa_e_periodo_do_input(self):
         caso_de_uso, ajustador = _caso_de_uso()
@@ -63,8 +67,12 @@ class TestSugerirAjusteExperienciaAdaptada:
 
         resultado = caso_de_uso.executar(_experiencia(), _contexto())
 
-        assert (resultado.cargo, resultado.empresa, resultado.periodo) == ("Dev", "TechCorp", "2024")
-        assert resultado.conquistas == ("Sugestão.",)
+        assert (resultado.valor.cargo, resultado.valor.empresa, resultado.valor.periodo) == (
+            "Dev",
+            "TechCorp",
+            "2024",
+        )
+        assert resultado.valor.conquistas == ("Sugestão.",)
 
     def test_aceita_experiencia_so_com_contexto(self):
         caso_de_uso, ajustador = _caso_de_uso()
@@ -114,3 +122,26 @@ class TestSugerirAjusteExperienciaAdaptada:
 
         with pytest.raises(SugestaoIAIndisponivel):
             caso_de_uso.executar(_experiencia(), _contexto())
+
+
+class TestSugerirAjusteExperienciaAdaptadaRefino:
+    def test_repassa_o_refino_e_devolve_o_foco_com_vaga(self):
+        caso_de_uso, ajustador = _caso_de_uso()
+        contexto = _contexto()
+        refino = PedidoRefino(tentativa=4, sugestoes_anteriores=("- Versão 3.",))
+        ajustador.refinar.return_value = _experiencia()
+
+        resultado = caso_de_uso.executar(_experiencia(), contexto, refino)
+
+        ajustador.refinar.assert_called_once_with(experiencia=_experiencia(), contexto=contexto, refino=refino)
+        assert resultado.foco == FocoRefino.CLAREZA_CONCISAO
+
+    def test_sugestao_anterior_acima_do_limite_nao_chama_a_ia(self):
+        caso_de_uso, ajustador = _caso_de_uso()
+
+        with pytest.raises(ValueError, match="5000"):
+            caso_de_uso.executar(
+                _experiencia(), _contexto(), PedidoRefino(tentativa=2, sugestoes_anteriores=("a" * 5001,))
+            )
+
+        ajustador.refinar.assert_not_called()

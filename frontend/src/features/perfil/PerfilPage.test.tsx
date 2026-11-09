@@ -289,14 +289,17 @@ describe("PerfilPage", () => {
       servidorApi.use(
         http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
           pedidos.push({ rota: "secao", corpo: (await request.json()) as Record<string, unknown> });
-          return HttpResponse.json({ conteudo_sugerido: "Resumo mais claro." });
+          return HttpResponse.json({ conteudo_sugerido: "Resumo mais claro.", foco: "impacto" });
         }),
         http.post(`${API_TESTE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
           pedidos.push({
             rota: "experiencia",
             corpo: (await request.json()) as Record<string, unknown>,
           });
-          return HttpResponse.json({ descricao_sugerida: "Desenvolvi APIs REST em Java." });
+          return HttpResponse.json({
+            descricao_sugerida: "Desenvolvi APIs REST em Java.",
+            foco: "impacto",
+          });
         }),
       );
       return pedidos;
@@ -327,7 +330,10 @@ describe("PerfilPage", () => {
 
       expect(pedidos[0]).toEqual({
         rota: "secao",
-        corpo: { secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Backend. Com APIs." } },
+        corpo: {
+          secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Backend. Com APIs." },
+          refino: { tentativa: 1, sugestoes_anteriores: [] },
+        },
       });
       expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo mais claro.");
       expect(screen.getByText("Alterações não salvas")).toBeInTheDocument();
@@ -355,6 +361,7 @@ describe("PerfilPage", () => {
             periodo: "2020-2024",
             descricao: "APIs em Java.",
           },
+          refino: { tentativa: 1, sugestoes_anteriores: [] },
         },
       });
       expect(screen.getByLabelText("Descrição")).toHaveValue("Desenvolvi APIs REST em Java.");

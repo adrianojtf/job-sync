@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from jobsync.curriculo import ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import ExperienciaParaAvaliacao, PedidoRefino, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.adapters.melhorador_texto_curriculo_openai_client import (
     MelhoradorTextoCurriculoOpenAIClient,
 )
@@ -27,7 +27,7 @@ class TestMelhoradorTextoCurriculoOpenAIClient:
         cliente = _cliente({"texto_sugerido": "  Engenheira backend com foco em APIs.  "})
         secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Trabalho com backend.")
 
-        sugerida = MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao)
+        sugerida = MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao, PedidoRefino())
 
         assert sugerida == SecaoCurriculo(
             TipoSecao.PERFIL, "Perfil", "Engenheira backend com foco em APIs."
@@ -37,7 +37,7 @@ class TestMelhoradorTextoCurriculoOpenAIClient:
         cliente = _cliente({"texto_sugerido": "Texto"})
         secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Trabalho com backend.")
 
-        MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao)
+        MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao, PedidoRefino())
 
         argumentos = cliente.solicitar_json.call_args.kwargs
         assert "idioma" in argumentos["prompt_sistema"].lower()
@@ -48,7 +48,7 @@ class TestMelhoradorTextoCurriculoOpenAIClient:
         cliente = _cliente({"texto_sugerido": "Desenvolvi APIs REST em Python."})
 
         sugerida = MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_experiencia(
-            _experiencia()
+            _experiencia(), PedidoRefino()
         )
 
         assert sugerida == ExperienciaParaAvaliacao(
@@ -64,4 +64,30 @@ class TestMelhoradorTextoCurriculoOpenAIClient:
         secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Trabalho com backend.")
 
         with pytest.raises(ValueError, match="texto sugerido"):
-            MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao)
+            MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao, PedidoRefino())
+
+
+class TestMelhoradorTextoCurriculoOpenAIClientRefino:
+    def test_secao_usa_o_foco_sem_vaga_da_tentativa_e_as_sugestoes_anteriores(self):
+        cliente = _cliente({"texto_sugerido": "Texto"})
+        secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Trabalho com backend.")
+        refino = PedidoRefino(tentativa=2, sugestoes_anteriores=("Versão anterior.",))
+
+        MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_secao(secao, refino)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Parta do texto atual" in usuario
+        assert "Foco desta versão: clareza e concisão" in usuario
+        assert "Não repita estas versões já sugeridas" in usuario
+        assert "Versão anterior." in usuario
+
+    def test_experiencia_usa_o_foco_sem_vaga_da_tentativa(self):
+        cliente = _cliente({"texto_sugerido": "Texto"})
+
+        MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_experiencia(
+            _experiencia(), PedidoRefino(tentativa=3)
+        )
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Foco desta versão: ênfase técnica" in usuario
+        assert "Não repita" not in usuario

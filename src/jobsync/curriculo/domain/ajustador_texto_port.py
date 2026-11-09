@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jobsync.curriculo import SecaoCurriculo
-    from jobsync.vaga import AnaliseVaga
+    from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, PedidoRefino, SecaoCurriculo
 
 
 class AjustadorTextoPort(ABC):
@@ -16,24 +16,24 @@ class AjustadorTextoPort(ABC):
     def ajustar_secao(
         self,
         secao: SecaoCurriculo,
-        descricao_vaga: str,
-        idioma_alvo: str,
-        analise_vaga: AnaliseVaga,
+        contexto: ContextoVaga,
+        ajustes: Sequence[EquivalenciaTecnologia] = (),
     ) -> SecaoCurriculo:
         """Retorna uma nova SecaoCurriculo com o conteúdo reescrito.
 
             Args:
                 secao: seção original extraída do currículo (ex.: TECNOLOGIAS, PERFIL).
-                descricao_vaga: texto livre com a descrição da vaga-alvo.
-                idioma_alvo: "pt" ou "en".
-                analise_vaga: análise estruturada da descrição de vaga para orientar o ajuste.
+                contexto: vaga-alvo (descrição, idioma "pt" ou "en", análise estruturada
+                e cargo-alvo) que orienta o ajuste.
+                ajustes: tecnologias equivalentes trocadas nas experiências (JOB-0037). A seção
+                de tecnologias lista a original e a equivalente; o resumo pode citar a equivalente.
 
             Regras de reescrita:
                 - Preservar fatos verificáveis: empresas e datas do currículo original
                 não podem ser alteradas.
                 - Priorizar e reformular a ênfase e o idioma conforme a vaga-alvo.
                 - Sempre extrair todas as tecnologias, ferramentas, frameworks e metodologias
-                mencionadas em `analise_vaga` como DESCRICAO_VAGA e incluir cada
+                mencionadas em `contexto.analise_vaga` como DESCRICAO_VAGA e incluir cada
                 uma delas na seção de tecnologias reescrita, mesmo que não constem
                 na secao.
                 - Objetivo: maximizar a correspondência de palavras-chave com a vaga
@@ -41,5 +41,16 @@ class AjustadorTextoPort(ABC):
 
             Returns:
                 Nova instância de SecaoCurriculo com o conteúdo ajustado.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def refinar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino
+    ) -> SecaoCurriculo:
+        """Refina o texto atual da seção para a vaga, com o foco da tentativa (JOB-0037).
+
+        Parte do texto atual do usuário, e não da geração inicial, e não repete as
+        `refino.sugestoes_anteriores`.
         """
         raise NotImplementedError

@@ -45,9 +45,13 @@ class AjustadorTextoFake(AjustadorTextoPort):
     def __init__(self):
         self.chamadas = 0
 
-    def ajustar_secao(self, secao, descricao_vaga, idioma_alvo, analise_vaga):
+    def ajustar_secao(self, secao, contexto):
         self.chamadas += 1
+        self.contexto = contexto
         return secao.com_novo_conteudo(f"[AJUSTADO] {secao.conteudo}")
+
+    def refinar_secao(self, secao, contexto, refino):
+        return secao
 
 
 class GeradorPdfFake(GeradorPdfPort):
@@ -99,12 +103,13 @@ def _input_dto(**overrides) -> CandidatarNaVagaExternaInputDto:
 def _use_case(
     analise: AnaliseVaga | None = None,
     gerador_carta: GerarCartaApresentacaoFake | None = None,
+    ajustador_texto: AjustadorTextoFake | None = None,
 ) -> CandidatarNaVagaExterna:
     analise = analise or AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
     return CandidatarNaVagaExterna(
         extrator=ExtratorFake(_curriculo()),
         analisador_vaga=JobDescriptionAnalyzerFake(analise),
-        ajustador_texto=AjustadorTextoFake(),
+        ajustador_texto=ajustador_texto or AjustadorTextoFake(),
         gerador_pdf=GeradorPdfFake(),
         calcular_ats_score=CalcularAtsScore(),
         gerador_carta=gerador_carta or GerarCartaApresentacaoFake(),
@@ -148,6 +153,18 @@ class TestCandidatarNaVagaExterna:
         assert analise_recebida is analise
         assert idioma_recebido == "pt"
         assert curriculo_recebido.obter_secao(TipoSecao.TECNOLOGIAS).conteudo == "[AJUSTADO] Python, Docker"
+
+    def test_secoes_sao_ajustadas_com_o_contexto_da_vaga_e_o_cargo_alvo(self):
+        analise = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
+        ajustador_texto = AjustadorTextoFake()
+        use_case = _use_case(analise=analise, ajustador_texto=ajustador_texto)
+
+        use_case.executar(_input_dto())
+
+        assert ajustador_texto.contexto.descricao_vaga == "Vaga remota para engenheiro backend com Python."
+        assert ajustador_texto.contexto.idioma_alvo == "pt"
+        assert ajustador_texto.contexto.analise_vaga is analise
+        assert ajustador_texto.contexto.cargo_alvo == "Engenheiro de Software"
 
     def test_pdf_vazio_gera_erro(self):
         use_case = _use_case()

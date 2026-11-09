@@ -23,6 +23,9 @@ from jobsync.curriculo.adapters.avaliador_experiencia_jev_client import (
     AvaliadorExperienciaJevClient,
 )
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
+from jobsync.curriculo.adapters.identificador_equivalencias_openai_client import (
+    IdentificadorEquivalenciasOpenAIClient,
+)
 from jobsync.curriculo.adapters.gerar_sugestoes_ats_client import GerarSugestoesAtsClient
 from jobsync.curriculo.adapters.melhorador_texto_curriculo_openai_client import (
     MelhoradorTextoCurriculoOpenAIClient,
@@ -149,6 +152,7 @@ def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
         avaliador_descricao_vaga=avaliador_vaga,
         ajustador_experiencia=AjustadorExperienciaOpenAIClient(),
         avaliador_experiencia=avaliador_experiencia,
+        identificador_equivalencias=IdentificadorEquivalenciasOpenAIClient(),
     )
 
 

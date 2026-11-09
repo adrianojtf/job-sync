@@ -3,7 +3,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from jobsync.curriculo import ExperienciaAdaptada, ExperienciaParaAvaliacao
+from jobsync.curriculo import (
+    ContextoVaga,
+    DiretrizesExperiencia,
+    EquivalenciaTecnologia,
+    PedidoRefino,
+    ExperienciaAdaptada,
+    ExperienciaParaAvaliacao,
+)
 from jobsync.curriculo.adapters.ajustador_experiencia_openai_client import (
     AjustadorExperienciaOpenAIClient,
 )
@@ -65,21 +72,36 @@ def _atual() -> ExperienciaAdaptada:
     )
 
 
-def _ajustar(cliente: Mock, descricao: str = "Fiz APIs em Java.", idioma: str = "pt"):
-    return AjustadorExperienciaOpenAIClient(cliente).ajustar(
-        experiencia=_original(descricao),
+def _contexto(idioma: str = "pt", cargo_alvo: str = "") -> ContextoVaga:
+    return ContextoVaga(
         descricao_vaga="Vaga Java sênior",
         idioma_alvo=idioma,
         analise_vaga=_analise(),
+        cargo_alvo=cargo_alvo,
     )
 
 
-def _refinar(cliente: Mock, idioma: str = "pt"):
+def _ajustar(
+    cliente: Mock,
+    descricao: str = "Fiz APIs em Java.",
+    idioma: str = "pt",
+    cargo_alvo: str = "",
+    diretrizes: DiretrizesExperiencia | None = None,
+):
+    return AjustadorExperienciaOpenAIClient(cliente).ajustar(
+        experiencia=_original(descricao),
+        contexto=_contexto(idioma, cargo_alvo),
+        diretrizes=diretrizes or DiretrizesExperiencia(),
+    )
+
+
+def _refinar(
+    cliente: Mock, idioma: str = "pt", cargo_alvo: str = "", refino: PedidoRefino | None = None
+):
     return AjustadorExperienciaOpenAIClient(cliente).refinar(
         experiencia=_atual(),
-        descricao_vaga="Vaga Java sênior",
-        idioma_alvo=idioma,
-        analise_vaga=_analise(),
+        contexto=_contexto(idioma, cargo_alvo),
+        refino=refino or PedidoRefino(),
     )
 
 
@@ -180,3 +202,101 @@ class TestAjustadorExperienciaOpenAIClientRefinar:
     def test_resposta_fora_do_formato_gera_erro(self):
         with pytest.raises(ValueError, match="conquistas"):
             _refinar(_cliente({"conquistas": []}))
+
+
+class TestAjustadorExperienciaOpenAIClientCargoAlvo:
+    def test_ajustar_envia_o_cargo_alvo_no_prompt_do_usuario(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, cargo_alvo="Code Reviewer")
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Cargo-alvo (título da vaga): Code Reviewer" in usuario
+
+    def test_refinar_envia_o_cargo_alvo_no_prompt_do_usuario(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente, cargo_alvo="Code Reviewer")
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Cargo-alvo (título da vaga): Code Reviewer" in usuario
+
+    def test_sem_cargo_alvo_o_prompt_nao_cita_o_cargo_alvo(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Cargo-alvo" not in usuario
+
+
+class TestAjustadorExperienciaOpenAIClientDiretrizes:
+    def test_prompt_de_sistema_traz_as_regras_de_cargo_alvo_tecnologias_e_responsabilidades(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
+        assert "Use o cargo-alvo para escolher a ênfase e o vocabulário" in sistema
+        assert "Não acrescente tecnologias além das que estão no texto e das trocas indicadas" in sistema
+        assert "responsabilidade essencial da vaga" in sistema
+        assert "comum ao cargo desta experiência" in sistema
+        assert "atípicas para o cargo" in sistema
+        assert "não invente métricas para elas" in sistema
+
+    def test_troca_indica_a_tecnologia_nova_e_pede_citacao_explicita_no_contexto(self):
+        cliente = _cliente(RESPOSTA)
+        diretrizes = DiretrizesExperiencia(trocar=(EquivalenciaTecnologia(original="React", alvo="Angular"),))
+
+        _ajustar(cliente, diretrizes=diretrizes)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Use Angular no lugar de React" in usuario
+        assert "cite Angular de forma explícita no contexto" in usuario
+
+    def test_manutencao_pede_citacao_explicita_da_tecnologia_original(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, diretrizes=DiretrizesExperiencia(manter=("React",)))
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Mantenha React" in usuario
+        assert "cite React de forma explícita no contexto" in usuario
+
+    def test_sem_diretrizes_o_prompt_nao_traz_ajustes_de_tecnologia(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Ajustes de tecnologia" not in usuario
+
+    def test_refinar_mantem_as_tecnologias_ja_citadas(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Mantenha as tecnologias já citadas nas conquistas e no contexto atuais" in usuario
+
+
+class TestAjustadorExperienciaOpenAIClientRefino:
+    def test_refinar_usa_o_foco_com_vaga_da_tentativa_e_as_sugestoes_anteriores(self):
+        cliente = _cliente(RESPOSTA)
+        refino = PedidoRefino(tentativa=2, sugestoes_anteriores=("- Versão anterior.",))
+
+        _refinar(cliente, refino=refino)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Foco desta versão: impacto e resultados" in usuario
+        assert "Não repita estas versões já sugeridas" in usuario
+        assert "- Versão anterior." in usuario
+
+    def test_primeira_tentativa_foca_na_aderencia_a_vaga(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Foco desta versão: aderência à vaga" in usuario
+        assert "Não repita" not in usuario

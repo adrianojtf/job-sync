@@ -1,0 +1,17 @@
+.bloco {
+  border: 1px solid #f5dfb8;
+  border-radius: var(--raio-lg);
+  background: var(--amber-soft);
+  color: var(--amber);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.titulo {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.lista {
+  margin: 0;
+  padding-left: 18px;
+}

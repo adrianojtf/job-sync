@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { entrar, novoPerfil, PDF_MINIMO, SAUDACAO, semearPerfilCompleto } from "./apoio";
+import {
+  entrar,
+  EXPERIENCIAS_COM_REACT,
+  novoPerfil,
+  PDF_MINIMO,
+  SAUDACAO,
+  semearPerfilCompleto,
+} from "./apoio";
 
 test("primeiro acesso: entrar, ver a Visão geral vazia e salvar o currículo mestre", async ({
   page,
@@ -182,4 +189,50 @@ test("Meu perfil: sugestão de IA sem vaga altera o campo, mas não salva o perf
 
   await page.reload();
   await expect(page.getByLabel("Resumo profissional")).toHaveValue("Backend Python.");
+});
+
+test("revisão mostra a troca de tecnologia equivalente pedida pela vaga só na experiência mais recente", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-ajustes-tecnologia");
+  await semearPerfilCompleto(request, perfil, EXPERIENCIAS_COM_REACT);
+  await entrar(page, perfil);
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Desenvolvedor Angular");
+  await page.getByLabel("Empresa").fill("Globex");
+  await page.getByLabel("Descrição da vaga").fill("Java e Angular.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+
+  const ajustes = page.getByRole("list", { name: "Ajustes de tecnologia" });
+  await expect(ajustes.getByRole("listitem")).toHaveCount(1);
+  await expect(ajustes).toContainText("React → Angular em Front-end — Acme");
+  await expect(
+    page.getByRole("group", { name: "Experiência 1" }).getByLabel("Contexto"),
+  ).toHaveValue("Contexto de Acme. Com Angular.");
+  await expect(
+    page.getByRole("group", { name: "Experiência 2" }).getByLabel("Contexto"),
+  ).toHaveValue("Contexto de Initech.");
+  await expect(page.getByText(/defender em entrevista/)).toBeVisible();
+});
+
+test("pedidos seguidos de sugestão na revisão mudam o foco da IA", async ({ page, request }) => {
+  const perfil = novoPerfil("e2e-refino");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Senior Python Engineer");
+  await page.getByLabel("Empresa").fill("Globex");
+  await page.getByLabel("Descrição da vaga").fill("Python, FastAPI e Kafka.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+  const sugestao = page.getByRole("region", { name: "Sugestão da IA para resumo" });
+
+  await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
+  await expect(sugestao).toContainText("Foco: aderência à vaga");
+  await page.getByRole("button", { name: "Descartar sugestão de resumo" }).click();
+  await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
+
+  await expect(sugestao).toContainText("Foco: impacto e resultados");
 });

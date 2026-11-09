@@ -6,7 +6,9 @@ import pytest
 from jobsync.curriculo import (
     AjustadorTextoPort,
     ContextoVaga,
+    FocoRefino,
     MelhoradorTextoCurriculoPort,
+    PedidoRefino,
     SecaoCurriculo,
     TipoSecao,
 )
@@ -40,18 +42,17 @@ class TestSugerirAjusteSecaoCurriculo:
         caso_de_uso, ajustador, melhorador = _caso_de_uso()
         contexto = _contexto()
         sugerida = _secao(conteudo="Sugestão da IA.")
-        ajustador.ajustar_secao.return_value = sugerida
+        ajustador.refinar_secao.return_value = sugerida
 
         resultado = caso_de_uso.executar(_secao(), contexto)
 
-        ajustador.ajustar_secao.assert_called_once_with(
-            secao=_secao(),
-            descricao_vaga="Vaga Python",
-            idioma_alvo="en",
-            analise_vaga=contexto.analise_vaga,
+        ajustador.refinar_secao.assert_called_once_with(
+            secao=_secao(), contexto=contexto, refino=PedidoRefino()
         )
+        ajustador.ajustar_secao.assert_not_called()
         melhorador.melhorar_secao.assert_not_called()
-        assert resultado == sugerida
+        assert resultado.valor == sugerida
+        assert resultado.foco == FocoRefino.ADERENCIA_VAGA
 
     def test_sem_contexto_melhora_a_escrita_sem_vaga(self):
         caso_de_uso, ajustador, melhorador = _caso_de_uso()
@@ -60,9 +61,10 @@ class TestSugerirAjusteSecaoCurriculo:
 
         resultado = caso_de_uso.executar(_secao(), None)
 
-        melhorador.melhorar_secao.assert_called_once_with(_secao())
-        ajustador.ajustar_secao.assert_not_called()
-        assert resultado == sugerida
+        melhorador.melhorar_secao.assert_called_once_with(_secao(), PedidoRefino())
+        ajustador.refinar_secao.assert_not_called()
+        assert resultado.valor == sugerida
+        assert resultado.foco == FocoRefino.IMPACTO
 
     @pytest.mark.parametrize(
         "tipo", [TipoSecao.PERFIL, TipoSecao.TECNOLOGIAS, TipoSecao.EXPERIENCIAS]
@@ -73,7 +75,7 @@ class TestSugerirAjusteSecaoCurriculo:
 
         resultado = caso_de_uso.executar(_secao(tipo), None)
 
-        assert resultado.tipo == tipo
+        assert resultado.valor.tipo == tipo
 
     @pytest.mark.parametrize(
         "tipo", [TipoSecao.FORMACAO, TipoSecao.CERTIFICACOES, TipoSecao.IDIOMAS]
@@ -84,7 +86,7 @@ class TestSugerirAjusteSecaoCurriculo:
         with pytest.raises(ValueError, match="sugestão"):
             caso_de_uso.executar(_secao(tipo), None)
 
-        ajustador.ajustar_secao.assert_not_called()
+        ajustador.refinar_secao.assert_not_called()
         melhorador.melhorar_secao.assert_not_called()
 
     def test_texto_acima_do_limite_nao_chama_a_ia(self):
@@ -93,13 +95,44 @@ class TestSugerirAjusteSecaoCurriculo:
         with pytest.raises(ValueError, match="5000"):
             caso_de_uso.executar(_secao(conteudo="a" * 5001), _contexto())
 
-        ajustador.ajustar_secao.assert_not_called()
+        ajustador.refinar_secao.assert_not_called()
         melhorador.melhorar_secao.assert_not_called()
 
     @pytest.mark.parametrize("erro", [RuntimeError("falha"), ValueError("resposta inválida")])
     def test_falha_do_provedor_vira_sugestao_indisponivel(self, erro):
         caso_de_uso, ajustador, _ = _caso_de_uso()
-        ajustador.ajustar_secao.side_effect = erro
+        ajustador.refinar_secao.side_effect = erro
 
         with pytest.raises(SugestaoIAIndisponivel):
             caso_de_uso.executar(_secao(), _contexto())
+
+
+class TestSugerirAjusteSecaoCurriculoRefino:
+    def test_repassa_o_refino_e_devolve_o_foco_da_tentativa(self):
+        caso_de_uso, ajustador, _ = _caso_de_uso()
+        contexto = _contexto()
+        refino = PedidoRefino(tentativa=2, sugestoes_anteriores=("Versão 1.",))
+        ajustador.refinar_secao.return_value = _secao(conteudo="Versão 2.")
+
+        resultado = caso_de_uso.executar(_secao(), contexto, refino)
+
+        ajustador.refinar_secao.assert_called_once_with(secao=_secao(), contexto=contexto, refino=refino)
+        assert resultado.foco == FocoRefino.IMPACTO
+
+    def test_sem_vaga_usa_o_rodizio_sem_vaga(self):
+        caso_de_uso, _, melhorador = _caso_de_uso()
+        melhorador.melhorar_secao.return_value = _secao()
+
+        resultado = caso_de_uso.executar(_secao(), None, PedidoRefino(tentativa=3))
+
+        assert resultado.foco == FocoRefino.ENFASE_TECNICA
+
+    def test_sugestao_anterior_acima_do_limite_nao_chama_a_ia(self):
+        caso_de_uso, ajustador, _ = _caso_de_uso()
+
+        with pytest.raises(ValueError, match="5000"):
+            caso_de_uso.executar(
+                _secao(), _contexto(), PedidoRefino(tentativa=2, sugestoes_anteriores=("a" * 5001,))
+            )
+
+        ajustador.refinar_secao.assert_not_called()

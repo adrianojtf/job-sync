@@ -11,12 +11,13 @@ import os
 from pathlib import Path
 
 from jobsync.ats_score import CalcularAtsScore, ResultadoAtsScore
-from jobsync.curriculo import AvaliacaoExperiencia, Curriculo, ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import AvaliacaoExperiencia, ContextoVaga, Curriculo, DiretrizesExperiencia, EquivalenciaTecnologia, PedidoRefino, ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
+from jobsync.curriculo.domain.identificador_equivalencias_port import IdentificadorEquivalenciasPort
 from jobsync.curriculo.domain.gerar_carta_apresentacao_port import GerarCartaApresentacaoPort
 from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsPort
 from jobsync.curriculo.domain.melhorador_texto_curriculo_port import MelhoradorTextoCurriculoPort
@@ -71,24 +72,37 @@ class AnalisadorVagaE2E(JobDescriptionAnalyzerPort):
 
 
 class AjustadorTextoE2E(AjustadorTextoPort):
-    def ajustar_secao(self, secao: SecaoCurriculo, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga) -> SecaoCurriculo:
+    def ajustar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()) -> SecaoCurriculo:
         return secao
+
+    def refinar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino) -> SecaoCurriculo:
+        return secao
+
+
+class IdentificadorEquivalenciasE2E(IdentificadorEquivalenciasPort):
+    """Aponta React → Angular quando a vaga cita Angular; nada nos demais casos."""
+
+    def identificar(self, experiencias, contexto: ContextoVaga) -> tuple[EquivalenciaTecnologia, ...]:
+        if "angular" in contexto.descricao_vaga.lower():
+            return (EquivalenciaTecnologia(original="React", alvo="Angular"),)
+        return ()
 
 
 class AjustadorExperienciaE2E(AjustadorExperienciaPort):
     def ajustar(
-        self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+        self, experiencia: ExperienciaParaAvaliacao, contexto: ContextoVaga, diretrizes: DiretrizesExperiencia
     ) -> ExperienciaAdaptada:
+        trocas = "".join(f" Com {troca.alvo}." for troca in diretrizes.trocar)
         return ExperienciaAdaptada(
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
             conquistas=(experiencia.descricao,) if experiencia.descricao.strip() else (),
-            contexto=f"Contexto de {experiencia.empresa}.",
+            contexto=f"Contexto de {experiencia.empresa}.{trocas}",
         )
 
     def refinar(
-        self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+        self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga, refino: PedidoRefino
     ) -> ExperienciaAdaptada:
         return experiencia
 
@@ -96,18 +110,21 @@ class AjustadorExperienciaE2E(AjustadorExperienciaPort):
 class AjustadorTextoSugestaoE2E(AjustadorTextoPort):
     """Sugestão com vaga: marca o texto recebido, para o E2E provar de onde veio."""
 
-    def ajustar_secao(self, secao: SecaoCurriculo, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga) -> SecaoCurriculo:
+    def ajustar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()) -> SecaoCurriculo:
+        raise NotImplementedError("As sugestões com vaga usam refinar_secao.")
+
+    def refinar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino) -> SecaoCurriculo:
         return secao.com_novo_conteudo(f"Sugestão com vaga: {secao.conteudo}")
 
 
 class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
     def ajustar(
-        self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+        self, experiencia: ExperienciaParaAvaliacao, contexto: ContextoVaga, diretrizes: DiretrizesExperiencia
     ) -> ExperienciaAdaptada:
         raise NotImplementedError("As sugestões com vaga usam refinar.")
 
     def refinar(
-        self, experiencia: ExperienciaAdaptada, descricao_vaga: str, idioma_alvo: str, analise_vaga: AnaliseVaga
+        self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga, refino: PedidoRefino
     ) -> ExperienciaAdaptada:
         return ExperienciaAdaptada(
             cargo=experiencia.cargo,
@@ -121,10 +138,12 @@ class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
 class MelhoradorTextoE2E(MelhoradorTextoCurriculoPort):
     """Sugestão sem vaga: marca o texto recebido."""
 
-    def melhorar_secao(self, secao: SecaoCurriculo) -> SecaoCurriculo:
+    def melhorar_secao(self, secao: SecaoCurriculo, refino: PedidoRefino) -> SecaoCurriculo:
         return secao.com_novo_conteudo(f"Sugestão de escrita: {secao.conteudo}")
 
-    def melhorar_experiencia(self, experiencia: ExperienciaParaAvaliacao) -> ExperienciaParaAvaliacao:
+    def melhorar_experiencia(
+        self, experiencia: ExperienciaParaAvaliacao, refino: PedidoRefino
+    ) -> ExperienciaParaAvaliacao:
         return ExperienciaParaAvaliacao(
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
@@ -196,6 +215,7 @@ def _adaptar() -> AdaptarCurriculoParaVaga:
         avaliador_descricao_vaga=AvaliadorDescricaoVagaE2E(),
         ajustador_experiencia=AjustadorExperienciaE2E(),
         avaliador_experiencia=AvaliadorExperienciaE2E(),
+        identificador_equivalencias=IdentificadorEquivalenciasE2E(),
     )
 
 

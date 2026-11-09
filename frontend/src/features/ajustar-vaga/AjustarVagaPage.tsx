@@ -174,6 +174,7 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
             descricao_vaga: vagaEmRevisao.descricao_vaga,
             idioma_alvo: vagaEmRevisao.idioma_alvo,
             analise_vaga: adaptado.analise_vaga,
+            cargo_alvo: vagaEmRevisao.cargo_alvo,
           }}
           gerando={gerarPdf.isPending}
           erro={gerarPdf.error?.message}

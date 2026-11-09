@@ -86,7 +86,7 @@ function servirIa() {
     }),
     http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async (info) => {
       await registrar("sugestao-secao")(info);
-      return HttpResponse.json({ conteudo_sugerido: "Resumo sugerido." });
+      return HttpResponse.json({ conteudo_sugerido: "Resumo sugerido.", foco: "aderencia_vaga" });
     }),
     http.post(`${API_TESTE}/v1/curriculos-revisados`, async (info) => {
       await registrar("pdf")(info);
@@ -441,7 +441,9 @@ describe("AjustarVagaPage", () => {
         descricao_vaga: "Java, Kafka e AWS.",
         idioma_alvo: "pt",
         analise_vaga: ANALISE_VAGA,
+        cargo_alvo: "Senior Java",
       },
+      refino: { tentativa: 1, sugestoes_anteriores: [] },
     });
     expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo sugerido.");
   });

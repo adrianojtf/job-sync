@@ -39,12 +39,14 @@ export function SugestaoExperienciaAdaptada({ form, indice, contextoVaga }: Prop
     <SugestaoIA<Sugestao>
       rotuloBloco={`experiência ${indice + 1}`}
       textoAtual={descricaoParaAvaliacao(experiencia)}
-      sugerir={() =>
-        api.sugerirAjusteExperienciaAdaptada({
+      sugerir={async (_texto, refino) => {
+        const sugestao = await api.sugerirAjusteExperienciaAdaptada({
           experiencia: formularioParaExperienciaAdaptada(form.getValues(`experiencias.${indice}`)),
           contexto_vaga: contextoVaga,
-        })
-      }
+          refino,
+        });
+        return { valor: sugestao, foco: sugestao.foco };
+      }}
       descrever={descreverSugestao}
       aplicar={(sugestao) => {
         const opcoes = { shouldDirty: true, shouldTouch: true };

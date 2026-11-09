@@ -7,10 +7,19 @@ para o idioma solicitado, sem inventar fatos que não constam no original.
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
+
+from jobsync.curriculo.adapters.prompt_contexto_vaga import (
+    REGRA_RESPONSABILIDADES_IMPLICITAS,
+    linha_cargo_alvo,
+)
+from jobsync.curriculo.adapters.prompt_refino import bloco_refino
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
+from jobsync.curriculo.domain.equivalencia_tecnologia import EquivalenciaTecnologia
+from jobsync.curriculo.domain.refino import PedidoRefino
 from jobsync.curriculo.domain.rotulos_experiencia import ROTULO_CONTEXTO
-from jobsync.vaga import AnaliseVaga, TipoRequisitoTecnico
-from jobsync.curriculo import SecaoCurriculo, TipoSecao
+from jobsync.vaga import TipoRequisitoTecnico
+from jobsync.curriculo import ContextoVaga, SecaoCurriculo, TipoSecao
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
 _NOME_IDIOMA = {"pt": "português do Brasil", "en": "inglês (formato americano de currículo)"}
@@ -25,7 +34,7 @@ _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
     TipoSecao.PERFIL: (
         "Reescreva o resumo profissional para enfatizar a experiência e competências "
         "mais alinhadas à vaga, mantendo-se fiel aos fatos originais (não invente "
-        "anos de experiência, cargos ou tecnologias que não constam no texto original)."
+        "anos de experiência ou cargos que não constam no texto original)."
     ),
     TipoSecao.FORMACAO: (
         "Apenas traduza/adapte o idioma, se necessário. Não altere instituições, "
@@ -50,14 +59,36 @@ def _instrucao_experiencias(rotulo_contexto: str) -> str:
         "a área e o papel, sem repetir as conquistas. "
         "Preserve empresas, cargos e datas exatamente como no original. "
         "Prefira sempre os números do original; quando ele não trouxer número, você pode propor "
-        "métricas e volumes plausíveis e conservadores."
+        "métricas e volumes plausíveis e conservadores. "
+        f"{REGRA_RESPONSABILIDADES_IMPLICITAS}"
     )
+
+
+def _instrucao_da_secao(
+    tipo: TipoSecao, idioma_alvo: str, ajustes: Sequence[EquivalenciaTecnologia]
+) -> str:
+    """Instrução específica do tipo de seção, com as trocas de tecnologia quando houver."""
+    if tipo == TipoSecao.EXPERIENCIAS:
+        return _instrucao_experiencias(ROTULO_CONTEXTO.get(idioma_alvo, ROTULO_CONTEXTO["pt"]))
+    instrucao = _INSTRUCOES_POR_TIPO.get(tipo, "Traduza/adapte o idioma, mantendo os fatos originais.")
+    if tipo == TipoSecao.TECNOLOGIAS:
+        complementos = [f"Liste também {ajuste.alvo} ao lado de {ajuste.original}." for ajuste in ajustes]
+    elif tipo == TipoSecao.PERFIL:
+        complementos = [
+            f"Pode citar {ajuste.alvo}, equivalente a {ajuste.original}, já usada pelo candidato."
+            for ajuste in ajustes
+        ]
+    else:
+        complementos = []
+    return " ".join([instrucao, *complementos])
 
 
 _PROMPT_SISTEMA = """\
 Você é um especialista em redação de currículos (resume writer) que ajuda \
 candidatos a adaptar seu currículo para vagas específicas, SEM jamais \
-inventar experiência, empresa ou tecnologia que não exista no texto original. \
+inventar experiência, empresa ou tecnologia que não exista no texto original, \
+exceto as tecnologias equivalentes indicadas na instrução da seção. \
+Quando houver cargo-alvo, use o cargo-alvo para escolher a ênfase e o vocabulário. \
 O que fazer com números e métricas é definido na instrução específica de cada seção.
 
 Responda ESTRITAMENTE em JSON no formato:
@@ -74,17 +105,33 @@ class AjustadorTextoClient(AjustadorTextoPort):
     def ajustar_secao(
         self,
         secao: SecaoCurriculo,
-        descricao_vaga: str,
-        idioma_alvo: str,
-        analise_vaga: AnaliseVaga,
+        contexto: ContextoVaga,
+        ajustes: Sequence[EquivalenciaTecnologia] = (),
     ) -> SecaoCurriculo:
-        instrucao_especifica = (
-            _instrucao_experiencias(ROTULO_CONTEXTO.get(idioma_alvo, ROTULO_CONTEXTO["pt"]))
-            if secao.tipo == TipoSecao.EXPERIENCIAS
-            else _INSTRUCOES_POR_TIPO.get(
-                secao.tipo, "Traduza/adapte o idioma, mantendo os fatos originais."
-            )
+        return self._solicitar(secao, contexto, ajustes, rotulo_texto="Conteúdo original")
+
+    def refinar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino
+    ) -> SecaoCurriculo:
+        return self._solicitar(
+            secao,
+            contexto,
+            ajustes=(),
+            rotulo_texto="Texto atual",
+            instrucao_refino=f"{bloco_refino(refino, com_vaga=True)}\n\n",
         )
+
+    def _solicitar(
+        self,
+        secao: SecaoCurriculo,
+        contexto: ContextoVaga,
+        ajustes: Sequence[EquivalenciaTecnologia],
+        rotulo_texto: str,
+        instrucao_refino: str = "",
+    ) -> SecaoCurriculo:
+        idioma_alvo = contexto.idioma_alvo
+        analise_vaga = contexto.analise_vaga
+        instrucao_especifica = _instrucao_da_secao(secao.tipo, idioma_alvo, ajustes)
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
 
         requisitos_explicitos = [
@@ -99,8 +146,10 @@ class AjustadorTextoClient(AjustadorTextoPort):
 
         prompt_usuario = (
             f"Seção do currículo: {secao.titulo}\n\n"
-            f"Conteúdo original:\n{secao.conteudo}\n\n"
-            f"Descrição da vaga-alvo:\n{descricao_vaga}\n\n"
+            f"{rotulo_texto}:\n{secao.conteudo}\n\n"
+            f"{instrucao_refino}"
+            f"{linha_cargo_alvo(contexto)}"
+            f"Descrição da vaga-alvo:\n{contexto.descricao_vaga}\n\n"
             f"Análise de vaga estruturada:\n"
             f"- Requisitos explícitos: {', '.join(requisitos_explicitos) or 'nenhum'}\n"
             f"- Requisitos implícitos: {', '.join(requisitos_implicitos) or 'nenhum'}\n"

@@ -10,7 +10,7 @@ from jobsync.vaga import (
     RequisitoTecnico,
     TipoRequisitoTecnico,
 )
-from jobsync.curriculo import SecaoCurriculo, TipoSecao
+from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, PedidoRefino, SecaoCurriculo, TipoSecao
 
 from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClient
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
@@ -52,9 +52,11 @@ def test_ajustador_texto_openai_usa_analise_vaga_estruturada_no_prompt() -> None
     secao = SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Python, Django")
     secao_ajustada = ajustador.ajustar_secao(
         secao,
-        descricao_vaga="Vaga para desenvolvedor backend com Python.",
-        idioma_alvo="pt",
-        analise_vaga=analise_vaga,
+        ContextoVaga(
+            descricao_vaga="Vaga para desenvolvedor backend com Python.",
+            idioma_alvo="pt",
+            analise_vaga=analise_vaga,
+        ),
     )
 
     assert secao_ajustada.conteudo == "Conteúdo ajustado"
@@ -75,20 +77,32 @@ def test_ajustador_texto_openai_resposta_estruturada_em_dict_nao_quebra() -> Non
     secao = SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Python, Django")
 
     secao_ajustada = ajustador.ajustar_secao(
-        secao, descricao_vaga="vaga qualquer", idioma_alvo="pt", analise_vaga=analise_vaga
+        secao, ContextoVaga(descricao_vaga="vaga qualquer", idioma_alvo="pt", analise_vaga=analise_vaga)
     )
 
     assert "Python" in secao_ajustada.conteudo
 
 
-def _prompt_da_secao(tipo: TipoSecao, idioma: str) -> str:
+def _prompt_da_secao(
+    tipo: TipoSecao,
+    idioma: str,
+    cargo_alvo: str = "",
+    ajustes: tuple[EquivalenciaTecnologia, ...] = (),
+) -> str:
     cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": "Conteúdo ajustado"})
     ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
     analise_vaga = AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga qualquer")
     secao = SecaoCurriculo(tipo, "Seção", "Starian - Engenheiro\nCriei APIs.")
 
     ajustador.ajustar_secao(
-        secao, descricao_vaga="vaga qualquer", idioma_alvo=idioma, analise_vaga=analise_vaga
+        secao,
+        ContextoVaga(
+            descricao_vaga="vaga qualquer",
+            idioma_alvo=idioma,
+            analise_vaga=analise_vaga,
+            cargo_alvo=cargo_alvo,
+        ),
+        ajustes,
     )
 
     assert cliente_fake.prompt_usuario is not None
@@ -135,9 +149,11 @@ def test_prompt_de_sistema_nao_proibe_resultados_que_a_instrucao_de_experiencias
 
     AjustadorTextoClient(cliente_openai=cliente).ajustar_secao(
         secao,
-        descricao_vaga="vaga",
-        idioma_alvo="pt",
-        analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga"),
+        ContextoVaga(
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga"),
+        ),
     )
 
     sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
@@ -145,6 +161,116 @@ def test_prompt_de_sistema_nao_proibe_resultados_que_a_instrucao_de_experiencias
     assert "resultado que não exista" not in sistema
 
 
+def test_prompt_traz_o_cargo_alvo_quando_informado() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", cargo_alvo="Code Reviewer")
+
+    assert "Cargo-alvo (título da vaga): Code Reviewer" in prompt
+
+
+def test_prompt_omite_o_cargo_alvo_quando_vazio() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "Cargo-alvo" not in prompt
+
+
+REACT_ANGULAR = EquivalenciaTecnologia(original="React", alvo="Angular")
+
+
+def test_tecnologias_listam_a_original_e_a_equivalente() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt", ajustes=(REACT_ANGULAR,))
+
+    assert "Liste também Angular ao lado de React" in prompt
+
+
+def test_perfil_pode_citar_a_tecnologia_equivalente() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", ajustes=(REACT_ANGULAR,))
+
+    assert "Pode citar Angular, equivalente a React" in prompt
+
+
+def test_sem_ajustes_o_prompt_nao_cita_equivalencias() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "Liste também" not in prompt
+
+
+def test_perfil_nao_proibe_as_tecnologias_que_a_instrucao_geral_pede() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "cargos ou tecnologias que não constam" not in prompt
+    assert "não invente anos de experiência ou cargos" in prompt
+
+
+def test_experiencias_da_fonte_pdf_trazem_a_regra_de_responsabilidades_implicitas() -> None:
+    prompt = _prompt_da_secao(TipoSecao.EXPERIENCIAS, "pt")
+
+    assert "responsabilidade essencial da vaga" in prompt
+    assert "não invente métricas para elas" in prompt
+
+
+def test_prompt_de_sistema_usa_o_cargo_alvo_para_a_enfase() -> None:
+    cliente = Mock(spec=ClienteOpenAI)
+    cliente.solicitar_json.return_value = {"conteudo_ajustado": "Conteúdo ajustado"}
+
+    AjustadorTextoClient(cliente_openai=cliente).ajustar_secao(
+        SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Engenheiro."),
+        ContextoVaga(
+            descricao_vaga="vaga",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga"),
+        ),
+    )
+
+    sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
+    assert "use o cargo-alvo para escolher a ênfase e o vocabulário" in sistema
+
+
+
+def _prompt_do_refino(refino: PedidoRefino) -> tuple[str, str, SecaoCurriculo]:
+    cliente = Mock(spec=ClienteOpenAI)
+    cliente.solicitar_json.return_value = {"conteudo_ajustado": "  Resumo refinado.  "}
+    secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo atual editado.")
+
+    refinada = AjustadorTextoClient(cliente_openai=cliente).refinar_secao(
+        secao,
+        ContextoVaga(
+            descricao_vaga="Vaga Angular",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga Angular"),
+            cargo_alvo="Code Reviewer",
+        ),
+        refino,
+    )
+
+    argumentos = cliente.solicitar_json.call_args.kwargs
+    return argumentos["prompt_sistema"], argumentos["prompt_usuario"], refinada
+
+
+def test_refinar_secao_parte_do_texto_atual_e_nao_do_conteudo_original() -> None:
+    _, usuario, refinada = _prompt_do_refino(PedidoRefino())
+
+    assert refinada == SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo refinado.")
+    assert "Texto atual:\nResumo atual editado." in usuario
+    assert "Conteúdo original" not in usuario
+    assert "Vaga Angular" in usuario
+    assert "Cargo-alvo (título da vaga): Code Reviewer" in usuario
+
+
+def test_refinar_secao_usa_o_foco_da_tentativa_e_as_sugestoes_anteriores() -> None:
+    _, usuario, _ = _prompt_do_refino(
+        PedidoRefino(tentativa=3, sugestoes_anteriores=("Versão 1.", "Versão 2."))
+    )
+
+    assert "Foco desta versão: palavras-chave da vaga" in usuario
+    assert "Não repita estas versões já sugeridas" in usuario
+    assert "Versão 1." in usuario and "Versão 2." in usuario
+
+
+def test_refinar_secao_mantem_as_regras_da_secao() -> None:
+    sistema, usuario, _ = _prompt_do_refino(PedidoRefino())
+
+    assert "não invente anos de experiência ou cargos" in usuario
+    assert "conteudo_ajustado" in sistema
 @pytest.mark.parametrize("tipo", list(TipoSecao))
 def test_prompt_de_qualquer_secao_pede_para_preservar_linhas_e_topicos(tipo: TipoSecao) -> None:
     prompt = _prompt_da_secao(tipo, "pt")

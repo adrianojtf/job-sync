@@ -11,8 +11,10 @@ from fastapi.testclient import TestClient
 from jobsync.curriculo import (
     AjustadorExperienciaPort,
     AjustadorTextoPort,
+    EquivalenciaTecnologia,
     ExperienciaAdaptada,
     ExtratorCurriculoPort,
+    IdentificadorEquivalenciasPort,
 )
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import AdaptarCurriculoParaVaga
 from jobsync.entrypoints.api.dependencies import (
@@ -49,11 +51,14 @@ def _servico_de_adaptacao() -> AdaptarCurriculoParaVaga:
         conquistas=CONQUISTAS_DA_IA,
         contexto=CONTEXTO_DA_IA,
     )
+    identificador = Mock(spec=IdentificadorEquivalenciasPort)
+    identificador.identificar.return_value = (EquivalenciaTecnologia(original="Python", alvo="Kotlin"),)
     return AdaptarCurriculoParaVaga(
         extrator=Mock(spec=ExtratorCurriculoPort),
         analisador_vaga=analisador,
         ajustador_texto=ajustador_texto,
         ajustador_experiencia=ajustador_experiencia,
+        identificador_equivalencias=identificador,
     )
 
 
@@ -72,7 +77,7 @@ def client() -> Generator[TestClient, None, None]:
                     empresa="TechCorp",
                     cargo="Engenheira de Software",
                     periodo="2022 - Atual",
-                    descricao="Fiz APIs.",
+                    descricao="Fiz APIs em Python.",
                 ),
             ),
             formacoes=(),
@@ -129,6 +134,20 @@ def test_o_rascunho_traz_conquistas_e_contexto_gerados_pela_ia(client):
             "periodo": "2022 - Atual",
             "conquistas": list(CONQUISTAS_DA_IA),
             "contexto": CONTEXTO_DA_IA,
+        }
+    ]
+
+
+def test_o_rascunho_lista_as_trocas_de_tecnologia_com_a_experiencia(client):
+    rascunho = _gerar_rascunho(client)
+
+    assert rascunho["ajustes_tecnologia"] == [
+        {
+            "indice_experiencia": 0,
+            "cargo": "Engenheira de Software",
+            "empresa": "TechCorp",
+            "original": "Python",
+            "alvo": "Kotlin",
         }
     ]
 

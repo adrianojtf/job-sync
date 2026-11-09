@@ -426,13 +426,13 @@ def sugerir_ajuste_secao(
             conteudo=body.secao.conteudo,
         )
         contexto = body.contexto_vaga.to_domain() if body.contexto_vaga else None
-        sugerida = service.executar(secao, contexto)
+        sugerida = service.executar(secao, contexto, body.refino.to_domain())
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return SugerirAjusteSecaoResponse(conteudo_sugerido=sugerida.conteudo)
+    return SugerirAjusteSecaoResponse(conteudo_sugerido=sugerida.valor.conteudo, foco=sugerida.foco)
 
 
 @router.post(
@@ -453,13 +453,15 @@ def sugerir_ajuste_experiencia(
 ) -> SugerirAjusteExperienciaResponse:
     """Devolve a descrição sugerida para a experiência do perfil informada."""
     try:
-        sugerida = service.executar(body.experiencia.to_domain())
+        sugerida = service.executar(body.experiencia.to_domain(), body.refino.to_domain())
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return SugerirAjusteExperienciaResponse(descricao_sugerida=sugerida.descricao)
+    return SugerirAjusteExperienciaResponse(
+        descricao_sugerida=sugerida.valor.descricao, foco=sugerida.foco
+    )
 
 
 @router.post(
@@ -480,14 +482,18 @@ def sugerir_ajuste_experiencia_adaptada(
 ) -> SugerirAjusteExperienciaAdaptadaResponse:
     """Devolve conquistas e contexto sugeridos para a experiência informada."""
     try:
-        sugerida = service.executar(body.experiencia.to_domain(), body.contexto_vaga.to_domain())
+        sugerida = service.executar(
+            body.experiencia.to_domain(), body.contexto_vaga.to_domain(), body.refino.to_domain()
+        )
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
     return SugerirAjusteExperienciaAdaptadaResponse(
-        conquistas=list(sugerida.conquistas), contexto=sugerida.contexto
+        conquistas=list(sugerida.valor.conquistas),
+        contexto=sugerida.valor.contexto,
+        foco=sugerida.foco,
     )
 
 

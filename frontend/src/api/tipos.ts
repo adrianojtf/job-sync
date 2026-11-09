@@ -27,6 +27,9 @@ export type ExperienciaAdaptada = Esquemas["ExperienciaAdaptadaSchema"];
 export type SugerirAjusteExperienciaAdaptadaEntrada =
   Esquemas["SugerirAjusteExperienciaAdaptadaRequest"];
 export type SugestaoExperienciaAdaptada = Esquemas["SugerirAjusteExperienciaAdaptadaResponse"];
+export type PedidoRefino = Esquemas["PedidoRefinoSchema"];
+export type FocoRefino = Esquemas["FocoRefino"];
+export type AjusteTecnologia = Esquemas["AjusteTecnologiaSchema"];
 export type AnalisarAtsEntrada = Esquemas["AnalisarAtsRequest"];
 export type AnaliseAts = Esquemas["AnalisarAtsResponse"];
 export type GerarCartaEntrada = Esquemas["GerarCartaApresentacaoRequest"];

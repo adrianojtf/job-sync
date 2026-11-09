@@ -6,6 +6,15 @@ export const SAUDACAO = /^(Bom dia|Boa tarde|Boa noite), /;
 export const novoPerfil = (prefixo: string) =>
   `${prefixo}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+/**
+ * Duas experiências com React: com uma vaga que cita Angular, o dublê de IA do E2E aponta
+ * React → Angular, e o plano troca só na primeira (a última mantém React).
+ */
+export const EXPERIENCIAS_COM_REACT: ExperienciaSemeada[] = [
+  { empresa: "Acme", cargo: "Front-end", periodo: "2022-2024", descricao: "Telas em React." },
+  { empresa: "Initech", cargo: "Front-end", periodo: "2019-2022", descricao: "Portal em React." },
+];
+
 /** PDF mínimo para o upload (o backend guarda o arquivo sem interpretá-lo). */
 export const PDF_MINIMO = {
   name: "curriculo-e2e.pdf",
@@ -20,8 +29,23 @@ export async function entrar(page: Page, perfil: string) {
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 }
 
+interface ExperienciaSemeada {
+  empresa: string;
+  cargo: string;
+  periodo: string;
+  descricao: string;
+}
+
+const EXPERIENCIAS_PADRAO: ExperienciaSemeada[] = [
+  { empresa: "Olist", cargo: "Backend", periodo: "2021-2024", descricao: "APIs em Python." },
+];
+
 /** Prepara dados pela API (mesma origem, via proxy /v1) para telas que precisam de conteúdo. */
-export async function semearPerfilCompleto(request: APIRequestContext, perfil: string) {
+export async function semearPerfilCompleto(
+  request: APIRequestContext,
+  perfil: string,
+  experiencias: ExperienciaSemeada[] = EXPERIENCIAS_PADRAO,
+) {
   await request.get(`/v1/perfis/${perfil}`);
   await request.post("/v1/perfil-estruturado", {
     data: {
@@ -30,9 +54,7 @@ export async function semearPerfilCompleto(request: APIRequestContext, perfil: s
       email: "pessoa@jobsync.test",
       linkedin: "",
       resumo_profissional: "Backend Python.",
-      experiencias: [
-        { empresa: "Olist", cargo: "Backend", periodo: "2021-2024", descricao: "APIs em Python." },
-      ],
+      experiencias,
       formacoes: [],
       certificacoes: [],
       idiomas: [],

@@ -15,10 +15,10 @@
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes da fábrica (red).
-- [ ] 2.2 Implementar `Candidatura.nova`.
-- [ ] 2.3 Trocar a montagem manual em `CriarCandidatura` pela fábrica.
-- [ ] 2.4 Confirmar que os testes de `CriarCandidatura` e do router de candidaturas continuam passando.
+- [x] 2.1 Escrever os testes da fábrica (red).
+- [x] 2.2 Implementar `Candidatura.nova`.
+- [x] 2.3 Trocar a montagem manual em `CriarCandidatura` pela fábrica.
+- [x] 2.4 Confirmar que os testes de `CriarCandidatura` e do router de candidaturas continuam passando.
 
 ## Detalhes de Implementação
 
@@ -31,11 +31,11 @@ Consultar em `techspec-job-0037.md` a seção "Interfaces Principais" (parágraf
 
 ## Testes da Tarefa
 
-- [ ] `Candidatura.nova` devolve status `APLICADO` e data igual a `agora`.
-- [ ] O histórico inicial tem uma mudança em `APLICADO` com a mesma data.
-- [ ] Ids de duas candidaturas novas são diferentes.
-- [ ] Empresa ou cargo em branco levantam `ValueError`.
-- [ ] `CriarCandidatura` continua marcando a vaga como convertida.
+- [x] `Candidatura.nova` devolve status `APLICADO` e data igual a `agora`.
+- [x] O histórico inicial tem uma mudança em `APLICADO` com a mesma data.
+- [x] Ids de duas candidaturas novas são diferentes.
+- [x] Empresa ou cargo em branco levantam `ValueError`.
+- [x] `CriarCandidatura` continua marcando a vaga como convertida.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -11,6 +11,7 @@ import type {
   CandidaturasPorStatus,
   CapturarVagaEntrada,
   CartaApresentacao,
+  ConfirmarCandidaturaEntrada,
   CriarCandidaturaEntrada,
   CurriculoConteudo,
   CurriculoRevisado,
@@ -77,6 +78,8 @@ export interface ApiClient {
 
   listarCandidaturas(perfil: string): Promise<CandidaturasPorStatus>;
   criarCandidatura(dados: CriarCandidaturaEntrada): Promise<Candidatura>;
+  /** Cria vaga, currículo salvo com o PDF gerado e candidatura APLICADO em uma operação (JOB-0037). */
+  confirmarCandidaturaAjustada(dados: ConfirmarCandidaturaEntrada): Promise<Candidatura>;
   moverCandidatura(id: string, novoStatus: StatusCandidatura): Promise<Candidatura>;
 
   criarTokenCaptura(perfil: string): Promise<TokenCaptura>;

@@ -43,6 +43,7 @@ export type CandidaturaExterna = Esquemas["CandidatarVagaExternaResponse"];
 export type Candidatura = Esquemas["CandidaturaResponse"];
 export type CandidaturasPorStatus = Esquemas["CandidaturasListagemResponse"];
 export type CriarCandidaturaEntrada = Esquemas["CandidaturaCriarRequest"];
+export type ConfirmarCandidaturaEntrada = Esquemas["CandidaturaConfirmarRequest"];
 export type TokenCaptura = Esquemas["TokenCapturaResponse"];
 export type Problema = Esquemas["ProblemaResponse"];
 

@@ -4,7 +4,13 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
-from jobsync.curriculo import ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo
+from jobsync.curriculo import (
+    ExperienciaAdaptada,
+    ExperienciaParaAvaliacao,
+    FocoRefino,
+    SecaoCurriculo,
+    SugestaoRefinada,
+)
 from jobsync.curriculo.service_layer.sugestao_ia_indisponivel import SugestaoIAIndisponivel
 from jobsync.entrypoints.api.dependencies import (
     obter_service_sugerir_ajuste_experiencia,
@@ -33,7 +39,7 @@ class ServicoSecaoFake:
         self.chamadas.append((secao, contexto))
         if self._erro:
             raise self._erro
-        return secao.com_novo_conteudo("Texto sugerido.")
+        return SugestaoRefinada(secao.com_novo_conteudo("Texto sugerido."), FocoRefino.IMPACTO)
 
 
 class ServicoExperienciaFake:
@@ -45,11 +51,14 @@ class ServicoExperienciaFake:
         self.chamadas.append(experiencia)
         if self._erro:
             raise self._erro
-        return ExperienciaParaAvaliacao(
-            cargo=experiencia.cargo,
-            empresa=experiencia.empresa,
-            periodo=experiencia.periodo,
-            descricao="Descrição sugerida.",
+        return SugestaoRefinada(
+            ExperienciaParaAvaliacao(
+                cargo=experiencia.cargo,
+                empresa=experiencia.empresa,
+                periodo=experiencia.periodo,
+                descricao="Descrição sugerida.",
+            ),
+            FocoRefino.IMPACTO,
         )
 
 
@@ -62,12 +71,15 @@ class ServicoExperienciaAdaptadaFake:
         self.chamadas.append((experiencia, contexto))
         if self._erro:
             raise self._erro
-        return ExperienciaAdaptada(
-            cargo=experiencia.cargo,
-            empresa=experiencia.empresa,
-            periodo=experiencia.periodo,
-            conquistas=("Conquista sugerida.",),
-            contexto="Contexto sugerido.",
+        return SugestaoRefinada(
+            ExperienciaAdaptada(
+                cargo=experiencia.cargo,
+                empresa=experiencia.empresa,
+                periodo=experiencia.periodo,
+                conquistas=("Conquista sugerida.",),
+                contexto="Contexto sugerido.",
+            ),
+            FocoRefino.ADERENCIA_VAGA,
         )
 
 

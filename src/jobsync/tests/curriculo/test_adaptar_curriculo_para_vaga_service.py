@@ -67,6 +67,9 @@ class AjustadorTextoFake(AjustadorTextoPort):
             self._eventos.append("ajustar_secao")
         return secao.com_novo_conteudo(f"[AJUSTADO-{contexto.idioma_alvo}] {secao.conteudo}")
 
+    def refinar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, refino) -> SecaoCurriculo:
+        return secao
+
 
 class JobDescriptionAnalyzerFake(JobDescriptionAnalyzerPort):
     def __init__(self, analise: AnaliseVaga):
@@ -125,7 +128,7 @@ class AjustadorExperienciaFake(AjustadorExperienciaPort):
             contexto=f"Contexto de {experiencia.empresa}.",
         )
 
-    def refinar(self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga) -> ExperienciaAdaptada:
+    def refinar(self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga, refino) -> ExperienciaAdaptada:
         return experiencia
 
 

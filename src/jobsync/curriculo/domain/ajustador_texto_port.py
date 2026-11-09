@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, SecaoCurriculo
+    from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, PedidoRefino, SecaoCurriculo
 
 
 class AjustadorTextoPort(ABC):
@@ -41,5 +41,16 @@ class AjustadorTextoPort(ABC):
 
             Returns:
                 Nova instância de SecaoCurriculo com o conteúdo ajustado.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def refinar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino
+    ) -> SecaoCurriculo:
+        """Refina o texto atual da seção para a vaga, com o foco da tentativa (JOB-0037).
+
+        Parte do texto atual do usuário, e não da geração inicial, e não repete as
+        `refino.sugestoes_anteriores`.
         """
         raise NotImplementedError

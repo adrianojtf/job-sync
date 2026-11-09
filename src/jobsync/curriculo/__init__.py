@@ -12,6 +12,7 @@ from jobsync.curriculo.domain import (
     EquivalenciaTecnologia,
     ExperienciaAdaptada,
     ExtratorCurriculoPort,
+    FocoRefino,
     ExperienciaParaAvaliacao,
     GeradorPdfPort,
     IdentificadorEquivalenciasPort,
@@ -19,9 +20,11 @@ from jobsync.curriculo.domain import (
     GerarSugestoesAtsPort,
     ManutencaoTecnologia,
     MelhoradorTextoCurriculoPort,
+    PedidoRefino,
     PlanoAdaptacao,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
+    SugestaoRefinada,
     TipoSecao,
 )
 
@@ -37,6 +40,7 @@ __all__ = [
     "EquivalenciaTecnologia",
     "ExperienciaAdaptada",
     "ExtratorCurriculoPort",
+    "FocoRefino",
     "ExperienciaParaAvaliacao",
     "GeradorPdfPort",
     "IdentificadorEquivalenciasPort",
@@ -44,8 +48,10 @@ __all__ = [
     "GerarSugestoesAtsPort",
     "ManutencaoTecnologia",
     "MelhoradorTextoCurriculoPort",
+    "PedidoRefino",
     "PlanoAdaptacao",
     "RascunhoCurriculoAdaptado",
     "SecaoCurriculo",
+    "SugestaoRefinada",
     "TipoSecao",
 ]

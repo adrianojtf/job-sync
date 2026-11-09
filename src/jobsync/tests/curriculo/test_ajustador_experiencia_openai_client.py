@@ -7,6 +7,7 @@ from jobsync.curriculo import (
     ContextoVaga,
     DiretrizesExperiencia,
     EquivalenciaTecnologia,
+    PedidoRefino,
     ExperienciaAdaptada,
     ExperienciaParaAvaliacao,
 )
@@ -94,10 +95,13 @@ def _ajustar(
     )
 
 
-def _refinar(cliente: Mock, idioma: str = "pt", cargo_alvo: str = ""):
+def _refinar(
+    cliente: Mock, idioma: str = "pt", cargo_alvo: str = "", refino: PedidoRefino | None = None
+):
     return AjustadorExperienciaOpenAIClient(cliente).refinar(
         experiencia=_atual(),
         contexto=_contexto(idioma, cargo_alvo),
+        refino=refino or PedidoRefino(),
     )
 
 
@@ -274,3 +278,25 @@ class TestAjustadorExperienciaOpenAIClientDiretrizes:
 
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
         assert "Mantenha as tecnologias já citadas nas conquistas e no contexto atuais" in usuario
+
+
+class TestAjustadorExperienciaOpenAIClientRefino:
+    def test_refinar_usa_o_foco_com_vaga_da_tentativa_e_as_sugestoes_anteriores(self):
+        cliente = _cliente(RESPOSTA)
+        refino = PedidoRefino(tentativa=2, sugestoes_anteriores=("- Versão anterior.",))
+
+        _refinar(cliente, refino=refino)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Foco desta versão: impacto e resultados" in usuario
+        assert "Não repita estas versões já sugeridas" in usuario
+        assert "- Versão anterior." in usuario
+
+    def test_primeira_tentativa_foca_na_aderencia_a_vaga(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Foco desta versão: aderência à vaga" in usuario
+        assert "Não repita" not in usuario

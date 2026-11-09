@@ -26,6 +26,7 @@ from jobsync.curriculo.domain.gerar_carta_apresentacao_port import GerarCartaApr
 from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsPort
 from jobsync.curriculo.domain.melhorador_texto_curriculo_port import MelhoradorTextoCurriculoPort
 from jobsync.curriculo.domain.rascunho_curriculo_adaptado import RascunhoCurriculoAdaptado
+from jobsync.curriculo.domain.refino import FocoRefino, PedidoRefino, SugestaoRefinada
 
 __all__ = [
     "ContextoVaga",
@@ -50,4 +51,7 @@ __all__ = [
     "GerarSugestoesAtsPort",
     "MelhoradorTextoCurriculoPort",
     "RascunhoCurriculoAdaptado",
+    "FocoRefino",
+    "PedidoRefino",
+    "SugestaoRefinada",
 ]

@@ -7,6 +7,7 @@ from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvalia
 from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
 from jobsync.curriculo.domain.equivalencia_tecnologia import DiretrizesExperiencia
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
+from jobsync.curriculo.domain.refino import PedidoRefino
 
 
 class AjustadorExperienciaPort(ABC):
@@ -27,6 +28,9 @@ class AjustadorExperienciaPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def refinar(self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga) -> ExperienciaAdaptada:
-        """Reescreve conquistas e contexto já adaptados, partindo do texto atual do usuário."""
+    def refinar(
+        self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga, refino: PedidoRefino
+    ) -> ExperienciaAdaptada:
+        """Reescreve conquistas e contexto já adaptados, partindo do texto atual do usuário,
+        com o foco da tentativa e sem repetir as sugestões anteriores."""
         raise NotImplementedError

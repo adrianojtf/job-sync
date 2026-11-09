@@ -432,7 +432,7 @@ def sugerir_ajuste_secao(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return SugerirAjusteSecaoResponse(conteudo_sugerido=sugerida.conteudo)
+    return SugerirAjusteSecaoResponse(conteudo_sugerido=sugerida.valor.conteudo)
 
 
 @router.post(
@@ -459,7 +459,7 @@ def sugerir_ajuste_experiencia(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return SugerirAjusteExperienciaResponse(descricao_sugerida=sugerida.descricao)
+    return SugerirAjusteExperienciaResponse(descricao_sugerida=sugerida.valor.descricao)
 
 
 @router.post(
@@ -487,7 +487,7 @@ def sugerir_ajuste_experiencia_adaptada(
             detail=str(erro),
         )
     return SugerirAjusteExperienciaAdaptadaResponse(
-        conquistas=list(sugerida.conquistas), contexto=sugerida.contexto
+        conquistas=list(sugerida.valor.conquistas), contexto=sugerida.valor.contexto
     )
 
 

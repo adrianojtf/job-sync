@@ -6,7 +6,7 @@
 - [x] 2.0 Equivalências e plano de adaptação no domínio
 - [x] 3.0 Identificador de equivalências (porta e adapter)
 - [x] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
-- [ ] 5.0 Refino variável no backend
+- [x] 5.0 Refino variável no backend
 - [ ] 6.0 API, Postman e tipos do frontend
 - [ ] 7.0 SugestaoIA com histórico e foco
 - [ ] 8.0 Tela de revisão: ajustes de tecnologia, aviso e cargo-alvo
@@ -56,3 +56,8 @@
 - **Task 4.0 — exceção explícita no prompt de sistema do ajuste de texto:** "sem inventar tecnologia" passou a excluir as equivalências indicadas na instrução da seção.
 - **Task 4.0 — citação explícita genérica:** o prompt pede para citar a tecnologia "dizendo em que parte do trabalho foi usada", em vez do exemplo fixo "no front-end", para servir também a bancos, mensageria etc.
 - **Task 4.0 — E2E:** o Playwright completo (19 testes) rodou verde com os novos dublês, inclusive `IdentificadorEquivalenciasE2E` (React → Angular quando a vaga cita Angular).
+- **Task 5.0 — limite das sugestões anteriores:** o VO `PedidoRefino` valida tentativa e quantidade (até 3, descartando itens em branco). O limite de 5.000 caracteres de cada sugestão anterior fica nos validadores dos casos de uso (`validar_refino`), porque a constante pertence à camada de serviço.
+- **Task 5.0 — routers:** os três endpoints passaram a ler `SugestaoRefinada.valor`, sem mudar o contrato. `refino` e `foco` entram na API na task 6.0.
+- **Task 5.0 — trecho de prompt único:** foco e versões anteriores vêm de `curriculo/adapters/prompt_refino.py` (`bloco_refino`), usado pelos três adapters.
+- **Task 5.0 — sugestão de experiência na revisão:** `refinar` não recebe o plano de trocas; mantém as tecnologias já citadas por instrução ("Mantenha as tecnologias já citadas nas conquistas e no contexto atuais"), como previsto na tech spec.
+- **Achado fora do escopo:** `curriculo_router.py` importa `SalvarCurriculo` sem uso (anterior a esta JOB). Não alterado.

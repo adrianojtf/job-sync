@@ -9,7 +9,9 @@ from jobsync.curriculo.adapters.prompt_contexto_vaga import (
     REGRA_RESPONSABILIDADES_IMPLICITAS,
     linha_cargo_alvo,
 )
+from jobsync.curriculo.adapters.prompt_refino import bloco_refino
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
+from jobsync.curriculo.domain.refino import PedidoRefino
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 from jobsync.vaga.domain.analise_vaga import AnaliseVaga, TipoRequisitoTecnico
 
@@ -63,7 +65,9 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
             contexto=contexto,
         )
 
-    def refinar(self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga) -> ExperienciaAdaptada:
+    def refinar(
+        self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga, refino: PedidoRefino
+    ) -> ExperienciaAdaptada:
         conquistas_atuais = "\n".join(f"- {conquista}" for conquista in experiencia.conquistas)
         return self._solicitar(
             cargo=experiencia.cargo,
@@ -73,7 +77,8 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
                 "- Conquistas atuais (reescreva a partir delas):\n"
                 f"{conquistas_atuais or '(nenhuma)'}\n"
                 f"- Contexto atual: {experiencia.contexto.strip() or '(nenhum)'}\n"
-                "- Mantenha as tecnologias já citadas nas conquistas e no contexto atuais."
+                "- Mantenha as tecnologias já citadas nas conquistas e no contexto atuais.\n\n"
+                f"{bloco_refino(refino, com_vaga=True)}"
             ),
             contexto=contexto,
         )

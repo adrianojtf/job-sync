@@ -12,6 +12,7 @@ from time import perf_counter
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
+from jobsync.curriculo.domain.refino import PedidoRefino, SugestaoRefinada
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada.validator import (
     SugerirAjusteExperienciaAdaptadaInputValidator,
 )
@@ -24,12 +25,18 @@ class SugerirAjusteExperienciaAdaptada:
         self._ajustador_experiencia = ajustador_experiencia
 
     def executar(
-        self, experiencia: ExperienciaAdaptada, contexto: ContextoVaga
-    ) -> ExperienciaAdaptada:
-        SugerirAjusteExperienciaAdaptadaInputValidator.validar(experiencia)
+        self,
+        experiencia: ExperienciaAdaptada,
+        contexto: ContextoVaga,
+        refino: PedidoRefino = PedidoRefino(),
+    ) -> SugestaoRefinada[ExperienciaAdaptada]:
+        SugerirAjusteExperienciaAdaptadaInputValidator.validar(experiencia, refino)
+        foco = refino.foco(com_vaga=True)
         inicio = perf_counter()
         try:
-            sugerida = self._ajustador_experiencia.refinar(experiencia=experiencia, contexto=contexto)
+            sugerida = self._ajustador_experiencia.refinar(
+                experiencia=experiencia, contexto=contexto, refino=refino
+            )
         except (RuntimeError, ValueError) as erro:
             raise SugestaoIAIndisponivel() from erro
         registrar_sugestao(
@@ -38,5 +45,9 @@ class SugerirAjusteExperienciaAdaptada:
             len(experiencia.como_descricao()),
             len(sugerida.como_descricao()),
             inicio,
+            refino,
+            foco,
         )
-        return replace(experiencia, conquistas=sugerida.conquistas, contexto=sugerida.contexto)
+        return SugestaoRefinada(
+            replace(experiencia, conquistas=sugerida.conquistas, contexto=sugerida.contexto), foco
+        )

@@ -8,7 +8,7 @@ from jobsync.vaga import (
     RequisitoTecnico,
     TipoRequisitoTecnico,
 )
-from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, PedidoRefino, SecaoCurriculo, TipoSecao
 
 from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClient
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
@@ -221,3 +221,51 @@ def test_prompt_de_sistema_usa_o_cargo_alvo_para_a_enfase() -> None:
 
     sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
     assert "use o cargo-alvo para escolher a ênfase e o vocabulário" in sistema
+
+
+
+def _prompt_do_refino(refino: PedidoRefino) -> tuple[str, str, SecaoCurriculo]:
+    cliente = Mock(spec=ClienteOpenAI)
+    cliente.solicitar_json.return_value = {"conteudo_ajustado": "  Resumo refinado.  "}
+    secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo atual editado.")
+
+    refinada = AjustadorTextoClient(cliente_openai=cliente).refinar_secao(
+        secao,
+        ContextoVaga(
+            descricao_vaga="Vaga Angular",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga Angular"),
+            cargo_alvo="Code Reviewer",
+        ),
+        refino,
+    )
+
+    argumentos = cliente.solicitar_json.call_args.kwargs
+    return argumentos["prompt_sistema"], argumentos["prompt_usuario"], refinada
+
+
+def test_refinar_secao_parte_do_texto_atual_e_nao_do_conteudo_original() -> None:
+    _, usuario, refinada = _prompt_do_refino(PedidoRefino())
+
+    assert refinada == SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo refinado.")
+    assert "Texto atual:\nResumo atual editado." in usuario
+    assert "Conteúdo original" not in usuario
+    assert "Vaga Angular" in usuario
+    assert "Cargo-alvo (título da vaga): Code Reviewer" in usuario
+
+
+def test_refinar_secao_usa_o_foco_da_tentativa_e_as_sugestoes_anteriores() -> None:
+    _, usuario, _ = _prompt_do_refino(
+        PedidoRefino(tentativa=3, sugestoes_anteriores=("Versão 1.", "Versão 2."))
+    )
+
+    assert "Foco desta versão: palavras-chave da vaga" in usuario
+    assert "Não repita estas versões já sugeridas" in usuario
+    assert "Versão 1." in usuario and "Versão 2." in usuario
+
+
+def test_refinar_secao_mantem_as_regras_da_secao() -> None:
+    sistema, usuario, _ = _prompt_do_refino(PedidoRefino())
+
+    assert "não invente anos de experiência ou cargos" in usuario
+    assert "conteudo_ajustado" in sistema

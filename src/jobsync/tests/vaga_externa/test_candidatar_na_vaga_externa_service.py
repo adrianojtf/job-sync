@@ -50,6 +50,9 @@ class AjustadorTextoFake(AjustadorTextoPort):
         self.contexto = contexto
         return secao.com_novo_conteudo(f"[AJUSTADO] {secao.conteudo}")
 
+    def refinar_secao(self, secao, contexto, refino):
+        return secao
+
 
 class GeradorPdfFake(GeradorPdfPort):
     def gerar(self, curriculo: Curriculo, idioma_alvo: str) -> bytes:

@@ -13,8 +13,10 @@ from jobsync.curriculo.adapters.prompt_contexto_vaga import (
     REGRA_RESPONSABILIDADES_IMPLICITAS,
     linha_cargo_alvo,
 )
+from jobsync.curriculo.adapters.prompt_refino import bloco_refino
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.equivalencia_tecnologia import EquivalenciaTecnologia
+from jobsync.curriculo.domain.refino import PedidoRefino
 from jobsync.curriculo.domain.rotulos_experiencia import ROTULO_CONTEXTO
 from jobsync.vaga import TipoRequisitoTecnico
 from jobsync.curriculo import ContextoVaga, SecaoCurriculo, TipoSecao
@@ -104,6 +106,27 @@ class AjustadorTextoClient(AjustadorTextoPort):
         contexto: ContextoVaga,
         ajustes: Sequence[EquivalenciaTecnologia] = (),
     ) -> SecaoCurriculo:
+        return self._solicitar(secao, contexto, ajustes, rotulo_texto="Conteúdo original")
+
+    def refinar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino
+    ) -> SecaoCurriculo:
+        return self._solicitar(
+            secao,
+            contexto,
+            ajustes=(),
+            rotulo_texto="Texto atual",
+            instrucao_refino=f"{bloco_refino(refino, com_vaga=True)}\n\n",
+        )
+
+    def _solicitar(
+        self,
+        secao: SecaoCurriculo,
+        contexto: ContextoVaga,
+        ajustes: Sequence[EquivalenciaTecnologia],
+        rotulo_texto: str,
+        instrucao_refino: str = "",
+    ) -> SecaoCurriculo:
         idioma_alvo = contexto.idioma_alvo
         analise_vaga = contexto.analise_vaga
         instrucao_especifica = _instrucao_da_secao(secao.tipo, idioma_alvo, ajustes)
@@ -121,7 +144,8 @@ class AjustadorTextoClient(AjustadorTextoPort):
 
         prompt_usuario = (
             f"Seção do currículo: {secao.titulo}\n\n"
-            f"Conteúdo original:\n{secao.conteudo}\n\n"
+            f"{rotulo_texto}:\n{secao.conteudo}\n\n"
+            f"{instrucao_refino}"
             f"{linha_cargo_alvo(contexto)}"
             f"Descrição da vaga-alvo:\n{contexto.descricao_vaga}\n\n"
             f"Análise de vaga estruturada:\n"

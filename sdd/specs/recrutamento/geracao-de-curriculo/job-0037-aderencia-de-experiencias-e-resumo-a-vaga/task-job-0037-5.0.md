@@ -18,11 +18,11 @@ As sugestões de IA passam a partir do texto atual com um foco diferente a cada 
 
 ## Subtarefas
 
-- [ ] 5.1 Testes de `PedidoRefino` e do rodízio (Red).
-- [ ] 5.2 `FocoRefino`, `PedidoRefino`, `SugestaoRefinada`.
-- [ ] 5.3 Portas e adapters (texto, experiência, melhorador).
-- [ ] 5.4 Casos de uso e registro.
-- [ ] 5.5 Dublês de E2E com saída que varia pelo foco.
+- [x] 5.1 Testes de `PedidoRefino` e do rodízio (Red).
+- [x] 5.2 `FocoRefino`, `PedidoRefino`, `SugestaoRefinada`.
+- [x] 5.3 Portas e adapters (texto, experiência, melhorador).
+- [x] 5.4 Casos de uso e registro.
+- [x] 5.5 Dublês de E2E com saída que varia pelo foco.
 
 ## Detalhes de Implementação
 
@@ -36,7 +36,7 @@ Ver "Refino" e "Regras dos prompts" em `techspec-job-0037.md`.
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos VOs, adapters e dos três casos de uso.
+- [x] Testes de unidade dos VOs, adapters e dos três casos de uso.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

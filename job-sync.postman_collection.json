@@ -695,6 +695,49 @@
       ]
     },
     {
+      "name": "14a - Confirmar candidatura a partir do ajuste",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/candidaturas-ajustadas",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "candidaturas-ajustadas"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"cargo\": \"Engenheiro de Software\", \"empresa\": \"TechCorp\", \"descricao_vaga\": \"Vaga de engenharia de software backend com Python.\", \"nome_arquivo\": \"Postman-Engenheiro-TechCorp.pdf\", \"pdf_base64\": \"{{pdf_base64}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Candidatura criada como aplicado, com vaga e curriculo ligados', () => { const j = pm.response.json(); pm.expect(j).to.have.property('id'); pm.expect(j.status).to.eql('APLICADO'); pm.expect(j.vaga_id).to.be.a('string').and.not.empty; pm.expect(j.curriculo_salvo_id).to.be.a('string').and.not.empty; });"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "15 - Adaptar curriculo (IA)",
       "request": {
         "method": "POST",

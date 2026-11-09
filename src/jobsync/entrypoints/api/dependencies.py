@@ -9,6 +9,9 @@ from fastapi import Depends
 
 from jobsync.ats_score import CalcularAtsScore
 from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
+from jobsync.candidatura.service_layer.confirmar_candidatura_ajustada import (
+    ConfirmarCandidaturaAjustada,
+)
 from jobsync.candidatura.service_layer.criar_candidatura import CriarCandidatura
 from jobsync.candidatura.service_layer.listar_candidaturas_por_status import (
     ListarCandidaturasPorStatus,
@@ -336,6 +339,23 @@ def obter_service_criar_candidatura(
 
 ServiceCriarCandidaturaDep = Annotated[
     CriarCandidatura, Depends(obter_service_criar_candidatura)
+]
+
+
+def obter_service_confirmar_candidatura_ajustada(
+    repositorio_candidatura: RepositorioCandidaturaDep,
+    repositorio_vaga: RepositorioVagaDep,
+    repositorio_curriculo_salvo: RepositorioCurriculoSalvoDep,
+) -> ConfirmarCandidaturaAjustada:
+    return ConfirmarCandidaturaAjustada(
+        repositorio_candidatura=repositorio_candidatura,
+        repositorio_vaga=repositorio_vaga,
+        repositorio_curriculo_salvo=repositorio_curriculo_salvo,
+    )
+
+
+ServiceConfirmarCandidaturaAjustadaDep = Annotated[
+    ConfirmarCandidaturaAjustada, Depends(obter_service_confirmar_candidatura_ajustada)
 ]
 
 

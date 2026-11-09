@@ -5,17 +5,21 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from jobsync.candidatura import CandidaturaNaoEncontrada, StatusCandidatura
+from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import LimiteCurriculosSalvosExcedido
 from jobsync.entrypoints.api.dependencies import (
+    ServiceConfirmarCandidaturaAjustadaDep,
     ServiceCriarCandidaturaDep,
     ServiceListarCandidaturasDep,
     ServiceMoverCandidaturaDep,
 )
 from jobsync.entrypoints.api.schemas.candidatura import (
+    CandidaturaConfirmarRequest,
     CandidaturaCriarRequest,
     CandidaturaResponse,
     CandidaturasListagemResponse,
     CandidaturaSubmeterRequest,
 )
+from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 
 router = APIRouter(tags=["candidaturas"])
 
@@ -58,6 +62,37 @@ def criar_candidatura(
             detail=str(erro),
         )
     response.headers["Location"] = f"{request.url.path}/{candidatura.id}"
+    return CandidaturaResponse.from_dto(candidatura)
+
+
+@router.post(
+    "/candidaturas-ajustadas",
+    response_model=CandidaturaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Confirmar candidatura a partir do currículo ajustado",
+    description=(
+        "Cria a vaga (já convertida), o currículo salvo com o PDF gerado e a candidatura "
+        "com status APLICADO, em uma única operação."
+    ),
+    responses={
+        status.HTTP_409_CONFLICT: {"model": ProblemaResponse},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": ProblemaResponse},
+    },
+)
+def confirmar_candidatura_ajustada(
+    body: CandidaturaConfirmarRequest,
+    service: ServiceConfirmarCandidaturaAjustadaDep,
+) -> CandidaturaResponse:
+    """Registra a candidatura APLICADO com a vaga e o PDF gerado na tela de ajuste."""
+    try:
+        candidatura = service.executar(body.to_dto())
+    except LimiteCurriculosSalvosExcedido:
+        raise
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
     return CandidaturaResponse.from_dto(candidatura)
 
 

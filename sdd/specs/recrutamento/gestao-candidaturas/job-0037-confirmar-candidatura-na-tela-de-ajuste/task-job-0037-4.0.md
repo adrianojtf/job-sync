@@ -20,12 +20,12 @@ Expor o caso de uso pela API. O endpoint recebe os dados da vaga e o PDF em base
 
 ## Subtarefas
 
-- [ ] 4.1 Escrever os testes de router (red).
-- [ ] 4.2 Criar o schema com a decodificação do base64.
-- [ ] 4.3 Criar a injeção de dependência.
-- [ ] 4.4 Criar o endpoint e o handler 409.
-- [ ] 4.5 Atualizar a coleção Postman.
-- [ ] 4.6 Teste com os repositórios SQLite em banco temporário (chaves estrangeiras de vaga e currículo).
+- [x] 4.1 Escrever os testes de router (red).
+- [x] 4.2 Criar o schema com a decodificação do base64.
+- [x] 4.3 Criar a injeção de dependência.
+- [x] 4.4 Criar o endpoint e o handler 409.
+- [x] 4.5 Atualizar a coleção Postman.
+- [x] 4.6 Teste com os repositórios SQLite em banco temporário (chaves estrangeiras de vaga e currículo).
 
 ## Detalhes de Implementação
 
@@ -40,12 +40,12 @@ Consultar em `techspec-job-0037.md` as seções "Endpoints de API" e "Considera�
 
 ## Testes da Tarefa
 
-- [ ] 201 com o corpo da candidatura (status `APLICADO`, empresa, cargo, `curriculo_salvo_id`).
-- [ ] A candidatura criada aparece na listagem do perfil e o currículo salvo aparece na biblioteca.
-- [ ] 409 com biblioteca cheia e nada gravado.
-- [ ] 422 com empresa vazia, PDF sem `%PDF` e base64 inválido.
-- [ ] Com SQLite temporário, as chaves estrangeiras de vaga e currículo são aceitas.
-- [ ] `POST /v1/curriculos` ainda devolve 422 com biblioteca cheia.
+- [x] 201 com o corpo da candidatura (status `APLICADO`, empresa, cargo, `curriculo_salvo_id`).
+- [x] A candidatura criada aparece na listagem do perfil e o currículo salvo aparece na biblioteca.
+- [x] 409 com biblioteca cheia e nada gravado.
+- [x] 422 com empresa vazia, PDF sem `%PDF` e base64 inválido.
+- [x] Com SQLite temporário, as chaves estrangeiras de vaga e currículo são aceitas.
+- [x] `POST /v1/curriculos` ainda devolve 422 com biblioteca cheia (coberto pelo teste existente `test_salvar_curriculo_acima_do_limite_retorna_422_com_mensagem`).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -94,3 +94,15 @@ class TestCandidaturaNova:
     def test_campo_obrigatorio_em_branco_gera_erro(self, campo):
         with pytest.raises(ValueError):
             self._nova(**{campo: "  "})
+
+
+class TestPosicaoDaCandidatura:
+    def test_posicao_padrao_eh_zero(self):
+        assert _criar_candidatura().posicao == 0
+
+    def test_aceita_posicao_positiva(self):
+        assert _criar_candidatura(posicao=3).posicao == 3
+
+    def test_posicao_negativa_levanta_value_error(self):
+        with pytest.raises(ValueError):
+            _criar_candidatura(posicao=-1)

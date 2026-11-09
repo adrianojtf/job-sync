@@ -1,5 +1,7 @@
 """Repository (Port) para persistência de candidaturas (Kanban)."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
 from jobsync.candidatura.domain.candidatura import Candidatura, StatusCandidatura
@@ -30,6 +32,26 @@ class CandidaturaRepository(ABC):
     def atualizar_status(self, candidatura_id: str, novo_status: StatusCandidatura) -> Candidatura:
         """Atualiza o status de uma candidatura e retorna a candidatura atualizada.
 
+        Levanta CandidaturaNaoEncontrada se o id não existir.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def buscar_por_id(self, candidatura_id: str) -> Candidatura | None:
+        """Devolve a candidatura ou None se o id não existir."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def aplicar_movimento(
+        self,
+        candidatura_id: str,
+        novo_status: StatusCandidatura,
+        ids_destino_ordenados: tuple[str, ...],
+    ) -> Candidatura:
+        """Move a candidatura para `novo_status` e grava a ordem completa da coluna de destino.
+
+        A operação é atômica: se falhar, nada muda. Quando o status muda, a coluna de origem
+        é renumerada para não deixar buracos.
         Levanta CandidaturaNaoEncontrada se o id não existir.
         """
         raise NotImplementedError

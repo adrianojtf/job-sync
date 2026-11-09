@@ -1,5 +1,7 @@
 """Testes do caso de uso CriarCandidatura."""
 
+from __future__ import annotations
+
 from jobsync.candidatura import Candidatura, StatusCandidatura
 from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
 from jobsync.candidatura.service_layer.criar_candidatura import CriarCandidatura, CriarCandidaturaInputDto
@@ -16,6 +18,17 @@ class CandidaturaRepositoryFake(CandidaturaRepository):
         return candidatura
 
     def listar_por_perfil(self, perfil_identificador: str) -> tuple[Candidatura, ...]:
+        raise NotImplementedError
+
+    def buscar_por_id(self, candidatura_id: str) -> Candidatura | None:
+        raise NotImplementedError
+
+    def aplicar_movimento(
+        self,
+        candidatura_id: str,
+        novo_status: StatusCandidatura,
+        ids_destino_ordenados: tuple[str, ...],
+    ) -> Candidatura:
         raise NotImplementedError
 
     def atualizar_status(self, candidatura_id: str, novo_status: StatusCandidatura) -> Candidatura:

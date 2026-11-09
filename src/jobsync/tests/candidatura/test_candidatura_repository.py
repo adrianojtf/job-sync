@@ -18,6 +18,17 @@ class CandidaturaRepositoryFake(CandidaturaRepository):
     def listar_por_perfil(self, perfil_identificador: str) -> tuple[Candidatura, ...]:
         return tuple(c for c in self._candidaturas.values() if c.perfil_identificador == perfil_identificador)
 
+    def buscar_por_id(self, candidatura_id: str) -> Candidatura | None:
+        raise NotImplementedError
+
+    def aplicar_movimento(
+        self,
+        candidatura_id: str,
+        novo_status: StatusCandidatura,
+        ids_destino_ordenados: tuple[str, ...],
+    ) -> Candidatura:
+        raise NotImplementedError
+
     def atualizar_status(self, candidatura_id: str, novo_status: StatusCandidatura) -> Candidatura:
         atual = self._candidaturas[candidatura_id]
         atualizada = replace(

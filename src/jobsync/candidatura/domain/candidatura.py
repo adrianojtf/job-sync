@@ -3,6 +3,8 @@
 `historico_status` contém, nesta fase, apenas a mudança de status mais
 recente (não um histórico de auditoria completo) — o schema de persistência
 não inclui uma tabela dedicada de histórico.
+
+`posicao` é o índice da candidatura dentro da sua coluna (perfil + status).
 """
 from __future__ import annotations
 
@@ -42,6 +44,7 @@ class Candidatura:
     status: StatusCandidatura
     data_aplicacao: datetime
     historico_status: tuple[MudancaStatus, ...]
+    posicao: int = 0
 
     @classmethod
     def nova(
@@ -75,3 +78,5 @@ class Candidatura:
             raise ValueError("A empresa da candidatura não pode ser vazia.")
         if not self.cargo or not self.cargo.strip():
             raise ValueError("O cargo da candidatura não pode ser vazio.")
+        if self.posicao < 0:
+            raise ValueError("A posição da candidatura não pode ser negativa.")

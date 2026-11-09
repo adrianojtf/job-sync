@@ -2,7 +2,7 @@
 
 ## Tarefas
 
-- [ ] 1.0 Domínio e persistência da ordem dos cartões
+- [x] 1.0 Domínio e persistência da ordem dos cartões
 - [ ] 2.0 Caso de uso MoverCandidatura com posição e endpoint de submissão
 - [ ] 3.0 Contrato e cliente de API no frontend
 - [ ] 4.0 Spike do @dnd-kit: teclado, toque e ativador

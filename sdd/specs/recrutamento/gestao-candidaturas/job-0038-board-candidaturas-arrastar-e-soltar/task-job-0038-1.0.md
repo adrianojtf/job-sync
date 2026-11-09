@@ -16,11 +16,11 @@ Cada candidatura passa a ter uma posição dentro da coluna (perfil + status). E
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de `reposicionar` e da validação de `posicao` (red).
-- [ ] 1.2 Implementar `ordenacao_coluna.py` e o campo em `Candidatura`.
-- [ ] 1.3 Escrever os testes do repositório SQLite (ordem, `salvar` no topo, `aplicar_movimento`, migração de banco antigo).
-- [ ] 1.4 Estender a porta e implementar `buscar_por_id`, `aplicar_movimento` e a migração.
-- [ ] 1.5 Ajustar os fakes e testes existentes que constroem `Candidatura` ou implementam a porta.
+- [x] 1.1 Escrever os testes de `reposicionar` e da validação de `posicao` (red).
+- [x] 1.2 Implementar `ordenacao_coluna.py` e o campo em `Candidatura`.
+- [x] 1.3 Escrever os testes do repositório SQLite (ordem, `salvar` no topo, `aplicar_movimento`, migração de banco antigo).
+- [x] 1.4 Estender a porta e implementar `buscar_por_id`, `aplicar_movimento` e a migração.
+- [x] 1.5 Ajustar os fakes e testes existentes que constroem `Candidatura` ou implementam a porta.
 
 ## Detalhes de Implementação
 
@@ -34,10 +34,10 @@ Techspec: "Visão Geral dos Componentes" (backend), "Interfaces Principais" e "M
 
 ## Testes da Tarefa
 
-- [ ] `reposicionar`: início, meio, fim, acima do tamanho, `None`, movido já presente, coluna vazia.
-- [ ] `Candidatura` rejeita `posicao` negativa.
-- [ ] Repositório: ordem por `posicao`; `salvar` entra no topo; `aplicar_movimento` fecha o vazio e não deixa estado parcial; migração idempotente (rodar duas vezes).
-- [ ] Regressão: `test_candidatura.py`, `test_candidatura_repository*.py` e demais testes de `candidatura/`.
+- [x] `reposicionar`: início, meio, fim, acima do tamanho, `None`, movido já presente, coluna vazia.
+- [x] `Candidatura` rejeita `posicao` negativa.
+- [x] Repositório: ordem por `posicao`; `salvar` entra no topo; `aplicar_movimento` fecha o vazio e não deixa estado parcial; migração idempotente (rodar duas vezes).
+- [x] Regressão: `test_candidatura.py`, `test_candidatura_repository*.py` e demais testes de `candidatura/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

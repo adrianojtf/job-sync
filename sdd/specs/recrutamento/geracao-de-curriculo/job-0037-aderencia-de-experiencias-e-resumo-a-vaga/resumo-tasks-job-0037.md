@@ -8,7 +8,7 @@
 - [x] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
 - [x] 5.0 Refino variável no backend
 - [x] 6.0 API, Postman e tipos do frontend
-- [ ] 7.0 SugestaoIA com histórico e foco
+- [x] 7.0 SugestaoIA com histórico e foco
 - [ ] 8.0 Tela de revisão: ajustes de tecnologia, aviso e cargo-alvo
 - [ ] 9.0 E2E, acessibilidade e suíte completa
 
@@ -65,3 +65,7 @@
 - **Task 6.0 — `ajustes_tecnologia` com cargo e empresa:** além de `indice_experiencia`, cada ajuste traz cargo e empresa da experiência, para a lista da revisão não depender do índice. No envio para `/curriculos-revisados` o campo é aceito e ignorado.
 - **Task 6.0 — exemplo do rascunho no OpenAPI:** o exemplo ainda usava `descricao` (formato anterior à JOB-0035), que o schema rejeita. Atualizado para conquistas, contexto e `ajustes_tecnologia`.
 - **Task 6.0 — limites do refino:** `tentativa >= 1` e no máximo 3 `sugestoes_anteriores` são validados pelo Pydantic (422 antes de chegar ao caso de uso).
+- **Task 7.0 — contrato do `sugerir`:** o `SugestaoIA` recebe `SugerirComRefino<S>` (`(texto, refino) => Promise<{ valor, foco }>`). Os adaptadores de cada tela (`use-sugestoes`, `SugestaoExperienciaAdaptada`) convertem a resposta da API nesse formato.
+- **Task 7.0 — o que conta como tentativa:** só sugestões recebidas com sucesso (aplicadas ou descartadas). Um pedido que falhou não avança a tentativa nem entra no histórico.
+- **Task 7.0 — histórico de sugestão estruturada:** a experiência adaptada guarda no histórico o texto descrito no painel (conquistas e linha de contexto), que é o que a IA recebe como versão anterior.
+- **Task 7.0 — histórico não reinicia ao editar o campo:** o histórico vale enquanto o bloco estiver montado, mesmo que o usuário edite o texto entre pedidos (PRD RF22). Sem cache entre telas.

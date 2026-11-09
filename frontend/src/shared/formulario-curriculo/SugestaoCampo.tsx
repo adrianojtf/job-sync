@@ -5,14 +5,14 @@ import {
   type PathValue,
   type UseFormReturn,
 } from "react-hook-form";
-import { SugestaoIA } from "./SugestaoIA";
+import { SugestaoIA, type SugerirComRefino } from "./SugestaoIA";
 
 interface Props<T extends FieldValues> {
   form: UseFormReturn<T>;
   /** Campo de texto do formulário que recebe a sugestão. */
   campo: Path<T>;
   rotuloBloco: string;
-  sugerir: (texto: string) => Promise<string>;
+  sugerir: SugerirComRefino<string>;
 }
 
 /** Liga um campo de texto do formulário ao botão "Sugestões de IA" (JOB-0034). */

@@ -4,13 +4,14 @@ import { Panel } from "../ui/Panel";
 import type { DadosPessoaisFormulario } from "./campos-curriculo";
 import estilos from "./FormularioCurriculo.module.css";
 import { SugestaoCampo } from "./SugestaoCampo";
+import type { SugerirComRefino } from "./SugestaoIA";
 
 interface Props<T extends FieldValues & DadosPessoaisFormulario> {
   form: UseFormReturn<T>;
   /** O cadastro exige e-mail; um currículo vindo de PDF pode não ter. */
   emailObrigatorio?: boolean;
   /** Quando informada, mostra "Sugestões de IA" no resumo profissional (JOB-0034). */
-  sugerirResumo?: (texto: string) => Promise<string>;
+  sugerirResumo?: SugerirComRefino<string>;
 }
 
 const campo = <T extends FieldValues>(nome: keyof DadosPessoaisFormulario) => nome as Path<T>;

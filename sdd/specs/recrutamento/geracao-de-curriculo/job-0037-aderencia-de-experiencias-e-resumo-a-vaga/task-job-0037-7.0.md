@@ -17,10 +17,10 @@ O botão "Sugestões de IA" passa a enviar a tentativa e as últimas sugestões 
 
 ## Subtarefas
 
-- [ ] 7.1 Testes de `SugestaoIA` (Red).
-- [ ] 7.2 `rotulos-foco.ts`.
-- [ ] 7.3 `SugestaoIA` e `SugestaoCampo`.
-- [ ] 7.4 `use-sugestoes` e `SugestaoExperienciaAdaptada`.
+- [x] 7.1 Testes de `SugestaoIA` (Red).
+- [x] 7.2 `rotulos-foco.ts`.
+- [x] 7.3 `SugestaoIA` e `SugestaoCampo`.
+- [x] 7.4 `use-sugestoes` e `SugestaoExperienciaAdaptada`.
 
 ## Detalhes de Implementação
 
@@ -33,7 +33,7 @@ Ver componentes de frontend e decisão 5 ("Histórico no frontend") em `techspec
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `SugestaoIA`, `use-sugestoes`, `SugestaoExperienciaAdaptada` e `PerfilPage`; lint e `tsc`.
+- [x] Vitest de `SugestaoIA`, `use-sugestoes`, `SugestaoExperienciaAdaptada` e `PerfilPage`; lint e `tsc`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

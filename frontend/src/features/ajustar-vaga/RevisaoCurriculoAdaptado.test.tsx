@@ -51,7 +51,10 @@ function servirSugestoes() {
   servidorApi.use(
     http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
       pedidos.push({ rota: "secao", corpo: (await request.json()) as Record<string, unknown> });
-      return HttpResponse.json({ conteudo_sugerido: "Seção sugerida pela IA." });
+      return HttpResponse.json({
+        conteudo_sugerido: "Seção sugerida pela IA.",
+        foco: "aderencia_vaga",
+      });
     }),
     http.post(`${API_TESTE}/v1/experiencias-adaptadas/sugestoes`, async ({ request }) => {
       pedidos.push({
@@ -61,6 +64,7 @@ function servirSugestoes() {
       return HttpResponse.json({
         conquistas: ["Conquista sugerida.", "Outra conquista sugerida."],
         contexto: "Contexto sugerido pela IA.",
+        foco: "aderencia_vaga",
       });
     }),
   );
@@ -313,6 +317,7 @@ describe("RevisaoCurriculoAdaptado", () => {
         corpo: {
           secao: { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo da IA. Editado." },
           contexto_vaga: contextoVaga,
+          refino: { tentativa: 1, sugestoes_anteriores: [] },
         },
       });
       expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo da IA. Editado.");
@@ -364,9 +369,11 @@ describe("RevisaoCurriculoAdaptado", () => {
             contexto: "Contexto da IA. Editado.",
           },
           contexto_vaga: contextoVaga,
+          refino: { tentativa: 1, sugestoes_anteriores: [] },
         },
       });
-      expect(painel.querySelector("p")?.textContent).toBe(
+      expect(painel).toHaveTextContent("Foco: aderência à vaga");
+      expect(painel.querySelector("p:last-of-type")?.textContent).toBe(
         "- Conquista sugerida.\n- Outra conquista sugerida.\nContexto: Contexto sugerido pela IA.",
       );
       expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA. Editada.");

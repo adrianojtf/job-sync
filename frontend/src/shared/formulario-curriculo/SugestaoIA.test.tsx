@@ -1,10 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { FocoRefino } from "../../api/tipos";
 import { SugestaoIA } from "./SugestaoIA";
 
+const comFoco = <S,>(valor: S, foco: FocoRefino = "impacto") => ({ valor, foco });
+const primeiroPedido = { tentativa: 1, sugestoes_anteriores: [] };
+
 function renderizar(props: Partial<Parameters<typeof SugestaoIA<string>>[0]> = {}) {
-  const sugerir = vi.fn().mockResolvedValue("Texto sugerido pela IA.");
+  const sugerir = vi.fn().mockResolvedValue(comFoco("Texto sugerido pela IA."));
   const aplicar = vi.fn();
   const focarCampo = vi.fn();
   render(
@@ -32,7 +36,7 @@ describe("SugestaoIA", () => {
     await pedir();
 
     expect(await screen.findByText("Texto sugerido pela IA.")).toBeInTheDocument();
-    expect(sugerir).toHaveBeenCalledWith("Texto atual editado.");
+    expect(sugerir).toHaveBeenCalledWith("Texto atual editado.", primeiroPedido);
     expect(aplicar).not.toHaveBeenCalled();
     expect(screen.getByRole("region", { name: "Sugestão da IA para resumo" })).toBeInTheDocument();
   });
@@ -85,23 +89,27 @@ describe("SugestaoIA", () => {
   });
 
   it("indica o carregamento só no botão do bloco", async () => {
-    let concluir: (texto: string) => void = () => undefined;
-    renderizar({ sugerir: vi.fn(() => new Promise<string>((resolve) => (concluir = resolve))) });
+    let concluir: (sugestao: { valor: string; foco: FocoRefino }) => void = () => undefined;
+    renderizar({
+      sugerir: vi.fn(
+        () => new Promise<{ valor: string; foco: FocoRefino }>((resolve) => (concluir = resolve)),
+      ),
+    });
 
     await pedir();
 
     const botao = screen.getByRole("button", { name: "Sugestões de IA para resumo" });
     expect(botao).toHaveAttribute("aria-busy", "true");
     expect(botao).toHaveTextContent("Gerando sugestão…");
-    concluir("Pronto.");
+    concluir(comFoco("Pronto."));
     expect(await screen.findByText("Pronto.")).toBeInTheDocument();
   });
 
   it("uma nova sugestão substitui a anterior", async () => {
     const sugerir = vi
       .fn()
-      .mockResolvedValueOnce("Primeira sugestão.")
-      .mockResolvedValueOnce("Segunda sugestão.");
+      .mockResolvedValueOnce(comFoco("Primeira sugestão."))
+      .mockResolvedValueOnce(comFoco("Segunda sugestão."));
     renderizar({ sugerir });
 
     await pedir();
@@ -135,7 +143,7 @@ describe("SugestaoIA com sugestão estruturada", () => {
     `${s.conquistas.map((c) => `- ${c}`).join("\n")}\n${s.contexto}`;
 
   function renderizarEstruturado() {
-    const sugerir = vi.fn().mockResolvedValue(sugestao);
+    const sugerir = vi.fn().mockResolvedValue(comFoco(sugestao, "aderencia_vaga"));
     const aplicar = vi.fn();
     const focarCampo = vi.fn();
     render(
@@ -161,8 +169,8 @@ describe("SugestaoIA com sugestão estruturada", () => {
     );
     const painel = await screen.findByRole("region", { name: "Sugestão da IA para experiência 1" });
 
-    expect(sugerir).toHaveBeenCalledWith("Criei APIs.");
-    expect(painel.querySelector("p")?.textContent).toBe(
+    expect(sugerir).toHaveBeenCalledWith("Criei APIs.", primeiroPedido);
+    expect(painel.querySelector("p:last-of-type")?.textContent).toBe(
       "- Criei APIs.\n- Reduzi custos.\nPagamentos.",
     );
 
@@ -181,7 +189,7 @@ describe("SugestaoIA com sugestão estruturada", () => {
       <SugestaoIA
         rotuloBloco="experiência 1"
         textoAtual="Criei APIs."
-        sugerir={async () => sugestao}
+        sugerir={async () => comFoco(sugestao)}
         aplicar={() => undefined}
       />
     );
@@ -201,5 +209,96 @@ describe("SugestaoIA com sugestão estruturada", () => {
     );
 
     expect(aplicar).not.toHaveBeenCalled();
+  });
+});
+
+describe("SugestaoIA com refino", () => {
+  it("mostra o foco usado na sugestão", async () => {
+    renderizar({ sugerir: vi.fn().mockResolvedValue(comFoco("Texto.", "palavras_chave")) });
+
+    await pedir();
+
+    const painel = await screen.findByRole("region", { name: "Sugestão da IA para resumo" });
+    expect(painel).toHaveTextContent("Foco: palavras-chave da vaga");
+  });
+
+  it("um novo pedido envia a próxima tentativa e as sugestões já mostradas", async () => {
+    const sugerir = vi
+      .fn()
+      .mockResolvedValueOnce(comFoco("Primeira sugestão.", "aderencia_vaga"))
+      .mockResolvedValueOnce(comFoco("Segunda sugestão."));
+    renderizar({ sugerir });
+
+    await pedir();
+    await screen.findByText("Primeira sugestão.");
+    await userEvent.click(screen.getByRole("button", { name: "Descartar sugestão de resumo" }));
+    await pedir();
+    await screen.findByText("Segunda sugestão.");
+
+    expect(sugerir).toHaveBeenLastCalledWith("Texto atual editado.", {
+      tentativa: 2,
+      sugestoes_anteriores: ["Primeira sugestão."],
+    });
+  });
+
+  it("guarda só as três últimas sugestões", async () => {
+    const sugerir = vi.fn();
+    for (let i = 1; i <= 5; i++) sugerir.mockResolvedValueOnce(comFoco(`Sugestão ${i}.`));
+    renderizar({ sugerir });
+
+    for (let i = 1; i <= 5; i++) {
+      await pedir();
+      await screen.findByText(`Sugestão ${i}.`);
+    }
+
+    expect(sugerir).toHaveBeenLastCalledWith("Texto atual editado.", {
+      tentativa: 5,
+      sugestoes_anteriores: ["Sugestão 2.", "Sugestão 3.", "Sugestão 4."],
+    });
+  });
+
+  it("um pedido que falhou não conta como tentativa", async () => {
+    const sugerir = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("IA fora do ar."))
+      .mockResolvedValueOnce(comFoco("Sugestão."));
+    renderizar({ sugerir });
+
+    await pedir();
+    await screen.findByText(/IA fora do ar\./);
+    await pedir();
+    await screen.findByText("Sugestão.");
+
+    expect(sugerir).toHaveBeenLastCalledWith("Texto atual editado.", primeiroPedido);
+  });
+
+  it("guarda a sugestão estruturada como o texto descrito", async () => {
+    const sugerir = vi
+      .fn()
+      .mockResolvedValueOnce(comFoco({ linhas: ["A", "B"] }))
+      .mockResolvedValueOnce(comFoco({ linhas: ["C"] }));
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SugestaoIA<{ linhas: string[] }>
+          rotuloBloco="experiência 1"
+          textoAtual="A"
+          sugerir={sugerir}
+          descrever={(s) => s.linhas.join(" / ")}
+          aplicar={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    const pedirExperiencia = () =>
+      userEvent.click(screen.getByRole("button", { name: "Sugestões de IA para experiência 1" }));
+
+    await pedirExperiencia();
+    await screen.findByText("A / B");
+    await pedirExperiencia();
+    await screen.findByText("C");
+
+    expect(sugerir).toHaveBeenLastCalledWith("A", {
+      tentativa: 2,
+      sugestoes_anteriores: ["A / B"],
+    });
   });
 });

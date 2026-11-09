@@ -1,6 +1,8 @@
 """Testes para o adaptador AjustadorTextoClient."""
 from unittest.mock import Mock
 
+import pytest
+
 from jobsync.vaga import (
     AnaliseVaga,
     CategoriaRequisitoTecnico,
@@ -269,3 +271,25 @@ def test_refinar_secao_mantem_as_regras_da_secao() -> None:
 
     assert "não invente anos de experiência ou cargos" in usuario
     assert "conteudo_ajustado" in sistema
+@pytest.mark.parametrize("tipo", list(TipoSecao))
+def test_prompt_de_qualquer_secao_pede_para_preservar_linhas_e_topicos(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt")
+
+    assert "Preserve a estrutura de linhas do conteúdo original" in prompt
+    assert 'começa com "- "' in prompt
+    assert "Nunca junte tópicos ou linhas em um parágrafo" in prompt
+
+
+def test_prompt_de_tecnologias_pede_uma_categoria_por_linha_sem_criar_categorias() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "en")
+
+    assert "uma categoria por linha" in prompt
+    assert "Rótulo: item1, item2" in prompt
+    assert "não crie categorias" in prompt
+
+
+@pytest.mark.parametrize("tipo", [TipoSecao.PERFIL, TipoSecao.FORMACAO, TipoSecao.IDIOMAS])
+def test_prompt_de_outras_secoes_nao_traz_a_regra_de_categorias_de_tecnologia(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt")
+
+    assert "uma categoria por linha" not in prompt

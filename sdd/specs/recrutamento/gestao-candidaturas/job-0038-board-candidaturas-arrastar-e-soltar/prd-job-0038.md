@@ -78,6 +78,8 @@ Requisitos funcionais:
 - **RF16.** A caixa de seleção "Mover para" é removida de todos os cartões.
 - **RF17.** O movimento por teclado substitui a seleção: o candidato foca o cartão, aperta Espaço para pegar, usa as setas para escolher a posição e aperta Espaço para soltar (Esc cancela).
 - **RF18.** Cada passo do movimento por teclado é anunciado a leitores de tela, em português.
+- **RF18a.** O detalhe da candidatura (janela aberta pelo título) tem o campo **"Mover para"** com os quatro status. Ele é a alternativa sem arrastar, para quem não consegue ou não quer arrastar.
+- **RF18b.** Escolher um status em "Mover para" move a candidatura para o topo da coluna escolhida, mostra o aviso "Candidatura movida para X" e atualiza o status exibido no próprio detalhe e no board atrás. Em caso de erro, o campo volta ao status anterior e o aviso de erro aparece.
 
 ### F5. Layout responsivo no estilo Jira
 
@@ -100,6 +102,7 @@ Requisitos funcionais:
 
 - **Fluxo principal:** abrir Candidaturas, pegar o cartão, soltar na coluna, ver o aviso "Candidatura movida para Entrevista".
 - **Toque:** o arrasto começa após um toque curto e firme sobre o cartão, para não conflitar com a rolagem da tela. O clique simples no título abre o detalhe.
+- **Sem arrastar:** o candidato clica no título e usa "Mover para" no detalhe.
 - **Teclado:** Tab chega ao cartão e ao título. Espaço no cartão inicia o movimento; Enter no título abre o detalhe.
 - **Leitor de tela:** anúncios em português ("Candidatura X pega. Posição 2 de 4 em Entrevista.").
 - **Acessibilidade:** mantém o padrão atual do projeto (WCAG AA, teste com axe). Movimento reduzido: com `prefers-reduced-motion`, as animações são cortadas.
@@ -123,11 +126,12 @@ Requisitos funcionais:
 - Colaboração em tempo real entre usuários.
 - Histórico completo de mudanças de status (continua só a mudança mais recente).
 - Rota própria para o detalhe da candidatura. O detalhe continua em janela sobre o board.
-- Mudanças na tela de detalhe além do acesso por título.
+- Mudanças na tela de detalhe além do acesso por título e do campo "Mover para".
+- Escolher a posição exata dentro da coluna pelo campo "Mover para" (a posição fina é feita arrastando).
 
 ## Questões em Aberto
 
-1. **Alternativa ao arrasto por ponteiro único.** A norma WCAG 2.2 (critério 2.5.7, nível AA) pede uma alternativa de ponteiro único para ações de arrasto. Remover a caixa de seleção deixa o teclado como alternativa, mas não resolve toque para quem não consegue arrastar. Sugestão: incluir um campo "Mover para" dentro do detalhe, fora do cartão. Precisa de decisão de produto.
+1. **Alternativa ao arrasto por ponteiro único.** Resolvida: o campo "Mover para" fica dentro do detalhe (RF18a e RF18b), o que atende a alternativa de ponteiro único pedida pela WCAG 2.2 (critério 2.5.7, nível AA).
 2. **Rolagem do cartão no toque.** O tempo de espera para iniciar o arrasto por toque (sugestão: 200 ms) precisa de validação em aparelhos reais.
 3. **Marca de cor por status.** As cores de cada coluna (por exemplo, azul para Aplicado, âmbar para Entrevista, verde para Oferta, cinza para Rejeitado) precisam de aprovação de design.
 4. **"Check box de seleção de status".** Este PRD interpreta o pedido como a remoção da caixa de seleção (`select`) "Mover para" dos cartões. Confirmar se havia outro controle em mente.

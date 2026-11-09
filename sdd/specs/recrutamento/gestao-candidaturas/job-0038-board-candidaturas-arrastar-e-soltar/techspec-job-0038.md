@@ -33,7 +33,9 @@ Frontend (`frontend/src`):
 |---|---|---|
 | `package.json` | **Modificado** | `@dnd-kit/core@6.3.1`, `@dnd-kit/sortable@10.0.0`, `@dnd-kit/utilities@3.2.2` (versões fixas, como o resto do projeto) |
 | `api/api-client.ts`, `http-api-client.ts`, `schema.d.ts`, `tipos.ts` | **Modificado** | `moverCandidatura(id, novoStatus, posicao?)`; schema regenerado com `npm run gerar-tipos` |
-| `features/candidaturas/CandidaturasPage.tsx` | **Modificado** | Monta o `DndContext`, as colunas e o `DragOverlay`; remove `select` e botão "Detalhes" |
+| `features/candidaturas/CandidaturasPage.tsx` | **Modificado** | Monta o `DndContext`, as colunas e o `DragOverlay`; remove `select` e botão "Detalhes". Guarda só o `id` da candidatura em detalhe e a obtém do cache, para o modal refletir o status novo |
+| `features/candidaturas/DetalheCandidaturaModal.tsx` | **Modificado** | Campo "Mover para" (select com os 4 status) que chama a mesma mutation, com `posicao: 0` |
+| `features/candidaturas/use-mover-com-aviso.ts` | **Novo** | Hook que junta a mutation e o toast de sucesso/erro, usado pelo arrasto e pelo modal (DRY) |
 | `features/candidaturas/ColunaKanban.tsx` | **Novo** | Coluna: cabeçalho, contagem, área de soltura (`useDroppable`) e `SortableContext` |
 | `features/candidaturas/CartaoCandidatura.tsx` | **Novo** | Cartão ordenável (`useSortable`) com título em botão. Também exporta a versão visual usada no overlay |
 | `features/candidaturas/movimento.ts` | **Novo** | Funções puras: `calcularDestino(quadro, ativoId, sobreId)` e `aplicarMovimento(quadro, ...)` (estado otimista) |
@@ -99,6 +101,8 @@ Sensores do `DndContext`:
 - `autoScroll` do dnd-kit habilitado nas áreas rolantes (RF22).
 - `collisionDetection`: `closestCorners`, adequado para colunas com cartões.
 
+Movimento pelo modal (RF18a, RF18b): o `select` do detalhe chama `mover({ id, novoStatus, posicao: 0 })`. Como usa a mesma mutation, ganha a atualização otimista e o retorno ao estado anterior. O valor do `select` vem da candidatura no cache, então volta sozinho ao status anterior em caso de erro.
+
 O nó de ativação do arrasto por teclado é o próprio cartão (`setActivatorNodeRef`). O dnd-kit só inicia o arrasto quando o foco está nesse nó, então o título (botão interno) continua com Enter para abrir o detalhe. Esse comportamento precisa ser confirmado na primeira tarefa (ver Riscos).
 
 ### Modelos de Dados
@@ -147,7 +151,7 @@ Backend (`src/jobsync/tests/candidatura/`):
 Frontend (Vitest + Testing Library + MSW):
 
 - `movimento.test.ts`: `calcularDestino` e `aplicarMovimento` (entre colunas, na mesma coluna, coluna vazia, soltar sobre a própria posição = `null`).
-- `CandidaturasPage.test.tsx`: título abre o detalhe; não há `select` nem botão "Detalhes"; movimento por teclado (Espaço, seta, Espaço) envia `novo_status` e `posicao` corretos; erro da API restaura o cartão e mostra o toast; anúncios em pt-BR.
+- `CandidaturasPage.test.tsx`: título abre o detalhe; "Mover para" no detalhe move a candidatura para o topo da coluna escolhida, atualiza o status exibido no modal e restaura o valor em caso de erro; não há `select` nem botão "Detalhes"; movimento por teclado (Espaço, seta, Espaço) envia `novo_status` e `posicao` corretos; erro da API restaura o cartão e mostra o toast; anúncios em pt-BR.
 - `http-api-client.test.ts`: corpo com `posicao` quando informada.
 - `formatacao.test.ts`: `formatarTempoRelativo`.
 
@@ -159,6 +163,7 @@ Playwright (`frontend/e2e/`):
 
 - Arrastar com o mouse (`mouse.down/move/up`) entre colunas e dentro da coluna; recarregar e conferir a persistência (RF8).
 - Clique no título abre o detalhe; arrasto não abre.
+- Mover pelo campo "Mover para" do detalhe e conferir a coluna do board após fechar o modal.
 - Larguras 375, 768 e 1280 px: sem rolagem horizontal da página; a área do board rola; as colunas mantêm largura fixa.
 - `acessibilidade.spec.ts`: axe na tela de Candidaturas com cartões e durante o arrasto por teclado.
 - Emulação de toque em um viewport móvel: rolagem da página e arrasto após toque longo.
@@ -204,7 +209,7 @@ Playwright (`frontend/e2e/`):
 - **Toque e rolagem.** Delay de 200 ms pode ser curto ou longo demais. Mitigação: teste em Safari iOS e Chrome Android; valor é constante em um só lugar.
 - **Dois movimentos rápidos.** A resposta da primeira chamada pode chegar depois da segunda. Mitigação: `onMutate` cancela consultas pendentes e `onSettled` invalida; as mutações ficam em série por `mutationKey`.
 - **Migração em banco existente.** Sem ferramenta de migração, a verificação por `PRAGMA` precisa ser idempotente. Coberta por teste.
-- **Acessibilidade WCAG 2.5.7.** Sem alternativa de ponteiro único, a conformidade depende da decisão em aberto do PRD (campo "Mover para" no detalhe).
+- **Modal com dado desatualizado.** Hoje o modal recebe uma cópia da candidatura. Mitigação: guardar só o `id` e ler do cache.
 - **Concorrência entre abas.** Duas abas podem reordenar a mesma coluna e a última vence. Aceito (usuário único por perfil).
 
 ### Conformidade com Padrões
@@ -233,6 +238,5 @@ Desvio: nova dependência de frontend (`@dnd-kit`), justificada acima. Sem outro
 
 ## Questões em Aberto
 
-1. Decisão de produto sobre a alternativa de ponteiro único (campo "Mover para" no detalhe), pendente no PRD.
-2. A cor de cada coluna precisa de aprovação de design; o valor entra em `status.ts`.
-3. Confirmar se o Streamlit deve mostrar a nova ordem. Hoje ele só usa `MoverCandidatura`, sem posição, então o movimento dele coloca o cartão no topo.
+1. A cor de cada coluna precisa de aprovação de design; o valor entra em `status.ts`.
+2. Confirmar se o Streamlit deve mostrar a nova ordem. Hoje ele só usa `MoverCandidatura`, sem posição, então o movimento dele coloca o cartão no topo.

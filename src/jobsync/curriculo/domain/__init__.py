@@ -20,6 +20,7 @@ from jobsync.curriculo.domain.avaliador_experiencia_port import (
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.ajustador_experiencia_port import AjustadorExperienciaPort
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
+from jobsync.curriculo.domain.identificador_equivalencias_port import IdentificadorEquivalenciasPort
 from jobsync.curriculo.domain.gerador_pdf_port import GeradorPdfPort
 from jobsync.curriculo.domain.gerar_carta_apresentacao_port import GerarCartaApresentacaoPort
 from jobsync.curriculo.domain.gerar_sugestoes_ats_port import GerarSugestoesAtsPort
@@ -43,6 +44,7 @@ __all__ = [
     "AjustadorTextoPort",
     "AjustadorExperienciaPort",
     "ExtratorCurriculoPort",
+    "IdentificadorEquivalenciasPort",
     "GeradorPdfPort",
     "GerarCartaApresentacaoPort",
     "GerarSugestoesAtsPort",

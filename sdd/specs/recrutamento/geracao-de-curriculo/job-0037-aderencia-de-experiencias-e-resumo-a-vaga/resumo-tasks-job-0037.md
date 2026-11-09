@@ -4,7 +4,7 @@
 
 - [x] 1.0 Cargo-alvo no ContextoVaga e portas com ContextoVaga
 - [x] 2.0 Equivalências e plano de adaptação no domínio
-- [ ] 3.0 Identificador de equivalências (porta e adapter)
+- [x] 3.0 Identificador de equivalências (porta e adapter)
 - [ ] 4.0 Trocas, cargo-alvo e responsabilidades implícitas na adaptação
 - [ ] 5.0 Refino variável no backend
 - [ ] 6.0 API, Postman e tipos do frontend
@@ -47,3 +47,6 @@
 - **Task 2.0 — `ManutencaoTecnologia`:** o plano guarda as manutenções como VO (`indice_experiencia`, `tecnologia`) em vez da tupla `(int, str)` da tech spec, para ficar legível e simétrico a `AjusteTecnologia`.
 - **Task 2.0 — uma equivalência por original:** se a IA devolver duas equivalências para a mesma tecnologia original (ex.: React → Angular e React → Vue), só a primeira é usada. Sem isso, a mesma experiência receberia duas trocas conflitantes.
 - **Task 2.0 — limitação conhecida:** a comparação por palavra inteira reconhece "React" dentro de "React Native". Não tratado nesta JOB.
+- **Task 3.0 — dublê de E2E adiado:** o dublê do identificador entra na task 4.0, junto com a injeção em `AdaptarCurriculoParaVaga`. Criá-lo na 3.0 deixaria uma classe sem uso.
+- **Task 3.0 — sem chamada desnecessária:** o adapter não chama a IA quando a vaga não tem requisitos ou nenhuma experiência tem descrição; devolve lista vazia.
+- **Task 3.0 — formato inválido:** qualquer item fora do formato (inclusive original igual ao alvo) faz o adapter levantar `ValueError`. A task 4.0 trata essa falha como plano vazio, sem interromper a adaptação.

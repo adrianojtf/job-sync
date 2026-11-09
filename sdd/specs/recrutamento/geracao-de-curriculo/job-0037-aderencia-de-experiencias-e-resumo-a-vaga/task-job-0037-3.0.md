@@ -17,10 +17,10 @@ Uma chamada de IA por adaptação aponta pares equivalentes entre as tecnologias
 
 ## Subtarefas
 
-- [ ] 3.1 Testes do adapter com mock do `ClienteOpenAI` (Red).
-- [ ] 3.2 Porta.
-- [ ] 3.3 Adapter e prompt.
-- [ ] 3.4 Dublê de E2E.
+- [x] 3.1 Testes do adapter com mock do `ClienteOpenAI` (Red).
+- [x] 3.2 Porta.
+- [x] 3.3 Adapter e prompt.
+- [x] 3.4 Dublê de E2E (movido para a task 4.0, onde o identificador é injetado).
 
 ## Detalhes de Implementação
 
@@ -33,7 +33,7 @@ Ver "`IdentificadorEquivalenciasOpenAIClient`" em "Regras dos prompts" de `techs
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do adapter (prompt, parse, erros).
+- [x] Testes de unidade do adapter (prompt, parse, erros).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

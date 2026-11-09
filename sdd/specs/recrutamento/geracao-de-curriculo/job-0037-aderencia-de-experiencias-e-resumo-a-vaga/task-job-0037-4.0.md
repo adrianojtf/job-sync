@@ -25,7 +25,7 @@ A adaptação passa a gerar o plano, a passar as diretrizes de cada experiência
 - [ ] 4.3 Porta e adapter de texto (TECNOLOGIAS, PERFIL, EXPERIENCIAS da fonte PDF).
 - [ ] 4.4 Rascunho com `ajustes_tecnologia`.
 - [ ] 4.5 `AdaptarCurriculoParaVaga` e injeção.
-- [ ] 4.6 Dublês de E2E.
+- [ ] 4.6 Dublês de E2E, incluindo o do identificador de equivalências (vindo da task 3.0).
 
 ## Detalhes de Implementação
 

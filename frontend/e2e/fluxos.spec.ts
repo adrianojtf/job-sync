@@ -118,7 +118,12 @@ test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover 
   await expect(page.getByText("Nenhuma vaga salva")).toBeVisible();
 
   await page.getByRole("link", { name: /Candidaturas/ }).click();
-  await page.getByLabel("Mover Senior Python Engineer para").selectOption("ENTREVISTA");
+  await page.getByRole("button", { name: "Senior Python Engineer", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Senior Python Engineer" })
+    .getByLabel("Mover para")
+    .selectOption("ENTREVISTA");
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("region", { name: "Entrevista, 1 candidatura" })).toContainText(
     "Senior Python Engineer",
   );
@@ -159,7 +164,7 @@ test("confirmar candidatura na tela de ajuste: Aplicado no board, PDF no detalhe
   await expect(aplicado).toContainText("Staff Platform Engineer");
   await expect(aplicado).toContainText("Initech");
 
-  await page.getByRole("button", { name: "Detalhes de Staff Platform Engineer" }).click();
+  await page.getByRole("button", { name: "Staff Platform Engineer", exact: true }).click();
   const detalhe = page.getByRole("dialog", { name: "Staff Platform Engineer" });
   const [download] = await Promise.all([
     page.waitForEvent("download"),

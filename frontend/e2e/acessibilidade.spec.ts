@@ -140,7 +140,7 @@ test("confirmar candidatura: botão, confirmação e detalhe com download sem vi
   expect(await violacoesGraves(page)).toEqual([]);
 
   await page.getByRole("link", { name: "Ver no board" }).click();
-  await page.getByRole("button", { name: "Detalhes de Staff Platform Engineer" }).click();
+  await page.getByRole("button", { name: "Staff Platform Engineer", exact: true }).click();
   await expect(page.getByRole("button", { name: "Baixar PDF do currículo usado" })).toBeVisible();
 
   expect(await violacoesGraves(page)).toEqual([]);

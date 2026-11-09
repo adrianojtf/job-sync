@@ -11,6 +11,16 @@ export const PREFIXO_COLUNA = "coluna:";
 
 export const idDaColuna = (status: string) => `${PREFIXO_COLUNA}${status}`;
 
+/** Candidatura com o `id` informado, em qualquer coluna do quadro. */
+export function encontrarCandidatura(
+  quadro: CandidaturasPorStatus,
+  id: string,
+): Candidatura | undefined {
+  return Object.values(colunas(quadro))
+    .flat()
+    .find((cartao) => cartao.id === id);
+}
+
 interface Posicao {
   status: string;
   indice: number;

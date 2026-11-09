@@ -18,12 +18,12 @@ Monta o board com `DndContext`: coluna, cartão ordenável, overlay de arrasto, 
 
 ## Subtarefas
 
-- [ ] 6.1 Reescrever os testes da página (sem `select` e sem "Detalhes"; título abre o detalhe) (red).
-- [ ] 6.2 Criar `CartaoCandidatura` e `ColunaKanban`.
-- [ ] 6.3 Montar o `DndContext`, o overlay, o cancelamento e os anúncios.
-- [ ] 6.4 Ligar o título ao detalhe e guardar só o `id`.
-- [ ] 6.5 Adicionar "Mover para" ao modal e testar o sucesso e o erro.
-- [ ] 6.6 Remover o código antigo do cartão.
+- [x] 6.1 Reescrever os testes da página (sem `select` e sem "Detalhes"; título abre o detalhe) (red).
+- [x] 6.2 Criar `CartaoCandidatura` e `ColunaKanban`.
+- [x] 6.3 Montar o `DndContext`, o overlay, o cancelamento e os anúncios.
+- [x] 6.4 Ligar o título ao detalhe e guardar só o `id`.
+- [x] 6.5 Adicionar "Mover para" ao modal e testar o sucesso e o erro.
+- [x] 6.6 Remover o código antigo do cartão.
 
 ## Detalhes de Implementação
 
@@ -38,8 +38,8 @@ Techspec: "Visão Geral dos Componentes" (frontend), "Interfaces Principais" (se
 
 ## Testes da Tarefa
 
-- [ ] Teste da página: título abre o detalhe; não há `select` nem "Detalhes"; movimento por teclado (Espaço, seta, Espaço) envia `novo_status` e `posicao` corretos; erro da API restaura o cartão e mostra o toast; anúncios em pt-BR.
-- [ ] Teste do modal: "Mover para" move, atualiza o status exibido e restaura o valor em erro.
+- [x] Teste da página: título abre o detalhe; não há `select` nem "Detalhes"; movimento por teclado (Espaço, seta, Espaço) envia `novo_status` e `posicao` corretos; erro da API restaura o cartão e mostra o toast; anúncios em pt-BR.
+- [x] Teste do modal: "Mover para" move, atualiza o status exibido e restaura o valor em erro.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

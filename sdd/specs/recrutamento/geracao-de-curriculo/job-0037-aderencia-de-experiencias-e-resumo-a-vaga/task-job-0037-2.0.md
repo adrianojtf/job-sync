@@ -16,9 +16,9 @@ Regra de negócio determinística que decide em quais experiências cada tecnolo
 
 ## Subtarefas
 
-- [ ] 2.1 Testes dos VOs e da distribuição (Red).
-- [ ] 2.2 VOs.
-- [ ] 2.3 `PlanoAdaptacao`.
+- [x] 2.1 Testes dos VOs e da distribuição (Red).
+- [x] 2.2 VOs.
+- [x] 2.3 `PlanoAdaptacao`.
 
 ## Detalhes de Implementação
 
@@ -31,7 +31,7 @@ Ver "Regras de `PlanoAdaptacao.distribuir`" em `techspec-job-0037.md`.
 
 ## Testes da Tarefa
 
-- [ ] Uma, duas e três ocorrências; alvo já presente; "Java" não casa com "JavaScript"; experiência sem descrição; duas equivalências na mesma experiência; plano vazio.
+- [x] Uma, duas e três ocorrências; alvo já presente; "Java" não casa com "JavaScript"; experiência sem descrição; duas equivalências na mesma experiência; plano vazio.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

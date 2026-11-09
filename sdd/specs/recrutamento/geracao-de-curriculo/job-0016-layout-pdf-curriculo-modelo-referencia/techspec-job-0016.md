@@ -111,7 +111,9 @@ Entrada: texto da seção, blocos separados por linha em branco.
 - **Ordem dos itens do bloco:** empresa e período, cargo, tópicos, texto solto (`descricao`) e contexto. O texto solto fica depois dos tópicos porque, na prática, é a continuação de um tópico quebrado em linha.
 - **Bloco de experiência:** `keepWithNext` na empresa, no cargo, no título da seção e na linha da seção, para o cabeçalho nunca ficar órfão no fim da página. Não usar `KeepTogether` aninhado: o ReportLab empurra o conteúdo inteiro para a página seguinte. O espaço entre blocos vem do `spaceBefore` da empresa (10 pt), sem `Spacer` (RF 22).
 - **Espaçamentos medidos no modelo:** o ReportLab usa o maior entre o `spaceAfter` do elemento anterior e o `spaceBefore` do próximo, sem somar. Valores: título da seção `spaceBefore` 15; linha da seção `spaceAfter` 6,5; cargo `spaceAfter` 4; tópico `spaceAfter` 3; perfil `spaceAfter` 4; margem superior 29,5 pt (mais 6 pt de folga do frame, o nome começa em 39,5 pt). Com esses valores, as linhas ficam a menos de 0,5 pt das posições do modelo.
-- **Formação/Certificações:** mesmo `InterpretadorExperiencias` (instituição + período, depois curso/grau em itálico azul). Reaproveita a tabela de cabeçalho. Idiomas: `<b>idioma</b> — nível`, uma linha por item.
+- **Formação/Certificações:** mesmo `InterpretadorExperiencias` e o mesmo desenho de bloco das experiências (instituição em negrito + período à direita, depois curso/grau em itálico azul).
+- **Idiomas:** uma linha por idioma, sem marcador. Com travessão (`English — Fluent`), só o idioma fica em negrito. Com dois-pontos (`English: Fluent`), o idioma e os dois-pontos ficam em negrito, como nas tecnologias. Sem nível, a linha inteira fica em negrito.
+- **Código removido:** o negrito parcial de formação do JOB-0002 (`_negritar_formacao` e auxiliares) deixou de existir, porque o padrão do modelo o substitui. Um texto no formato antigo (`Education: Estácio, Jun 2022 - Jun 2024, Associate Degree ...`) não tem período no fim da linha e sai como uma única linha em negrito, sem perda de texto.
 - **Escape:** manter `_escape_text` antes de aplicar qualquer markup.
 
 ### Modelos de Dados

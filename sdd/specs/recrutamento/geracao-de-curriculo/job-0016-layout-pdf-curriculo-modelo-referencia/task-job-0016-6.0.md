@@ -17,10 +17,10 @@ Aplicar o padrão do modelo às seções finais: instituição e período na mes
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever testes com `pdfplumber` para formação, certificações e idiomas (red).
-- [ ] 6.2 Implementar formação e certificações reaproveitando o componente da tarefa 5.0.
-- [ ] 6.3 Implementar idiomas.
-- [ ] 6.4 Revisar código antigo de formação e testes associados.
+- [x] 6.1 Escrever testes com `pdfplumber` para formação, certificações e idiomas (red).
+- [x] 6.2 Implementar formação e certificações reaproveitando o componente da tarefa 5.0.
+- [x] 6.3 Implementar idiomas.
+- [x] 6.4 Revisar código antigo de formação e testes associados.
 
 ## Detalhes de Implementação
 
@@ -33,12 +33,12 @@ Consultar em `techspec-job-0016.md` a seção "Regras de renderização" (item F
 
 ## Testes da Tarefa
 
-- [ ] `Estácio` em `Carlito-Bold` e `Jun 2022 - Jun 2024` alinhado à direita em `#595959`.
-- [ ] `Systems Analysis and Development - Associate Degree` em `Carlito-Italic` `#1F3864`.
-- [ ] Certificação com nome e ano na mesma linha.
-- [ ] Formação `Curso — Instituição (Período)` gera instituição em negrito com período à direita e curso em itálico azul na linha abaixo.
-- [ ] Idiomas: uma linha por idioma, idioma em negrito.
-- [ ] Formato antigo de formação gera PDF válido com todo o texto.
+- [x] `Estácio` em `Carlito-Bold` e `Jun 2022 - Jun 2024` alinhado à direita em `#595959`.
+- [x] `Systems Analysis and Development - Associate Degree` em `Carlito-Italic` `#1F3864`.
+- [x] Certificação com nome e ano na mesma linha.
+- [x] Formação `Curso — Instituição (Período)` gera instituição em negrito com período à direita e curso em itálico azul na linha abaixo.
+- [x] Idiomas: uma linha por idioma, idioma em negrito.
+- [x] Formato antigo de formação gera PDF válido com todo o texto.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -66,13 +66,6 @@ def test_localiza_titulo_de_secao_para_ingles():
     assert gerador._obter_titulo_secao(TipoSecao.PERFIL, "Perfil", "en") == "Profile"
 
 
-def test_aplica_enfase_formacao():
-    texto = "Estácio - ADS"
-    resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.FORMACAO)
-
-    assert resultado == "<b>Estácio</b> - <b>ADS</b>"
-
-
 def test_formatar_conteudo_tecnologias_separa_categorias_com_espacamento():
     conteudo = "Languages: Python, Java\nDatabases: PostgreSQL"
     elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.TECNOLOGIAS, "en")
@@ -93,13 +86,6 @@ def test_formatar_conteudo_tecnologias_sem_categorias_explicitas_preserva_texto(
 
     assert len(paragrafos) == 1
     assert paragrafos[0].text == "Python, Java, Go"
-
-
-def test_aplica_enfase_formacao_com_education_e_grau():
-    texto = "Education: Estácio, Jun 2022 - Jun 2024, Associate Degree in Systems Analysis and Development"
-    resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.FORMACAO)
-
-    assert resultado == "<b>Education</b>: <b>Estácio</b>, Jun 2022 - Jun 2024, <b>Associate Degree in Systems Analysis and Development</b>"
 
 
 def test_gera_pdf_valido_com_todas_as_secoes():
@@ -617,3 +603,88 @@ def test_layout_ritmo_vertical_das_experiencias_segue_o_modelo():
     assert abs((topos["Context: Segundo."] - topos["Cargo B"]) - 16.8) < 0.5
     assert abs((topos["Context: Fim do primeiro."] - topos["● Dois"]) - 15.8) < 0.5
     assert abs((topos["B 2022 - 2023"] - topos["Context: Fim do primeiro."]) - 23.0) < 1.0
+
+
+def _pagina_da_secao(tipo: TipoSecao, titulo: str, conteudo: str, idioma: str = "en"):
+    return _pagina_do_pdf(_curriculo_com(SecaoCurriculo(tipo, titulo, conteudo)), idioma)
+
+
+_FORMACAO = (
+    "Estácio Jun 2022 - Jun 2024\nSystems Analysis and Development - Associate Degree\n\n"
+    "IFSC Dec 2013 - Dec 2015\nTelecommunications Technician - Technical Degree"
+)
+
+
+def test_formacao_desenha_instituicao_em_negrito_periodo_a_direita_e_curso_em_italico_azul():
+    pagina = _pagina_da_secao(TipoSecao.FORMACAO, "Formação", _FORMACAO)
+
+    instituicao = _linha(pagina, "Estácio Jun 2022 - Jun 2024")
+    curso = _linha(pagina, "Systems Analysis and Development - Associate Degree")
+    caracteres = _caracteres_visiveis(instituicao)
+    assert "EDUCATION" in _linhas_de_texto(pagina)
+    assert all(_fonte(c) == "Carlito-Bold" and round(c["size"], 1) == 11.5 for c in caracteres[: len("Estácio")])
+    assert all(_hex(c["non_stroking_color"]) == _CINZA for c in caracteres[len("Estácio"):])
+    assert abs(instituicao["x1"] - 513) < 1
+    assert curso["top"] > instituicao["top"]
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(curso))
+    assert all(_hex(c["non_stroking_color"]) == _AZUL_MARINHO for c in _caracteres_visiveis(curso))
+
+
+def test_formacao_com_travessao_separa_curso_e_instituicao():
+    pagina = _pagina_da_secao(
+        TipoSecao.FORMACAO, "Formação", "Análise e Desenvolvimento de Sistemas — Estácio (Jun 2022 - Jun 2024)", "pt"
+    )
+
+    instituicao = _linha(pagina, "Estácio Jun 2022 - Jun 2024")
+    curso = _linha(pagina, "Análise e Desenvolvimento de Sistemas")
+    assert abs(instituicao["x1"] - 513) < 1
+    assert curso["top"] > instituicao["top"]
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(curso))
+    assert not any("—" in linha for linha in _linhas_de_texto(pagina))
+
+
+def test_certificacao_desenha_instituicao_com_ano_a_direita_e_nome_em_italico_azul():
+    pagina = _pagina_da_secao(TipoSecao.CERTIFICACOES, "Certificações", "AWS Developer — Amazon (2023)")
+
+    instituicao = _linha(pagina, "Amazon 2023")
+    nome = _linha(pagina, "AWS Developer")
+    assert "CERTIFICATIONS" in _linhas_de_texto(pagina)
+    assert abs(instituicao["x1"] - 513) < 1
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(nome))
+    assert all(_hex(c["non_stroking_color"]) == _AZUL_MARINHO for c in _caracteres_visiveis(nome))
+
+
+def test_idiomas_uma_linha_por_idioma_com_o_idioma_em_negrito_e_o_nivel_em_regular():
+    pagina = _pagina_da_secao(TipoSecao.IDIOMAS, "Idiomas", "English — Fluent\nPortuguês — Nativo")
+
+    assert "LANGUAGES" in _linhas_de_texto(pagina)
+    for texto, idioma in (("English — Fluent", "English"), ("Português — Nativo", "Português")):
+        caracteres = _caracteres_visiveis(_linha(pagina, texto))
+        negrito = "".join(c["text"] for c in caracteres if _fonte(c) == "Carlito-Bold")
+        regular = "".join(c["text"] for c in caracteres if _fonte(c) == "Carlito-Regular")
+        assert negrito == idioma
+        assert regular == texto.replace(idioma, "").replace(" ", "")
+
+
+def test_idiomas_com_dois_pontos_deixam_idioma_e_dois_pontos_em_negrito():
+    pagina = _pagina_da_secao(TipoSecao.IDIOMAS, "Idiomas", "English: Fluent")
+
+    caracteres = _caracteres_visiveis(_linha(pagina, "English: Fluent"))
+    assert "".join(c["text"] for c in caracteres if _fonte(c) == "Carlito-Bold") == "English:"
+
+
+def test_idiomas_sem_nivel_ficam_em_negrito_e_sem_marcador():
+    pagina = _pagina_da_secao(TipoSecao.IDIOMAS, "Idiomas", "- English\n• Spanish")
+
+    for idioma in ("English", "Spanish"):
+        assert all(_fonte(c) == "Carlito-Bold" for c in _caracteres_visiveis(_linha(pagina, idioma)))
+
+
+def test_formacao_no_formato_antigo_continua_gerando_pdf_sem_perder_texto():
+    antigo = "Education: Estácio, Jun 2022 - Jun 2024, Associate Degree in Systems Analysis and Development"
+
+    pagina = _pagina_da_secao(TipoSecao.FORMACAO, "Formação", antigo)
+
+    texto = " ".join(_linhas_de_texto(pagina))
+    for trecho in ("Education:", "Estácio,", "Jun 2022 - Jun 2024,", "Associate Degree in Systems Analysis and Development"):
+        assert trecho in texto

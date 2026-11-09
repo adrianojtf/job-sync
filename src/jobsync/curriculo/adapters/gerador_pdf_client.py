@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 _MARGEM_SUPERIOR = 29.5  # com a folga do frame, o topo do nome fica em 39,5 pt, como no modelo
 _MARGEM_INFERIOR = 36
 _MARCADOR_DA_LISTA = "●"
+_LINHA_DE_IDIOMA = re.compile(r"^(?P<idioma>.+?)(?:(?P<travessao>\s+[—–-]\s+)|\s*:\s*)(?P<nivel>.+)$")
 _SEPARADOR_DO_CONTATO = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;"  # mais largo que um espaço, como no modelo
 _FOLGA_LATERAL_DO_FRAME = 6  # padding interno do Frame do ReportLab, somado à margem do documento
 _MARCADORES_DE_TOPICO = ("-", "•", "*")
@@ -149,10 +150,6 @@ class GeradorPdfClient(GeradorPdfPort):
         conteudo = GeradorPdfClient._escape_text(conteudo)
         if tipo_secao == TipoSecao.TECNOLOGIAS:
             return GeradorPdfClient._negritar_categorias_tecnologia(conteudo, idioma_alvo, catalogo)
-        if tipo_secao == TipoSecao.EXPERIENCIAS:
-            return conteudo
-        if tipo_secao == TipoSecao.FORMACAO:
-            return GeradorPdfClient._negritar_formacao(conteudo)
         return conteudo
 
     @staticmethod
@@ -190,114 +187,20 @@ class GeradorPdfClient(GeradorPdfPort):
         padrao = re.compile(rf"(?P<prefixo>^|[-•*]\s*)(?P<label>{'|'.join(re.escape(c) for c in categorias)})(?P<separador>\s*:)", re.MULTILINE)
         return padrao.sub(lambda m: f"{m.group('prefixo')}<b>{m.group('label')}:</b>", texto_localizado)
 
-    @staticmethod
-    def _negritar_formacao(conteudo: str) -> str:
-        def formatar_linha(linha: str) -> str:
-            prefixo, texto = GeradorPdfClient._separar_rotulo_formacao(linha)
-            if ";" in texto:
-                partes = [parte.strip() for parte in texto.split(";")]
-                texto_formatado = "; ".join(GeradorPdfClient._formatar_bloco_formacao(parte) for parte in partes)
-            else:
-                texto_formatado = GeradorPdfClient._formatar_bloco_formacao(texto)
-            return f"{prefixo}{texto_formatado}"
-
-        linhas = conteudo.split("\n")
-        return "\n".join(formatar_linha(linha) for linha in linhas)
-
-    @staticmethod
-    def _separar_rotulo_formacao(conteudo: str) -> tuple[str, str]:
-        padrao = re.compile(
-            r"^(?P<label>Languages|Frameworks|Web Development|DevOps|Databases|Version Control|Other|Education|Educação|Formação|Academic)\s*:\s*(?P<rest>.*)$",
-            re.IGNORECASE,
-        )
-        correspondencia = padrao.match(conteudo)
-        if not correspondencia:
-            return "", conteudo
-        return f"<b>{correspondencia.group('label').strip()}</b>: ", correspondencia.group("rest")
-
-    @staticmethod
-    def _formatar_bloco_formacao(conteudo: str) -> str:
-        texto = conteudo.strip()
-        if " - " in texto:
-            nome, resto = texto.split(" - ", 1)
-            if "," in nome:
-                primeiro, complemento = nome.split(",", 1)
-                nome_formatado = f"<b>{primeiro.strip()}</b>, {complemento.strip()}"
-            else:
-                nome_formatado = GeradorPdfClient._negritar_instituicao_ou_titulo(nome)
-
-            resto_bruto = resto.strip()
-            resto_formatado = GeradorPdfClient._negritar_grau_formacao(resto_bruto)
-            if resto_formatado == resto_bruto:
-                resto_formatado = GeradorPdfClient._negritar_instituicao_ou_titulo(resto_bruto)
-            return f"{nome_formatado} - {resto_formatado}"
-        if "," in texto:
-            primeiro, resto = texto.split(",", 1)
-            primeiro_formatado = GeradorPdfClient._negritar_instituicao_ou_titulo(primeiro)
-            resto_formatado = GeradorPdfClient._negritar_grau_formacao(resto)
-            return f"{primeiro_formatado}, {resto_formatado.lstrip()}"
-        return GeradorPdfClient._negritar_grau_formacao(texto)
-
-    @staticmethod
-    def _negritar_instituicao_ou_titulo(texto: str) -> str:
-        texto = texto.strip()
-        if not texto:
-            return texto
-        if texto.startswith("<b>") and texto.endswith("</b>"):
-            return texto
-        return f"<b>{texto}</b>"
-
-    @staticmethod
-    def _negritar_grau_formacao(conteudo: str) -> str:
-        padrao = re.compile(
-            r"(?P<grau>\b(?:Associate Degree|Bachelor(?:'s)? Degree|Master(?:'s)? Degree|Technical Degree|Diploma|Certificate|Certification|Technical Diploma|Técnico|Bacharelado|Mestrado|Graduação)(?:\s+in\b[^,;]*)?)",
-            re.IGNORECASE,
-        )
-
-        def substituir(m: re.Match[str]) -> str:
-            grau = m.group("grau").strip()
-            if grau.startswith("<b>") and grau.endswith("</b>"):
-                return grau
-            return f"<b>{grau}</b>"
-
-        return padrao.sub(substituir, conteudo)
-
     def _formatar_conteudo(
         self,
         conteudo: str,
         tipo_secao: TipoSecao,
         idioma_alvo: str = "en",
     ) -> list:
-        """Converte o texto em parágrafos, tratando linhas iniciadas com marcador como bullets."""
-        if tipo_secao == TipoSecao.EXPERIENCIAS:
-            return self._formatar_conteudo_experiencias(conteudo)
+        """Despacha para o formatador da seção; experiências, formação e certificações usam blocos."""
         if tipo_secao == TipoSecao.TECNOLOGIAS:
             return self._formatar_conteudo_tecnologias(conteudo, idioma_alvo)
         if tipo_secao == TipoSecao.PERFIL:
             return self._formatar_conteudo_perfil(conteudo)
-
-        elementos = []
-        for linha in conteudo.split("\n"):
-            linha_tratada = linha.strip()
-            if not linha_tratada:
-                continue
-            if linha_tratada.startswith(_MARCADORES_DE_TOPICO):
-                texto = linha_tratada.lstrip("-•* ").strip()
-                elementos.append(
-                    Paragraph(
-                        f"&bull;&nbsp;&nbsp;{self._aplicar_enfase(texto, tipo_secao, idioma_alvo, self._catalogo)}",
-                        self._estilo.corpo,
-                    )
-                )
-            else:
-                elementos.append(
-                    Paragraph(
-                        self._aplicar_enfase(linha_tratada, tipo_secao, idioma_alvo, self._catalogo),
-                        self._estilo.corpo,
-                    )
-                )
-            elementos.append(Spacer(1, 2))
-        return elementos
+        if tipo_secao == TipoSecao.IDIOMAS:
+            return self._formatar_conteudo_idiomas(conteudo)
+        return self._formatar_conteudo_em_blocos(conteudo)
 
     def _formatar_conteudo_perfil(self, conteudo: str) -> list:
         """Junta linhas consecutivas em um parágrafo; linha em branco separa parágrafos."""
@@ -351,10 +254,26 @@ class GeradorPdfClient(GeradorPdfPort):
         partes = (parte.strip().rstrip(",").strip() for parte in antes_de_rotulo.split(texto))
         return [parte for parte in partes if parte]
 
-    def _formatar_conteudo_experiencias(self, conteudo: str) -> list:
+    def _formatar_conteudo_idiomas(self, conteudo: str) -> list:
+        """Uma linha por idioma: o idioma em negrito e o nível em texto regular."""
+        linhas = (linha.strip().lstrip("-•* ").strip() for linha in conteudo.splitlines())
+        return [Paragraph(self._linha_de_idioma(linha), self._estilo.idioma) for linha in linhas if linha]
+
+    def _linha_de_idioma(self, linha: str) -> str:
+        correspondencia = _LINHA_DE_IDIOMA.match(linha)
+        if not correspondencia:
+            return f"<b>{self._escape_text(linha)}</b>"
+        idioma = self._escape_text(correspondencia.group("idioma"))
+        nivel = self._escape_text(correspondencia.group("nivel"))
+        if correspondencia.group("travessao"):
+            separador = correspondencia.group("travessao").strip()
+            return f"<b>{idioma}</b> {separador} {nivel}"
+        return f"<b>{idioma}:</b> {nivel}"
+
+    def _formatar_conteudo_em_blocos(self, conteudo: str) -> list:
         blocos = self._interpretador.interpretar(conteudo)
         logger.debug(
-            "Experiências interpretadas: blocos=%d topicos=%d sem_periodo=%d",
+            "Blocos interpretados: blocos=%d topicos=%d sem_periodo=%d",
             len(blocos),
             sum(len(bloco.topicos) for bloco in blocos),
             sum(1 for bloco in blocos if not bloco.periodo),
@@ -365,7 +284,7 @@ class GeradorPdfClient(GeradorPdfPort):
         return elementos
 
     def _montar_bloco_de_experiencia(self, bloco: BlocoExperiencia) -> list:
-        """Empresa e período, cargo, tópicos, texto solto e contexto, nesta ordem."""
+        """Empresa e período, cargo, tópicos, texto solto e contexto, nesta ordem (também para formação)."""
         itens = []
         if bloco.cargo:
             itens.append(Paragraph(self._escape_text(bloco.cargo), self._estilo.cargo))

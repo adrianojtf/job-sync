@@ -68,6 +68,10 @@ class EstiloCurriculoPdf:
         return ParagraphStyle("Tecnologia", parent=self.corpo, spaceAfter=2)
 
     @property
+    def idioma(self) -> ParagraphStyle:
+        return ParagraphStyle("Idioma", parent=self.tecnologia)
+
+    @property
     def empresa(self) -> ParagraphStyle:
         return ParagraphStyle(
             "Empresa", fontName=self.familia.bold, fontSize=11.5, leading=14, textColor=_PRETO, keepWithNext=1,

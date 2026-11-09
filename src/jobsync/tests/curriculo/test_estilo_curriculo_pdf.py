@@ -65,6 +65,12 @@ class TestEstiloCurriculoPdf:
         assert estilo.empresa.spaceBefore == 10
         assert estilo.cargo.spaceAfter == 4
 
+    def test_idioma_usa_o_espacamento_das_linhas_com_rotulo(self):
+        estilo = _estilo()
+
+        assert estilo.idioma.spaceAfter == estilo.tecnologia.spaceAfter == 2
+        assert estilo.idioma.fontName == estilo.corpo.fontName
+
     def test_corpo_e_regular_10_5_preto_com_entrelinha_do_modelo(self):
         corpo = _estilo().corpo
 

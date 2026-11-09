@@ -13,7 +13,8 @@ interface PropsCartao {
 /**
  * Cartão do quadro. O cartão inteiro é o ativador do arrasto (inclusive por teclado) e o título é o
  * único botão, que abre o detalhe. O `role` padrão do dnd-kit ("button") é removido para não aninhar
- * botão dentro de botão (spike da tarefa 4.0).
+ * botão dentro de botão (spike da tarefa 4.0), e com ele `aria-pressed` e `aria-disabled`, que não
+ * são válidos num item de lista (o axe aponta `aria-allowed-attr` durante o arrasto).
  */
 export function CartaoCandidatura({ candidatura, aoAbrir }: PropsCartao) {
   const {
@@ -43,6 +44,8 @@ export function CartaoCandidatura({ candidatura, aoAbrir }: PropsCartao) {
       style={{ transform: CSS.Transform.toString(transform), transition }}
       {...attributes}
       role={undefined}
+      aria-pressed={undefined}
+      aria-disabled={undefined}
       {...listeners}
     >
       <button type="button" className={estilos.tituloCartao} onClick={aoAbrir}>

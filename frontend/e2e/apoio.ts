@@ -99,3 +99,44 @@ export async function semearPerfilCompleto(
     },
   });
 }
+
+export type StatusSemeado = "aplicado" | "entrevista" | "oferta" | "rejeitado";
+
+export interface CandidaturaSemeada {
+  cargo: string;
+  empresa: string;
+  status?: StatusSemeado;
+}
+
+/**
+ * Cria candidaturas pela API, já nas colunas pedidas. A ordem de cada coluna no board é a ordem
+ * em que os itens aparecem em `itens` (a API coloca o último criado no topo, então cria ao contrário).
+ * O perfil precisa ter sido semeado com `semearPerfilCompleto`.
+ */
+export async function semearCandidaturas(
+  request: APIRequestContext,
+  perfil: string,
+  itens: CandidaturaSemeada[],
+) {
+  const vagas = await (await request.get(`/v1/vagas?perfil_identificador=${perfil}`)).json();
+  const curriculos = await (
+    await request.get(`/v1/curriculos?perfil_identificador=${perfil}`)
+  ).json();
+  for (const item of [...itens].reverse()) {
+    const criada = await request.post("/v1/candidaturas", {
+      data: {
+        perfil_identificador: perfil,
+        vaga_id: vagas.items[0].id,
+        curriculo_salvo_id: curriculos.items[0].id,
+        empresa: item.empresa,
+        cargo: item.cargo,
+      },
+    });
+    const { id } = await criada.json();
+    if (item.status && item.status !== "aplicado") {
+      await request.post(`/v1/candidaturas/${id}/submissao`, {
+        data: { novo_status: item.status, posicao: 0 },
+      });
+    }
+  }
+}

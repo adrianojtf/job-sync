@@ -18,11 +18,11 @@ Cobre com testes de ponta a ponta o que o jsdom não consegue testar (arrasto po
 
 ## Subtarefas
 
-- [ ] 8.1 Ajustar `frontend/e2e/apoio.ts` para criar candidaturas em mais de uma coluna.
-- [ ] 8.2 Escrever os E2E de arrasto, persistência, título e "Mover para".
-- [ ] 8.3 Escrever os E2E de largura e de toque.
-- [ ] 8.4 Estender `acessibilidade.spec.ts`.
-- [ ] 8.5 Rodar todas as suítes e corrigir o que falhar.
+- [x] 8.1 Ajustar `frontend/e2e/apoio.ts` para criar candidaturas em mais de uma coluna.
+- [x] 8.2 Escrever os E2E de arrasto, persistência, título e "Mover para".
+- [x] 8.3 Escrever os E2E de largura e de toque.
+- [x] 8.4 Estender `acessibilidade.spec.ts`.
+- [x] 8.5 Rodar todas as suítes e corrigir o que falhar.
 
 ## Detalhes de Implementação
 
@@ -36,8 +36,8 @@ Techspec: "Abordagem de Testes" (Testes de Serviço). PRD: critérios de sucesso
 
 ## Testes da Tarefa
 
-- [ ] Todos os E2E e axe listados acima.
-- [ ] Suíte completa de backend e frontend.
+- [x] Todos os E2E e axe listados acima.
+- [x] Suíte completa de backend e frontend.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

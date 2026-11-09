@@ -151,14 +151,12 @@
 .cartaoArrastavel:focus-visible {
   border-color: var(--accent);
 }
+/* Espaço reservado na origem: mantém o texto com contraste pleno (sem opacidade) e muda só a moldura. */
 .cartaoOrigem {
-  border-style: dashed;
-  border-color: var(--line-strong);
-  background: transparent;
+  border: 1px dashed var(--accent);
+  background: var(--surface);
   box-shadow: none;
-}
-.cartaoOrigem > * {
-  opacity: 0.35;
+  filter: grayscale(1);
 }
 .cartaoFlutuante {
   cursor: grabbing;

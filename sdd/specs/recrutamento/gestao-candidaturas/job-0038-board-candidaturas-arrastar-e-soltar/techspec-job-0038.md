@@ -260,3 +260,12 @@ Cenários verificados (todos passaram):
 2. **Papel do cartão.** O `useSortable` define `role="button"` no cartão. Com o título (botão) dentro, o axe aponta `nested-interactive` e `list`. Sobrescrever o `role` do `li` depois de espalhar `attributes` (por exemplo, `role={undefined}`), mantendo `tabIndex`, `aria-roledescription` e `aria-describedby`. O texto de `aria-roledescription` e as instruções para leitor de tela devem ser traduzidos para português em `anuncios.ts`.
 
 **Limites do spike:** o toque foi emulado no Chromium; Safari iOS e Chrome Android reais não foram testados. O tempo de 200 ms deve ser validado em aparelho antes da entrega (tarefa 8.0). Nos testes de teclado é preciso esperar cerca de 100 ms entre o Espaço inicial e a tecla seguinte, porque o `KeyboardSensor` registra o ouvinte de teclas de forma assíncrona; isso afeta os testes automatizados, não o uso real.
+
+## Observações da entrega (tarefas 6.0 a 8.0)
+
+- **`aria-pressed` e `aria-disabled`.** Além do `role`, o cartão remove `aria-pressed` e `aria-disabled` do `useSortable`. Durante o arrasto por teclado o dnd-kit marca o cartão ativo com `aria-pressed`, que não é válido num item de lista; o axe reportou `aria-allowed-attr` (crítico). O E2E de acessibilidade cobre esse estado.
+- **Espaço reservado na origem.** Fica com borda tracejada e texto em contraste pleno, sem opacidade reduzida (o axe reprovou o contraste com opacidade 0,35).
+- **Destino por retângulo, não por ponteiro.** O `closestCorners` decide o destino pelo retângulo do cartão arrastado. Nos E2E o cartão é agarrado pelo centro e levado ao ponto do destino.
+- **Teclado entre colunas.** A primeira seta lateral leva o cartão ao fim da própria coluna ("sobre Aplicado, posição 2 de 3"); a segunda chega à coluna vizinha. É o comportamento do `sortableKeyboardCoordinates` com a área de soltura de cada coluna. Funciona e é anunciado, mas exige duas teclas. Melhoria possível: um `coordinateGetter` próprio que ignore a coluna de origem.
+- **Largura no desktop.** Com colunas de 272 px e o menu lateral, a 1280 px cabem cerca de 3,4 colunas; "Rejeitado" exige rolagem horizontal. As quatro colunas cabem a partir de cerca de 1450 px.
+- **Pendências de validação manual.** Toque em Safari iOS e Chrome Android reais (atraso de 200 ms) e leitura do anúncio de "pega" com um leitor de tela (o dnd-kit o substitui logo pelo de posição).

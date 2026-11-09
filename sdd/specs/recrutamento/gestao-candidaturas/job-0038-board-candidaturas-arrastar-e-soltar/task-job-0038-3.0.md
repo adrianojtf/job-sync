@@ -14,10 +14,10 @@ O frontend passa a enviar a posição ao mover uma candidatura e a receber `posi
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever o teste do `HttpApiClient` com e sem `posicao` (red).
-- [ ] 3.2 Regenerar o schema e conferir `tipos.ts`.
-- [ ] 3.3 Implementar a assinatura nova na interface e no cliente HTTP.
-- [ ] 3.4 Ajustar mocks e fakes existentes.
+- [x] 3.1 Escrever o teste do `HttpApiClient` com e sem `posicao` (red).
+- [x] 3.2 Regenerar o schema e conferir `tipos.ts`.
+- [x] 3.3 Implementar a assinatura nova na interface e no cliente HTTP.
+- [x] 3.4 Ajustar mocks e fakes existentes.
 
 ## Detalhes de Implementação
 
@@ -30,7 +30,7 @@ Techspec: "Visão Geral dos Componentes" (frontend, `api/*`) e "Pontos de Integr
 
 ## Testes da Tarefa
 
-- [ ] `http-api-client.test.ts`: corpo com `posicao` quando informada, sem o campo quando omitida, e conversão de 404 e 422 em `ApiError`.
+- [x] `http-api-client.test.ts`: corpo com `posicao` quando informada, sem o campo quando omitida, e conversão de 404 e 422 em `ApiError`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

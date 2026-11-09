@@ -158,7 +158,7 @@ class CandidaturaResponse(BaseModel):
         default_factory=list,
         description="Histórico de mudanças de status.",
     )
-    posicao: int = Field(default=0, description="Posição (a partir de 0) da candidatura na coluna.")
+    posicao: int = Field(description="Posição (a partir de 0) da candidatura na coluna.")
 
     @classmethod
     def from_dto(cls, dto: Candidatura) -> CandidaturaResponse:

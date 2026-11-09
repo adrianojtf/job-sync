@@ -80,7 +80,12 @@ export interface ApiClient {
   criarCandidatura(dados: CriarCandidaturaEntrada): Promise<Candidatura>;
   /** Cria vaga, currículo salvo com o PDF gerado e candidatura APLICADO em uma operação (JOB-0037). */
   confirmarCandidaturaAjustada(dados: ConfirmarCandidaturaEntrada): Promise<Candidatura>;
-  moverCandidatura(id: string, novoStatus: StatusCandidatura): Promise<Candidatura>;
+  /** Move a candidatura de coluna e/ou posição (índice na coluna de destino; ausente = topo). */
+  moverCandidatura(
+    id: string,
+    novoStatus: StatusCandidatura,
+    posicao?: number,
+  ): Promise<Candidatura>;
 
   criarTokenCaptura(perfil: string): Promise<TokenCaptura>;
 }

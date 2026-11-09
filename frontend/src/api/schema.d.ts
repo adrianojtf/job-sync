@@ -431,7 +431,7 @@ export interface paths {
         put?: never;
         /**
          * Submeter/mover candidatura
-         * @description Atualiza o status de uma candidatura.
+         * @description Atualiza o status de uma candidatura e, opcionalmente, sua posição na coluna de destino. Sem posição, a candidatura vai para o topo da coluna.
          */
         post: operations["submeter_candidatura_v1_candidaturas__id__submissao_post"];
         delete?: never;
@@ -1109,12 +1109,18 @@ export interface components {
              * @description Histórico de mudanças de status.
              */
             historico_status?: components["schemas"]["MudancaStatusResponse"][];
+            /**
+             * Posicao
+             * @description Posição (a partir de 0) da candidatura na coluna.
+             */
+            posicao: number;
         };
         /**
          * CandidaturaSubmeterRequest
          * @description Payload para submeter/mover o status de uma candidatura.
          * @example {
-         *       "novo_status": "entrevista"
+         *       "novo_status": "entrevista",
+         *       "posicao": 0
          *     }
          */
         CandidaturaSubmeterRequest: {
@@ -1124,6 +1130,11 @@ export interface components {
              * @enum {string}
              */
             novo_status: "aplicado" | "entrevista" | "oferta" | "rejeitado";
+            /**
+             * Posicao
+             * @description Índice (a partir de 0) da candidatura na coluna de destino. Ausente = topo da coluna; acima do tamanho da coluna = fim.
+             */
+            posicao?: number | null;
         };
         /**
          * CandidaturasListagemResponse

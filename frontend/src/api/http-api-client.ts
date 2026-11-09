@@ -245,9 +245,16 @@ export class HttpApiClient implements ApiClient {
     return this.requisitar("POST", "/v1/candidaturas-ajustadas", { corpo: dados });
   }
 
-  moverCandidatura(id: string, novoStatus: StatusCandidatura): Promise<Candidatura> {
+  moverCandidatura(
+    id: string,
+    novoStatus: StatusCandidatura,
+    posicao?: number,
+  ): Promise<Candidatura> {
     return this.requisitar("POST", caminho`/v1/candidaturas/${id}/submissao`, {
-      corpo: { novo_status: novoStatus.toLowerCase() },
+      corpo: {
+        novo_status: novoStatus.toLowerCase(),
+        ...(posicao === undefined ? {} : { posicao }),
+      },
     });
   }
 

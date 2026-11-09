@@ -7,8 +7,6 @@ import io
 
 import pdfplumber
 import pytest
-from reportlab.lib.colors import HexColor
-from reportlab.platypus import Spacer
 
 from jobsync.curriculo import (
     Curriculo,
@@ -97,35 +95,6 @@ def test_formatar_conteudo_tecnologias_sem_categorias_explicitas_preserva_texto(
     assert paragrafos[0].text == "Python, Java, Go"
 
 
-def test_formatar_experiencias_com_cabecalho_e_posicao():
-    conteudo = "Starian Mar 2026 - Present\nSoftware Engineer\n- Desenvolvi APIs REST\n\nIFSC - Técnico em Telecomunicações"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
-
-    paragrafos = [elemento for elemento in elementos if hasattr(elemento, "text")]
-
-    assert paragrafos[0].text == "<b>Starian Mar 2026 - Present</b>"
-    assert paragrafos[1].text == "<b>Software Engineer</b>"
-    assert paragrafos[2].text == "&bull;&nbsp;&nbsp;Desenvolvi APIs REST"
-    assert any("<b>IFSC - Técnico em Telecomunicações</b>" in getattr(elemento, "text", "") for elemento in paragrafos)
-
-
-def test_nao_aplica_negrito_em_descricao_de_experiencia():
-    conteudo = "Starian Mar 2026 - Present\nSoftware Engineer\n- Conduzi integração com APIs\n- Reduzi tempo de deploy"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
-
-    paragrafos = [elemento for elemento in elementos if hasattr(elemento, "text")]
-    assert paragrafos[2].text == "&bull;&nbsp;&nbsp;Conduzi integração com APIs"
-    assert paragrafos[3].text == "&bull;&nbsp;&nbsp;Reduzi tempo de deploy"
-
-
-def test_adiciona_espacamento_extra_entre_blocos_de_experiencia():
-    conteudo = "Starian Mar 2026 - Present\nSoftware Engineer\n- Desenvolvi APIs REST\n\nIFSC - Técnico em Telecomunicações"
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
-
-    spacers = [elemento for elemento in elementos if isinstance(elemento, Spacer)]
-    assert sum(1 for elemento in spacers if getattr(elemento, "height", None) == 6) == 1
-
-
 def test_aplica_enfase_formacao_com_education_e_grau():
     texto = "Education: Estácio, Jun 2022 - Jun 2024, Associate Degree in Systems Analysis and Development"
     resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.FORMACAO)
@@ -157,76 +126,7 @@ def test_gera_pdf_valido_com_todas_as_secoes():
     assert len(pdf_bytes) > 500
 
 
-def _paragrafos_de_experiencias(conteudo: str) -> list:
-    elementos = GeradorPdfClient()._formatar_conteudo(conteudo, TipoSecao.EXPERIENCIAS)
-    return [elemento for elemento in elementos if hasattr(elemento, "text")]
-
-
-def test_formata_linha_de_contexto_em_italico_cinza_depois_dos_bullets():
-    conteudo = (
-        "Software Engineer — SIPPulse (2022 - Atual)\n"
-        "- Developed a VoIP billing system.\n"
-        "Context: Worked on the communications platform."
-    )
-
-    paragrafos = _paragrafos_de_experiencias(conteudo)
-
-    contexto = paragrafos[-1]
-    assert contexto.text == "Context: Worked on the communications platform."
-    assert contexto.style.fontName == "Helvetica-Oblique"
-    assert contexto.style.textColor == HexColor("#666666")
-    assert paragrafos[1].text == "&bull;&nbsp;&nbsp;Developed a VoIP billing system."
-
-
-@pytest.mark.parametrize("linha", ["Contexto: Empresa de telecom.", "CONTEXT: Telecom company.", "contexto:Empresa."])
-def test_reconhece_o_rotulo_do_contexto_nos_dois_idiomas_sem_diferenciar_maiusculas(linha):
-    paragrafos = _paragrafos_de_experiencias(f"Dev — TechCorp (2024)\n- Criei APIs.\n{linha}")
-
-    assert paragrafos[-1].style.fontName == "Helvetica-Oblique"
-    assert paragrafos[-1].text == linha
-
-
-def test_contexto_logo_apos_o_cabecalho_nao_vira_negrito():
-    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp (2024)\nContexto: Empresa de telecom.")
-
-    assert paragrafos[0].text == "<b>Dev — TechCorp (2024)</b>"
-    assert paragrafos[1].text == "Contexto: Empresa de telecom."
-    assert paragrafos[1].style.fontName == "Helvetica-Oblique"
-
-
-def test_escapa_caracteres_especiais_na_linha_de_contexto():
-    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp\nContexto: P&D de <telecom>.")
-
-    assert paragrafos[1].text == "Contexto: P&amp;D de &lt;telecom&gt;."
-
-
-def test_experiencia_sem_contexto_nao_gera_linha_em_italico():
-    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp (2024)\n- Criei APIs.\n- Reduzi custos.")
-
-    assert all(p.style.fontName != "Helvetica-Oblique" for p in paragrafos)
-    assert len(paragrafos) == 3
-
-
-def test_linha_que_apenas_comeca_com_a_palavra_contexto_nao_e_tratada_como_rotulo():
-    paragrafos = _paragrafos_de_experiencias("Dev — TechCorp\n- Criei APIs.\nContextualizei o sistema legado.")
-
-    assert paragrafos[-1].text == "Contextualizei o sistema legado."
-    assert paragrafos[-1].style.fontName != "Helvetica-Oblique"
-
-
-def test_cada_experiencia_tem_o_proprio_contexto():
-    conteudo = (
-        "Dev — A (2024)\n- Criei APIs.\nContexto: Empresa A.\n\n"
-        "Dev — B (2022)\n- Criei testes.\nContexto: Empresa B."
-    )
-
-    paragrafos = _paragrafos_de_experiencias(conteudo)
-
-    textos_em_italico = [p.text for p in paragrafos if p.style.fontName == "Helvetica-Oblique"]
-    assert textos_em_italico == ["Contexto: Empresa A.", "Contexto: Empresa B."]
-
-
-def test_pdf_desenha_o_contexto_em_fonte_obliqua_cinza_depois_dos_bullets():
+def test_pdf_desenha_o_contexto_em_fonte_italica_cinza_depois_dos_bullets():
     curriculo = Curriculo(
         nome_completo="Ana Souza",
         email="ana@example.com",
@@ -253,11 +153,11 @@ def test_pdf_desenha_o_contexto_em_fonte_obliqua_cinza_depois_dos_bullets():
         ]
 
     assert linhas.index("Contexto: Atuei na plataforma de comunicação.") > linhas.index(
-        "• Developed a VoIP billing system."
+        "● Developed a VoIP billing system."
     )
     assert letras_da_linha
-    assert all("Oblique" in c["fontname"] for c in letras_da_linha)
-    assert all(c["non_stroking_color"] == pytest.approx((0.4, 0.4, 0.4)) for c in letras_da_linha)
+    assert all(c["fontname"].endswith("Carlito-Italic") for c in letras_da_linha)
+    assert all(_hex(c["non_stroking_color"]) == "#595959" for c in letras_da_linha)
 
 
 def _topo(pagina, palavra: str) -> float:
@@ -291,7 +191,7 @@ def test_pdf_de_um_rascunho_desenha_o_contexto_no_rotulo_do_idioma(idioma, rotul
         texto = pagina.extract_text()
 
     assert f"{rotulo} Empresa de pagamentos." in texto
-    assert all("Oblique" in c["fontname"] for c in letras)
+    assert all(c["fontname"].endswith("Carlito-Italic") for c in letras)
 
 
 def _hex(cor) -> str:
@@ -476,3 +376,244 @@ def test_layout_dois_pontos_do_rotulo_de_tecnologia_tambem_ficam_em_negrito():
     linha = next(linha for linha in pagina.extract_text_lines() if linha["text"] == "Languages: Java")
     negrito = "".join(c["text"] for c in linha["chars"] if c["fontname"].endswith("Carlito-Bold"))
     assert negrito == "Languages:"
+
+
+_AZUL_MARINHO = "#1F3864"
+_CINZA = "#595959"
+
+
+def _pagina_de_experiencias(conteudo: str, idioma: str = "en"):
+    secao = SecaoCurriculo(TipoSecao.EXPERIENCIAS, "Experiências", conteudo)
+    return _pagina_do_pdf(_curriculo_com(secao), idioma)
+
+
+def _linha(pagina, texto: str) -> dict:
+    return next(linha for linha in pagina.extract_text_lines() if linha["text"] == texto)
+
+
+def _caracteres_visiveis(linha: dict) -> list[dict]:
+    return [c for c in linha["chars"] if c["text"].strip()]
+
+
+def _fonte(caractere: dict) -> str:
+    return caractere["fontname"].split("+")[-1]
+
+
+def test_experiencia_empresa_em_bold_11_5_e_periodo_em_cinza_alinhado_a_direita():
+    pagina = _pagina_de_experiencias("Starian Mar 2026 - Present\nSoftware Engineer")
+
+    linha = _linha(pagina, "Starian Mar 2026 - Present")
+    empresa = _caracteres_visiveis(linha)[: len("Starian")]
+    periodo = _caracteres_visiveis(linha)[len("Starian"):]
+    assert all(_fonte(c) == "Carlito-Bold" and round(c["size"], 1) == 11.5 for c in empresa)
+    assert all(_hex(c["non_stroking_color"]) == "#000000" for c in empresa)
+    assert all(_fonte(c) == "Carlito-Regular" and round(c["size"], 1) == 10.5 for c in periodo)
+    assert all(_hex(c["non_stroking_color"]) == _CINZA for c in periodo)
+    assert abs(empresa[0]["x0"] - 45) < 1
+    assert abs(linha["x1"] - 513) < 1
+
+
+def test_experiencia_cargo_em_italico_azul_marinho_na_linha_abaixo_da_empresa():
+    pagina = _pagina_de_experiencias("Starian Mar 2026 - Present\nSoftware Engineer")
+
+    empresa = _linha(pagina, "Starian Mar 2026 - Present")
+    cargo = _linha(pagina, "Software Engineer")
+    assert cargo["top"] > empresa["top"]
+    assert abs(cargo["x0"] - 45) < 1
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(cargo))
+    assert all(_hex(c["non_stroking_color"]) == _AZUL_MARINHO for c in _caracteres_visiveis(cargo))
+
+
+def test_experiencia_topico_com_marcador_recuado_e_continuacao_alinhada_ao_texto():
+    topico = "Desenvolvi um sistema de faturamento para telefonia com processamento em lote de milhares de bilhetes por minuto e cache"
+    pagina = _pagina_de_experiencias(f"Starian 2024 - 2025\nDev\n- {topico}")
+
+    palavras = pagina.extract_words()
+    marcador = next(p for p in palavras if p["text"] == "●")
+    primeira_palavra = next(p for p in palavras if p["text"] == "Desenvolvi")
+    linhas_do_topico = [p for p in pagina.extract_text_lines() if p["top"] >= marcador["top"] - 1]
+    assert abs(marcador["x0"] - 63) < 1.5
+    assert abs(primeira_palavra["x0"] - 81) < 1
+    assert len(linhas_do_topico) >= 2
+    assert all(abs(linha["x0"] - 81) < 1 or abs(linha["x0"] - 63) < 1.5 for linha in linhas_do_topico)
+    assert abs(linhas_do_topico[1]["x0"] - 81) < 1
+
+
+def test_experiencia_topicos_nao_mostram_o_hifen_do_texto_de_entrada():
+    pagina = _pagina_de_experiencias("Starian 2024 - 2025\nDev\n- Criei APIs\n- Reduzi custos")
+
+    linhas = _linhas_de_texto(pagina)
+    assert "● Criei APIs" in linhas
+    assert "● Reduzi custos" in linhas
+    assert not any(linha.startswith("- ") for linha in linhas)
+
+
+def test_experiencia_contexto_em_italico_cinza_depois_dos_topicos_sem_recuo():
+    pagina = _pagina_de_experiencias(
+        "SIPPulse 2022 - 2026\nSoftware Engineer\n- Criei APIs\nContext: Worked on the communications platform."
+    )
+
+    topico = _linha(pagina, "● Criei APIs")
+    contexto = _linha(pagina, "Context: Worked on the communications platform.")
+    assert contexto["top"] > topico["top"]
+    assert abs(contexto["x0"] - 45) < 1
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(contexto))
+    assert all(_hex(c["non_stroking_color"]) == _CINZA for c in _caracteres_visiveis(contexto))
+
+
+@pytest.mark.parametrize(
+    "linha_de_contexto",
+    ["Contexto: Empresa de telecom.", "CONTEXT: Telecom company.", "contexto:Empresa."],
+)
+def test_experiencia_reconhece_o_rotulo_do_contexto_nos_dois_idiomas_sem_diferenciar_maiusculas(linha_de_contexto):
+    pagina = _pagina_de_experiencias(f"Dev — TechCorp (2024)\n- Criei APIs.\n{linha_de_contexto}")
+
+    contexto = next(l for l in pagina.extract_text_lines() if l["text"].lower().startswith(("contexto", "context")))
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(contexto))
+
+
+def test_experiencia_contexto_logo_apos_o_cabecalho_nao_vira_cargo_nem_negrito():
+    pagina = _pagina_de_experiencias("Dev — TechCorp (2024)\nContexto: Empresa de telecom.")
+
+    cargo = _linha(pagina, "Dev")
+    contexto = _linha(pagina, "Contexto: Empresa de telecom.")
+    assert all(_hex(c["non_stroking_color"]) == _AZUL_MARINHO for c in _caracteres_visiveis(cargo))
+    assert all(_hex(c["non_stroking_color"]) == _CINZA for c in _caracteres_visiveis(contexto))
+    assert not any("Bold" in _fonte(c) for c in _caracteres_visiveis(contexto))
+
+
+def test_experiencia_escapa_caracteres_especiais_no_contexto():
+    pagina = _pagina_de_experiencias("Dev — TechCorp\nContexto: P&D de <telecom>.")
+
+    assert "Contexto: P&D de <telecom>." in _linhas_de_texto(pagina)
+
+
+def test_experiencia_sem_contexto_nao_gera_texto_em_italico_cinza():
+    pagina = _pagina_de_experiencias("Dev — TechCorp (2024)\n- Criei APIs.\n- Reduzi custos.")
+
+    italicos_cinza = [
+        c for c in pagina.chars if _fonte(c) == "Carlito-Italic" and _hex(c["non_stroking_color"]) == _CINZA
+    ]
+    assert italicos_cinza == []
+
+
+def test_experiencia_linha_que_apenas_comeca_com_a_palavra_contexto_e_texto_normal():
+    pagina = _pagina_de_experiencias("Dev — TechCorp\n- Criei APIs.\nContextualizei o sistema legado.")
+
+    linha = _linha(pagina, "Contextualizei o sistema legado.")
+    assert all(_fonte(c) == "Carlito-Regular" for c in _caracteres_visiveis(linha))
+    assert all(_hex(c["non_stroking_color"]) == "#000000" for c in _caracteres_visiveis(linha))
+
+
+def test_experiencia_cada_bloco_tem_o_proprio_contexto_em_italico():
+    pagina = _pagina_de_experiencias(
+        "Dev — A (2024)\n- Criei APIs.\nContexto: Empresa A.\n\nDev — B (2022)\n- Criei testes.\nContexto: Empresa B."
+    )
+
+    linhas_em_italico_cinza = [
+        l["text"] for l in pagina.extract_text_lines()
+        if all(_fonte(c) == "Carlito-Italic" and _hex(c["non_stroking_color"]) == _CINZA for c in _caracteres_visiveis(l))
+    ]
+    assert linhas_em_italico_cinza == ["Contexto: Empresa A.", "Contexto: Empresa B."]
+
+
+def test_experiencia_so_com_contexto_nao_gera_marcador():
+    pagina = _pagina_de_experiencias("Starian Mar 2026 - Present\nSoftware Engineer\nContext: ERP de construção civil.")
+
+    assert "Context: ERP de construção civil." in _linhas_de_texto(pagina)
+    assert not any("●" in linha for linha in _linhas_de_texto(pagina))
+
+
+def test_experiencia_sem_periodo_mostra_apenas_a_empresa():
+    pagina = _pagina_de_experiencias("Starian\nSoftware Engineer\n- Criei APIs")
+
+    linha = _linha(pagina, "Starian")
+    assert all(_fonte(c) == "Carlito-Bold" for c in _caracteres_visiveis(linha))
+
+
+def test_experiencia_no_formato_com_travessao_desenha_empresa_periodo_e_cargo_do_modelo():
+    pagina = _pagina_de_experiencias("Software Engineer — Starian (Mar 2026 - Present)\n- Criei APIs")
+
+    empresa = _linha(pagina, "Starian Mar 2026 - Present")
+    cargo = _linha(pagina, "Software Engineer")
+    assert abs(empresa["x1"] - 513) < 1
+    assert cargo["top"] > empresa["top"]
+    assert all(_fonte(c) == "Carlito-Italic" for c in _caracteres_visiveis(cargo))
+    assert not any("—" in linha for linha in _linhas_de_texto(pagina))
+
+
+def test_experiencia_texto_extraido_segue_a_ordem_empresa_periodo_cargo_topicos_contexto():
+    pagina = _pagina_de_experiencias(
+        "Starian Mar 2026 - Present\nSoftware Engineer\n- Primeiro\n- Segundo\nContext: Fim."
+    )
+
+    linhas = _linhas_de_texto(pagina)
+    assert linhas[linhas.index("Starian Mar 2026 - Present"):] == [
+        "Starian Mar 2026 - Present",
+        "Software Engineer",
+        "● Primeiro",
+        "● Segundo",
+        "Context: Fim.",
+    ]
+
+
+def test_experiencia_deixa_espaco_vertical_visivel_entre_blocos():
+    pagina = _pagina_de_experiencias("A 2024 - 2025\nDev\n- Um\n\nB 2022 - 2023\nDev\n- Dois")
+
+    ultimo_do_primeiro = _linha(pagina, "● Um")
+    segundo_bloco = _linha(pagina, "B 2022 - 2023")
+    passo_entre_linhas_do_mesmo_bloco = _linha(pagina, "Dev")["top"] - _linha(pagina, "A 2024 - 2025")["top"]
+    assert segundo_bloco["top"] - ultimo_do_primeiro["top"] > passo_entre_linhas_do_mesmo_bloco + 4
+
+
+def test_experiencia_nao_deixa_o_cabecalho_orfao_no_fim_da_pagina():
+    blocos = "\n\n".join(f"Empresa {n} 2020 - 2021\nDev\n- Entrega {n}\n- Outra {n}" for n in range(1, 40))
+
+    pdf = pdfplumber.open(io.BytesIO(GeradorPdfClient().gerar(
+        _curriculo_com(SecaoCurriculo(TipoSecao.EXPERIENCIAS, "Experiências", blocos)), "en")))
+
+    assert len(pdf.pages) >= 2
+    for pagina in pdf.pages:
+        linhas = _linhas_de_texto(pagina)
+        if linhas and linhas[-1].startswith("Empresa"):
+            raise AssertionError(f"cabeçalho órfão no fim da página: {linhas[-1]}")
+
+
+def _topos(pagina) -> dict[str, float]:
+    return {linha["text"]: linha["top"] for linha in pagina.extract_text_lines()}
+
+
+def test_layout_nome_comeca_no_topo_do_modelo():
+    pagina = _pagina_do_pdf(_curriculo_com(_perfil("Texto")))
+
+    assert abs(_topos(pagina)["ADRIANO JOÃO TEIXEIRA FILHO"] - 39.5) < 0.6
+
+
+def test_layout_ritmo_vertical_das_secoes_segue_o_modelo():
+    secoes = (
+        _tecnologias("Languages: Java\nFrameworks: Spring Boot"),
+        _perfil("Resumo."),
+        SecaoCurriculo(TipoSecao.EXPERIENCIAS, "Experiências", "Starian Mar 2026 - Present\nSoftware Engineer"),
+    )
+    pagina = _pagina_do_pdf(_curriculo_com(*secoes))
+
+    topos = _topos(pagina)
+    assert abs((topos["Languages: Java"] - topos["TECHNICAL SKILLS"]) - 22.1) < 0.7
+    assert abs((topos["Frameworks: Spring Boot"] - topos["Languages: Java"]) - 14.8) < 0.3
+    assert abs((topos["PROFILE"] - topos["Frameworks: Spring Boot"]) - 27.9) < 1.0
+    assert abs((topos["EXPERIENCE"] - topos["Resumo."]) - 27.9) < 1.0
+    assert abs((topos["Starian Mar 2026 - Present"] - topos["EXPERIENCE"]) - 26.3) < 1.0
+    assert abs((topos["Software Engineer"] - topos["Starian Mar 2026 - Present"]) - 14.8) < 0.5
+
+
+def test_layout_ritmo_vertical_das_experiencias_segue_o_modelo():
+    pagina = _pagina_de_experiencias(
+        "A 2024 - 2025\nCargo A\n- Um\n- Dois\nContext: Fim do primeiro.\n\nB 2022 - 2023\nCargo B\nContext: Segundo."
+    )
+
+    topos = _topos(pagina)
+    assert abs((topos["● Dois"] - topos["● Um"]) - 15.8) < 0.5
+    assert abs((topos["● Um"] - topos["Cargo A"]) - 16.7) < 0.7
+    assert abs((topos["Context: Segundo."] - topos["Cargo B"]) - 16.8) < 0.5
+    assert abs((topos["Context: Fim do primeiro."] - topos["● Dois"]) - 15.8) < 0.5
+    assert abs((topos["B 2022 - 2023"] - topos["Context: Fim do primeiro."]) - 23.0) < 1.0

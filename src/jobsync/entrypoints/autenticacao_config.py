@@ -23,6 +23,9 @@ class ConfiguracaoHttpAutenticacao:
     origens_permitidas: tuple[str, ...] = ()
     nome_cookie_sessao: str = "js_sessao"
     nome_cookie_oauth: str = "js_oauth"
+    # Cabeçalho em que o proxy de confiança informa o IP real (ex.: X-Forwarded-For). Sem ele,
+    # vale o endereço da conexão; cabeçalhos enviados pelo cliente nunca são considerados.
+    cabecalho_ip_cliente: str | None = None
 
 
 def _verdadeiro(valor: str | None) -> bool:
@@ -60,6 +63,7 @@ def configuracao_http_do_ambiente(ambiente: Mapping[str, str]) -> ConfiguracaoHt
         cookie_secure=_verdadeiro(ambiente.get("AUTH_COOKIE_SECURE")),
         login_simples_habilitado=_verdadeiro(ambiente.get("AUTH_LOGIN_SIMPLES_HABILITADO")),
         origens_permitidas=origens,
+        cabecalho_ip_cliente=(ambiente.get("AUTH_CABECALHO_IP_CLIENTE") or "").strip() or None,
     )
 
 

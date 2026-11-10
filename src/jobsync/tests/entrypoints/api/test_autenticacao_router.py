@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from jobsync.autenticacao.domain.exceptions import EnvioEmailFalhou, ProvedorIndisponivel
 from jobsync.autenticacao.domain.provedor_identidade import IdentidadeAutenticada
+from jobsync.autenticacao.domain.token_opaco import chave_de_limite
 from jobsync.entrypoints.api.main import app
 from jobsync.entrypoints.dependencies import obter_servicos_autenticacao
 from jobsync.tests.entrypoints.api.apoio_autenticacao import FRONTEND, montar_mundo
@@ -384,3 +385,61 @@ class TestLoginGoogle:
         client.get("/v1/provedores/google/retorno", params={"code": "c", "state": estado})
 
         assert client.get("/v1/usuarios/me").json()["perfil_identificador"] == perfil_senha
+
+
+class TestIpDoCliente:
+    def _cliente(self, cabecalho):
+        mundo = montar_mundo(cabecalho_ip_cliente=cabecalho)
+        app.dependency_overrides[obter_servicos_autenticacao] = lambda: mundo.servicos
+        return mundo, TestClient(app, base_url=FRONTEND)
+
+    def teardown_method(self):
+        app.dependency_overrides.pop(obter_servicos_autenticacao, None)
+
+    def test_usa_o_ultimo_ip_do_cabecalho_configurado(self):
+        mundo, cliente = self._cliente("X-Forwarded-For")
+
+        cliente.post(
+            "/v1/sessoes",
+            json={"email": "ana@exemplo.com", "senha": SENHA},
+            headers={"X-Forwarded-For": "6.6.6.6, 203.0.113.9"},
+        )
+
+        assert chave_de_limite("ip", "203.0.113.9") in mundo.limites._limites
+        assert chave_de_limite("ip", "6.6.6.6") not in mundo.limites._limites
+
+    def test_ips_diferentes_nao_compartilham_o_limite(self):
+        mundo, cliente = self._cliente("X-Forwarded-For")
+
+        for _ in range(6):
+            cliente.post(
+                "/v1/sessoes",
+                json={"email": "ana@exemplo.com", "senha": SENHA},
+                headers={"X-Forwarded-For": "203.0.113.9"},
+            )
+
+        outro = cliente.post(
+            "/v1/sessoes",
+            json={"email": "outra@exemplo.com", "senha": SENHA},
+            headers={"X-Forwarded-For": "198.51.100.4"},
+        )
+
+        assert outro.status_code == 401
+
+    def test_sem_o_cabecalho_cai_no_endereco_da_conexao(self):
+        mundo, cliente = self._cliente("X-Forwarded-For")
+
+        cliente.post("/v1/sessoes", json={"email": "ana@exemplo.com", "senha": SENHA})
+
+        assert any(chave.startswith("ip:") for chave in mundo.limites._limites)
+
+    def test_sem_configuracao_ignora_o_cabecalho_enviado_pelo_cliente(self):
+        mundo, cliente = self._cliente(None)
+
+        cliente.post(
+            "/v1/sessoes",
+            json={"email": "ana@exemplo.com", "senha": SENHA},
+            headers={"X-Forwarded-For": "203.0.113.9"},
+        )
+
+        assert chave_de_limite("ip", "203.0.113.9") not in mundo.limites._limites

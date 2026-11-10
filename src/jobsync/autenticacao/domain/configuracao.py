@@ -17,6 +17,11 @@ class ConfiguracaoAutenticacao:
     validade_redefinicao_senha: timedelta = timedelta(hours=1)
     validade_estado_oauth: timedelta = timedelta(minutes=10)
     politica_limite: PoliticaLimiteTentativas = field(default_factory=PoliticaLimiteTentativas)
+    # Um IP pode agrupar muita gente (NAT, escritório, proxy): o limite dele é bem mais folgado
+    # que o da conta, só para frear tentativas em massa contra várias contas.
+    politica_limite_ip: PoliticaLimiteTentativas = field(
+        default_factory=lambda: PoliticaLimiteTentativas(max_falhas=30)
+    )
 
     def link_do_frontend(self, caminho: str, **parametros: str) -> str:
         consulta = "&".join(f"{chave}={valor}" for chave, valor in parametros.items())

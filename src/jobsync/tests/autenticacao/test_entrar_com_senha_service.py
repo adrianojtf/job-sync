@@ -70,8 +70,15 @@ class TestEntrarComSenha:
 
         assert erro.value.retry_after_segundos == 15 * 60
 
-    def test_bloqueio_por_ip_vale_para_qualquer_email(self, servico, usuario):
+    def test_poucas_falhas_de_um_ip_nao_bloqueiam_os_demais_usuarios_do_mesmo_ip(self, servico, usuario):
         for indice in range(5):
+            with pytest.raises(CredenciaisInvalidas):
+                servico.executar(f"alvo{indice}@exemplo.com", SENHA, ip="10.0.0.9")
+
+        assert servico.executar("ana@exemplo.com", SENHA, ip="10.0.0.9").usuario == usuario
+
+    def test_bloqueio_por_ip_vale_para_qualquer_email_ao_passar_do_limite_do_ip(self, servico, usuario):
+        for indice in range(30):
             with pytest.raises(CredenciaisInvalidas):
                 servico.executar(f"alvo{indice}@exemplo.com", SENHA, ip="10.0.0.9")
 

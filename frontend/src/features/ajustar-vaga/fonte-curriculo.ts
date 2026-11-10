@@ -40,10 +40,13 @@ export function useFontesCurriculo() {
     return { curriculoId: fonte, pdf_base64: conteudo.pdf_base64 };
   };
 
+  const carregando = perfilEstruturado.isPending || curriculos.isPending;
   return {
     opcoes,
-    carregando: perfilEstruturado.isPending || curriculos.isPending,
-    padrao: opcoes[0]?.valor ?? "",
+    carregando,
+    // O padrão só existe com as duas consultas prontas: se a lista de PDFs chegasse primeiro, o
+    // formulário travaria num PDF e nunca voltaria ao perfil mestre, que é a fonte preferida.
+    padrao: carregando ? "" : (opcoes[0]?.valor ?? ""),
     resolver,
   };
 }

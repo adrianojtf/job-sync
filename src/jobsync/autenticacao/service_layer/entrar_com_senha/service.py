@@ -15,6 +15,7 @@ from jobsync.autenticacao.domain.exceptions import (
     LimiteTentativasExcedido,
 )
 from jobsync.autenticacao.domain.hasher_senha import HasherSenha
+from jobsync.autenticacao.domain.limite_tentativa import PoliticaLimiteTentativas
 from jobsync.autenticacao.domain.limite_tentativas_repository import LimiteTentativasRepository
 from jobsync.autenticacao.domain.token_opaco import chave_de_limite, gerar_token
 from jobsync.autenticacao.domain.usuario_repository import UsuarioRepository
@@ -44,15 +45,17 @@ class EntrarComSenha:
         except EmailInvalido as erro:
             raise CredenciaisInvalidas("E-mail ou senha incorretos.") from erro
         chave_email = chave_de_limite("email", email_vo.valor)
-        chaves = [chave_email] + ([chave_de_limite("ip", ip)] if ip else [])
-        self._recusar_se_bloqueado(chaves)
+        limites = [(chave_email, self._config.politica_limite)]
+        if ip:
+            limites.append((chave_de_limite("ip", ip), self._config.politica_limite_ip))
+        self._recusar_se_bloqueado([chave for chave, _ in limites])
 
         usuario = self._usuarios.buscar_por_email(email_vo)
         senha_hash = self._usuarios.obter_senha_hash(usuario.id) if usuario else None
         # Sempre confere um hash, mesmo sem usuário, para o tempo de resposta não revelar o e-mail.
         confere = self._hasher.conferir(senha, senha_hash or self._hash_ficticio)
         if not (confere and usuario is not None and senha_hash is not None and usuario.email_verificado):
-            self._registrar_falha(chaves)
+            self._registrar_falha(limites)
             raise CredenciaisInvalidas("E-mail ou senha incorretos.")
 
         self._limites.limpar(chave_email)
@@ -69,8 +72,8 @@ class EntrarComSenha:
                 restante = (limite.bloqueado_ate - agora).total_seconds()
                 raise LimiteTentativasExcedido(math.ceil(restante))
 
-    def _registrar_falha(self, chaves: list[str]) -> None:
+    def _registrar_falha(self, limites: list[tuple[str, PoliticaLimiteTentativas]]) -> None:
         agora = self._relogio()
-        for chave in chaves:
-            self._limites.registrar_falha(chave, agora, self._config.politica_limite)
-        logger.warning("login_falha chave=%s", chaves[0])
+        for chave, politica in limites:
+            self._limites.registrar_falha(chave, agora, politica)
+        logger.warning("login_falha chave=%s", limites[0][0])

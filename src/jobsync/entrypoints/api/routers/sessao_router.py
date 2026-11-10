@@ -18,7 +18,14 @@ router = APIRouter(tags=["sessões"])
 _LOCATION_SESSAO_ATUAL = "/v1/sessoes/atual"
 
 
-def _ip_do_cliente(request: Request) -> str | None:
+def _ip_do_cliente(request: Request, cabecalho: str | None) -> str | None:
+    """IP real do cliente. Atrás de um proxy, todo mundo chega com o IP dele; por isso, com o
+    cabeçalho configurado, vale a última entrada, que é a que o próprio proxy acrescentou."""
+    if cabecalho:
+        valor = request.headers.get(cabecalho, "")
+        ultimo = valor.split(",")[-1].strip()
+        if ultimo:
+            return ultimo
     return request.client.host if request.client else None
 
 
@@ -39,7 +46,7 @@ def entrar(
     response: Response,
     servicos: ServicosAutenticacaoDep,
 ) -> UsuarioResponse:
-    sessao = servicos.entrar_com_senha.executar(body.email, body.senha, ip=_ip_do_cliente(request))
+    sessao = servicos.entrar_com_senha.executar(body.email, body.senha, ip=_ip_do_cliente(request, servicos.http.cabecalho_ip_cliente))
     definir_cookie_sessao(
         response, sessao.token, servicos.http, int(servicos.config.sessao_maxima.total_seconds())
     )

@@ -14,6 +14,7 @@ class TestConfiguracaoAutenticacao:
         assert config.validade_confirmacao_email == timedelta(hours=24)
         assert config.validade_redefinicao_senha == timedelta(hours=1)
         assert config.politica_limite.max_falhas == 5
+        assert config.politica_limite_ip.max_falhas == 30
 
     def test_monta_link_com_parametros(self):
         config = ConfiguracaoAutenticacao(url_frontend="http://localhost:8080/")

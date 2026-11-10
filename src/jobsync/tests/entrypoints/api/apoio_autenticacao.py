@@ -18,7 +18,7 @@ from jobsync.tests.autenticacao.dobles import EnviadorEmailFalso, HasherSenhaFal
 FRONTEND = "http://localhost:8080"
 
 
-def montar_mundo(login_simples=False, cookie_secure=False):
+def montar_mundo(login_simples=False, cookie_secure=False, cabecalho_ip_cliente=None):
     mundo = SimpleNamespace(
         usuarios=UsuarioRepositoryFake(),
         sessoes=SessaoRepositoryFake(),
@@ -44,6 +44,7 @@ def montar_mundo(login_simples=False, cookie_secure=False):
             cookie_secure=cookie_secure,
             login_simples_habilitado=login_simples,
             origens_permitidas=(FRONTEND,),
+            cabecalho_ip_cliente=cabecalho_ip_cliente,
         ),
         relogio=mundo.relogio,
     )

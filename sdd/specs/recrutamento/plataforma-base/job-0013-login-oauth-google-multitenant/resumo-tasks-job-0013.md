@@ -11,7 +11,7 @@
 - [x] 7.0 Proteger os routers existentes por sessão e perfil
 - [x] 8.0 CLI `associar_email_perfil` para migrar perfis legados
 - [x] 9.0 Frontend: sessão por cookie, nova tela de entrada e fluxos de e-mail
-- [ ] 10.0 Infra, documentação, E2E e validação manual
+- [ ] 10.0 Infra, documentação, E2E e validação manual (feito, exceto a validação com o Google real; veja a task 10.0)
 
 ## Dependências
 

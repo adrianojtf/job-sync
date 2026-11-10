@@ -52,6 +52,15 @@ class TestConfiguracaoHttpDoAmbiente:
         assert http.cookie_secure is False
         assert http.login_simples_habilitado is False
         assert http.nome_cookie_sessao == "js_sessao"
+        assert http.cabecalho_ip_cliente is None
+
+    def test_le_o_cabecalho_do_ip_do_cliente(self):
+        http = configuracao_http_do_ambiente({"AUTH_CABECALHO_IP_CLIENTE": " X-Forwarded-For "})
+
+        assert http.cabecalho_ip_cliente == "X-Forwarded-For"
+
+    def test_cabecalho_do_ip_em_branco_equivale_a_ausente(self):
+        assert configuracao_http_do_ambiente({"AUTH_CABECALHO_IP_CLIENTE": "  "}).cabecalho_ip_cliente is None
 
     @pytest.mark.parametrize("valor", ["true", "TRUE", "1", "yes"])
     def test_flags_verdadeiras(self, valor):

@@ -7,6 +7,13 @@ Uso: PYTHONPATH=src DATABASE_URL=<url do postgres> uvicorn jobsync.tests.e2e.app
 """
 from __future__ import annotations
 
+import os
+from dataclasses import dataclass
+from typing import Optional
+
+from fastapi import Query
+from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 
 from jobsync.ats_score import CalcularAtsScore, ResultadoAtsScore
 from jobsync.curriculo import AvaliacaoExperiencia, ContextoVaga, Curriculo, DiretrizesExperiencia, EquivalenciaTecnologia, PedidoRefino, ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
@@ -26,8 +33,26 @@ from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import Ger
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia import SugerirAjusteExperiencia
 from jobsync.curriculo.service_layer.sugerir_ajuste_experiencia_adaptada import SugerirAjusteExperienciaAdaptada
 from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import SugerirAjusteSecaoCurriculo
+from jobsync.autenticacao.adapters import (
+    EstadoOAuthRepositoryImpl,
+    HasherSenhaArgon2,
+    LimiteTentativasRepositoryImpl,
+    SessaoRepositoryImpl,
+    TokenUsoUnicoRepositoryImpl,
+    UsuarioRepositoryImpl,
+)
+from jobsync.autenticacao.domain.provedor_identidade import IdentidadeAutenticada
+from jobsync.autenticacao.service_layer.associar_email_a_perfil import AssociarEmailAPerfil
 from jobsync.entrypoints.api import dependencies
 from jobsync.entrypoints.api.main import app
+from jobsync.entrypoints.autenticacao_config import (
+    configuracao_autenticacao_do_ambiente,
+    configuracao_http_do_ambiente,
+)
+from jobsync.entrypoints.autenticacao_servicos import montar_servicos_autenticacao
+from jobsync.entrypoints.dependencies import obter_pool_conexoes, obter_servicos_autenticacao
+from jobsync.perfil.adapters import PerfilRepositoryImpl
+from jobsync.perfil_estruturado.adapters import PerfilEstruturadoRepositoryImpl
 from jobsync.shared_kernel.domain.score_avaliacao import ResultadoDimensaoAvaliacao
 from jobsync.vaga import (
     AnaliseVaga,
@@ -254,3 +279,137 @@ app.dependency_overrides.update(
         ),
     }
 )
+
+
+# --- Autenticação: Google e e-mail simulados, só para o navegador percorrer o fluxo real ---
+
+
+class CaixaDeEmailE2E:
+    """Guarda os e-mails enviados para o teste ler o link de confirmação ou de redefinição."""
+
+    def __init__(self) -> None:
+        self.enviados: list[dict[str, str]] = []
+
+    def enviar(self, para, assunto: str, corpo: str) -> None:
+        self.enviados.append({"para": para.valor, "assunto": assunto, "corpo": corpo})
+
+
+@dataclass
+class IdentidadeGoogleE2E:
+    subject: str = "sub-e2e"
+    email: str = "google@jobsync.test"
+    email_verificado: bool = True
+    nome: Optional[str] = "Pessoa Google"
+
+
+class ProvedorGoogleE2E:
+    """Faz o papel do Google: a "tela do Google" é /e2e/idp, que volta direto com um código."""
+
+    nome = "google"
+
+    def __init__(self) -> None:
+        self.identidade = IdentidadeGoogleE2E()
+
+    def url_autorizacao(self, estado: str, nonce: str, code_challenge: str) -> str:
+        # URL absoluta, como a do Google: a "tela do Google" fica na porta da API, fora do proxy /v1.
+        return f"{URL_API_E2E}/e2e/idp?state={estado}"
+
+    def trocar_codigo(self, codigo: str, code_verifier: str, nonce: str) -> IdentidadeAutenticada:
+        atual = self.identidade
+        return IdentidadeAutenticada("google", atual.subject, atual.email, atual.email_verificado, atual.nome)
+
+
+URL_API_E2E = os.environ.get("E2E_URL_API", "http://localhost:8010")
+CAIXA_DE_EMAIL = CaixaDeEmailE2E()
+GOOGLE_E2E = ProvedorGoogleE2E()
+_servicos_e2e = None
+
+
+def _servicos_autenticacao_e2e():
+    global _servicos_e2e
+    if _servicos_e2e is None:
+        pool = obter_pool_conexoes()
+        _servicos_e2e = montar_servicos_autenticacao(
+            usuarios=UsuarioRepositoryImpl(pool),
+            sessoes=SessaoRepositoryImpl(pool),
+            tokens=TokenUsoUnicoRepositoryImpl(pool),
+            estados=EstadoOAuthRepositoryImpl(pool),
+            limites=LimiteTentativasRepositoryImpl(pool),
+            hasher=HasherSenhaArgon2(),
+            enviador=CAIXA_DE_EMAIL,
+            provedores={"google": GOOGLE_E2E},
+            config=configuracao_autenticacao_do_ambiente(os.environ),
+            http=configuracao_http_do_ambiente(os.environ),
+        )
+    return _servicos_e2e
+
+
+app.dependency_overrides[obter_servicos_autenticacao] = _servicos_autenticacao_e2e
+
+
+class IdentidadeGoogleRequest(BaseModel):
+    subject: str
+    email: str
+    email_verificado: bool = True
+    nome: Optional[str] = None
+
+
+class PerfilLegadoRequest(BaseModel):
+    perfil: str
+    email: str
+    nome_completo: str
+
+
+@app.get("/e2e/idp", include_in_schema=False)
+def tela_do_google_falsa(state: str = Query(...)) -> RedirectResponse:
+    return RedirectResponse(f"/v1/provedores/google/retorno?code=codigo-e2e&state={state}", status_code=302)
+
+
+@app.put("/e2e/idp/identidade", include_in_schema=False)
+def definir_identidade_do_google(corpo: IdentidadeGoogleRequest) -> dict:
+    GOOGLE_E2E.identidade = IdentidadeGoogleE2E(
+        corpo.subject, corpo.email, corpo.email_verificado, corpo.nome
+    )
+    return {"ok": True}
+
+
+@app.get("/e2e/emails", include_in_schema=False)
+def listar_emails(para: str) -> list[dict[str, str]]:
+    return [email for email in CAIXA_DE_EMAIL.enviados if email["para"] == para.lower()]
+
+
+@app.post("/e2e/perfis-legados", include_in_schema=False)
+def criar_perfil_legado(corpo: PerfilLegadoRequest) -> dict:
+    """Cria um perfil anterior à autenticação, com dados, e associa o e-mail do dono (como a CLI)."""
+    from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado import (
+        SalvarPerfilEstruturado,
+        SalvarPerfilEstruturadoInputDto,
+    )
+
+    pool = obter_pool_conexoes()
+    perfis = PerfilRepositoryImpl(pool)
+    perfis.criar(corpo.perfil)
+    SalvarPerfilEstruturado(repositorio=PerfilEstruturadoRepositoryImpl(pool)).executar(
+        SalvarPerfilEstruturadoInputDto(
+            perfil_identificador=corpo.perfil,
+            nome_completo=corpo.nome_completo,
+            email=corpo.email,
+            linkedin="",
+            resumo_profissional="Dados anteriores à autenticação.",
+            experiencias=(),
+            formacoes=(),
+            certificacoes=(),
+            idiomas=(),
+            tecnologias=("Python",),
+        )
+    )
+    AssociarEmailAPerfil(UsuarioRepositoryImpl(pool), perfis).executar(corpo.perfil, corpo.email)
+    return {"ok": True}
+
+
+@app.delete("/e2e/limites", include_in_schema=False)
+def zerar_limites_de_tentativas() -> dict:
+    """O banco de E2E é reaproveitado entre rodadas: zera o contador de falhas de login."""
+    with obter_pool_conexoes().connection() as conexao:
+        conexao.execute("DELETE FROM limite_tentativa")
+    return {"ok": True}

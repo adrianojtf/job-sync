@@ -1,67 +1,25 @@
 """Testes de API dos fluxos de autenticação (serviços reais sobre repositórios fake)."""
 
 from collections.abc import Generator
-from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
 
-from jobsync.autenticacao.adapters import (
-    EstadoOAuthRepositoryFake,
-    LimiteTentativasRepositoryFake,
-    SessaoRepositoryFake,
-    TokenUsoUnicoRepositoryFake,
-    UsuarioRepositoryFake,
-)
-from jobsync.autenticacao.domain.configuracao import ConfiguracaoAutenticacao
 from jobsync.autenticacao.domain.exceptions import EnvioEmailFalhou, ProvedorIndisponivel
 from jobsync.autenticacao.domain.provedor_identidade import IdentidadeAutenticada
 from jobsync.entrypoints.api.main import app
-from jobsync.entrypoints.autenticacao_config import ConfiguracaoHttpAutenticacao
-from jobsync.entrypoints.autenticacao_servicos import montar_servicos_autenticacao
 from jobsync.entrypoints.dependencies import obter_servicos_autenticacao
-from jobsync.tests.autenticacao.dobles import EnviadorEmailFalso, HasherSenhaFalso, ProvedorFalso, RelogioFalso
+from jobsync.tests.entrypoints.api.apoio_autenticacao import FRONTEND, montar_mundo
 
 SENHA = "uma-senha-longa-1"
-FRONTEND = "http://localhost:8080"
 
-
-def _montar(login_simples=False, cookie_secure=False):
-    mundo = SimpleNamespace(
-        usuarios=UsuarioRepositoryFake(),
-        sessoes=SessaoRepositoryFake(),
-        tokens=TokenUsoUnicoRepositoryFake(),
-        estados=EstadoOAuthRepositoryFake(),
-        limites=LimiteTentativasRepositoryFake(),
-        enviador=EnviadorEmailFalso(),
-        relogio=RelogioFalso(),
-        provedor=ProvedorFalso(),
-    )
-    mundo.provedor.identidade = IdentidadeAutenticada("google", "sub-1", "ana@exemplo.com", True, "Ana Souza")
-    mundo.servicos = montar_servicos_autenticacao(
-        usuarios=mundo.usuarios,
-        sessoes=mundo.sessoes,
-        tokens=mundo.tokens,
-        estados=mundo.estados,
-        limites=mundo.limites,
-        hasher=HasherSenhaFalso(),
-        enviador=mundo.enviador,
-        provedores={"google": mundo.provedor},
-        config=ConfiguracaoAutenticacao(url_frontend=FRONTEND),
-        http=ConfiguracaoHttpAutenticacao(
-            cookie_secure=cookie_secure,
-            login_simples_habilitado=login_simples,
-            origens_permitidas=(FRONTEND,),
-        ),
-        relogio=mundo.relogio,
-    )
-    return mundo
+pytestmark = pytest.mark.sem_sessao_simulada
 
 
 @pytest.fixture
 def mundo():
-    return _montar()
+    return montar_mundo()
 
 
 @pytest.fixture
@@ -146,7 +104,7 @@ class TestLoginComSenha:
         assert "max-age=2592000" in cookie
 
     def test_cookie_secure_quando_configurado(self, mundo):
-        mundo = _montar(cookie_secure=True)
+        mundo = montar_mundo(cookie_secure=True)
         app.dependency_overrides[obter_servicos_autenticacao] = lambda: mundo.servicos
         try:
             cliente = TestClient(app, base_url=FRONTEND, follow_redirects=False)
@@ -291,7 +249,7 @@ class TestProvedores:
         assert corpo == {"provedores": ["google"], "senha": True, "login_simples": False}
 
     def test_login_simples_aparece_quando_habilitado(self):
-        mundo = _montar(login_simples=True)
+        mundo = montar_mundo(login_simples=True)
         app.dependency_overrides[obter_servicos_autenticacao] = lambda: mundo.servicos
         try:
             corpo = TestClient(app).get("/v1/provedores").json()
@@ -306,7 +264,7 @@ class TestLoginSimples:
         assert client.post("/v1/sessoes/simples", json={"identificador": "matheus"}).status_code == 404
 
     def test_habilitado_cria_sessao_no_perfil_do_identificador(self):
-        mundo = _montar(login_simples=True)
+        mundo = montar_mundo(login_simples=True)
         app.dependency_overrides[obter_servicos_autenticacao] = lambda: mundo.servicos
         try:
             cliente = TestClient(app, base_url=FRONTEND)
@@ -321,7 +279,7 @@ class TestLoginSimples:
         assert me.json()["perfil_identificador"] == "matheus"
 
     def test_identificador_vazio_gera_422(self):
-        mundo = _montar(login_simples=True)
+        mundo = montar_mundo(login_simples=True)
         app.dependency_overrides[obter_servicos_autenticacao] = lambda: mundo.servicos
         try:
             resposta = TestClient(app).post("/v1/sessoes/simples", json={"identificador": "  "})

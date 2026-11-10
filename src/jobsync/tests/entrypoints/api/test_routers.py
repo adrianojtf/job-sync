@@ -657,7 +657,8 @@ class TestCandidaturaRouter:
         assert data["perfil_identificador"] == "matheus"
         assert data["status"] == "APLICADO"
 
-    def test_post_submissao_candidatura(self, client: TestClient):
+    def test_post_submissao_candidatura(self, client: TestClient, como_perfil):
+        como_perfil("matheus")
         vaga_repo = VagaRepositoryFake()
         vaga = vaga_repo.salvar(_vaga_fake(perfil_identificador="matheus"))
         candidatura_repo = CandidaturaRepositoryFake()
@@ -713,7 +714,9 @@ class TestPerfilRouter:
         data = response.json()
         assert data["total"] == 0
 
-    def test_get_perfil(self, client: TestClient):
+    def test_get_perfil(self, client: TestClient, como_perfil):
+        como_perfil("matheus")
+
         response = client.get("/v1/perfis/matheus")
 
         assert response.status_code == 200

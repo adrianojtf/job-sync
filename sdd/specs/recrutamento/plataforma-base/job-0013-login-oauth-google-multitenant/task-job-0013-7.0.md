@@ -18,15 +18,21 @@ Hoje os routers confiam no `perfil_identificador` enviado pelo cliente. Esta tar
 
 ## Subtarefas
 
-- [ ] 7.1 Implementar `exigir_acesso_ao_perfil` com testes.
-- [ ] 7.2 Aplicar em `perfil_router` e `perfil_estruturado_router`.
-- [ ] 7.3 Aplicar em `curriculo_router` e `candidatura_router`.
-- [ ] 7.4 Aplicar em `vaga_router` e `token_captura_router`.
-- [ ] 7.5 Teste de varredura de rotas e ajuste dos testes existentes.
+- [x] 7.1 Implementar `exigir_acesso_ao_perfil` com testes.
+- [x] 7.2 Aplicar em `perfil_router` e `perfil_estruturado_router`.
+- [x] 7.3 Aplicar em `curriculo_router` e `candidatura_router`.
+- [x] 7.4 Aplicar em `vaga_router` e `token_captura_router`.
+- [x] 7.5 Teste de varredura de rotas e ajuste dos testes existentes.
 
 ## Detalhes de Implementação
 
 Ver "Componentes existentes alterados", "Riscos Conhecidos" e "Conformidade com Padrões" em `techspec-job-0013.md`. Usar `grep -rn perfil_identificador src/jobsync/entrypoints/api/routers` para o inventário.
+
+## Achados durante a execução
+
+- `POST /candidaturas/{id}/submissao` não trazia perfil na entrada e não conferia o dono: qualquer usuário autenticado podia mover candidaturas alheias pelo `id`. Passou a responder 404 para candidatura de outro perfil.
+- A extensão Chrome usa o servidor separado `servidor_captura.py` (token Bearer), então `POST /v1/vagas` ficou só para o frontend e exige sessão.
+- A proteção é uma dependência de router (`exigir_perfil_da_requisicao`): rota nova nasce protegida. Um teste varre `app.routes` e confere 401 sem sessão e 403 com perfil alheio no caminho, na query ou no corpo.
 
 ## Critérios de Sucesso
 
@@ -36,8 +42,8 @@ Ver "Componentes existentes alterados", "Riscos Conhecidos" e "Conformidade com 
 
 ## Testes da Tarefa
 
-- [ ] Testes de API por router (401, 403 e caminho feliz)
-- [ ] Teste de varredura de rotas
+- [x] Testes de API por router (401, 403 e caminho feliz)
+- [x] Teste de varredura de rotas
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

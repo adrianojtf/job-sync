@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.entrypoints.api.curriculo_pre_montado import (
     buscar_perfil_estruturado,
     montar_curriculo_pre_montado,
@@ -21,7 +22,7 @@ from jobsync.entrypoints.api.schemas.vaga_externa import (
     DescobrirVagasResponse,
 )
 
-router = APIRouter(tags=["vagas externas"])
+router = APIRouter(tags=["vagas externas"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
 
 @router.post(

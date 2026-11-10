@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
+from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.curriculo import (
     ExperienciaParaAvaliacao,
     RascunhoCurriculoAdaptado,
@@ -66,7 +67,7 @@ from jobsync.entrypoints.api.schemas.curriculo import (
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
 
-router = APIRouter(tags=["currículos"])
+router = APIRouter(tags=["currículos"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
 
 @router.post(

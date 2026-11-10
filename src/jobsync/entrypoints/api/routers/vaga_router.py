@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
+from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.entrypoints.api.dependencies import (
     ServiceAvaliarDescricaoVagaDep,
     ServiceCapturarVagaDep,
@@ -18,7 +19,7 @@ from jobsync.entrypoints.api.schemas.vaga import (
     VagasListagemResponse,
 )
 
-router = APIRouter(tags=["vagas"])
+router = APIRouter(tags=["vagas"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
 
 @router.post(

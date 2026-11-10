@@ -17,10 +17,10 @@ Definir as portas do domínio e implementar, para cada repositório, um fake em 
 
 ## Subtarefas
 
-- [ ] 2.1 Criar as portas em `autenticacao/domain/` (padrão de `perfil/domain/perfil_repository.py`).
-- [ ] 2.2 Escrever testes de contrato reutilizáveis para os repositórios e implementar os fakes.
-- [ ] 2.3 Implementar os `*RepositoryImpl` com `psycopg_pool.ConnectionPool` e testes de integração.
-- [ ] 2.4 Atualizar `src/jobsync/tests/conftest.py` com as novas tabelas.
+- [x] 2.1 Criar as portas em `autenticacao/domain/` (padrão de `perfil/domain/perfil_repository.py`).
+- [x] 2.2 Escrever testes de contrato reutilizáveis para os repositórios e implementar os fakes.
+- [x] 2.3 Implementar os `*RepositoryImpl` com `psycopg_pool.ConnectionPool` e testes de integração.
+- [x] 2.4 Atualizar `src/jobsync/tests/conftest.py` com as novas tabelas.
 
 ## Detalhes de Implementação
 
@@ -34,8 +34,8 @@ Ver "Interfaces Principais" e "Modelos de Dados" em `techspec-job-0013.md`. Segu
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos fakes
-- [ ] Testes de integração dos repositórios Postgres
+- [x] Testes de unidade dos fakes
+- [x] Testes de integração dos repositórios Postgres
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

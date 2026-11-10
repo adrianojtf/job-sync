@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 Migração `0003_autenticacao.sql`, entidades de domínio e value objects
-- [ ] 2.0 Portas e repositórios (fake e Postgres) do domínio `autenticacao`
+- [x] 2.0 Portas e repositórios (fake e Postgres) do domínio `autenticacao`
 - [ ] 3.0 Adapters externos: `HasherSenhaArgon2`, `EnviadorEmail*` e `ProvedorGoogle`
 - [ ] 4.0 Serviços de sessão e de e-mail/senha
 - [ ] 5.0 Serviços do fluxo Google (`IniciarLoginOAuth`, `ConcluirLoginOAuth`)

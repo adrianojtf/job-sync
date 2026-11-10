@@ -7,6 +7,7 @@ import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
 import { CartaoAutenticacao } from "./CartaoAutenticacao";
+import { IconeGoogle } from "./IconeGoogle";
 import estilos from "./EntrarPage.module.css";
 import { mensagemDoErroDeLogin, mensagemDoErroDeProvedor } from "./mensagens-autenticacao";
 
@@ -70,6 +71,7 @@ export function EntrarPage() {
       {temGoogle && (
         <>
           <a className={estilos.botaoProvedor} href={api.urlAutorizacao("google", destino)}>
+            <IconeGoogle />
             Entrar com Google
           </a>
           <div className={estilos.separador}>ou</div>

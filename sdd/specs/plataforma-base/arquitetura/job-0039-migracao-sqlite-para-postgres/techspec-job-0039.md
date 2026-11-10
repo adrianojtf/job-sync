@@ -185,13 +185,14 @@ Roteiro de troca (RF-14): parar a API, copiar o `.db` para backup, rodar a CLI c
 - **Pool compartilhado, em vez de uma conexão por repositório.** Hoje cada request abre várias conexões SQLite e reexecuta o schema. Com PostgreSQL isso esgotaria conexões do servidor.
 - **Migração em transação única com dry-run por rollback.** Garante tudo ou nada com pouco código. Alternativa rejeitada: dual-write, por complexidade desproporcional para um sistema de uso individual.
 - **Fuso: instantes em UTC com fuso (`TIMESTAMPTZ`).** Decisão do responsável: usar o fuso do usuário recebido pelo navegador. Como o navegador já converte datas ISO com offset, o servidor só precisa devolver instantes sem ambiguidade. Alternativa rejeitada: header `X-Timezone` e conversão no servidor, que adicionaria código sem benefício para os valores armazenados.
+- **Sem chave estrangeira em `candidatura.curriculo_salvo_id` (migração `0002`).** O sistema sempre permitiu remover um currículo salvo em uso, pois o SQLite não validava a chave, e a tela já trata currículo ausente. Com a chave validada no Postgres, essa remoção passaria a dar erro 500. A chave foi removida para preservar o comportamento, e a CLI migra essas candidaturas com aviso. Alternativa rejeitada: bloquear a remoção, que é regra de negócio nova.
 - **Sem SQLite no runtime.** Evita manter dois adapters. Os fakes cobrem os testes de service, e os testes de repositório usam PostgreSQL real.
 
 ### Riscos Conhecidos
 
 | Risco | Mitigação |
 | --- | --- |
-| Órfãos de FK no `.db` (as FKs não eram validadas) | Pré-checagem lista tudo e aborta. Correção manual antes de repetir. |
+| Órfãos de FK no `.db` (as FKs não eram validadas) | Pré-checagem lista tudo e aborta. Exceção: candidatura com currículo salvo removido é migrada com aviso (migração `0002`). Correção manual dos demais antes de repetir. |
 | Concorrência no reordenamento do board (antes serializada pelo SQLite) | Lock advisory por perfil e teste de concorrência. |
 | Datas antigas sem fuso (`datetime.now()` da máquina) | A CLI as interpreta no fuso local da máquina, ou em `--fuso-origem`, e grava em UTC. Se a máquina que criou o banco usava outro fuso, informe `--fuso-origem`. |
 | Ordem de desempate por `id` diferente por collation | `COLLATE "C"` nos `ORDER BY`. Após a migração `posicao` é única por coluna, então o impacto é baixo. |

@@ -185,6 +185,16 @@ class TestAplicarMovimento:
         assert [c.posicao for c in tres_aplicadas.listar_por_perfil("matheus")] == [0, 1, 2]
 
 
+class TestCurriculoRemovidoEmUso:
+    def test_remover_curriculo_usado_por_candidatura_mantem_a_candidatura(self, repositorio, pool_postgres):
+        repositorio.salvar(_criar_candidatura(id="c-1"))
+
+        CurriculoSalvoRepositoryImpl(pool_postgres).remover("curriculo-1", "matheus")
+
+        candidatura = repositorio.buscar_por_id("c-1")
+        assert candidatura.curriculo_salvo_id == "curriculo-1"
+
+
 class TestConcorrenciaNoBoard:
     def test_salvamentos_simultaneos_no_mesmo_perfil_geram_posicoes_distintas(self, repositorio):
         def salvar(indice):

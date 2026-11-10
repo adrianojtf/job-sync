@@ -68,6 +68,7 @@ class Relatorio:
     pdfs_conferidos: int
     simulacao: bool
     migracoes_aplicadas: tuple[str, ...] = field(default_factory=tuple)
+    avisos: tuple[str, ...] = field(default_factory=tuple)
 
 
 def converter_data(texto: str, fuso_origem: ZoneInfo | None) -> datetime:
@@ -89,9 +90,14 @@ def abrir_sqlite_somente_leitura(caminho: Path) -> sqlite3.Connection:
     return sqlite3.connect(f"file:{caminho.resolve()}?mode=ro", uri=True)
 
 
-def verificar_origem(origem: sqlite3.Connection, fuso_origem: ZoneInfo | None) -> None:
-    """Reúne todos os problemas da origem de uma vez e aborta se houver algum."""
+def verificar_origem(origem: sqlite3.Connection, fuso_origem: ZoneInfo | None) -> list[str]:
+    """Reúne todos os problemas da origem de uma vez e aborta se houver algum.
+
+    Devolve avisos: candidaturas que apontam para um currículo salvo já removido são
+    aceitas, porque o sistema sempre permitiu remover currículos em uso.
+    """
     problemas: list[str] = []
+    avisos: list[str] = []
     existentes = {l[0] for l in origem.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     ausentes = [t for t in TABELAS_EM_ORDEM if t not in existentes]
     if ausentes:
@@ -106,8 +112,14 @@ def verificar_origem(origem: sqlite3.Connection, fuso_origem: ZoneInfo | None) -
             ]
         )
 
-    for tabela, linha_id, filha, pai in origem.execute("PRAGMA foreign_key_check"):
-        problemas.append(f"Referência órfã: {tabela} (rowid {linha_id}) aponta para {filha} inexistente ({pai})")
+    for tabela, linha_id, pai, _ in origem.execute("PRAGMA foreign_key_check"):
+        if tabela == "candidatura" and pai == "curriculo_salvo":
+            id_, curriculo_id = origem.execute(
+                "SELECT id, curriculo_salvo_id FROM candidatura WHERE rowid = ?", (linha_id,)
+            ).fetchone()
+            avisos.append(f"Candidatura {id_} usa o currículo salvo {curriculo_id}, que não existe mais (migrada assim mesmo)")
+            continue
+        problemas.append(f"Referência órfã: {tabela} (rowid {linha_id}) aponta para {pai} inexistente")
 
     for tabela, coluna in (
         ("curriculo_salvo", "data_upload"),
@@ -130,6 +142,7 @@ def verificar_origem(origem: sqlite3.Connection, fuso_origem: ZoneInfo | None) -
 
     if problemas:
         raise OrigemInvalida(problemas)
+    return avisos
 
 
 def verificar_destino_vazio(destino: Connection) -> None:
@@ -239,7 +252,7 @@ def migrar(
     """Copia tudo do SQLite para o PostgreSQL em uma transação; `simulacao` reverte no final."""
     origem = abrir_sqlite_somente_leitura(caminho_sqlite)
     try:
-        verificar_origem(origem, fuso_origem)
+        avisos = verificar_origem(origem, fuso_origem)
         try:
             aplicadas = executar_migracoes(destino)
             verificar_destino_vazio(destino)
@@ -257,6 +270,7 @@ def migrar(
             pdfs_conferidos=pdfs,
             simulacao=simulacao,
             migracoes_aplicadas=tuple(aplicadas),
+            avisos=tuple(avisos),
         )
     finally:
         origem.close()

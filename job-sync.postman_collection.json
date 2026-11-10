@@ -673,7 +673,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"novo_status\": \"entrevista\"}",
+          "raw": "{\"novo_status\": \"entrevista\", \"posicao\": 0}",
           "options": {
             "raw": {
               "language": "json"
@@ -688,7 +688,8 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "pm.test('Status movido para entrevista', () => pm.expect(pm.response.json().status).to.eql('entrevista'));"
+              "pm.test('Status movido para entrevista', () => pm.expect(pm.response.json().status).to.eql('entrevista'));",
+              "pm.test('Candidatura no topo da coluna', () => pm.expect(pm.response.json().posicao).to.eql(0));"
             ]
           }
         }

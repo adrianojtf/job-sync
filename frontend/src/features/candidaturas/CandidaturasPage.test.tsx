@@ -1,4 +1,5 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import type { DndContextProps, DragCancelEvent, DragEndEvent } from "@dnd-kit/core";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { CANDIDATURA, CURRICULO_SALVO, servirDadosBase } from "../../test/fixtures";
@@ -8,25 +9,72 @@ import { servidorApi } from "../../test/servidor-api";
 type Candidatura = typeof CANDIDATURA;
 const STATUS = ["APLICADO", "ENTREVISTA", "OFERTA", "REJEITADO"];
 
+const dnd = vi.hoisted(() => ({ props: null as DndContextProps | null }));
+vi.mock("@dnd-kit/core", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@dnd-kit/core")>();
+  return {
+    ...real,
+    DndContext: (props: DndContextProps) => {
+      dnd.props = props;
+      return <real.DndContext {...props} />;
+    },
+  };
+});
+
+const esperarUmPouco = () => act(() => new Promise<void>((resolver) => setTimeout(resolver, 30)));
+
+async function soltar(ativo: string, sobre: string | null) {
+  await act(async () => {
+    dnd.props!.onDragEnd!({
+      active: { id: ativo },
+      over: sobre ? { id: sobre } : null,
+    } as DragEndEvent);
+  });
+  await esperarUmPouco();
+}
+
+async function cancelar(ativo: string) {
+  await act(async () => {
+    dnd.props!.onDragCancel!({ active: { id: ativo }, over: null } as DragCancelEvent);
+  });
+  await esperarUmPouco();
+}
+
 function servirCandidaturas(iniciais: Candidatura[]) {
   const candidaturas = iniciais.map((candidatura) => ({ ...candidatura }));
-  const movimentos: { id: string; novo_status: string }[] = [];
+  const movimentos: { id: string; novo_status: string; posicao?: number }[] = [];
   servirDadosBase();
   servidorApi.use(
     http.get(`${API_TESTE}/v1/candidaturas`, () =>
       HttpResponse.json({
         por_status: Object.fromEntries(
-          STATUS.map((status) => [status, candidaturas.filter((c) => c.status === status)]),
+          STATUS.map((status) => [
+            status,
+            candidaturas.filter((c) => c.status === status).sort((a, b) => a.posicao - b.posicao),
+          ]),
         ),
         total: candidaturas.length,
       }),
     ),
     http.post(`${API_TESTE}/v1/candidaturas/:id/submissao`, async ({ params, request }) => {
-      const { novo_status } = (await request.json()) as { novo_status: string };
-      movimentos.push({ id: String(params.id), novo_status });
+      const { novo_status, posicao } = (await request.json()) as {
+        novo_status: string;
+        posicao?: number;
+      };
+      movimentos.push({
+        id: String(params.id),
+        novo_status,
+        ...(posicao === undefined ? {} : { posicao }),
+      });
       const candidatura = candidaturas.find((c) => c.id === params.id)!;
-      candidatura.status = novo_status.toUpperCase();
-      candidatura.historico_status = [{ status: candidatura.status, data: "2026-11-06T15:30:00" }];
+      const novoStatus = novo_status.toUpperCase();
+      const destino = candidaturas
+        .filter((c) => c.status === novoStatus && c.id !== candidatura.id)
+        .sort((a, b) => a.posicao - b.posicao);
+      destino.splice(Math.min(posicao ?? 0, destino.length), 0, candidatura);
+      destino.forEach((c, indice) => (c.posicao = indice));
+      candidatura.status = novoStatus;
+      candidatura.historico_status = [{ status: novoStatus, data: "2026-11-06T15:30:00" }];
       return HttpResponse.json(candidatura);
     }),
   );
@@ -56,53 +104,231 @@ describe("CandidaturasPage", () => {
     expect(coluna("Oferta")).toHaveAccessibleName("Oferta, 0 candidaturas");
     expect(within(coluna("Rejeitado")).getByText("Nenhuma candidatura")).toBeInTheDocument();
     expect(within(coluna("Entrevista")).getByText("Thoughtworks")).toBeInTheDocument();
-    expect(within(coluna("Aplicado")).getByText("Aplicada em 02/11/2026")).toBeInTheDocument();
-  });
-
-  it("move a candidatura de coluna pelo menu Mover para", async () => {
-    const movimentos = servirCandidaturas([CANDIDATURA]);
-    renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
-
-    await userEvent.selectOptions(
-      await screen.findByLabelText("Mover Senior Java Backend Developer para"),
-      "ENTREVISTA",
+    const quando = within(coluna("Aplicado")).getByTitle("Aplicada em 02/11/2026");
+    expect(quando.tagName).toBe("TIME");
+    expect(quando).toHaveAttribute("datetime", "2026-11-02T09:00:00");
+    expect(quando).toHaveTextContent(
+      /^(hoje|há \d+ (dia|dias|semana|semanas|mês|meses|ano|anos))$/,
     );
-
-    expect(
-      await within(coluna("Entrevista")).findByText("Senior Java Backend Developer"),
-    ).toBeInTheDocument();
-    expect(within(coluna("Aplicado")).getByText("Nenhuma candidatura")).toBeInTheDocument();
-    expect(movimentos).toEqual([{ id: "cand-1", novo_status: "entrevista" }]);
-    expect(screen.getByRole("status")).toHaveTextContent("Candidatura movida para Entrevista.");
+    expect(within(coluna("Aplicado")).getByText("N")).toHaveAttribute("aria-hidden", "true");
+    expect(within(coluna("Rejeitado")).getByText("Arraste um cartão até aqui")).toBeInTheDocument();
   });
 
-  it("mostra a falha ao mover e mantém o cartão na coluna", async () => {
+  it("não tem mais caixa de seleção nem botão Detalhes nos cartões", async () => {
     servirCandidaturas([CANDIDATURA]);
-    servidorApi.use(
-      http.post(`${API_TESTE}/v1/candidaturas/:id/submissao`, () =>
-        HttpResponse.json(
-          {
-            type: "t",
-            title: "Não encontrado",
-            status: 404,
-            detail: "Candidatura não encontrada.",
-            instance: "i",
-          },
-          { status: 404 },
-        ),
-      ),
-    );
+
     renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
 
-    await userEvent.selectOptions(
-      await screen.findByLabelText("Mover Senior Java Backend Developer para"),
-      "OFERTA",
-    );
+    await screen.findByText("Senior Java Backend Developer");
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Detalhes/ })).not.toBeInTheDocument();
+  });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Candidatura não encontrada.");
-    expect(
-      within(coluna("Aplicado")).getByText("Senior Java Backend Developer"),
-    ).toBeInTheDocument();
+  it("o cartão é um item de lista com o título como único botão", async () => {
+    servirCandidaturas([CANDIDATURA]);
+
+    renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+
+    await screen.findByText("Senior Java Backend Developer");
+    const cartao = within(coluna("Aplicado")).getAllByRole("listitem")[0]!;
+    expect(cartao).toHaveAttribute("tabindex", "0");
+    expect(cartao).toHaveAttribute("aria-roledescription", "cartão arrastável");
+    expect(within(cartao).getAllByRole("button")).toHaveLength(1);
+  });
+
+  describe("arrastar e soltar", () => {
+    async function abrirBoard(candidaturas: Candidatura[] = [CANDIDATURA]) {
+      const movimentos = servirCandidaturas(candidaturas);
+      renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+      await screen.findByText(candidaturas[0]!.cargo);
+      return movimentos;
+    }
+
+    const duasAplicadas = () => [
+      { ...CANDIDATURA, id: "cand-1", cargo: "Vaga Um", posicao: 0 },
+      { ...CANDIDATURA, id: "cand-2", cargo: "Vaga Dois", posicao: 1 },
+      { ...CANDIDATURA, id: "cand-3", cargo: "Vaga Três", posicao: 2 },
+    ];
+
+    it("soltar sobre outra coluna move a candidatura para o fim dela", async () => {
+      const movimentos = await abrirBoard();
+
+      await soltar("cand-1", "coluna:ENTREVISTA");
+
+      expect(
+        await within(coluna("Entrevista")).findByText("Senior Java Backend Developer"),
+      ).toBeInTheDocument();
+      expect(within(coluna("Aplicado")).getByText("Nenhuma candidatura")).toBeInTheDocument();
+      expect(movimentos).toEqual([{ id: "cand-1", novo_status: "entrevista", posicao: 0 }]);
+      expect(await screen.findByText("Candidatura movida para Entrevista.")).toBeInTheDocument();
+    });
+
+    it("soltar sobre um cartão de outra coluna usa a posição dele", async () => {
+      const movimentos = await abrirBoard([
+        ...duasAplicadas(),
+        { ...CANDIDATURA, id: "cand-9", cargo: "Vaga Nove", status: "ENTREVISTA", posicao: 0 },
+      ]);
+
+      await soltar("cand-2", "cand-9");
+
+      await waitFor(() =>
+        expect(movimentos).toEqual([{ id: "cand-2", novo_status: "entrevista", posicao: 0 }]),
+      );
+    });
+
+    it("reordena dentro da coluna enviando a nova posição", async () => {
+      const movimentos = await abrirBoard(duasAplicadas());
+
+      await soltar("cand-1", "cand-3");
+
+      await waitFor(() =>
+        expect(movimentos).toEqual([{ id: "cand-1", novo_status: "aplicado", posicao: 2 }]),
+      );
+      await waitFor(() =>
+        expect(
+          within(coluna("Aplicado"))
+            .getAllByRole("listitem")
+            .map((item) => item.textContent),
+        ).toEqual([
+          expect.stringContaining("Vaga Dois"),
+          expect.stringContaining("Vaga Três"),
+          expect.stringContaining("Vaga Um"),
+        ]),
+      );
+    });
+
+    it("soltar no mesmo lugar não chama a API", async () => {
+      const movimentos = await abrirBoard(duasAplicadas());
+
+      await soltar("cand-2", "cand-2");
+      await soltar("cand-3", "coluna:APLICADO");
+
+      expect(movimentos).toEqual([]);
+    });
+
+    it("soltar fora de qualquer coluna não chama a API", async () => {
+      const movimentos = await abrirBoard();
+
+      await soltar("cand-1", null);
+
+      expect(movimentos).toEqual([]);
+    });
+
+    it("cancelar o arrasto não chama a API", async () => {
+      const movimentos = await abrirBoard();
+
+      await cancelar("cand-1");
+
+      expect(movimentos).toEqual([]);
+    });
+
+    it("mostra a falha ao soltar e devolve o cartão à coluna de origem", async () => {
+      await abrirBoard();
+      servidorApi.use(
+        http.post(`${API_TESTE}/v1/candidaturas/:id/submissao`, () =>
+          HttpResponse.json(
+            {
+              type: "t",
+              title: "Não encontrado",
+              status: 404,
+              detail: "Candidatura não encontrada.",
+              instance: "i",
+            },
+            { status: 404 },
+          ),
+        ),
+      );
+
+      await soltar("cand-1", "coluna:OFERTA");
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Candidatura não encontrada.");
+      expect(
+        within(coluna("Aplicado")).getByText("Senior Java Backend Developer"),
+      ).toBeInTheDocument();
+    });
+
+    it("anuncia o movimento por teclado em português", async () => {
+      await abrirBoard();
+      const cartao = within(coluna("Aplicado")).getAllByRole("listitem")[0]!;
+
+      cartao.focus();
+      await userEvent.keyboard(" ");
+
+      expect(
+        await screen.findByText("Candidatura Senior Java Backend Developer na posição original."),
+      ).toBeInTheDocument();
+      await userEvent.keyboard("{Escape}");
+      expect(
+        await screen.findByText(
+          "Movimento cancelado. Candidatura Senior Java Backend Developer voltou à posição original.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("detalhe da candidatura", () => {
+    it("o título do cartão abre o detalhe", async () => {
+      servirCandidaturas([CANDIDATURA]);
+      renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Senior Java Backend Developer" }),
+      );
+
+      expect(
+        screen.getByRole("dialog", { name: "Senior Java Backend Developer" }),
+      ).toBeInTheDocument();
+    });
+
+    it("move pelo campo Mover para: topo da coluna, status atualizado e aviso", async () => {
+      const movimentos = servirCandidaturas([CANDIDATURA]);
+      renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Senior Java Backend Developer" }),
+      );
+      const dialogo = screen.getByRole("dialog", { name: "Senior Java Backend Developer" });
+
+      await userEvent.selectOptions(within(dialogo).getByLabelText("Mover para"), "ENTREVISTA");
+
+      expect(movimentos).toEqual([{ id: "cand-1", novo_status: "entrevista", posicao: 0 }]);
+      expect(await screen.findByText("Candidatura movida para Entrevista.")).toBeInTheDocument();
+      await waitFor(() =>
+        expect(within(dialogo).getByLabelText("Mover para")).toHaveValue("ENTREVISTA"),
+      );
+      expect(
+        within(coluna("Entrevista")).getByText("Senior Java Backend Developer"),
+      ).toBeInTheDocument();
+    });
+
+    it("se o Mover para falhar, o campo volta ao status anterior", async () => {
+      servirCandidaturas([CANDIDATURA]);
+      servidorApi.use(
+        http.post(`${API_TESTE}/v1/candidaturas/:id/submissao`, () =>
+          HttpResponse.json(
+            {
+              type: "t",
+              title: "Erro",
+              status: 404,
+              detail: "Candidatura não encontrada.",
+              instance: "i",
+            },
+            { status: 404 },
+          ),
+        ),
+      );
+      renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Senior Java Backend Developer" }),
+      );
+      const dialogo = screen.getByRole("dialog", { name: "Senior Java Backend Developer" });
+
+      await userEvent.selectOptions(within(dialogo).getByLabelText("Mover para"), "OFERTA");
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Candidatura não encontrada.");
+      await waitFor(() =>
+        expect(within(dialogo).getByLabelText("Mover para")).toHaveValue("APLICADO"),
+      );
+    });
   });
 
   it("mostra o detalhe com histórico e currículo usado", async () => {
@@ -110,7 +336,7 @@ describe("CandidaturasPage", () => {
     renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Detalhes de Senior Java Backend Developer" }),
+      await screen.findByRole("button", { name: "Senior Java Backend Developer" }),
     );
     const dialogo = screen.getByRole("dialog", { name: "Senior Java Backend Developer" });
 
@@ -135,9 +361,7 @@ describe("CandidaturasPage", () => {
     async function abrirDetalhe(candidatura: Candidatura) {
       servirCandidaturas([candidatura]);
       renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
-      await userEvent.click(
-        await screen.findByRole("button", { name: `Detalhes de ${candidatura.cargo}` }),
-      );
+      await userEvent.click(await screen.findByRole("button", { name: candidatura.cargo }));
       return screen.getByRole("dialog", { name: candidatura.cargo });
     }
 
@@ -165,9 +389,7 @@ describe("CandidaturasPage", () => {
         ),
       );
       renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
-      await userEvent.click(
-        await screen.findByRole("button", { name: `Detalhes de ${candidatura.cargo}` }),
-      );
+      await userEvent.click(await screen.findByRole("button", { name: candidatura.cargo }));
       const dialogo = screen.getByRole("dialog", { name: candidatura.cargo });
 
       await userEvent.click(

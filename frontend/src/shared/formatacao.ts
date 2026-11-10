@@ -51,3 +51,25 @@ export function dominioDaUrl(url: string | null | undefined): string {
     return "";
   }
 }
+
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+const diaCivil = (data: Date) => Date.UTC(data.getFullYear(), data.getMonth(), data.getDate());
+
+const plural = (quantidade: number, singular: string, pluralizado: string) =>
+  `há ${quantidade} ${quantidade === 1 ? singular : pluralizado}`;
+
+/** Tempo decorrido em linguagem natural ("hoje", "há 3 dias", "há 2 semanas"), contado em dias de calendário. */
+export function formatarTempoRelativo(iso: string, agora: Date = new Date()): string {
+  const dias = Math.max(0, Math.round((diaCivil(agora) - diaCivil(new Date(iso))) / MS_POR_DIA));
+  if (dias === 0) return "hoje";
+  if (dias < 7) return plural(dias, "dia", "dias");
+  if (dias < 30) return plural(Math.floor(dias / 7), "semana", "semanas");
+  if (dias < 365) return plural(Math.floor(dias / 30), "mês", "meses");
+  return plural(Math.floor(dias / 365), "ano", "anos");
+}
+
+/** Primeira letra, em maiúscula, para avatares (ex.: empresa); "?" se o texto estiver vazio. */
+export function inicialDe(texto: string): string {
+  return texto.trim().charAt(0).toLocaleUpperCase("pt-BR") || "?";
+}

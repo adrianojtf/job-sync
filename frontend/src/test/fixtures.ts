@@ -93,4 +93,5 @@ export const CANDIDATURA = {
   status: "APLICADO",
   data_aplicacao: "2026-11-02T09:00:00",
   historico_status: [{ status: "APLICADO", data: "2026-11-02T09:00:00" }],
+  posicao: 0,
 };

@@ -6,17 +6,21 @@ import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { useToast } from "../../shared/ui/use-toast";
 import { useBaixarCurriculo, useCurriculos } from "../curriculos/use-curriculos";
 import estilos from "./CandidaturasPage.module.css";
-import { rotuloStatus, TOM_STATUS } from "./status";
+import { ORDEM_STATUS, ROTULO_STATUS, rotuloStatus, TOM_STATUS } from "./status";
+import { useMoverComAviso } from "./use-mover-com-aviso";
+
+const ID_MOVER = "detalhe-mover-para";
 
 interface Props {
   candidatura: Candidatura | null;
   aoFechar: () => void;
 }
 
-/** RF10.3 — dados da candidatura, currículo usado e histórico de status. */
+/** RF10.3 — dados da candidatura, currículo usado e histórico de status. RF18a — move sem arrastar. */
 export function DetalheCandidaturaModal({ candidatura, aoFechar }: Props) {
   const curriculos = useCurriculos();
   const download = useBaixarCurriculo();
+  const mover = useMoverComAviso();
   const { notificar } = useToast();
   if (!candidatura) return null;
 
@@ -36,6 +40,25 @@ export function DetalheCandidaturaModal({ candidatura, aoFechar }: Props) {
           <StatusBadge tom={TOM_STATUS[candidatura.status as StatusCandidatura] ?? "neutro"}>
             {rotuloStatus(candidatura.status)}
           </StatusBadge>
+        </dd>
+        <dt>
+          <label htmlFor={ID_MOVER}>Mover para</label>
+        </dt>
+        <dd>
+          <select
+            id={ID_MOVER}
+            className={estilos.mover}
+            value={candidatura.status}
+            onChange={(evento) =>
+              mover(candidatura.id, evento.target.value as StatusCandidatura, 0)
+            }
+          >
+            {ORDEM_STATUS.map((opcao) => (
+              <option key={opcao} value={opcao}>
+                {ROTULO_STATUS[opcao]}
+              </option>
+            ))}
+          </select>
         </dd>
         <dt>Aplicada em</dt>
         <dd>{formatarData(candidatura.data_aplicacao)}</dd>

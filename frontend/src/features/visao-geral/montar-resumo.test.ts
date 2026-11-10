@@ -35,6 +35,7 @@ const candidatura = (
   status,
   data_aplicacao: "2026-11-01T09:00:00",
   historico_status: historico,
+  posicao: 0,
 });
 
 function porStatus(...lista: ReturnType<typeof candidatura>[]): CandidaturasPorStatus {

@@ -101,7 +101,10 @@ def confirmar_candidatura_ajustada(
     response_model=CandidaturaResponse,
     status_code=status.HTTP_200_OK,
     summary="Submeter/mover candidatura",
-    description="Atualiza o status de uma candidatura.",
+    description=(
+        "Atualiza o status de uma candidatura e, opcionalmente, sua posição na coluna de destino. "
+        "Sem posição, a candidatura vai para o topo da coluna."
+    ),
 )
 def submeter_candidatura(
     id: str,
@@ -109,9 +112,9 @@ def submeter_candidatura(
     service: ServiceMoverCandidaturaDep,
 ) -> CandidaturaResponse:
     """Move a candidatura para o novo status informado."""
-    novo_status = body.to_dto()["novo_status"]
+    dados = body.to_dto()
     try:
-        candidatura = service.executar(id, novo_status)
+        candidatura = service.executar(id, dados["novo_status"], dados["posicao"])
     except CandidaturaNaoEncontrada:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

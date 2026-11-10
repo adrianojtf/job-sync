@@ -1,6 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { entrar, EXPERIENCIAS_COM_REACT, novoPerfil, semearPerfilCompleto } from "./apoio";
+import {
+  entrar,
+  EXPERIENCIAS_COM_REACT,
+  novoPerfil,
+  semearCandidaturas,
+  semearPerfilCompleto,
+} from "./apoio";
 
 const TELAS = [
   "/",
@@ -140,7 +146,7 @@ test("confirmar candidatura: botão, confirmação e detalhe com download sem vi
   expect(await violacoesGraves(page)).toEqual([]);
 
   await page.getByRole("link", { name: "Ver no board" }).click();
-  await page.getByRole("button", { name: "Detalhes de Staff Platform Engineer" }).click();
+  await page.getByRole("button", { name: "Staff Platform Engineer", exact: true }).click();
   await expect(page.getByRole("button", { name: "Baixar PDF do currículo usado" })).toBeVisible();
 
   expect(await violacoesGraves(page)).toEqual([]);
@@ -163,6 +169,48 @@ test("revisão com ajustes de tecnologia e foco da sugestão sem violações gra
   await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toContainText(
     "Foco:",
   );
+
+  expect(await violacoesGraves(page)).toEqual([]);
+});
+
+test("board de candidaturas com cartões, durante o arrasto por teclado e com o detalhe aberto, sem violações graves", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-a11y-board");
+  await semearPerfilCompleto(request, perfil);
+  await semearCandidaturas(request, perfil, [
+    { cargo: "Backend Um", empresa: "Globex" },
+    { cargo: "Platform Um", empresa: "Hooli", status: "entrevista" },
+    { cargo: "Oferta Um", empresa: "Wayne", status: "oferta" },
+  ]);
+  await entrar(page, perfil);
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto("/candidaturas");
+  await expect(page.getByRole("region", { name: /^Aplicado/ })).toContainText("Backend Um");
+
+  expect(await violacoesGraves(page)).toEqual([]);
+
+  await page.getByRole("listitem").filter({ hasText: "Backend Um" }).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByText("Candidatura Backend Um na posição original.")).toBeAttached();
+  expect(await violacoesGraves(page)).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(page.getByText(/Movimento cancelado/)).toBeAttached();
+
+  await page.getByRole("button", { name: "Backend Um", exact: true }).click();
+  await expect(page.getByLabel("Mover para")).toBeVisible();
+  expect(await violacoesGraves(page)).toEqual([]);
+});
+
+test("board de candidaturas em tela de celular sem violações graves", async ({ page, request }) => {
+  const perfil = novoPerfil("e2e-a11y-board-celular");
+  await semearPerfilCompleto(request, perfil);
+  await semearCandidaturas(request, perfil, [{ cargo: "Backend Um", empresa: "Globex" }]);
+  await entrar(page, perfil);
+  await page.setViewportSize({ width: 375, height: 740 });
+  await page.goto("/candidaturas");
+  await expect(page.getByRole("region", { name: /^Aplicado/ })).toContainText("Backend Um");
 
   expect(await violacoesGraves(page)).toEqual([]);
 });

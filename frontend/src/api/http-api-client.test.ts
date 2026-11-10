@@ -492,4 +492,51 @@ describe("HttpApiClient", () => {
 
     expect(corpoRecebido).toEqual({ novo_status: "entrevista" });
   });
+
+  it("envia a posição na coluna de destino quando informada", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/candidaturas/:id/submissao`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ id: "c1", status: "OFERTA", posicao: 2 });
+      }),
+    );
+
+    const candidatura = await criarCliente().moverCandidatura("c1", "OFERTA", 2);
+
+    expect(corpoRecebido).toEqual({ novo_status: "oferta", posicao: 2 });
+    expect(candidatura.posicao).toBe(2);
+  });
+
+  it("envia a posição zero, sem confundi-la com posição ausente", async () => {
+    let corpoRecebido: unknown;
+    servidorApi.use(
+      http.post(`${BASE}/v1/candidaturas/:id/submissao`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({ id: "c1", status: "OFERTA", posicao: 0 });
+      }),
+    );
+
+    await criarCliente().moverCandidatura("c1", "OFERTA", 0);
+
+    expect(corpoRecebido).toEqual({ novo_status: "oferta", posicao: 0 });
+  });
+
+  it("converte 404 e 422 do movimento em ApiError", async () => {
+    servidorApi.use(
+      http.post(`${BASE}/v1/candidaturas/:id/submissao`, () =>
+        HttpResponse.json({ detail: "Candidatura não encontrada." }, { status: 404 }),
+      ),
+    );
+    const naoEncontrada = await capturarErro(criarCliente().moverCandidatura("x", "OFERTA", 0));
+
+    servidorApi.use(
+      http.post(`${BASE}/v1/candidaturas/:id/submissao`, () =>
+        HttpResponse.json({ detail: "Posição inválida." }, { status: 422 }),
+      ),
+    );
+    const invalida = await capturarErro(criarCliente().moverCandidatura("c1", "OFERTA", 0));
+
+    expect([naoEncontrada.status, invalida.status]).toEqual([404, 422]);
+  });
 });

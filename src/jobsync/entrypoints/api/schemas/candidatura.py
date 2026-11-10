@@ -96,6 +96,7 @@ class CandidaturaSubmeterRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "novo_status": "entrevista",
+                "posicao": 0,
             }
         }
     )
@@ -103,6 +104,14 @@ class CandidaturaSubmeterRequest(BaseModel):
     novo_status: str = Field(
         description="Novo status da candidatura (aplicado, entrevista, oferta ou rejeitado).",
         json_schema_extra={"enum": [status.name.lower() for status in StatusCandidatura]},
+    )
+    posicao: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Índice (a partir de 0) da candidatura na coluna de destino. "
+            "Ausente = topo da coluna; acima do tamanho da coluna = fim."
+        ),
     )
 
     @field_validator("novo_status")
@@ -116,6 +125,7 @@ class CandidaturaSubmeterRequest(BaseModel):
     def to_dto(self) -> dict[str, Any]:
         return {
             "novo_status": StatusCandidatura[self.novo_status.upper()],
+            "posicao": self.posicao,
         }
 
 
@@ -148,6 +158,7 @@ class CandidaturaResponse(BaseModel):
         default_factory=list,
         description="Histórico de mudanças de status.",
     )
+    posicao: int = Field(description="Posição (a partir de 0) da candidatura na coluna.")
 
     @classmethod
     def from_dto(cls, dto: Candidatura) -> CandidaturaResponse:
@@ -161,6 +172,7 @@ class CandidaturaResponse(BaseModel):
             status=dto.status.name,
             data_aplicacao=dto.data_aplicacao,
             historico_status=[MudancaStatusResponse.from_dto(m) for m in dto.historico_status],
+            posicao=dto.posicao,
         )
 
 

@@ -6,6 +6,8 @@ from jobsync.shared_kernel.adapters.persistence.conexao_postgres import criar_po
 from jobsync.shared_kernel.adapters.persistence.executor_migracoes import executar_migracoes
 
 _TABELAS = (
+    "limite_tentativa",
+    "estado_oauth",
     "candidatura",
     "perfil_estruturado",
     "token_captura",

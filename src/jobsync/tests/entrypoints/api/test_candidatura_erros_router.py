@@ -46,7 +46,8 @@ def candidaturas() -> CandidaturaRepositoryFake:
 
 
 @pytest.fixture
-def client(candidaturas: CandidaturaRepositoryFake) -> Generator[TestClient, None, None]:
+def client(candidaturas: CandidaturaRepositoryFake, como_perfil) -> Generator[TestClient, None, None]:
+    como_perfil("adriano")
     app.dependency_overrides[obter_repositorio_candidatura] = lambda: candidaturas
     app.dependency_overrides[obter_repositorio_vaga] = lambda: VagaRepositoryFake()
 

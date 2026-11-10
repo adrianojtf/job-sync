@@ -19,7 +19,6 @@ import type {
   DescobrirVagasEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
-  Perfil,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
@@ -32,6 +31,8 @@ import type {
   SugestaoExperienciaAdaptada,
   SugestaoSecao,
   TokenCaptura,
+  Provedores,
+  Usuario,
   Vaga,
   VagaDescoberta,
 } from "./tipos";
@@ -40,7 +41,21 @@ import type {
 export interface ApiClient {
   verificarSaude(): Promise<{ status: string }>;
 
-  obterOuCriarPerfil(identificador: string): Promise<Perfil>;
+  /** Usuário da sessão atual (cookie HttpOnly), ou `null` quando não há sessão válida. */
+  obterUsuarioAtual(): Promise<Usuario | null>;
+  /** Métodos de entrada que o servidor oferece (Google, e-mail e senha, login legado de dev). */
+  listarProvedores(): Promise<Provedores>;
+  entrarComSenha(email: string, senha: string): Promise<Usuario>;
+  /** Login legado por identificador; só existe em desenvolvimento (404 fora dele). */
+  entrarComIdentificador(identificador: string): Promise<Usuario>;
+  sair(): Promise<void>;
+  /** Envia o link de confirmação; a senha só vale depois de confirmar o e-mail. */
+  cadastrar(email: string, senha: string): Promise<void>;
+  confirmarEmail(token: string): Promise<void>;
+  solicitarRedefinicaoSenha(email: string): Promise<void>;
+  redefinirSenha(token: string, novaSenha: string): Promise<void>;
+  /** URL para onde o navegador deve ir para entrar com um provedor (fluxo de redirecionamento). */
+  urlAutorizacao(provedor: string, destino: string): string;
   buscarPerfilEstruturado(perfil: string): Promise<PerfilEstruturado | null>;
   salvarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   atualizarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;

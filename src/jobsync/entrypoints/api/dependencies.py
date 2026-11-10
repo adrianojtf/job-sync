@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from jobsync.ats_score import CalcularAtsScore
 from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
@@ -56,7 +56,11 @@ from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
 from jobsync.curriculo_salvo.service_layer.salvar_curriculo import SalvarCurriculo
 from jobsync.curriculo_salvo.service_layer.listar_curriculos_salvos.service import ListarCurriculosSalvos
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import RemoverCurriculoSalvo
+from jobsync.autenticacao.domain.exceptions import NaoAutenticado
+from jobsync.autenticacao.domain.usuario import Usuario
+from jobsync.entrypoints.autenticacao_servicos import ServicosAutenticacao
 from jobsync.entrypoints.dependencies import (
+    obter_servicos_autenticacao,
     obter_repositorio_candidatura,
     obter_repositorio_curriculo_salvo,
     obter_repositorio_perfil,
@@ -103,6 +107,20 @@ from jobsync.vaga_externa.service_layer.candidatar_na_vaga_externa import (
 from jobsync.vaga_externa.service_layer.descobrir_vagas_com_match import (
     DescobrirVagasComMatch,
 )
+
+ServicosAutenticacaoDep = Annotated[ServicosAutenticacao, Depends(obter_servicos_autenticacao)]
+
+
+def obter_usuario_autenticado(request: Request, servicos: ServicosAutenticacaoDep) -> Usuario:
+    """Resolve o usuário pelo cookie de sessão; sem sessão válida, responde 401."""
+    token = request.cookies.get(servicos.http.nome_cookie_sessao)
+    usuario = servicos.resolver_sessao.executar(token)
+    if usuario is None:
+        raise NaoAutenticado("Sessão ausente ou expirada.")
+    return usuario
+
+
+UsuarioAutenticadoDep = Annotated[Usuario, Depends(obter_usuario_autenticado)]
 
 RepositorioVagaDep = Annotated[VagaRepository, Depends(obter_repositorio_vaga)]
 RepositorioCandidaturaDep = Annotated[

@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
+from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.candidatura import CandidaturaNaoEncontrada, StatusCandidatura
 from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import LimiteCurriculosSalvosExcedido
 from jobsync.entrypoints.api.dependencies import (
+    RepositorioCandidaturaDep,
     ServiceConfirmarCandidaturaAjustadaDep,
     ServiceCriarCandidaturaDep,
     ServiceListarCandidaturasDep,
     ServiceMoverCandidaturaDep,
+    UsuarioAutenticadoDep,
 )
 from jobsync.entrypoints.api.schemas.candidatura import (
     CandidaturaConfirmarRequest,
@@ -21,7 +24,7 @@ from jobsync.entrypoints.api.schemas.candidatura import (
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 
-router = APIRouter(tags=["candidaturas"])
+router = APIRouter(tags=["candidaturas"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
 
 @router.get(
@@ -110,8 +113,16 @@ def submeter_candidatura(
     id: str,
     body: CandidaturaSubmeterRequest,
     service: ServiceMoverCandidaturaDep,
+    repositorio: RepositorioCandidaturaDep,
+    usuario: UsuarioAutenticadoDep,
 ) -> CandidaturaResponse:
     """Move a candidatura para o novo status informado."""
+    existente = repositorio.buscar_por_id(id)
+    if existente is not None and existente.perfil_identificador != usuario.perfil_identificador:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidatura não encontrada.",
+        )
     dados = body.to_dto()
     try:
         candidatura = service.executar(id, dados["novo_status"], dados["posicao"])

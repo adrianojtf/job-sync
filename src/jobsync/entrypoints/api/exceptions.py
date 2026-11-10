@@ -9,6 +9,18 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import JSONResponse
 
+from jobsync.autenticacao.domain.exceptions import (
+    AcessoNegado,
+    CredenciaisInvalidas,
+    EmailInvalido,
+    EnvioEmailFalhou,
+    LimiteTentativasExcedido,
+    NaoAutenticado,
+    ProvedorDesconhecido,
+    ProvedorIndisponivel,
+    SenhaInvalida,
+    TokenInvalido,
+)
 from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import LimiteCurriculosSalvosExcedido
 from jobsync.vaga.service_layer.avaliar_descricao_vaga.exceptions import (
     AvaliacaoDescricaoVagaIndisponivel,
@@ -27,9 +39,11 @@ def _problem_response(
     title: str,
     detail: str,
     type_slug: str,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
+        headers=headers,
         content={
             "type": f"https://jobsync.com/erros/{type_slug}",
             "title": title,
@@ -92,6 +106,44 @@ def adicionar_handlers_excecao(app: FastAPI) -> None:
                 "Remova um currículo para confirmar a candidatura."
             ),
             type_slug="limite-curriculos-salvos",
+        )
+
+    def _registrar_autenticacao(
+        excecao: type[Exception],
+        status_code: int,
+        title: str,
+        type_slug: str,
+        detail: str | None = None,
+    ) -> None:
+        @app.exception_handler(excecao)
+        async def _handler(request: Request, exc: Exception) -> JSONResponse:
+            return _problem_response(
+                request=request,
+                status_code=status_code,
+                title=title,
+                detail=detail or str(exc),
+                type_slug=type_slug,
+            )
+
+    _registrar_autenticacao(NaoAutenticado, status.HTTP_401_UNAUTHORIZED, "Não autenticado", "nao-autenticado", "Faça login para continuar.")
+    _registrar_autenticacao(AcessoNegado, status.HTTP_403_FORBIDDEN, "Acesso negado", "acesso-negado", "Você não tem acesso a este recurso.")
+    _registrar_autenticacao(CredenciaisInvalidas, status.HTTP_401_UNAUTHORIZED, "Credenciais inválidas", "credenciais-invalidas", "E-mail ou senha incorretos.")
+    _registrar_autenticacao(TokenInvalido, status.HTTP_400_BAD_REQUEST, "Link inválido", "token-invalido", "Link inválido ou expirado.")
+    _registrar_autenticacao(EmailInvalido, status.HTTP_422_UNPROCESSABLE_ENTITY, "Requisição inválida", "requisicao-invalida")
+    _registrar_autenticacao(SenhaInvalida, status.HTTP_422_UNPROCESSABLE_ENTITY, "Requisição inválida", "requisicao-invalida")
+    _registrar_autenticacao(EnvioEmailFalhou, status.HTTP_503_SERVICE_UNAVAILABLE, "E-mail indisponível", "email-indisponivel", "Não foi possível enviar o e-mail agora. Tente novamente em instantes.")
+    _registrar_autenticacao(ProvedorDesconhecido, status.HTTP_404_NOT_FOUND, "Provedor desconhecido", "provedor-desconhecido", "Provedor de login não encontrado.")
+    _registrar_autenticacao(ProvedorIndisponivel, status.HTTP_502_BAD_GATEWAY, "Provedor indisponível", "provedor-indisponivel", "Não foi possível autenticar com o provedor.")
+
+    @app.exception_handler(LimiteTentativasExcedido)
+    async def _limite_tentativas_handler(request: Request, exc: LimiteTentativasExcedido) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            title="Muitas tentativas",
+            detail="Muitas tentativas. Tente novamente mais tarde.",
+            type_slug="limite-tentativas",
+            headers={"Retry-After": str(exc.retry_after_segundos)},
         )
 
     @app.exception_handler(HTTPException)

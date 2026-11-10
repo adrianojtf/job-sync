@@ -3,11 +3,15 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import { AjustarVagaPage } from "../features/ajustar-vaga/AjustarVagaPage";
 import { AnalisarAtsPage } from "../features/analisar-ats/AnalisarAtsPage";
 import { CandidaturasPage } from "../features/candidaturas/CandidaturasPage";
+import { CadastrarPage } from "../features/cadastrar/CadastrarPage";
 import { ConfiguracoesPage } from "../features/configuracoes/ConfiguracoesPage";
+import { ConfirmarEmailPage } from "../features/confirmar-email/ConfirmarEmailPage";
 import { CurriculosPage } from "../features/curriculos/CurriculosPage";
 import { DescobrirVagasPage } from "../features/descobrir-vagas/DescobrirVagasPage";
 import { EntrarPage } from "../features/entrar/EntrarPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
+import { RecuperarSenhaPage } from "../features/recuperar-senha/RecuperarSenhaPage";
+import { RedefinirSenhaPage } from "../features/redefinir-senha/RedefinirSenhaPage";
 import { VagasSalvasPage } from "../features/vagas-salvas/VagasSalvasPage";
 import { VisaoGeralPage } from "../features/visao-geral/VisaoGeralPage";
 import { AppShell } from "./AppShell";
@@ -43,6 +47,26 @@ export const rotas: RouteObject[] = [
       </SomenteSemSessao>
     ),
   },
+  {
+    path: "/cadastrar",
+    errorElement: <ErroDeRota />,
+    element: (
+      <SomenteSemSessao>
+        <CadastrarPage />
+      </SomenteSemSessao>
+    ),
+  },
+  {
+    path: "/recuperar-senha",
+    errorElement: <ErroDeRota />,
+    element: (
+      <SomenteSemSessao>
+        <RecuperarSenhaPage />
+      </SomenteSemSessao>
+    ),
+  },
+  { path: "/confirmar-email", errorElement: <ErroDeRota />, element: <ConfirmarEmailPage /> },
+  { path: "/redefinir-senha", errorElement: <ErroDeRota />, element: <RedefinirSenhaPage /> },
   {
     path: "/",
     errorElement: <ErroDeRota />,

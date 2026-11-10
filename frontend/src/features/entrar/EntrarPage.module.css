@@ -44,3 +44,66 @@
 .acoes {
   margin-top: 20px;
 }
+.cartaoLargo {
+  composes: cartao;
+}
+.formulario {
+  display: grid;
+  gap: 4px;
+}
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.separador::before,
+.separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.botaoProvedor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--raio-lg, 10px);
+  background: var(--surface);
+  color: var(--text, inherit);
+  font-weight: 600;
+  text-decoration: none;
+}
+.botaoProvedor:hover {
+  background: var(--surface-2, var(--line));
+}
+.botaoProvedor:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+.links a {
+  color: var(--accent);
+}
+.desenvolvimento {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+}
+.avisoTopo {
+  margin-bottom: 16px;
+}

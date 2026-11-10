@@ -44,6 +44,220 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entrar com e-mail e senha
+         * @description Cria a sessão e a entrega em cookie HttpOnly. O erro não diz se o e-mail existe.
+         */
+        post: operations["entrar_v1_sessoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessoes/simples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entrar por identificador (somente desenvolvimento)
+         * @description Existe só com AUTH_LOGIN_SIMPLES_HABILITADO=true; caso contrário responde 404.
+         */
+        post: operations["entrar_com_identificador_v1_sessoes_simples_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessoes/atual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Sair
+         * @description Encerra a sessão atual e limpa o cookie. Sem sessão, também responde 204.
+         */
+        delete: operations["sair_v1_sessoes_atual_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/usuarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cadastrar com e-mail e senha
+         * @description Envia um link de confirmação. A senha só passa a valer depois da confirmação. A resposta é a mesma para e-mails novos e já cadastrados.
+         */
+        post: operations["cadastrar_v1_usuarios_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/usuarios/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usuário da sessão atual */
+        get: operations["obter_usuario_atual_v1_usuarios_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/confirmacoes-email/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Confirmar e-mail
+         * @description Confirma o e-mail pelo link recebido e ativa a senha escolhida no cadastro.
+         */
+        put: operations["confirmar_email_v1_confirmacoes_email__token__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/redefinicoes-senha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pedir redefinição de senha
+         * @description Envia o link se o e-mail tiver cadastro confirmado. A resposta é sempre a mesma.
+         */
+        post: operations["solicitar_redefinicao_v1_redefinicoes_senha_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/redefinicoes-senha/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Definir nova senha
+         * @description Troca a senha pelo link recebido e encerra todas as sessões do usuário.
+         */
+        put: operations["redefinir_senha_v1_redefinicoes_senha__token__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/provedores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Métodos de entrada disponíveis */
+        get: operations["listar_provedores_v1_provedores_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/provedores/{provedor}/autorizacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Iniciar login com o provedor
+         * @description Redireciona para o provedor e grava o estado do login em cookie curto e HttpOnly.
+         */
+        get: operations["iniciar_login_v1_provedores__provedor__autorizacao_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/provedores/{provedor}/retorno": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retorno do provedor
+         * @description Conclui o login e redireciona ao frontend. Falhas voltam para /entrar?erro=<codigo> com códigos fixos: acesso_negado, estado_invalido, email_nao_verificado, provedor_indisponivel.
+         */
+        get: operations["concluir_login_v1_provedores__provedor__retorno_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/experiencias-profissionais/avaliacoes": {
         parameters: {
             query?: never;
@@ -468,8 +682,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Obter ou criar perfil
-         * @description Busca o perfil pelo identificador, criando-o se necessário.
+         * Obter o próprio perfil
+         * @description Devolve o perfil do usuário autenticado. Não cria perfis: eles nascem no cadastro ou no primeiro login. Pedir o perfil de outra pessoa responde 403.
          */
         get: operations["obter_perfil_v1_perfis__id__get"];
         put?: never;
@@ -887,6 +1101,19 @@ export interface components {
              * @description Descrição da vaga usada como contexto para avaliar aderência.
              */
             descricao_vaga: string;
+        };
+        /** CadastroRequest */
+        CadastroRequest: {
+            /**
+             * Email
+             * @description E-mail que será confirmado por link.
+             */
+            email: string;
+            /**
+             * Senha
+             * @description Senha escolhida; só vale após confirmar o e-mail.
+             */
+            senha: string;
         };
         /**
          * CandidatarVagaExternaRequest
@@ -1684,6 +1911,26 @@ export interface components {
              */
             nivel: string;
         };
+        /** LoginRequest */
+        LoginRequest: {
+            /** Email */
+            email: string;
+            /** Senha */
+            senha: string;
+        };
+        /** LoginSimplesRequest */
+        LoginSimplesRequest: {
+            /**
+             * Identificador
+             * @description Identificador do perfil (apenas desenvolvimento).
+             */
+            identificador: string;
+        };
+        /** MensagemResponse */
+        MensagemResponse: {
+            /** Mensagem */
+            mensagem: string;
+        };
         /**
          * MudancaStatusResponse
          * @description Registro de uma mudança de status da candidatura.
@@ -1700,6 +1947,11 @@ export interface components {
              * @description Data e hora da mudança.
              */
             data: string;
+        };
+        /** NovaSenhaRequest */
+        NovaSenhaRequest: {
+            /** Nova Senha */
+            nova_senha: string;
         };
         /**
          * PedidoRefinoSchema
@@ -1953,6 +2205,24 @@ export interface components {
              */
             instance: string;
         };
+        /** ProvedoresResponse */
+        ProvedoresResponse: {
+            /**
+             * Provedores
+             * @description Provedores de identidade configurados (ex.: google).
+             */
+            provedores: string[];
+            /**
+             * Senha
+             * @description Se o login por e-mail e senha está disponível.
+             */
+            senha: boolean;
+            /**
+             * Login Simples
+             * @description Se o login legado por identificador está habilitado.
+             */
+            login_simples: boolean;
+        };
         /**
          * RascunhoAdaptadoResponse
          * @description Rascunho adaptado pela IA, ainda sem PDF, para revisão do usuário.
@@ -2157,6 +2427,11 @@ export interface components {
              */
             conteudo: string;
         };
+        /** SolicitacaoRedefinicaoRequest */
+        SolicitacaoRedefinicaoRequest: {
+            /** Email */
+            email: string;
+        };
         /**
          * SugerirAjusteExperienciaAdaptadaRequest
          * @description Pedido de sugestão de IA para as conquistas e o contexto de uma experiência, com a vaga.
@@ -2276,6 +2551,20 @@ export interface components {
             /**
              * Perfil Identificador
              * @description Identificador do perfil dono do token.
+             */
+            perfil_identificador: string;
+        };
+        /** UsuarioResponse */
+        UsuarioResponse: {
+            /** Id */
+            id: string;
+            /** Email */
+            email: string;
+            /** Nome */
+            nome?: string | null;
+            /**
+             * Perfil Identificador
+             * @description Perfil dono dos dados deste usuário.
              */
             perfil_identificador: string;
         };
@@ -2511,6 +2800,416 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    entrar_v1_sessoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    entrar_com_identificador_v1_sessoes_simples_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginSimplesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sair_v1_sessoes_atual_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cadastrar_v1_usuarios_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CadastroRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MensagemResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    obter_usuario_atual_v1_usuarios_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    confirmar_email_v1_confirmacoes_email__token__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    solicitar_redefinicao_v1_redefinicoes_senha_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitacaoRedefinicaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MensagemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    redefinir_senha_v1_redefinicoes_senha__token__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovaSenhaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    listar_provedores_v1_provedores_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvedoresResponse"];
+                };
+            };
+        };
+    };
+    iniciar_login_v1_provedores__provedor__autorizacao_get: {
+        parameters: {
+            query?: {
+                destino?: string | null;
+            };
+            header?: never;
+            path: {
+                provedor: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    concluir_login_v1_provedores__provedor__retorno_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path: {
+                provedor: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3286,7 +3985,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemaResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3537,7 +4236,7 @@ export interface operations {
                     "application/json": components["schemas"]["TokenCapturaResponse"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;

@@ -2,10 +2,348 @@
   "info": {
     "_postman_id": "job-sync-api-tests",
     "name": "Job Sync API - Testes Funcionais",
-    "description": "Coleção de testes automatizados para a API Job Sync v1. Execute o backend antes (uvicorn ou Docker). Os endpoints de IA (adaptar/analisar/descobrir) requerem GROQ_API_KEY no servidor.",
+    "description": "Coleção de testes automatizados para a API Job Sync v1. Execute o backend antes (uvicorn ou Docker). Os endpoints de IA (adaptar/analisar/descobrir) requerem GROQ_API_KEY no servidor. A partir do JOB-0013, todas as rotas de dados exigem sessão: rode a pasta 00 - Autenticação (00e basta em desenvolvimento) antes das demais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "00 - Autenticação (rode 00d ou 00e antes dos demais)",
+      "description": "Todas as rotas de dados exigem sessão (cookie js_sessao, que o Postman guarda sozinho). Sem sessão a API responde 401; com o perfil de outra pessoa, 403. Para o login com Google use o navegador: GET /v1/provedores/google/autorizacao.",
+      "item": [
+        {
+          "name": "00a - Opções de entrada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/provedores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "provedores"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Lista os métodos', () => { const j = pm.response.json(); pm.expect(j).to.have.property('provedores'); pm.expect(j.senha).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00b - Cadastrar com e-mail e senha",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{email}}\", \"senha\": \"{{senha}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00c - Confirmar e-mail (cole o token do e-mail em token_confirmacao)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/confirmacoes-email/{{token_confirmacao}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "confirmacoes-email",
+                "{{token_confirmacao}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00d - Entrar com e-mail e senha (grava o cookie de sessão)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/sessoes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "sessoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{email}}\", \"senha\": \"{{senha}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Cookie de sessão HttpOnly', () => { const cookie = pm.response.headers.get('Set-Cookie'); pm.expect(cookie).to.include('js_sessao'); pm.expect(cookie.toLowerCase()).to.include('httponly'); });",
+                  "pm.test('Traz o perfil do usuário', () => pm.expect(pm.response.json()).to.have.property('perfil_identificador'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00e - Entrar por identificador (somente desenvolvimento: AUTH_LOGIN_SIMPLES_HABILITADO=true)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/sessoes/simples",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "sessoes",
+                "simples"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identificador\": \"{{perfil}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Perfil é o identificador', () => pm.expect(pm.response.json().perfil_identificador).to.eql(pm.collectionVariables.get('perfil')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00f - Usuário da sessão atual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/usuarios/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "usuarios",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Traz e-mail e perfil', () => { const j = pm.response.json(); pm.expect(j).to.have.property('email'); pm.expect(j).to.have.property('perfil_identificador'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00g - Pedir redefinição de senha",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/redefinicoes-senha",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "redefinicoes-senha"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{email}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00h - Redefinir senha (cole o token do e-mail em token_redefinicao)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/redefinicoes-senha/{{token_redefinicao}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "redefinicoes-senha",
+                "{{token_redefinicao}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nova_senha\": \"{{nova_senha}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00i - Sair (encerra a sessão e limpa o cookie)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/sessoes/atual",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "sessoes",
+                "atual"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "01 - Health",
       "request": {
@@ -35,7 +373,7 @@
       ]
     },
     {
-      "name": "02 - Listar perfis (placeholder)",
+      "name": "02 - Listar perfis (placeholder, exige sessão)",
       "request": {
         "method": "GET",
         "header": [],
@@ -64,7 +402,7 @@
       ]
     },
     {
-      "name": "03 - Criar/Obter perfil",
+      "name": "03 - Obter o próprio perfil (não cria; 403 para perfil alheio)",
       "request": {
         "method": "GET",
         "header": [],
@@ -1207,6 +1545,31 @@
     {
       "key": "candidatura_id",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "postman-test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "senha",
+      "value": "uma-senha-bem-longa-1",
+      "type": "string"
+    },
+    {
+      "key": "token_confirmacao",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_redefinicao",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nova_senha",
+      "value": "outra-senha-bem-longa-2",
       "type": "string"
     }
   ]

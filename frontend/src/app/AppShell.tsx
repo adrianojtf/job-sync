@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 import { AjustarVagaModal } from "../features/ajustar-vaga/AjustarVagaModal";
@@ -20,8 +19,8 @@ function useTituloAtual(): string {
 
 /** Estrutura das telas autenticadas: menu lateral, barra superior com trilha e conteúdo (RF1.1–RF1.4). */
 export function AppShell() {
-  const { perfil, sair } = useSessao();
-  const queryClient = useQueryClient();
+  const { usuario, sair } = useSessao();
+  const nomeExibido = usuario?.nome || usuario?.email || "";
   const navegar = useNavigate();
   const titulo = useTituloAtual();
   const [menuAberto, setMenuAberto] = useState(false);
@@ -42,9 +41,8 @@ export function AppShell() {
     return () => document.removeEventListener("keydown", aoTeclar);
   }, [menuAberto]);
 
-  const encerrarSessao = () => {
-    sair();
-    queryClient.clear();
+  const encerrarSessao = async () => {
+    await sair();
     navegar("/entrar", { replace: true });
   };
 
@@ -104,10 +102,10 @@ export function AppShell() {
 
         <div className={estilos.rodapeSidebar}>
           <span className={estilos.avatar} aria-hidden="true">
-            {perfil?.slice(0, 2).toUpperCase()}
+            {nomeExibido.slice(0, 2).toUpperCase()}
           </span>
-          <span className={estilos.perfil} title={perfil ?? undefined}>
-            {perfil}
+          <span className={estilos.perfil} title={nomeExibido}>
+            {nomeExibido}
           </span>
           <Button variante="text" onClick={encerrarSessao}>
             Sair

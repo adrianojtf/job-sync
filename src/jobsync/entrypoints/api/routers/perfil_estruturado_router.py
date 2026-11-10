@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.entrypoints.api.dependencies import (
     ServiceBuscarPerfilEstruturadoDep,
     ServiceImportarPerfilDePdfDep,
@@ -17,7 +18,7 @@ from jobsync.entrypoints.api.schemas.perfil_estruturado import (
     PerfilImportarPdfRequest,
 )
 
-router = APIRouter(tags=["perfil estruturado"])
+router = APIRouter(tags=["perfil estruturado"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
 
 @router.post(

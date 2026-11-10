@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.entrypoints.api.dependencies import ServiceCriarTokenCapturaDep
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.entrypoints.api.schemas.token_captura import (
@@ -15,7 +16,7 @@ from jobsync.entrypoints.api.schemas.token_captura import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["tokens de captura"])
+router = APIRouter(tags=["tokens de captura"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
 
 @router.post(

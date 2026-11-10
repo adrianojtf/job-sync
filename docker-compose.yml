@@ -10,6 +10,8 @@ services:
     environment:
       # Postgres instalado na máquina hospedeira (veja o README).
       DATABASE_URL: postgresql://job_sync:troque_a_senha@host.docker.internal:5432/job_sync
+      # Atrás do Nginx, o IP real do cliente vem no X-Forwarded-For (o Nginx acrescenta o dele no fim).
+      AUTH_CABECALHO_IP_CLIENTE: X-Forwarded-For
     volumes:
       - ./storage:/app/storage
     ports:
@@ -23,3 +25,12 @@ services:
       - "8080:80"
     depends_on:
       - backend
+
+  # Caixa de e-mail de desenvolvimento: recebe os e-mails de confirmação e de redefinição de senha.
+  # Só sobe com `docker compose --profile dev up`. Interface em http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit
+    profiles: ["dev"]
+    ports:
+      - "8025:8025"
+      - "1025:1025"

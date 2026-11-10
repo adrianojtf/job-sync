@@ -93,6 +93,71 @@ Os valores são carregados em tempo de execução por `python-dotenv`; certifiqu
 - `OPENAI_API_KEY` / `OPENAI_MODEL`: provedor de geração de texto (extração, adaptação de seções, carta de apresentação e sugestões ATS). O modelo padrão é `gpt-6-luna`.
 - `DATABASE_URL`: conexão com o PostgreSQL. Obrigatória: sem ela a API não sobe. As tabelas são criadas e atualizadas sozinhas na subida (migrações em `shared_kernel/adapters/persistence/migracoes/`).
 - `TYPESAFE_API_KEY` / `TYPESAFE_MODEL`: provedor de avaliações estruturadas (Jev). Sem essa chave, as avaliações automáticas ficam indisponíveis, mas a adaptação do currículo continua funcionando.
+- Variáveis de login (`GOOGLE_*`, `AUTH_*`, `SMTP_*`): veja a seção [Autenticação](#autenticação-google-e-e-mail-e-senha).
+
+## Autenticação (Google e e-mail e senha)
+
+Todas as rotas de dados exigem sessão. A pessoa entra com a conta Google ou com e-mail e senha, e a
+API entrega um cookie `js_sessao` (HttpOnly, `SameSite=Lax`). Cada usuário tem um único perfil e só
+acessa os próprios dados: sem sessão a API responde 401; com o perfil de outra pessoa, 403.
+
+### Login com Google
+
+1. No [Google Cloud Console](https://console.cloud.google.com/apis/credentials), crie um **ID do cliente OAuth**
+   do tipo "Aplicativo da Web".
+2. Em "URIs de redirecionamento autorizados", cadastre `<AUTH_BASE_URL_FRONTEND>/v1/provedores/google/retorno`
+   (local: `http://localhost:8080/v1/provedores/google/retorno`; sem o Nginx, `http://localhost:8000/...`).
+3. Na tela de consentimento, escolha o tipo de usuário **Externo** para aceitar qualquer conta Google
+   (Gmail e Workspace) e use os escopos `openid`, `email` e `profile`. Enquanto o app estiver em modo
+   "Teste", só contas listadas como testadoras conseguem entrar; confira no console o que é exigido
+   para publicá-lo.
+4. Preencha `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no `.env`. Sem eles o botão não aparece.
+
+O fluxo usa Authorization Code com PKCE, `state` e `nonce`, conduzido pelo backend. O e-mail só vale
+se o Google o informar como verificado.
+
+### Login com e-mail e senha
+
+O cadastro envia um link de confirmação; **a senha só passa a valer depois de confirmar o e-mail**.
+Sem `SMTP_HOST`, os e-mails só aparecem no log da API (útil em desenvolvimento). Para ver os e-mails
+numa caixa de entrada local:
+
+```bash
+docker compose --profile dev up --build   # sobe também o Mailpit
+# no .env: SMTP_HOST=mailpit  SMTP_PORT=1025  SMTP_STARTTLS=false
+```
+
+A caixa de entrada fica em `http://localhost:8025`. Senhas têm de 10 a 128 caracteres e são
+guardadas com Argon2id. Cinco falhas seguidas bloqueiam a conta por 15 minutos.
+
+### Migrando um perfil criado antes da autenticação
+
+Perfis antigos eram só um identificador. Para que o dono continue com os dados, associe o e-mail dele
+ao perfil (com `DATABASE_URL` configurada):
+
+```bash
+PYTHONPATH=src python -m jobsync.entrypoints.cli.associar_email_perfil --perfil meu-identificador --email dono@exemplo.com
+```
+
+O comando **não libera acesso sozinho**: o vínculo se completa no primeiro login em que o dono prova
+o e-mail (Google com e-mail verificado, ou o link de confirmação por e-mail). Assim, saber o
+identificador de um perfil antigo não basta para tomá-lo. Repetir o mesmo par não altera nada.
+Códigos de saída: 0 sucesso, 2 dados inválidos, 3 banco inacessível, 4 conflito (perfil ou e-mail
+já associados a outro usuário). Perfis antigos sem e-mail associado continuam no banco, mas
+inacessíveis por login.
+
+### Login por identificador (somente desenvolvimento)
+
+`AUTH_LOGIN_SIMPLES_HABILITADO=true` habilita `POST /v1/sessoes/simples` e um campo na tela de
+entrada, sem senha. Serve para desenvolvimento, testes e para a coleção Postman. **Nunca ligue em
+produção.**
+
+### Atrás de um proxy
+
+O limite de tentativas por IP precisa do IP real. Com o Nginx do compose, `AUTH_CABECALHO_IP_CLIENTE`
+já vem como `X-Forwarded-For` (vale a última entrada, a que o proxy acrescenta). Sem proxy, deixe em
+branco. Em produção, sirva por HTTPS e use `AUTH_COOKIE_SECURE=true`. Se frontend e API ficarem em
+origens diferentes, liste as origens em `CORS_ORIGINS` (com origens explícitas o CORS aceita o cookie).
 
 ## Banco de dados (PostgreSQL)
 
@@ -217,6 +282,11 @@ instale o navegador com `npx playwright install chromium`. O Python usado é `py
 definido em `E2E_PYTHON` (ex.: `E2E_PYTHON=venv/bin/python npm run e2e`), com as dependências de
 `requirements.txt` instaladas. O banco do E2E vem de `E2E_DATABASE_URL` (padrão
 `postgresql://localhost:5432/job_sync_e2e`, que precisa existir).
+
+O app de E2E também simula o Google (uma "tela do Google" local que devolve o código ao callback real), uma
+caixa de e-mail em memória e a criação de um perfil antigo, para o navegador percorrer o login
+completo, inclusive a migração de um perfil legado. Ele liga `AUTH_LOGIN_SIMPLES_HABILITADO` só para os
+testes prepararem dados.
 
 **Variáveis:** `VITE_API_BASE_URL` (opcional) aponta a UI para outra origem da API. Vazio, a UI usa
 a mesma origem: o proxy do Vite em desenvolvimento e o Nginx no container. Se a UI e a API

@@ -1,7 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CHAVE_SESSAO } from "../shared/sessao/sessao-context";
-import { renderizarApp } from "../test/renderizar-app";
+import { http, HttpResponse } from "msw";
+import { API_TESTE, renderizarApp } from "../test/renderizar-app";
+import { servidorApi } from "../test/servidor-api";
 
 describe("Rotas e AppShell", () => {
   it("sem sessão, uma rota protegida leva para Entrar", async () => {
@@ -34,14 +35,68 @@ describe("Rotas e AppShell", () => {
     ).toBeInTheDocument();
   });
 
-  it("mostra o perfil ativo e Sair volta para Entrar limpando a sessão", async () => {
+  it("mostra o usuário logado e Sair encerra a sessão no servidor e volta para Entrar", async () => {
+    let sessaoEncerrada = false;
+    servidorApi.use(
+      http.delete(`${API_TESTE}/v1/sessoes/atual`, () => {
+        sessaoEncerrada = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
     renderizarApp({ caminho: "/", perfil: "adriano" });
     expect(await screen.findByText("adriano")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Sair" }));
 
     expect(await screen.findByRole("heading", { name: "Entrar" })).toBeInTheDocument();
-    expect(localStorage.getItem(CHAVE_SESSAO)).toBeNull();
+    expect(sessaoEncerrada).toBe(true);
+  });
+
+  it("uma resposta 401 em qualquer tela encerra a sessão local e leva para Entrar", async () => {
+    servidorApi.use(
+      http.get(`${API_TESTE}/v1/candidaturas`, () =>
+        HttpResponse.json(
+          {
+            type: "t",
+            title: "Não autenticado",
+            status: 401,
+            detail: "Faça login para continuar.",
+            instance: "i",
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+    renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
+
+    expect(await screen.findByRole("heading", { name: "Entrar" })).toBeInTheDocument();
+  });
+
+  it("pergunta ao servidor se há sessão e mostra Carregando até a resposta", async () => {
+    servidorApi.use(
+      http.get(`${API_TESTE}/v1/usuarios/me`, async () => {
+        await new Promise((resolver) => setTimeout(resolver, 30));
+        return HttpResponse.json({
+          id: "1",
+          email: "ana@exemplo.com",
+          nome: "Ana",
+          perfil_identificador: "u-ana",
+        });
+      }),
+    );
+    renderizarApp({ caminho: "/candidaturas", consultarSessao: true });
+
+    expect(screen.getByText("Carregando…")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Candidaturas" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Ana")).toBeInTheDocument();
+  });
+
+  it("consultar a sessão sem cookie válido leva para Entrar", async () => {
+    renderizarApp({ caminho: "/candidaturas", consultarSessao: true });
+
+    expect(await screen.findByRole("heading", { name: "Entrar" })).toBeInTheDocument();
   });
 
   it("o botão de menu móvel abre e fecha a navegação", async () => {

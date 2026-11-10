@@ -22,10 +22,11 @@ export const PDF_MINIMO = {
   buffer: Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"),
 };
 
+/** Entra pela tela, com o login por identificador que o app de E2E habilita só para testes. */
 export async function entrar(page: Page, perfil: string) {
   await page.goto("/entrar");
-  await page.getByLabel("Identificador").fill(perfil);
-  await page.getByRole("button", { name: "Entrar" }).click();
+  await page.getByLabel("Identificador (somente desenvolvimento)").fill(perfil);
+  await page.getByRole("button", { name: "Entrar por identificador" }).click();
   // A própria tela de login tem um h1: sem esperar a saída dela, o teste segue (e recarrega a
   // página) antes de a sessão ser gravada e volta para o login.
   await expect(page).not.toHaveURL(/\/entrar$/);
@@ -49,7 +50,9 @@ export async function semearPerfilCompleto(
   perfil: string,
   experiencias: ExperienciaSemeada[] = EXPERIENCIAS_PADRAO,
 ) {
-  await request.get(`/v1/perfis/${perfil}`);
+  // O contexto de API tem o próprio cookie: sem sessão, todas as rotas de dados respondem 401.
+  const sessao = await request.post("/v1/sessoes/simples", { data: { identificador: perfil } });
+  expect(sessao.ok()).toBeTruthy();
   await request.post("/v1/perfil-estruturado", {
     data: {
       perfil_identificador: perfil,
@@ -139,4 +142,30 @@ export async function semearCandidaturas(
       });
     }
   }
+}
+
+/** O app de E2E expõe fora de /v1 a caixa de e-mail e o Google simulado (porta da API, sem proxy). */
+export const API_E2E = "http://localhost:8010";
+
+export const novoEmail = (prefixo: string) =>
+  `${prefixo}-${Date.now()}-${Math.floor(Math.random() * 1000)}@jobsync.test`;
+
+/** Lê o token do último link enviado por e-mail ao destinatário. */
+export async function tokenDoUltimoEmail(request: APIRequestContext, email: string) {
+  const resposta = await request.get(`${API_E2E}/e2e/emails`, { params: { para: email } });
+  const emails = (await resposta.json()) as { corpo: string }[];
+  for (const { corpo } of emails.reverse()) {
+    const encontrado = corpo.match(/token=([\w-]+)/);
+    if (encontrado) return encontrado[1]!;
+  }
+  throw new Error(`Nenhum e-mail com link para ${email}.`);
+}
+
+/** Define quem o "Google" diz que está entrando no próximo login. */
+export async function definirIdentidadeDoGoogle(
+  request: APIRequestContext,
+  identidade: { subject: string; email: string; email_verificado?: boolean; nome?: string },
+) {
+  const resposta = await request.put(`${API_E2E}/e2e/idp/identidade`, { data: identidade });
+  expect(resposta.ok()).toBeTruthy();
 }

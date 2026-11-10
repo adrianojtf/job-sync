@@ -21,7 +21,6 @@ import type {
   DescobrirVagasEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
-  Perfil,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
@@ -34,7 +33,9 @@ import type {
   SugestaoExperiencia,
   SugestaoExperienciaAdaptada,
   SugestaoSecao,
+  Provedores,
   TokenCaptura,
+  Usuario,
   Vaga,
   VagaDescoberta,
 } from "./tipos";
@@ -88,8 +89,53 @@ export class HttpApiClient implements ApiClient {
     return this.requisitar("GET", "/v1/health");
   }
 
-  obterOuCriarPerfil(identificador: string): Promise<Perfil> {
-    return this.requisitar("GET", caminho`/v1/perfis/${identificador}`);
+  async obterUsuarioAtual(): Promise<Usuario | null> {
+    try {
+      return await this.requisitar<Usuario>("GET", "/v1/usuarios/me");
+    } catch (erro) {
+      if (erro instanceof ApiError && erro.status === 401) return null;
+      throw erro;
+    }
+  }
+
+  listarProvedores(): Promise<Provedores> {
+    return this.requisitar("GET", "/v1/provedores");
+  }
+
+  entrarComSenha(email: string, senha: string): Promise<Usuario> {
+    return this.requisitar("POST", "/v1/sessoes", { corpo: { email, senha } });
+  }
+
+  entrarComIdentificador(identificador: string): Promise<Usuario> {
+    return this.requisitar("POST", "/v1/sessoes/simples", { corpo: { identificador } });
+  }
+
+  async sair(): Promise<void> {
+    await this.requisitar("DELETE", "/v1/sessoes/atual");
+  }
+
+  async cadastrar(email: string, senha: string): Promise<void> {
+    await this.requisitar("POST", "/v1/usuarios", { corpo: { email, senha } });
+  }
+
+  async confirmarEmail(token: string): Promise<void> {
+    await this.requisitar("PUT", caminho`/v1/confirmacoes-email/${token}`);
+  }
+
+  async solicitarRedefinicaoSenha(email: string): Promise<void> {
+    await this.requisitar("POST", "/v1/redefinicoes-senha", { corpo: { email } });
+  }
+
+  async redefinirSenha(token: string, novaSenha: string): Promise<void> {
+    await this.requisitar("PUT", caminho`/v1/redefinicoes-senha/${token}`, {
+      corpo: { nova_senha: novaSenha },
+    });
+  }
+
+  urlAutorizacao(provedor: string, destino: string): string {
+    return this.montarUrl(`/v1/provedores/${encodeURIComponent(provedor)}/autorizacao`, {
+      destino,
+    });
   }
 
   async buscarPerfilEstruturado(perfil: string): Promise<PerfilEstruturado | null> {
@@ -281,6 +327,7 @@ export class HttpApiClient implements ApiClient {
           requisicao.corpo === undefined ? undefined : { "Content-Type": "application/json" },
         body: requisicao.corpo === undefined ? undefined : JSON.stringify(requisicao.corpo),
         signal: controle.signal,
+        credentials: "include",
       });
       return await this.lerResposta<T>(resposta);
     } catch (erro) {

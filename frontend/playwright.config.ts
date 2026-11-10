@@ -26,6 +26,9 @@ export default defineConfig({
       env: {
         PYTHONPATH: "src",
         DATABASE_URL: process.env.E2E_DATABASE_URL ?? "postgresql://localhost:5432/job_sync_e2e",
+        // Login por identificador, só para os testes prepararem dados sem passar pelo e-mail.
+        AUTH_LOGIN_SIMPLES_HABILITADO: "true",
+        AUTH_BASE_URL_FRONTEND: `http://localhost:${PORTA_UI}`,
       },
       url: `http://localhost:${PORTA_API}/health`,
       reuseExistingServer: !process.env.CI,

@@ -8,6 +8,8 @@ from fastapi import FastAPI, status
 load_dotenv()
 from jobsync.entrypoints.dependencies import fechar_pool_conexoes, preparar_banco
 from jobsync.entrypoints.api.cors import configurar_cors, obter_origens_cors
+from jobsync.entrypoints.api.protecao_csrf import adicionar_protecao_csrf
+from jobsync.entrypoints.autenticacao_config import obter_configuracao_http
 from jobsync.entrypoints.api.exceptions import adicionar_handlers_excecao
 from jobsync.entrypoints.api.routers import (
     candidatura_router,
@@ -15,7 +17,10 @@ from jobsync.entrypoints.api.routers import (
     health,
     perfil_estruturado_router,
     perfil_router,
+    provedor_router,
+    sessao_router,
     token_captura_router,
+    usuario_router,
     vaga_externa_router,
     vaga_router,
 )
@@ -35,6 +40,7 @@ app = FastAPI(
 )
 
 configurar_cors(app, obter_origens_cors())
+adicionar_protecao_csrf(app, obter_configuracao_http)
 
 adicionar_handlers_excecao(app)
 
@@ -46,6 +52,9 @@ def root_health_check() -> dict:
 
 
 app.include_router(health.router, prefix="/v1")
+app.include_router(sessao_router.router, prefix="/v1")
+app.include_router(usuario_router.router, prefix="/v1")
+app.include_router(provedor_router.router, prefix="/v1")
 app.include_router(curriculo_router.router, prefix="/v1")
 app.include_router(vaga_router.router, prefix="/v1")
 app.include_router(vaga_externa_router.router, prefix="/v1")

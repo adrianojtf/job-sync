@@ -12,7 +12,7 @@ Implementar o início e a conclusão do login via provedor de identidade, inclui
 - `ConcluirLoginOAuth`: confere `state` com o cookie e o estado salvo (uso único); troca o código; resolve o usuário nesta ordem:
   1. identidade `(provedor, subject)` existente;
   2. recusa se `email_verificado` for falso;
-  3. usuário existente com o mesmo e-mail: cria a identidade, marca o e-mail como verificado e **apaga credencial de senha**;
+  3. usuário existente com o mesmo e-mail: cria a identidade, marca o e-mail como verificado e **descarta os links de confirmação pendentes**;
   4. caso contrário, cria `Perfil` (`u-` + 12 hex), `Usuario` e identidade.
 - Provedores resolvidos por dicionário `{nome: ProvedorIdentidade}`; provedor desconhecido gera erro de domínio.
 - Cria a sessão ao final (reaproveitando o serviço da tarefa 4.0).
@@ -31,7 +31,7 @@ Ver "Fluxo de dados" e "Resolução da identidade" em `techspec-job-0013.md`. Us
 ## Critérios de Sucesso
 
 - Perfil legado pré-criado pelo mantenedor é vinculado no primeiro login com e-mail verificado.
-- Credencial de senha anterior à verificação não sobrevive ao vínculo.
+- Link de confirmação (com senha) criado antes da verificação não sobrevive ao vínculo.
 - O mesmo `state` não funciona duas vezes.
 
 ## Testes da Tarefa

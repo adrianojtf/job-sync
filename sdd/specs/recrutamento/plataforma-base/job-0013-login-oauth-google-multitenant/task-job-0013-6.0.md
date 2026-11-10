@@ -21,12 +21,12 @@ Expor os serviços das tarefas 4.0 e 5.0 pela API, com cookie de sessão, prote�
 
 ## Subtarefas
 
-- [ ] 6.1 Schemas Pydantic e fábricas de dependências.
-- [ ] 6.2 Router de sessões, usuários, confirmações e redefinições de senha.
-- [ ] 6.3 Router de provedores (autorização e retorno).
-- [ ] 6.4 Middleware de origem, `UsuarioAutenticadoDep` e handlers de erro.
-- [ ] 6.5 Login simples atrás da flag e ajuste de CORS.
-- [ ] 6.6 Testes com `TestClient` (padrão de `tests/entrypoints/api`).
+- [x] 6.1 Schemas Pydantic e fábricas de dependências.
+- [x] 6.2 Router de sessões, usuários, confirmações e redefinições de senha.
+- [x] 6.3 Router de provedores (autorização e retorno).
+- [x] 6.4 Middleware de origem, `UsuarioAutenticadoDep` e handlers de erro.
+- [x] 6.5 Login simples atrás da flag e ajuste de CORS.
+- [x] 6.6 Testes com `TestClient` (padrão de `tests/entrypoints/api`).
 
 ## Detalhes de Implementação
 
@@ -41,7 +41,7 @@ Ver "Endpoints de API" e "Pontos de Integração" em `techspec-job-0013.md`. Seg
 
 ## Testes da Tarefa
 
-- [ ] Testes de API com `TestClient` e serviços fake
+- [x] Testes de API com `TestClient` e serviços fake
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

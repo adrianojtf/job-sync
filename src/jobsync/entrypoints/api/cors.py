@@ -18,11 +18,15 @@ def obter_origens_cors() -> list[str]:
 
 
 def configurar_cors(app: FastAPI, origens: list[str]) -> None:
-    """Registra o middleware de CORS sem credenciais: o frontend não usa cookies."""
+    """Registra o middleware de CORS.
+
+    Credenciais (cookie de sessão) só são aceitas com origens explícitas; com o curinga o
+    navegador nunca as envia entre origens, que é o comportamento seguro.
+    """
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origens,
-        allow_credentials=False,
+        allow_credentials=_CURINGA not in origens,
         allow_methods=["*"],
         allow_headers=["*"],
     )

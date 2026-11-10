@@ -48,8 +48,21 @@ class TestConfigurarCors:
 
         assert "access-control-allow-origin" not in response.headers
 
-    def test_nao_permite_credenciais(self):
+    def test_origens_explicitas_permitem_credenciais_para_o_cookie_de_sessao(self):
         client = _client_com_cors(["http://localhost:5173"])
+
+        response = client.options(
+            "/ping",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+        assert response.headers["access-control-allow-credentials"] == "true"
+
+    def test_curinga_nao_permite_credenciais(self):
+        client = _client_com_cors(["*"])
 
         response = client.options(
             "/ping",

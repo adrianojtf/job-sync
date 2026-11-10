@@ -17,10 +17,10 @@ Implementar os adapters das portas externas definidas na tarefa 2.0. Complexidad
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever testes e implementar `HasherSenhaArgon2`.
-- [ ] 3.2 Escrever testes e implementar `EnviadorEmailSmtp` e `EnviadorEmailLog`.
-- [ ] 3.3 Escrever testes com `httpx.MockTransport` e implementar `ProvedorGoogle`.
-- [ ] 3.4 Atualizar os arquivos de requisitos.
+- [x] 3.1 Escrever testes e implementar `HasherSenhaArgon2`.
+- [x] 3.2 Escrever testes e implementar `EnviadorEmailSmtp` e `EnviadorEmailLog`.
+- [x] 3.3 Escrever testes com `httpx.MockTransport` e implementar `ProvedorGoogle`.
+- [x] 3.4 Atualizar os arquivos de requisitos.
 
 ## Detalhes de Implementação
 
@@ -34,7 +34,7 @@ Ver "Pontos de Integração" e "Decisões Principais" em `techspec-job-0013.md`.
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos três adapters (rede e SMTP simulados)
+- [x] Testes de unidade dos três adapters (rede e SMTP simulados)
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

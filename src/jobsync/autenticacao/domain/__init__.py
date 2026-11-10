@@ -6,6 +6,7 @@ from jobsync.autenticacao.domain.estado_oauth import EstadoOAuth
 from jobsync.autenticacao.domain.estado_oauth_repository import EstadoOAuthRepository
 from jobsync.autenticacao.domain.exceptions import (
     EmailInvalido,
+    EnvioEmailFalhou,
     IdentidadeJaVinculada,
     ProvedorIndisponivel,
     SenhaInvalida,
@@ -28,6 +29,7 @@ __all__ = [
     "Email",
     "EmailInvalido",
     "EnviadorEmail",
+    "EnvioEmailFalhou",
     "EstadoOAuth",
     "EstadoOAuthRepository",
     "Finalidade",

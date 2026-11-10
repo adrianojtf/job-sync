@@ -20,3 +20,7 @@ class IdentidadeJaVinculada(Exception):
 
 class ProvedorIndisponivel(Exception):
     """Falha ao falar com o provedor de identidade ou resposta inválida dele."""
+
+
+class EnvioEmailFalhou(Exception):
+    """Não foi possível entregar o e-mail ao servidor de saída."""

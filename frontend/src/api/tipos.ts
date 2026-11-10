@@ -4,6 +4,8 @@ import type { components } from "./schema";
 type Esquemas = components["schemas"];
 
 export type Perfil = Esquemas["PerfilResponse"];
+export type Usuario = Esquemas["UsuarioResponse"];
+export type Provedores = Esquemas["ProvedoresResponse"];
 export type PerfilEstruturado = Esquemas["PerfilEstruturadoResponse"];
 export type PerfilEstruturadoEntrada = Esquemas["PerfilEstruturadoRequest"];
 export type AvaliarExperienciaEntrada = Esquemas["AvaliarExperienciaRequest"];

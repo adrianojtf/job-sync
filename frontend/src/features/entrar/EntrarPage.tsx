@@ -1,66 +1,131 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useApiClient } from "../../api/api-client-context";
 import { useSessao } from "../../shared/sessao/use-sessao";
+import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
+import { CartaoAutenticacao } from "./CartaoAutenticacao";
 import estilos from "./EntrarPage.module.css";
+import { mensagemDoErroDeLogin, mensagemDoErroDeProvedor } from "./mensagens-autenticacao";
 
-/** T1 — Login por identificador (JOB-0004): cria o perfil se ele ainda não existir (RF2.1). */
+/** Entrada com Google, e-mail e senha (JOB-0013) e, só em desenvolvimento, por identificador. */
 export function EntrarPage() {
   const api = useApiClient();
   const { entrar } = useSessao();
+  const [parametros] = useSearchParams();
+  const destino = (useLocation().state as { de?: string } | null)?.de ?? "/";
+  const provedores = useQuery({
+    queryKey: ["provedores"],
+    queryFn: () => api.listarProvedores(),
+    staleTime: 5 * 60_000,
+  });
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [identificador, setIdentificador] = useState("");
   const [erroValidacao, setErroValidacao] = useState<string>();
 
-  const login = useMutation({
-    mutationFn: (id: string) => api.obterOuCriarPerfil(id),
-    // Com a sessão ativa, a guarda SomenteSemSessao leva à página pedida.
-    onSuccess: (perfil) => entrar(perfil.identificador),
+  // Com a sessão ativa, a guarda SomenteSemSessao leva à página pedida.
+  const loginComSenha = useMutation({
+    mutationFn: () => api.entrarComSenha(email.trim(), senha),
+    onSuccess: entrar,
+  });
+  const loginSimples = useMutation({
+    mutationFn: () => api.entrarComIdentificador(identificador.trim()),
+    onSuccess: entrar,
   });
 
-  const enviar = (evento: FormEvent) => {
+  const enviarSenha = (evento: FormEvent) => {
     evento.preventDefault();
-    const valor = identificador.trim();
-    if (!valor) {
-      setErroValidacao("Informe seu identificador.");
+    if (!email.trim() || !senha) {
+      setErroValidacao("Informe o e-mail e a senha.");
       return;
     }
     setErroValidacao(undefined);
-    login.mutate(valor);
+    loginComSenha.mutate();
   };
 
+  const enviarIdentificador = (evento: FormEvent) => {
+    evento.preventDefault();
+    if (identificador.trim()) loginSimples.mutate();
+  };
+
+  const erroDoProvedor = mensagemDoErroDeProvedor(parametros.get("erro"));
+  const temGoogle = provedores.data?.provedores.includes("google") ?? false;
+  const mensagemDeErro =
+    erroValidacao ?? (loginComSenha.error ? mensagemDoErroDeLogin(loginComSenha.error) : undefined);
+
   return (
-    <main className={estilos.pagina}>
-      <div className={estilos.cartao}>
-        <div className={estilos.marca}>
-          <span className={estilos.marcaIcone} aria-hidden="true">
-            js
-          </span>
-          job-sync
+    <CartaoAutenticacao
+      titulo="Entrar"
+      descricao="Organize seus currículos e prepare a próxima candidatura."
+    >
+      {erroDoProvedor && (
+        <div className={estilos.avisoTopo}>
+          <Aviso tom="erro">{erroDoProvedor}</Aviso>
         </div>
-        <h1 className={estilos.titulo}>Entrar</h1>
-        <p className={estilos.descricao}>
-          Organize seus currículos e prepare a próxima candidatura.
-        </p>
-        <form onSubmit={enviar} noValidate>
+      )}
+
+      {temGoogle && (
+        <>
+          <a className={estilos.botaoProvedor} href={api.urlAutorizacao("google", destino)}>
+            Entrar com Google
+          </a>
+          <div className={estilos.separador}>ou</div>
+        </>
+      )}
+
+      <form onSubmit={enviarSenha} noValidate className={estilos.formulario}>
+        <Field
+          rotulo="E-mail"
+          name="email"
+          type="email"
+          autoComplete="username"
+          value={email}
+          onChange={(evento) => setEmail(evento.target.value)}
+        />
+        <Field
+          rotulo="Senha"
+          name="senha"
+          type="password"
+          autoComplete="current-password"
+          value={senha}
+          onChange={(evento) => setSenha(evento.target.value)}
+          erro={mensagemDeErro}
+        />
+        <div className={estilos.acoes}>
+          <Button
+            type="submit"
+            variante="primary"
+            larguraTotal
+            carregando={loginComSenha.isPending}
+          >
+            {loginComSenha.isPending ? "Entrando…" : "Entrar"}
+          </Button>
+        </div>
+      </form>
+
+      <div className={estilos.links}>
+        <Link to="/cadastrar">Criar conta</Link>
+        <Link to="/recuperar-senha">Esqueci minha senha</Link>
+      </div>
+
+      {provedores.data?.login_simples && (
+        <form onSubmit={enviarIdentificador} noValidate className={estilos.desenvolvimento}>
           <Field
-            rotulo="Identificador"
+            rotulo="Identificador (somente desenvolvimento)"
             name="identificador"
-            autoComplete="username"
-            placeholder="Ex.: seu nome ou apelido"
-            ajuda="Use sempre o mesmo identificador para encontrar seus dados. Não há senha."
+            autoComplete="off"
             value={identificador}
             onChange={(evento) => setIdentificador(evento.target.value)}
-            erro={erroValidacao ?? login.error?.message}
+            erro={loginSimples.error?.message}
           />
-          <div className={estilos.acoes}>
-            <Button type="submit" variante="primary" larguraTotal carregando={login.isPending}>
-              {login.isPending ? "Entrando…" : "Entrar"}
-            </Button>
-          </div>
+          <Button type="submit" larguraTotal carregando={loginSimples.isPending}>
+            Entrar por identificador
+          </Button>
         </form>
-      </div>
-    </main>
+      )}
+    </CartaoAutenticacao>
   );
 }

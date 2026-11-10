@@ -19,12 +19,12 @@ Trocar a sessão baseada em `localStorage` pela sessão do servidor e entregar a
 
 ## Subtarefas
 
-- [ ] 9.1 Cliente de API e tipos para os novos endpoints.
-- [ ] 9.2 `SessaoProvider`, guardas e tratamento global de 401.
-- [ ] 9.3 Nova `EntrarPage`.
-- [ ] 9.4 Páginas de cadastro, confirmação e redefinição de senha.
-- [ ] 9.5 Cabeçalho com usuário e sair.
-- [ ] 9.6 Testes Vitest e ajuste dos testes existentes.
+- [x] 9.1 Cliente de API e tipos para os novos endpoints.
+- [x] 9.2 `SessaoProvider`, guardas e tratamento global de 401.
+- [x] 9.3 Nova `EntrarPage`.
+- [x] 9.4 Páginas de cadastro, confirmação e redefinição de senha.
+- [x] 9.5 Cabeçalho com usuário e sair.
+- [x] 9.6 Testes Vitest e ajuste dos testes existentes.
 
 ## Detalhes de Implementação
 
@@ -39,7 +39,7 @@ Ver "Componentes existentes alterados" e "Endpoints de API" em `techspec-job-001
 
 ## Testes da Tarefa
 
-- [ ] Testes Vitest das páginas e do `SessaoProvider`
+- [x] Testes Vitest das páginas e do `SessaoProvider`
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

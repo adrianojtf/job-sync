@@ -8,6 +8,21 @@ export const API_TESTE = "http://api.test";
  * carregam dados de outras áreas (ex.: Visão geral). Escritas sem handler continuam falhando o teste.
  */
 const leiturasPadrao = [
+  http.get(`${API_TESTE}/v1/usuarios/me`, () =>
+    HttpResponse.json(
+      {
+        type: "t",
+        title: "Não autenticado",
+        status: 401,
+        detail: "Faça login para continuar.",
+        instance: "i",
+      },
+      { status: 401 },
+    ),
+  ),
+  http.get(`${API_TESTE}/v1/provedores`, () =>
+    HttpResponse.json({ provedores: ["google"], senha: true, login_simples: false }),
+  ),
   http.get(`${API_TESTE}/v1/perfil-estruturado/:perfil`, () =>
     HttpResponse.json(
       {

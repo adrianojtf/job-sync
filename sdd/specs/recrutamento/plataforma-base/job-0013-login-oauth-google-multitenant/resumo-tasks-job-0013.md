@@ -10,7 +10,7 @@
 - [x] 6.0 Routers de autenticação, cookie de sessão, middleware de origem e login simples atrás de flag
 - [x] 7.0 Proteger os routers existentes por sessão e perfil
 - [x] 8.0 CLI `associar_email_perfil` para migrar perfis legados
-- [ ] 9.0 Frontend: sessão por cookie, nova tela de entrada e fluxos de e-mail
+- [x] 9.0 Frontend: sessão por cookie, nova tela de entrada e fluxos de e-mail
 - [ ] 10.0 Infra, documentação, E2E e validação manual
 
 ## Dependências

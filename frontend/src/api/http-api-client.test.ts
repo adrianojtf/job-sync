@@ -66,15 +66,148 @@ describe("HttpApiClient", () => {
   it("codifica parâmetros de caminho", async () => {
     let caminho = "";
     servidorApi.use(
-      http.get(`${BASE}/v1/perfis/:id`, ({ request }) => {
+      http.put(`${BASE}/v1/confirmacoes-email/:token`, ({ request }) => {
         caminho = new URL(request.url).pathname;
-        return HttpResponse.json({ identificador: "ana maria" });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
 
-    await criarCliente().obterOuCriarPerfil("ana maria");
+    await criarCliente().confirmarEmail("a b/c");
 
-    expect(caminho).toBe("/v1/perfis/ana%20maria");
+    expect(caminho).toBe("/v1/confirmacoes-email/a%20b%2Fc");
+  });
+
+  it("envia o cookie de sessão nas requisições", async () => {
+    let credenciais = "";
+    servidorApi.use(
+      http.get(`${BASE}/v1/usuarios/me`, ({ request }) => {
+        credenciais = request.credentials;
+        return HttpResponse.json({
+          id: "1",
+          email: "a@b.com",
+          nome: null,
+          perfil_identificador: "u-1",
+        });
+      }),
+    );
+
+    await criarCliente().obterUsuarioAtual();
+
+    expect(credenciais).toBe("include");
+  });
+
+  describe("autenticação", () => {
+    const problema = (status: number, detail: string) =>
+      HttpResponse.json({ type: "t", title: "Erro", status, detail, instance: "i" }, { status });
+
+    it("obterUsuarioAtual devolve null quando não há sessão (401)", async () => {
+      servidorApi.use(http.get(`${BASE}/v1/usuarios/me`, () => problema(401, "sem sessão")));
+
+      expect(await criarCliente().obterUsuarioAtual()).toBeNull();
+    });
+
+    it("obterUsuarioAtual repassa falhas que não são 401", async () => {
+      servidorApi.use(http.get(`${BASE}/v1/usuarios/me`, () => problema(500, "falha")));
+
+      await expect(criarCliente().obterUsuarioAtual()).rejects.toMatchObject({ status: 500 });
+    });
+
+    it("entrarComSenha envia e-mail e senha e devolve o usuário", async () => {
+      let corpo: unknown;
+      servidorApi.use(
+        http.post(`${BASE}/v1/sessoes`, async ({ request }) => {
+          corpo = await request.json();
+          return HttpResponse.json(
+            { id: "1", email: "ana@exemplo.com", nome: null, perfil_identificador: "u-1" },
+            { status: 201 },
+          );
+        }),
+      );
+
+      const usuario = await criarCliente().entrarComSenha("ana@exemplo.com", "segredo-longo-1");
+
+      expect(corpo).toEqual({ email: "ana@exemplo.com", senha: "segredo-longo-1" });
+      expect(usuario.perfil_identificador).toBe("u-1");
+    });
+
+    it("entrarComSenha propaga o 401 como ApiError", async () => {
+      servidorApi.use(
+        http.post(`${BASE}/v1/sessoes`, () => problema(401, "E-mail ou senha incorretos.")),
+      );
+
+      await expect(criarCliente().entrarComSenha("a@b.com", "x")).rejects.toMatchObject({
+        status: 401,
+        message: "E-mail ou senha incorretos.",
+      });
+    });
+
+    it("entrarComIdentificador usa a rota de desenvolvimento", async () => {
+      let corpo: unknown;
+      servidorApi.use(
+        http.post(`${BASE}/v1/sessoes/simples`, async ({ request }) => {
+          corpo = await request.json();
+          return HttpResponse.json(
+            { id: "1", email: "dev@simples.local", nome: null, perfil_identificador: "ana" },
+            { status: 201 },
+          );
+        }),
+      );
+
+      await criarCliente().entrarComIdentificador("ana");
+
+      expect(corpo).toEqual({ identificador: "ana" });
+    });
+
+    it("sair chama DELETE /v1/sessoes/atual", async () => {
+      let metodo = "";
+      servidorApi.use(
+        http.delete(`${BASE}/v1/sessoes/atual`, ({ request }) => {
+          metodo = request.method;
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+
+      await criarCliente().sair();
+
+      expect(metodo).toBe("DELETE");
+    });
+
+    it("cadastrar, solicitarRedefinicaoSenha e redefinirSenha enviam os corpos esperados", async () => {
+      const corpos: Record<string, unknown> = {};
+      servidorApi.use(
+        http.post(`${BASE}/v1/usuarios`, async ({ request }) => {
+          corpos.cadastro = await request.json();
+          return HttpResponse.json({ mensagem: "ok" }, { status: 202 });
+        }),
+        http.post(`${BASE}/v1/redefinicoes-senha`, async ({ request }) => {
+          corpos.pedido = await request.json();
+          return HttpResponse.json({ mensagem: "ok" }, { status: 202 });
+        }),
+        http.put(`${BASE}/v1/redefinicoes-senha/:token`, async ({ request, params }) => {
+          corpos.redefinicao = { token: params.token, corpo: await request.json() };
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+      const cliente = criarCliente();
+
+      await cliente.cadastrar("ana@exemplo.com", "segredo-longo-1");
+      await cliente.solicitarRedefinicaoSenha("ana@exemplo.com");
+      await cliente.redefinirSenha("tok", "nova-senha-longa");
+
+      expect(corpos).toEqual({
+        cadastro: { email: "ana@exemplo.com", senha: "segredo-longo-1" },
+        pedido: { email: "ana@exemplo.com" },
+        redefinicao: { token: "tok", corpo: { nova_senha: "nova-senha-longa" } },
+      });
+    });
+
+    it("urlAutorizacao monta a URL de redirecionamento com o destino codificado", () => {
+      const url = criarCliente().urlAutorizacao("google", "/candidaturas?aba=ativas");
+
+      expect(url).toBe(
+        `${BASE}/v1/provedores/google/autorizacao?destino=%2Fcandidaturas%3Faba%3Dativas`,
+      );
+    });
   });
 
   it("resolve sem valor em respostas 204", async () => {

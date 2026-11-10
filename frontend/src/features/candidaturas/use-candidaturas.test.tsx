@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import type { ApiClient } from "../../api/api-client";
 import type { Candidatura, CandidaturasPorStatus } from "../../api/tipos";
 import { AppProviders } from "../../app/AppProviders";
-import { CHAVE_SESSAO } from "../../shared/sessao/sessao-context";
+import { CHAVE_QUERY_SESSAO } from "../../shared/sessao/sessao-context";
+import { usuarioDeTeste } from "../../test/usuario-de-teste";
 import { chaveCandidaturas, useMoverCandidatura } from "./use-candidaturas";
 
 const notificar = vi.fn();
@@ -51,8 +52,8 @@ function prepararApi() {
 }
 
 function montar(api: ApiClient) {
-  localStorage.setItem(CHAVE_SESSAO, "adriano");
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(CHAVE_QUERY_SESSAO, usuarioDeTeste("adriano"));
   queryClient.setQueryData(chaveCandidaturas("adriano"), inicial());
   const wrapper = ({ children }: { children: ReactNode }) => (
     <AppProviders apiClient={api} queryClient={queryClient}>

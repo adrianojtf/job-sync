@@ -4,7 +4,7 @@
 
 ## Visão Geral
 
-Tarefa operacional e manual, feita por quem opera o sistema, com o `job_sync.db` real e o Postgres instalado.
+Tarefa operacional e manual, feita por quem opera o sistema, com o `job_sync.db` real e o Postgres 15.3 instalado. Como o sistema não está em produção, não há limite de duração da parada.
 
 <requirements>
 - Registrar tamanho do `.db` e contagem por tabela antes da troca.
@@ -29,7 +29,7 @@ Techspec: "Roteiro de troca" e "Roteiro de retorno". PRD: histórias 1 a 6; ques
 ## Critérios de Sucesso
 
 - Contagens e hashes iguais no relatório.
-- Duração da parada dentro do limite definido pelo responsável.
+- Duração da parada registrada (sem limite máximo por enquanto).
 - Plano de retorno testado de forma documental (passos conferidos).
 
 ## Testes da Tarefa

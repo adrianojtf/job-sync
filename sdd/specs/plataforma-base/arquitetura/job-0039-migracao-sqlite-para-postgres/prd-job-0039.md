@@ -26,7 +26,7 @@ Como medir o sucesso:
 - Cada PDF de currículo salvo tem o mesmo conteúdo (verificado por hash) nos dois bancos.
 - A ordem dos cartões em cada coluna do board é a mesma antes e depois.
 - A suíte de testes (unitários, integração e E2E) passa usando PostgreSQL.
-- A janela de parada do sistema durante a troca fica abaixo do limite definido nas questões em aberto.
+- A duração da parada durante a troca é registrada. Não há limite máximo enquanto o sistema não estiver em produção.
 
 ## Histórias de Usuário
 
@@ -93,7 +93,8 @@ Requisitos funcionais:
 
 ## Restrições Técnicas de Alto Nível
 
-- O PostgreSQL será instalado na máquina que executa o sistema, fora do `docker-compose`. O backend em container precisa conseguir alcançá-lo.
+- O PostgreSQL (versão 15.3) está instalado na máquina que executa o sistema, fora do `docker-compose`. O backend roda direto na máquina por enquanto. O uso em container fica para depois, e o backend em container precisará alcançar o Postgres do host.
+- O sistema ainda não está em produção, então não há usuários a proteger durante a troca.
 - Segredos de conexão não vão para o repositório nem para logs.
 - O conteúdo dos currículos (dados pessoais) trafega e fica armazenado apenas no banco do próprio responsável.
 - As regras de arquitetura do projeto continuam valendo (hexagonal, domínios isolados, verificadas pelo `import-linter`).
@@ -114,7 +115,6 @@ Requisitos funcionais:
 
 1. Qual é a motivação principal da troca (concorrência, deploy fora da máquina local, outra)? Isso ajusta prioridades de teste.
 2. Qual o tamanho atual do `job_sync.db` e o número de registros por tabela?
-3. Qual a janela máxima de parada aceitável durante a troca?
-4. Qual versão do PostgreSQL está instalada (a Tech Spec assume 15 ou superior)?
-5. As datas atuais são horários locais sem fuso. Mantemos "sem fuso" na migração? A Tech Spec propõe manter e tratar fuso em outra demanda.
-6. Quem fará o backup do PostgreSQL após a troca? Fica fora do escopo, mas precisa de responsável.
+3. Resolvida: o sistema não está em produção, então não há limite de janela de parada por enquanto. Retomar este ponto antes de qualquer uso em produção.
+4. As datas atuais são horários locais sem fuso. Mantemos "sem fuso" na migração? A Tech Spec propõe manter e tratar fuso em outra demanda.
+5. Quem fará o backup do PostgreSQL após a troca? Fica fora do escopo, mas precisa de responsável.

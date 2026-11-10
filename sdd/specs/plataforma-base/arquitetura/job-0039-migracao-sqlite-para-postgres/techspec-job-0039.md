@@ -109,8 +109,8 @@ Fluxo (ordem pela dependência de FK: `perfil`, `curriculo_salvo`, `token_captur
 
 ## Pontos de Integração
 
-- **PostgreSQL local**: instalado na máquina, fora do compose. Requisitos: versão 15 ou superior (a confirmar), banco e usuário dedicados, `DATABASE_URL=postgresql://usuario:senha@host:5432/job_sync`.
-- **Backend em container**: o `docker-compose.yml` ganha `extra_hosts: ["host.docker.internal:host-gateway"]`. O `postgresql.conf` precisa escutar na interface da bridge do Docker e o `pg_hba.conf` precisa liberar a rede do container. Isso é configuração da máquina e entra no README.
+- **PostgreSQL local**: versão 15.3, instalado na máquina, fora do compose. Requisitos: banco e usuário dedicados, `DATABASE_URL=postgresql://usuario:senha@host:5432/job_sync`.
+- **Backend em container (fase posterior)**: por enquanto o backend roda direto na máquina e usa `localhost` na `DATABASE_URL`. Quando for para container, o `docker-compose.yml` ganha `extra_hosts: ["host.docker.internal:host-gateway"]`. O `postgresql.conf` precisa escutar na interface da bridge do Docker e o `pg_hba.conf` precisa liberar a rede do container. Isso é configuração da máquina e entra no README.
 - **Falhas**: sem `DATABASE_URL` ou sem conexão, a API não sobe e registra o erro sem a senha (RF-04).
 
 ## Abordagem de Testes
@@ -166,6 +166,7 @@ Roteiro de troca (RF-14): parar a API, copiar o `.db` para backup, rodar a CLI c
 - PostgreSQL instalado e acessível, com banco e usuário criados.
 - Versões exatas de `psycopg` e `psycopg-pool` a fixar na implementação (série 3.2, a validar com Python 3.12).
 - Serviço PostgreSQL disponível no GitHub Actions.
+- Recursos usados (`pg_advisory_xact_lock`, `JSONB`, `ON CONFLICT`) existem no PostgreSQL 15.3, e o CI usa `postgres:16`. Rodar a suíte também contra a versão 15 é uma melhoria opcional.
 
 ## Monitoramento e Observabilidade
 
@@ -216,7 +217,5 @@ Desvios: nenhum identificado. A confirmar na implementação: se o novo pacote `
 
 ## Questões em Aberto
 
-1. Versão do PostgreSQL instalada (a spec assume 15 ou superior).
-2. Fuso horário: manter `TIMESTAMP` sem fuso agora, com demanda futura para `TIMESTAMPTZ`?
-3. O backend vai rodar em container (exige o ajuste de rede do host) ou direto na máquina?
-4. Janela de parada aceitável na troca (PRD, questão 3). Ela define se o ensaio com `--dry-run` é suficiente.
+1. Fuso horário: manter `TIMESTAMP` sem fuso agora, com demanda futura para `TIMESTAMPTZ`?
+2. Resolvida: o sistema não está em produção, então a janela de parada não é restrição agora. Rever antes de ir para produção.

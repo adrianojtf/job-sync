@@ -8,9 +8,9 @@ Atualiza a configuração de execução e documenta instalação, troca e retorn
 
 <requirements>
 - `.env.example`: `DATABASE_PATH` vira `DATABASE_URL` com exemplo e comentário.
-- `docker-compose.yml`: remover `DATABASE_PATH`, manter o volume `storage` para PDFs e adicionar `extra_hosts: ["host.docker.internal:host-gateway"]`.
+- `docker-compose.yml` (uso em container é fase posterior; entra aqui só a preparação): remover `DATABASE_PATH`, manter o volume `storage` para PDFs e adicionar `extra_hosts: ["host.docker.internal:host-gateway"]`.
 - `Dockerfile`: remover `ENV DATABASE_PATH`; sem valor padrão de `DATABASE_URL`.
-- README: instalar e configurar o Postgres local (banco, usuário, `listen_addresses`, `pg_hba.conf`), variáveis, roteiro de troca (RF-14) e roteiro de retorno (RF-15); atualizar menções a SQLite.
+- README: instalar e configurar o Postgres local 15.3 (banco, usuário, `listen_addresses`, `pg_hba.conf`), variáveis, roteiro de troca (RF-14) e roteiro de retorno (RF-15); atualizar menções a SQLite.
 - Atualizar a seção de testes E2E do README.
 </requirements>
 

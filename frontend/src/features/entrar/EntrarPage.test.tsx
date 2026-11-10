@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
@@ -100,6 +100,16 @@ describe("EntrarPage", () => {
       "href",
       `${API_TESTE}/v1/provedores/google/autorizacao?destino=%2Fcandidaturas`,
     );
+  });
+
+  it("mostra o logotipo do Google no botão sem alterar o nome acessível", async () => {
+    renderizarApp({ caminho: "/entrar" });
+
+    const link = await screen.findByRole("link", { name: "Entrar com Google" });
+    const icone = within(link).getByTestId("icone-google");
+
+    expect(icone).toHaveAttribute("aria-hidden", "true");
+    expect(link).toHaveAccessibleName("Entrar com Google");
   });
 
   it("não mostra o Google quando o servidor não o oferece", async () => {

@@ -20,9 +20,9 @@ Implementar o início e a conclusão do login via provedor de identidade, inclui
 
 ## Subtarefas
 
-- [ ] 5.1 `IniciarLoginOAuth` (testes primeiro).
-- [ ] 5.2 `ConcluirLoginOAuth` com os quatro caminhos de resolução.
-- [ ] 5.3 Testes de segurança: `state` inválido, reaproveitado ou expirado; provedor desconhecido; e-mail não verificado.
+- [x] 5.1 `IniciarLoginOAuth` (testes primeiro).
+- [x] 5.2 `ConcluirLoginOAuth` com os quatro caminhos de resolução.
+- [x] 5.3 Testes de segurança: `state` inválido, reaproveitado ou expirado; provedor desconhecido; e-mail não verificado.
 
 ## Detalhes de Implementação
 
@@ -36,7 +36,7 @@ Ver "Fluxo de dados" e "Resolução da identidade" em `techspec-job-0013.md`. Us
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade com fakes
+- [x] Testes de unidade com fakes
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

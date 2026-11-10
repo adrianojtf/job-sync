@@ -48,3 +48,15 @@ class NaoAutenticado(Exception):
 
 class AcessoNegado(Exception):
     """O usuário autenticado não pode acessar o recurso pedido."""
+
+
+class ProvedorDesconhecido(Exception):
+    """O provedor pedido não está configurado."""
+
+
+class EstadoOAuthInvalido(Exception):
+    """O `state` do retorno OAuth é inexistente, expirado, reaproveitado ou não bate com o navegador."""
+
+
+class EmailNaoVerificado(Exception):
+    """O provedor não confirma que o e-mail pertence à pessoa que autenticou."""

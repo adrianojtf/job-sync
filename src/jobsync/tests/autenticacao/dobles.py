@@ -40,3 +40,22 @@ class EnviadorEmailFalso:
             if encontrado:
                 return encontrado.group(1)
         return None
+
+
+class ProvedorFalso:
+    def __init__(self, nome: str = "google") -> None:
+        self.nome = nome
+        self.identidade = None
+        self.erro = None
+        self.chamadas: list[tuple[str, str, str]] = []
+        self.ultima_url_autorizacao: Optional[dict] = None
+
+    def url_autorizacao(self, estado: str, nonce: str, code_challenge: str) -> str:
+        self.ultima_url_autorizacao = {"estado": estado, "nonce": nonce, "code_challenge": code_challenge}
+        return f"https://idp.teste/auth?state={estado}&nonce={nonce}&cc={code_challenge}"
+
+    def trocar_codigo(self, codigo: str, code_verifier: str, nonce: str):
+        self.chamadas.append((codigo, code_verifier, nonce))
+        if self.erro is not None:
+            raise self.erro
+        return self.identidade

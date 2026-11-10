@@ -6,7 +6,7 @@
 - [x] 2.0 Portas e repositórios (fake e Postgres) do domínio `autenticacao`
 - [x] 3.0 Adapters externos: `HasherSenhaArgon2`, `EnviadorEmail*` e `ProvedorGoogle`
 - [x] 4.0 Serviços de sessão e de e-mail/senha
-- [ ] 5.0 Serviços do fluxo Google (`IniciarLoginOAuth`, `ConcluirLoginOAuth`)
+- [x] 5.0 Serviços do fluxo Google (`IniciarLoginOAuth`, `ConcluirLoginOAuth`)
 - [ ] 6.0 Routers de autenticação, cookie de sessão, middleware de origem e login simples atrás de flag
 - [ ] 7.0 Proteger os routers existentes por sessão e perfil
 - [ ] 8.0 CLI `associar_email_perfil` para migrar perfis legados

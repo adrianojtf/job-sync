@@ -141,6 +141,53 @@ class TestMigrar:
         assert _contagem(pool_postgres, "curriculo_salvo") == 0
 
 
+class TestCurriculoRemovidoEmUso:
+    @pytest.fixture
+    def sqlite_com_curriculo_removido(self, tmp_path):
+        caminho = tmp_path / "orfao.db"
+        criar_sqlite(
+            caminho,
+            extra="""
+            INSERT INTO candidatura VALUES
+              ('c4', 'ana', NULL, 'removido-1', 'Delta', 'Dev', 'APLICADO',
+               '2026-03-15T10:00:00', '2026-03-15T10:00:00', 2);
+            """,
+        )
+        return caminho
+
+    def test_candidatura_com_curriculo_removido_e_migrada_com_aviso(
+        self, sqlite_com_curriculo_removido, destino, pool_postgres
+    ):
+        relatorio = migrar(sqlite_com_curriculo_removido, destino, fuso_origem=SAO_PAULO)
+
+        with pool_postgres.connection() as conexao:
+            curriculo = conexao.execute("SELECT curriculo_salvo_id FROM candidatura WHERE id = 'c4'").fetchone()[0]
+        assert curriculo == "removido-1"
+        assert _contagem(pool_postgres, "candidatura") == 4
+        assert len(relatorio.avisos) == 1
+        assert "c4" in relatorio.avisos[0]
+        assert "removido-1" in relatorio.avisos[0]
+
+    def test_origem_sem_orfaos_nao_gera_avisos(self, sqlite_origem, destino):
+        relatorio = migrar(sqlite_origem, destino, fuso_origem=SAO_PAULO)
+
+        assert relatorio.avisos == ()
+
+    def test_vaga_inexistente_continua_sendo_problema(self, tmp_path, destino):
+        caminho = tmp_path / "vaga-orfa.db"
+        criar_sqlite(
+            caminho,
+            extra="""
+            INSERT INTO candidatura VALUES
+              ('c5', 'ana', 'vaga-fantasma', NULL, 'Eps', 'Dev', 'APLICADO',
+               '2026-03-15T10:00:00', '2026-03-15T10:00:00', 3);
+            """,
+        )
+
+        with pytest.raises(OrigemInvalida, match="aponta para vaga inexistente"):
+            migrar(caminho, destino, fuso_origem=SAO_PAULO)
+
+
 class TestOrigemInvalida:
     def test_referencia_orfa_data_e_json_invalidos_sao_relatados_juntos(self, tmp_path, destino, pool_postgres):
         caminho = tmp_path / "ruim.db"

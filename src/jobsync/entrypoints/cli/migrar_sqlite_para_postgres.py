@@ -51,6 +51,8 @@ def _formatar(relatorio: Relatorio) -> str:
     linhas += ["", f"PDFs conferidos por hash: {relatorio.pdfs_conferidos}"]
     if relatorio.migracoes_aplicadas:
         linhas.append(f"Migrações de schema aplicadas: {', '.join(relatorio.migracoes_aplicadas)}")
+    if relatorio.avisos:
+        linhas += ["", "Avisos:", *[f"  - {aviso}" for aviso in relatorio.avisos]]
     return "\n".join(linhas)
 
 

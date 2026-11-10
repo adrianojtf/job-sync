@@ -31,6 +31,24 @@ class TestPrincipal:
         assert "candidatura" in saida
         assert "PDFs conferidos por hash: 2" in saida
 
+    def test_avisos_de_curriculo_removido_aparecem_no_relatorio(self, ambiente, tmp_path, capsys):
+        caminho = tmp_path / "orfao.db"
+        criar_sqlite(
+            caminho,
+            extra="""
+            INSERT INTO candidatura VALUES
+              ('c4', 'ana', NULL, 'removido-1', 'Delta', 'Dev', 'APLICADO',
+               '2026-03-15T10:00:00', '2026-03-15T10:00:00', 2);
+            """,
+        )
+
+        codigo = principal(["--sqlite", str(caminho), "--fuso-origem", "UTC"])
+
+        saida = capsys.readouterr().out
+        assert codigo == SUCESSO
+        assert "Avisos:" in saida
+        assert "removido-1" in saida
+
     def test_dry_run_informa_simulacao(self, ambiente, sqlite_origem, capsys):
         codigo = principal(["--sqlite", str(sqlite_origem), "--dry-run", "--fuso-origem", "UTC"])
 

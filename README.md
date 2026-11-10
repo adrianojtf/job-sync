@@ -121,7 +121,9 @@ PYTHONPATH=src python -m jobsync.entrypoints.cli.migrar_sqlite_para_postgres --s
   `--fuso-origem America/Sao_Paulo` (ou outro) para informar o fuso correto.
 - O comando só roda em banco vazio, grava tudo ou nada e confere contagens, hash dos PDFs e a ordem
   do board. Códigos de saída: 0 sucesso, 2 problema na origem, 3 destino inválido, 4 divergência.
-- Se a origem tiver referências órfãs, datas ou JSON inválidos, o comando lista todos os problemas e
+- Candidaturas que apontam para um currículo salvo já removido são migradas assim mesmo e listadas
+  em "Avisos" (o sistema sempre permitiu remover currículos em uso, e a tela lida com isso).
+- Se a origem tiver outras referências órfãs, datas ou JSON inválidos, o comando lista todos os problemas e
   não grava nada. Se for um banco muito antigo (sem a coluna `posicao`), abra-o uma vez com a versão
   anterior do sistema e repita.
 

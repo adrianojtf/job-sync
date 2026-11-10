@@ -17,12 +17,12 @@ Criar o domínio `autenticacao` (pacote `src/jobsync/autenticacao/`) com as enti
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever testes (TDD) dos value objects `Email` e `Senha`.
-- [ ] 1.2 Implementar `Email` e `Senha` em `autenticacao/domain/`.
-- [ ] 1.3 Escrever testes e implementar `Usuario` e `IdentidadeExterna`.
-- [ ] 1.4 Escrever testes e implementar `Sessao` (expiração por inatividade e absoluta), `TokenUsoUnico` e `EstadoOAuth`.
-- [ ] 1.5 Criar a migração `0003_autenticacao.sql`.
-- [ ] 1.6 Registrar `jobsync.autenticacao` em `setup.cfg` e rodar `lint-imports`.
+- [x] 1.1 Escrever testes (TDD) dos value objects `Email` e `Senha`.
+- [x] 1.2 Implementar `Email` e `Senha` em `autenticacao/domain/`.
+- [x] 1.3 Escrever testes e implementar `Usuario` e `IdentidadeExterna`.
+- [x] 1.4 Escrever testes e implementar `Sessao` (expiração por inatividade e absoluta), `TokenUsoUnico` e `EstadoOAuth`.
+- [x] 1.5 Criar a migração `0003_autenticacao.sql`.
+- [x] 1.6 Registrar `jobsync.autenticacao` em `setup.cfg` e rodar `lint-imports`.
 
 ## Detalhes de Implementação
 
@@ -36,8 +36,8 @@ Ver "Visão Geral dos Componentes" e "Modelos de Dados" em `techspec-job-0013.md
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos value objects e entidades
-- [ ] Teste de aplicação da migração (quando `TEST_DATABASE_URL` estiver definida)
+- [x] Testes de unidade dos value objects e entidades
+- [x] Teste de aplicação da migração (quando `TEST_DATABASE_URL` estiver definida)
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

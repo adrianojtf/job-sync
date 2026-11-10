@@ -60,3 +60,15 @@ class EstadoOAuthInvalido(Exception):
 
 class EmailNaoVerificado(Exception):
     """O provedor não confirma que o e-mail pertence à pessoa que autenticou."""
+
+
+class PerfilInexistente(Exception):
+    """O perfil a ser associado não existe."""
+
+
+class PerfilJaAssociado(Exception):
+    """O perfil já pertence a um usuário com outro e-mail."""
+
+
+class EmailEmUso(Exception):
+    """O e-mail já pertence a outro usuário."""

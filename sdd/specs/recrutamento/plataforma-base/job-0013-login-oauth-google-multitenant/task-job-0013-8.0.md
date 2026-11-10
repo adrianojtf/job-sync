@@ -16,9 +16,9 @@ Dar ao mantenedor um comando que associa um e-mail a um perfil legado, criando o
 
 ## Subtarefas
 
-- [ ] 8.1 Serviço `AssociarEmailAPerfil` com testes.
-- [ ] 8.2 CLI com testes (padrão de `tests/entrypoints/cli`).
-- [ ] 8.3 Instruções de uso no README (a tarefa 10.0 consolida).
+- [x] 8.1 Serviço `AssociarEmailAPerfil` com testes.
+- [x] 8.2 CLI com testes (padrão de `tests/entrypoints/cli`).
+- [x] 8.3 Instruções de uso no README (a tarefa 10.0 consolida).
 
 ## Detalhes de Implementação
 
@@ -31,7 +31,7 @@ Ver "Resolução da identidade" e "Decisões Principais" em `techspec-job-0013.m
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do serviço e da CLI
+- [x] Testes de unidade do serviço e da CLI
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

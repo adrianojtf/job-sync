@@ -57,7 +57,6 @@ from jobsync.curriculo_salvo.service_layer.salvar_curriculo import SalvarCurricu
 from jobsync.curriculo_salvo.service_layer.listar_curriculos_salvos.service import ListarCurriculosSalvos
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import RemoverCurriculoSalvo
 from jobsync.entrypoints.dependencies import (
-    obter_caminho_banco,
     obter_repositorio_candidatura,
     obter_repositorio_curriculo_salvo,
     obter_repositorio_perfil,
@@ -105,7 +104,6 @@ from jobsync.vaga_externa.service_layer.descobrir_vagas_com_match import (
     DescobrirVagasComMatch,
 )
 
-CaminhoBancoDep = Annotated[str, Depends(obter_caminho_banco)]
 RepositorioVagaDep = Annotated[VagaRepository, Depends(obter_repositorio_vaga)]
 RepositorioCandidaturaDep = Annotated[
     CandidaturaRepository, Depends(obter_repositorio_candidatura)

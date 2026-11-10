@@ -1,8 +1,6 @@
 """Testes de integração do VagaRepositoryImpl."""
 
-import os
-import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -12,18 +10,10 @@ from jobsync.vaga.adapters import VagaRepositoryImpl
 
 
 @pytest.fixture
-def caminho_banco():
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    yield caminho
-    os.remove(caminho)
-
-
-@pytest.fixture
-def repositorio(caminho_banco):
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("matheus")
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("outra-pessoa")
-    return VagaRepositoryImpl(caminho_banco=caminho_banco)
+def repositorio(pool_postgres):
+    PerfilRepositoryImpl(pool_postgres).criar("matheus")
+    PerfilRepositoryImpl(pool_postgres).criar("outra-pessoa")
+    return VagaRepositoryImpl(pool_postgres)
 
 
 def _criar_vaga(**overrides) -> Vaga:
@@ -31,7 +21,7 @@ def _criar_vaga(**overrides) -> Vaga:
         id="vaga-1",
         perfil_identificador="matheus",
         texto_descricao="Vaga para Engenheiro de Software",
-        data_captura=datetime(2026, 7, 26, 10, 0, 0),
+        data_captura=datetime(2026, 7, 26, 10, 0, 0, tzinfo=timezone.utc),
         url_origem="https://exemplo.com/vaga/1",
     )
     dados.update(overrides)
@@ -65,8 +55,8 @@ class TestVagaRepositoryImpl:
         assert repositorio.listar_nao_convertidas("outra-pessoa") == (vaga_outra,)
 
     def test_ordena_por_data_captura_decrescente(self, repositorio):
-        mais_antiga = _criar_vaga(id="vaga-antiga", data_captura=datetime(2026, 1, 1))
-        mais_recente = _criar_vaga(id="vaga-recente", data_captura=datetime(2026, 6, 1))
+        mais_antiga = _criar_vaga(id="vaga-antiga", data_captura=datetime(2026, 1, 1, tzinfo=timezone.utc))
+        mais_recente = _criar_vaga(id="vaga-recente", data_captura=datetime(2026, 6, 1, tzinfo=timezone.utc))
 
         repositorio.salvar(mais_antiga)
         repositorio.salvar(mais_recente)

@@ -16,10 +16,10 @@ Expõe a migração como comando de terminal, com relatório claro em português
 
 ## Subtarefas
 
-- [ ] 7.1 Escrever testes da CLI com `subprocess`/`main(argv)`: códigos de saída e conteúdo do relatório (red).
-- [ ] 7.2 Implementar argumentos, relatório e códigos de saída.
-- [ ] 7.3 Garantir que a senha nunca aparece em `stdout` nem em logs.
-- [ ] 7.4 Rodar `lint-imports` e ajustar contratos se necessário.
+- [x] 7.1 Escrever testes da CLI com `subprocess`/`main(argv)`: códigos de saída e conteúdo do relatório (red).
+- [x] 7.2 Implementar argumentos, relatório e códigos de saída.
+- [x] 7.3 Garantir que a senha nunca aparece em `stdout` nem em logs.
+- [x] 7.4 Rodar `lint-imports` e ajustar contratos se necessário.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Techspec: "CLI de migração de dados" e "Monitoramento e Observabilidade". PRD:
 
 ## Testes da Tarefa
 
-- [ ] Testes de ponta a ponta da CLI com origem SQLite temporária e Postgres real.
-- [ ] Senha ausente da saída.
+- [x] Testes de ponta a ponta da CLI com origem SQLite temporária e Postgres real.
+- [x] Senha ausente da saída.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

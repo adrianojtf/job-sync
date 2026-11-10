@@ -1,20 +1,13 @@
 """Testes de integração do PerfilRepositoryImpl."""
 
-import os
-import tempfile
-
 import pytest
 
 from jobsync.perfil.adapters import PerfilRepositoryImpl
 
 
 @pytest.fixture
-def repositorio():
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    repo = PerfilRepositoryImpl(caminho_banco=caminho)
-    yield repo
-    os.remove(caminho)
+def repositorio(pool_postgres):
+    return PerfilRepositoryImpl(pool_postgres)
 
 
 class TestPerfilRepositoryImpl:

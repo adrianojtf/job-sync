@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from jobsync.shared_kernel.domain.relogio import agora_utc
 
 from jobsync.candidatura.domain.candidatura import Candidatura
 from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
@@ -44,7 +44,7 @@ class ConfirmarCandidaturaAjustada:
         ConfirmarCandidaturaAjustadaInputValidator.validar(input_dto)
         garantir_espaco(self.repositorio_curriculo_salvo.contar_por_perfil(input_dto.perfil_identificador))
 
-        agora = datetime.now()
+        agora = agora_utc()
         curriculo = self.repositorio_curriculo_salvo.salvar(
             CurriculoSalvo(
                 id=str(uuid.uuid4()),

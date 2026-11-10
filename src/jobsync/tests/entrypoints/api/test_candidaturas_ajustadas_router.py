@@ -1,9 +1,5 @@
 import base64
-import os
-import sqlite3
-import tempfile
 from collections.abc import Generator
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -174,21 +170,13 @@ class TestCandidaturasAjustadasRouter:
         assert "empresa" in response.json()["detail"]
 
 
-@pytest.fixture
-def caminho_banco() -> Generator[str, None, None]:
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    yield caminho
-    os.remove(caminho)
-
-
-class TestCandidaturasAjustadasComSqlite:
-    def test_registros_ficam_ligados_por_chave_estrangeira_no_banco_real(self, caminho_banco: str):
-        PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("ana")
+class TestCandidaturasAjustadasComPostgres:
+    def test_registros_ficam_ligados_por_chave_estrangeira_no_banco_real(self, pool_postgres):
+        PerfilRepositoryImpl(pool_postgres).criar("ana")
         _usar(
-            CandidaturaRepositoryImpl(caminho_banco=caminho_banco),
-            VagaRepositoryImpl(caminho_banco=caminho_banco),
-            CurriculoSalvoRepositoryImpl(caminho_banco=caminho_banco),
+            CandidaturaRepositoryImpl(pool_postgres),
+            VagaRepositoryImpl(pool_postgres),
+            CurriculoSalvoRepositoryImpl(pool_postgres),
         )
         try:
             client = TestClient(app)
@@ -198,15 +186,20 @@ class TestCandidaturasAjustadasComSqlite:
         finally:
             _soltar()
 
-        conexao = sqlite3.connect(caminho_banco)
-        try:
-            violacoes = conexao.execute("PRAGMA foreign_key_check").fetchall()
+        with pool_postgres.connection() as conexao:
+            ligadas = conexao.execute(
+                """
+                SELECT COUNT(*) FROM candidatura c
+                JOIN vaga v ON v.id = c.vaga_id
+                JOIN curriculo_salvo cs ON cs.id = c.curriculo_salvo_id
+                """
+            ).fetchone()[0]
             total_de_vagas = conexao.execute("SELECT COUNT(*) FROM vaga").fetchone()[0]
-            vagas_pendentes = conexao.execute("SELECT COUNT(*) FROM vaga WHERE convertida_em_candidatura = 0").fetchone()[0]
-        finally:
-            conexao.close()
+            vagas_pendentes = conexao.execute(
+                "SELECT COUNT(*) FROM vaga WHERE NOT convertida_em_candidatura"
+            ).fetchone()[0]
         assert response.status_code == 201
         assert [c["id"] for c in listagem["por_status"]["APLICADO"]] == [response.json()["id"]]
-        assert violacoes == []
+        assert ligadas == 1
         assert total_de_vagas == 1
         assert vagas_pendentes == 0

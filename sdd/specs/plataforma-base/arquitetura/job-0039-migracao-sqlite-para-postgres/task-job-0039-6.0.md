@@ -17,12 +17,12 @@ Implementa a lógica que lê o SQLite, valida a origem, copia para o Postgres em
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever testes das conversões puras (data, booleano, JSON, hash) (red).
-- [ ] 6.2 Implementar as conversões e o modelo de relatório.
-- [ ] 6.3 Escrever testes de integração com SQLite temporário: caminho feliz, órfão, data inválida, JSON inválido, `posicao` ausente (red).
-- [ ] 6.4 Implementar leitura somente leitura e pré-checagens.
-- [ ] 6.5 Implementar cópia transacional, validação e dry-run.
-- [ ] 6.6 Testar rollback por falha induzida, destino com dados, segunda execução e `.db` inalterado (hash antes e depois).
+- [x] 6.1 Escrever testes das conversões puras (data, booleano, JSON, hash) (red).
+- [x] 6.2 Implementar as conversões e o modelo de relatório.
+- [x] 6.3 Escrever testes de integração com SQLite temporário: caminho feliz, órfão, data inválida, JSON inválido, `posicao` ausente (red).
+- [x] 6.4 Implementar leitura somente leitura e pré-checagens.
+- [x] 6.5 Implementar cópia transacional, validação e dry-run.
+- [x] 6.6 Testar rollback por falha induzida, destino com dados, segunda execução e `.db` inalterado (hash antes e depois).
 
 ## Detalhes de Implementação
 
@@ -36,8 +36,8 @@ Techspec: "CLI de migração de dados" e "Testes da CLI de migração". PRD: RF-
 
 ## Testes da Tarefa
 
-- [ ] Conversões puras sem banco.
-- [ ] Cenários completos da Tech Spec com SQLite temporário criado via `sqlite3` e Postgres real.
+- [x] Conversões puras sem banco.
+- [x] Cenários completos da Tech Spec com SQLite temporário criado via `sqlite3` e Postgres real.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

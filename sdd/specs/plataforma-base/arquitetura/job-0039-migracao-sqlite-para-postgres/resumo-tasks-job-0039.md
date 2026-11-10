@@ -2,15 +2,15 @@
 
 ## Tarefas
 
-- [ ] 1.0 Base de conexão e schema no PostgreSQL
-- [ ] 2.0 Repositórios simples: perfil, token de captura e vaga
-- [ ] 3.0 Repositórios com tipos especiais: currículo salvo e perfil estruturado
-- [ ] 4.0 Repositório de candidatura: posição do board e concorrência
-- [ ] 5.0 Raiz de composição, lifespan da API e remoção do SQLite do runtime
-- [ ] 6.0 Núcleo da migração de dados SQLite para PostgreSQL
-- [ ] 7.0 CLI de migração de dados
-- [ ] 8.0 Configuração e documentação
-- [ ] 9.0 E2E e CI completo
+- [x] 1.0 Base de conexão e schema no PostgreSQL
+- [x] 2.0 Repositórios simples: perfil, token de captura e vaga
+- [x] 3.0 Repositórios com tipos especiais: currículo salvo e perfil estruturado
+- [x] 4.0 Repositório de candidatura: posição do board e concorrência
+- [x] 5.0 Raiz de composição, lifespan da API e remoção do SQLite do runtime
+- [x] 6.0 Núcleo da migração de dados SQLite para PostgreSQL
+- [x] 7.0 CLI de migração de dados
+- [x] 8.0 Configuração e documentação
+- [x] 9.0 E2E e CI completo
 - [ ] 10.0 Ensaio e troca real dos dados
 
 ## Dependências

@@ -22,6 +22,7 @@ Analogia: a CLI é uma mudança com inventário. Cada caixa é listada na origem
 | --- | --- | --- |
 | `shared_kernel/adapters/persistence/_conexao_sqlite.py` | Removido | Substituído pelos três módulos abaixo. A lógica `_migrar_posicao_da_candidatura` sai do runtime. |
 | `shared_kernel/adapters/persistence/conexao_postgres.py` | Novo | Cria o `ConnectionPool` a partir de `DATABASE_URL`, falha rápido se não conectar e mascara a senha nos logs. |
+| `shared_kernel/domain/relogio.py` | Novo | `agora_utc()`, usado pelos services e pelo repositório de candidatura. |
 | `shared_kernel/adapters/persistence/migracoes/` | Novo | Arquivos `NNNN_descricao.sql` e `executor_migracoes.py`, que aplica os pendentes e registra em `schema_migrations`. |
 | `shared_kernel/adapters/persistence/migracao_sqlite.py` | Novo | Lógica da migração de dados: leitura, conversão, validação e gravação. |
 | `entrypoints/cli/migrar_sqlite_para_postgres.py` | Novo | Interface de linha de comando (argumentos, relatório, códigos de saída). |
@@ -67,7 +68,7 @@ Migração `0001_schema_inicial.sql`, equivalente ao schema atual:
 | SQLite | PostgreSQL | Observação |
 | --- | --- | --- |
 | `id`, `identificador`, `token` `TEXT` | `TEXT` | Mantém os UUIDs como texto (YAGNI). |
-| `data_*` `TEXT` ISO-8601 | `TIMESTAMP` (sem fuso) | Os valores atuais são `datetime.now()` sem fuso. Ver Riscos. |
+| `data_*` `TEXT` ISO-8601 | `TIMESTAMPTZ` (UTC) | O domínio passa a usar `agora_utc()` (`shared_kernel/domain/relogio.py`). A API devolve a data com fuso (`...Z`) e o navegador a exibe no fuso do usuário, com `new Date(iso)` e `Intl`, que o frontend já usa. Nenhum header de fuso é necessário. |
 | `pdf_bytes BLOB` | `BYTEA` | |
 | `convertida_em_candidatura INTEGER 0/1` | `BOOLEAN NOT NULL DEFAULT FALSE` | |
 | `*_json TEXT` | `JSONB NOT NULL DEFAULT '[]'` | Remove `json.dumps` e `json.loads`. |
@@ -183,6 +184,7 @@ Roteiro de troca (RF-14): parar a API, copiar o `.db` para backup, rodar a CLI c
 - **Migrações em SQL com executor próprio.** São cerca de 40 linhas, e o schema tem seis tabelas. Alternativa rejeitada: Alembic, que traz SQLAlchemy só para isso. Reavaliar se o número de migrações crescer.
 - **Pool compartilhado, em vez de uma conexão por repositório.** Hoje cada request abre várias conexões SQLite e reexecuta o schema. Com PostgreSQL isso esgotaria conexões do servidor.
 - **Migração em transação única com dry-run por rollback.** Garante tudo ou nada com pouco código. Alternativa rejeitada: dual-write, por complexidade desproporcional para um sistema de uso individual.
+- **Fuso: instantes em UTC com fuso (`TIMESTAMPTZ`).** Decisão do responsável: usar o fuso do usuário recebido pelo navegador. Como o navegador já converte datas ISO com offset, o servidor só precisa devolver instantes sem ambiguidade. Alternativa rejeitada: header `X-Timezone` e conversão no servidor, que adicionaria código sem benefício para os valores armazenados.
 - **Sem SQLite no runtime.** Evita manter dois adapters. Os fakes cobrem os testes de service, e os testes de repositório usam PostgreSQL real.
 
 ### Riscos Conhecidos
@@ -191,7 +193,7 @@ Roteiro de troca (RF-14): parar a API, copiar o `.db` para backup, rodar a CLI c
 | --- | --- |
 | Órfãos de FK no `.db` (as FKs não eram validadas) | Pré-checagem lista tudo e aborta. Correção manual antes de repetir. |
 | Concorrência no reordenamento do board (antes serializada pelo SQLite) | Lock advisory por perfil e teste de concorrência. |
-| Datas sem fuso (`datetime.now()`) | Manter `TIMESTAMP` sem fuso preserva os valores. Fuso explícito fica para outra demanda. |
+| Datas antigas sem fuso (`datetime.now()` da máquina) | A CLI as interpreta no fuso local da máquina, ou em `--fuso-origem`, e grava em UTC. Se a máquina que criou o banco usava outro fuso, informe `--fuso-origem`. |
 | Ordem de desempate por `id` diferente por collation | `COLLATE "C"` nos `ORDER BY`. Após a migração `posicao` é única por coluna, então o impacto é baixo. |
 | Container não alcança o Postgres do host | Documentar `extra_hosts`, `listen_addresses` e `pg_hba.conf`. Teste manual no roteiro de troca. |
 | Tipos retornados pelo driver (`bytea`, `jsonb`) | Testes de integração cobrem PDF e JSON em ida e volta. Esta especificação assume que o driver devolve `bytes` e `list`, e os testes confirmam. |
@@ -217,5 +219,5 @@ Desvios: nenhum identificado. A confirmar na implementação: se o novo pacote `
 
 ## Questões em Aberto
 
-1. Fuso horário: manter `TIMESTAMP` sem fuso agora, com demanda futura para `TIMESTAMPTZ`?
+1. Resolvida: datas em `TIMESTAMPTZ` (UTC), exibidas no fuso do navegador. Já o `date.today()` de `NomeArquivo` e de `DescobrirVagasComMatch` continua usando a data do servidor. Se a data do nome do PDF precisar seguir o fuso do usuário, o frontend deve enviar `data_referencia`.
 2. Resolvida: o sistema não está em produção, então a janela de parada não é restrição agora. Rever antes de ir para produção.

@@ -16,13 +16,15 @@ Converte o repositório do board preservando a ordem dos cartões, agora com con
 
 ## Subtarefas
 
-- [ ] 4.1 Adaptar os testes existentes à fixture de pool (red).
-- [ ] 4.2 Escrever o teste de concorrência (red).
-- [ ] 4.3 Converter o repositório com lock advisory e collation.
-- [ ] 4.4 Remover o teste e o código da migração antiga de `posicao`.
-- [ ] 4.5 Conferir `CandidaturaRepositoryFake`: sem mudança.
+- [x] 4.1 Adaptar os testes existentes à fixture de pool (red).
+- [x] 4.2 Escrever o teste de concorrência (red).
+- [x] 4.3 Converter o repositório com lock advisory e collation.
+- [x] 4.4 Remover o teste e o código da migração antiga de `posicao`.
+- [x] 4.5 Conferir `CandidaturaRepositoryFake`: sem mudança.
 
 ## Detalhes de Implementação
+
+Observação: o teste de concorrência cobre `salvar` simultâneo no mesmo perfil. Sem o lock advisory ele falha (verificado), e com o lock passa. `aplicar_movimento` recebe a ordem pronta do service, então a corrida entre ler a coluna e gravar a ordem está no service e não foi alterada por esta tarefa.
 
 Techspec: "Interfaces Principais", "Modelos de Dados" e Riscos (concorrência, collation). PRD: RF-02, RF-07; história 2.
 
@@ -33,9 +35,9 @@ Techspec: "Interfaces Principais", "Modelos de Dados" e Riscos (concorrência, c
 
 ## Testes da Tarefa
 
-- [ ] `test_candidatura_repository_impl` completo sobre Postgres real.
-- [ ] Concorrência em `aplicar_movimento`.
-- [ ] Regressão: `test_mover_candidatura_service`, `test_criar_candidatura_service`.
+- [x] `test_candidatura_repository_impl` completo sobre Postgres real.
+- [x] Concorrência em `aplicar_movimento`.
+- [x] Regressão: `test_mover_candidatura_service`, `test_criar_candidatura_service`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

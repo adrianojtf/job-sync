@@ -1,55 +1,54 @@
-"""Implementação SQLite de VagaRepository."""
+"""Implementação PostgreSQL de VagaRepository."""
 from __future__ import annotations
 
-from datetime import datetime
-
-from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
+from psycopg_pool import ConnectionPool
 
 from jobsync.vaga.domain.vaga import Vaga
 from jobsync.vaga.domain.vaga_repository import VagaRepository
 
 
 class VagaRepositoryImpl(VagaRepository):
-    """Implementação SQLite da porta de vagas capturadas."""
+    """Implementação PostgreSQL da porta de vagas capturadas."""
 
-    def __init__(self, caminho_banco: str) -> None:
-        self._conexao = criar_conexao(caminho_banco)
+    def __init__(self, pool: ConnectionPool) -> None:
+        self._pool = pool
 
     def salvar(self, vaga: Vaga) -> Vaga:
-        self._conexao.execute(
-            """
-            INSERT INTO vaga (id, perfil_identificador, texto_descricao, url_origem, data_captura, convertida_em_candidatura)
-            VALUES (?, ?, ?, ?, ?, 0)
-            """,
-            (
-                vaga.id,
-                vaga.perfil_identificador,
-                vaga.texto_descricao,
-                vaga.url_origem,
-                vaga.data_captura.isoformat(),
-            ),
-        )
-        self._conexao.commit()
+        with self._pool.connection() as conexao:
+            conexao.execute(
+                """
+                INSERT INTO vaga (id, perfil_identificador, texto_descricao, url_origem, data_captura, convertida_em_candidatura)
+                VALUES (%s, %s, %s, %s, %s, FALSE)
+                """,
+                (
+                    vaga.id,
+                    vaga.perfil_identificador,
+                    vaga.texto_descricao,
+                    vaga.url_origem,
+                    vaga.data_captura,
+                ),
+            )
         return vaga
 
     def listar_nao_convertidas(self, perfil_identificador: str) -> tuple[Vaga, ...]:
-        cursor = self._conexao.execute(
-            """
-            SELECT id, perfil_identificador, texto_descricao, url_origem, data_captura
-            FROM vaga
-            WHERE perfil_identificador = ? AND convertida_em_candidatura = 0
-            ORDER BY data_captura DESC
-            """,
-            (perfil_identificador,),
-        )
-        return tuple(self._linha_para_vaga(linha) for linha in cursor.fetchall())
+        with self._pool.connection() as conexao:
+            linhas = conexao.execute(
+                """
+                SELECT id, perfil_identificador, texto_descricao, url_origem, data_captura
+                FROM vaga
+                WHERE perfil_identificador = %s AND NOT convertida_em_candidatura
+                ORDER BY data_captura DESC, id COLLATE "C" ASC
+                """,
+                (perfil_identificador,),
+            ).fetchall()
+        return tuple(self._linha_para_vaga(linha) for linha in linhas)
 
     def marcar_como_convertida(self, vaga_id: str) -> None:
-        self._conexao.execute(
-            "UPDATE vaga SET convertida_em_candidatura = 1 WHERE id = ?",
-            (vaga_id,),
-        )
-        self._conexao.commit()
+        with self._pool.connection() as conexao:
+            conexao.execute(
+                "UPDATE vaga SET convertida_em_candidatura = TRUE WHERE id = %s",
+                (vaga_id,),
+            )
 
     @staticmethod
     def _linha_para_vaga(linha: tuple) -> Vaga:
@@ -59,5 +58,5 @@ class VagaRepositoryImpl(VagaRepository):
             perfil_identificador=perfil_identificador,
             texto_descricao=texto_descricao,
             url_origem=url_origem,
-            data_captura=datetime.fromisoformat(data_captura),
+            data_captura=data_captura,
         )

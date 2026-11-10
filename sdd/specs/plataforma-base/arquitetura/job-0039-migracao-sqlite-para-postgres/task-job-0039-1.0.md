@@ -17,13 +17,15 @@ Cria a base que todas as outras tarefas usam: dependências, pool de conexões, 
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever testes do executor de migrações (ordem, idempotência, rollback do chamador) e da máscara de senha (red).
-- [ ] 1.2 Implementar `conexao_postgres.py` e `executor_migracoes.py`.
-- [ ] 1.3 Escrever `0001_schema_inicial.sql` e um teste que confere tabelas, colunas e tipos criados.
-- [ ] 1.4 Criar a fixture de pool e limpeza em `conftest.py`.
-- [ ] 1.5 Atualizar requirements e o job `lint-and-test` do CI.
+- [x] 1.1 Escrever testes do executor de migrações (ordem, idempotência, rollback do chamador) e da máscara de senha (red).
+- [x] 1.2 Implementar `conexao_postgres.py` e `executor_migracoes.py`.
+- [x] 1.3 Escrever `0001_schema_inicial.sql` e um teste que confere tabelas, colunas e tipos criados.
+- [x] 1.4 Criar a fixture de pool e limpeza em `conftest.py`.
+- [x] 1.5 Atualizar requirements e o job `lint-and-test` do CI.
 
 ## Detalhes de Implementação
+
+Desvio registrado: as colunas de data nasceram como `TIMESTAMPTZ` (UTC), por decisão do responsável, e foi criado `shared_kernel/domain/relogio.py`. O pool abre as sessões em UTC.
 
 Techspec: "Componentes", "Modelos de Dados", "Testes de Integração" e "Dependências Técnicas". PRD: RF-03, RF-04, RF-05.
 
@@ -35,9 +37,9 @@ Techspec: "Componentes", "Modelos de Dados", "Testes de Integração" e "Depend�
 
 ## Testes da Tarefa
 
-- [ ] Executor: aplica pendentes na ordem, ignora aplicadas, respeita rollback do chamador.
-- [ ] Máscara de senha da URL.
-- [ ] Schema criado com os tipos esperados (`BYTEA`, `JSONB`, `BOOLEAN`, `TIMESTAMP`).
+- [x] Executor: aplica pendentes na ordem, ignora aplicadas, respeita rollback do chamador.
+- [x] Máscara de senha da URL.
+- [x] Schema criado com os tipos esperados (`BYTEA`, `JSONB`, `BOOLEAN`, `TIMESTAMP`).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

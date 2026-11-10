@@ -1,8 +1,6 @@
 """Testes de integração do CurriculoSalvoRepositoryImpl."""
 
-import os
-import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -12,18 +10,10 @@ from jobsync.curriculo_salvo.adapters import CurriculoSalvoRepositoryImpl
 
 
 @pytest.fixture
-def caminho_banco():
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    yield caminho
-    os.remove(caminho)
-
-
-@pytest.fixture
-def repositorio(caminho_banco):
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("matheus")
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("outra-pessoa")
-    return CurriculoSalvoRepositoryImpl(caminho_banco=caminho_banco)
+def repositorio(pool_postgres):
+    PerfilRepositoryImpl(pool_postgres).criar("matheus")
+    PerfilRepositoryImpl(pool_postgres).criar("outra-pessoa")
+    return CurriculoSalvoRepositoryImpl(pool_postgres)
 
 
 def _criar_curriculo_salvo(**overrides) -> CurriculoSalvo:
@@ -32,7 +22,7 @@ def _criar_curriculo_salvo(**overrides) -> CurriculoSalvo:
         perfil_identificador="matheus",
         nome_referencia="Currículo Backend",
         pdf_bytes=b"%PDF-fake",
-        data_upload=datetime(2026, 7, 26, 10, 0, 0),
+        data_upload=datetime(2026, 7, 26, 10, 0, 0, tzinfo=timezone.utc),
     )
     dados.update(overrides)
     return CurriculoSalvo(**dados)
@@ -47,8 +37,8 @@ class TestCurriculoSalvoRepositoryImpl:
         assert repositorio.listar_por_perfil("matheus") == (curriculo,)
 
     def test_listar_por_perfil_ordena_por_data_upload_decrescente(self, repositorio):
-        mais_antigo = _criar_curriculo_salvo(id="uuid-1", data_upload=datetime(2026, 1, 1))
-        mais_recente = _criar_curriculo_salvo(id="uuid-2", data_upload=datetime(2026, 6, 1))
+        mais_antigo = _criar_curriculo_salvo(id="uuid-1", data_upload=datetime(2026, 1, 1, tzinfo=timezone.utc))
+        mais_recente = _criar_curriculo_salvo(id="uuid-2", data_upload=datetime(2026, 6, 1, tzinfo=timezone.utc))
 
         repositorio.salvar(mais_antigo)
         repositorio.salvar(mais_recente)

@@ -19,7 +19,7 @@ src/                        Código fonte da aplicação
 
     shared_kernel/          Conceitos transversais compartilhados entre domínios
       domain/               Value Objects compartilhados (ex: NomeArquivo, CatalogoLocalizacao)
-      adapters/             Mecanismos técnicos compartilhados (ex: ClienteOpenAI, ClienteJev, conexão SQLite)
+      adapters/             Mecanismos técnicos compartilhados (ex: ClienteOpenAI, ClienteJev, pool PostgreSQL e migrações)
 
     entrypoints/            Adapters de entrada da aplicação
       streamlit_app.py      Interface web (Streamlit)
@@ -32,7 +32,7 @@ src/                        Código fonte da aplicação
       test_arquitetura.py   Validação dos contratos do import-linter
       e2e/app_e2e.py        API real com dublês de IA, usada pelos testes E2E da UI
 
-storage/                    PDFs gerados e banco SQLite são salvos aqui
+storage/                    PDFs gerados são salvos aqui (os dados ficam no PostgreSQL)
 frontend/                   Nova interface web (React + Vite + TypeScript), cliente da API /v1
 sdd/                        Documentos de especificação e templates
 ```
@@ -47,6 +47,7 @@ seções ajustadas são remontadas e um novo PDF é gerado.
 ## Pré-requisitos
 
 - Python 3.10+
+- PostgreSQL 15 ou superior (testado no 15.3 e no 16)
 - Uma chave da OpenAI: https://platform.openai.com/api-keys
 - Uma chave da TypeSafe AI (Jev) para as avaliações: https://docs.typesafe.ai/
 
@@ -84,12 +85,48 @@ OPENAI_API_KEY=sua_chave_aqui
 OPENAI_MODEL=gpt-6-luna
 TYPESAFE_API_KEY=sua_chave_aqui
 TYPESAFE_MODEL=jev-1.14.0
+DATABASE_URL=postgresql://job_sync:troque_a_senha@localhost:5432/job_sync
 ```
 
 Os valores são carregados em tempo de execução por `python-dotenv`; certifique-se de que o arquivo esteja na raiz do projeto.
 
 - `OPENAI_API_KEY` / `OPENAI_MODEL`: provedor de geração de texto (extração, adaptação de seções, carta de apresentação e sugestões ATS). O modelo padrão é `gpt-6-luna`.
+- `DATABASE_URL`: conexão com o PostgreSQL. Obrigatória: sem ela a API não sobe. As tabelas são criadas e atualizadas sozinhas na subida (migrações em `shared_kernel/adapters/persistence/migracoes/`).
 - `TYPESAFE_API_KEY` / `TYPESAFE_MODEL`: provedor de avaliações estruturadas (Jev). Sem essa chave, as avaliações automáticas ficam indisponíveis, mas a adaptação do currículo continua funcionando.
+
+## Banco de dados (PostgreSQL)
+
+Crie o usuário e o banco uma vez (como superusuário do Postgres):
+
+```bash
+psql -U postgres -c "CREATE USER job_sync WITH PASSWORD 'troque_a_senha'"
+psql -U postgres -c "CREATE DATABASE job_sync OWNER job_sync"
+```
+
+Datas são guardadas em `TIMESTAMPTZ` (UTC) e a API as devolve com o fuso (`...Z`). O navegador
+mostra cada data no fuso do próprio usuário.
+
+### Migrando os dados do SQLite antigo
+
+Antes desta versão, os dados ficavam em `storage/job_sync.db`. O arquivo **não é alterado** pela
+migração e serve de backup. Com a API parada e `DATABASE_URL` configurada:
+
+```bash
+PYTHONPATH=src python -m jobsync.entrypoints.cli.migrar_sqlite_para_postgres --sqlite storage/job_sync.db --dry-run
+PYTHONPATH=src python -m jobsync.entrypoints.cli.migrar_sqlite_para_postgres --sqlite storage/job_sync.db
+```
+
+- `--dry-run` faz tudo e desfaz no final, só para conferir o relatório.
+- As datas antigas não guardavam fuso. Elas são lidas no fuso local da máquina; use
+  `--fuso-origem America/Sao_Paulo` (ou outro) para informar o fuso correto.
+- O comando só roda em banco vazio, grava tudo ou nada e confere contagens, hash dos PDFs e a ordem
+  do board. Códigos de saída: 0 sucesso, 2 problema na origem, 3 destino inválido, 4 divergência.
+- Se a origem tiver referências órfãs, datas ou JSON inválidos, o comando lista todos os problemas e
+  não grava nada. Se for um banco muito antigo (sem a coluna `posicao`), abra-o uma vez com a versão
+  anterior do sistema e repita.
+
+Para voltar ao SQLite, use a versão anterior do sistema com o arquivo `storage/job_sync.db`; o que
+foi gravado no PostgreSQL depois da troca não volta sozinho.
 
 ## Executando o MVP
 
@@ -172,11 +209,12 @@ npm run dev        # http://localhost:5173 (proxy de /v1 para http://localhost:8
 **Contrato da API:** sempre que um schema do backend mudar, rode `npm run gerar-tipos` com o
 backend atualizado e faça commit do `schema.d.ts`. O CI falha se o arquivo estiver desatualizado.
 
-**Testes E2E:** usam a API real (SQLite, casos de uso e geração de PDF) com dublês apenas nas
+**Testes E2E:** usam a API real (PostgreSQL, casos de uso e geração de PDF) com dublês apenas nas
 portas de IA (`src/jobsync/tests/e2e/app_e2e.py`), então não precisam de chaves. Na primeira vez,
 instale o navegador com `npx playwright install chromium`. O Python usado é `python3`, ou o
 definido em `E2E_PYTHON` (ex.: `E2E_PYTHON=venv/bin/python npm run e2e`), com as dependências de
-`requirements.txt` instaladas.
+`requirements.txt` instaladas. O banco do E2E vem de `E2E_DATABASE_URL` (padrão
+`postgresql://localhost:5432/job_sync_e2e`, que precisa existir).
 
 **Variáveis:** `VITE_API_BASE_URL` (opcional) aponta a UI para outra origem da API. Vazio, a UI usa
 a mesma origem: o proxy do Vite em desenvolvimento e o Nginx no container. Se a UI e a API
@@ -203,6 +241,15 @@ Se preferir explicitar o `PYTHONPATH`:
 
 ```bash
 PYTHONPATH=src pytest
+```
+
+Os testes de repositório, de API e da migração de dados usam um PostgreSQL real. Crie um banco
+vazio de teste e aponte `TEST_DATABASE_URL` para ele (sem a variável, esses testes são ignorados
+ou falham, conforme o caso):
+
+```bash
+createdb job_sync_test
+TEST_DATABASE_URL=postgresql://job_sync:troque_a_senha@localhost:5432/job_sync_test pytest
 ```
 
 Os testes de `domain/` e `service_layer/` são independentes de rede e de
@@ -242,8 +289,14 @@ docker compose up --build
 A UI fica em `http://localhost:8080` e a API em `http://localhost:8000`. No container do
 frontend, o Nginx serve os arquivos estáticos, devolve o `index.html` nas rotas da SPA e encaminha
 `/v1` para o backend (`API_UPSTREAM`, padrão `http://backend:8000`), com timeout de 180 s para as
-chamadas de IA e limite de 10 MB por requisição (PDFs de até 5 MB em base64). Os dados ficam em
-`./storage`.
+chamadas de IA e limite de 10 MB por requisição (PDFs de até 5 MB em base64). Os PDFs gerados
+ficam em `./storage`.
+
+O banco é o PostgreSQL **instalado na máquina hospedeira**, fora do compose. O backend o alcança por
+`host.docker.internal` (`DATABASE_URL` no `docker-compose.yml`; ajuste usuário e senha). No
+hospedeiro, o Postgres precisa escutar na interface da bridge do Docker (`listen_addresses` no
+`postgresql.conf`) e aceitar a rede do container (`pg_hba.conf`, por exemplo `host job_sync job_sync
+172.16.0.0/12 scram-sha-256`).
 
 ## Lint de arquitetura
 

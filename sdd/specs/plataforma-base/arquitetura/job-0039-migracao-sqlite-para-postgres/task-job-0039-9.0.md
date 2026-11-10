@@ -15,12 +15,14 @@ Faz os testes E2E e o CI rodarem sobre Postgres.
 
 ## Subtarefas
 
-- [ ] 9.1 Ajustar `app_e2e.py` para Postgres e limpeza do banco.
-- [ ] 9.2 Ajustar `playwright.config.ts`.
-- [ ] 9.3 Adicionar o serviço Postgres ao job `e2e` e a variável `DATABASE_URL`.
-- [ ] 9.4 Rodar E2E, axe e contrato OpenAPI localmente.
+- [x] 9.1 Ajustar `app_e2e.py` para Postgres e limpeza do banco.
+- [x] 9.2 Ajustar `playwright.config.ts`.
+- [x] 9.3 Adicionar o serviço Postgres ao job `e2e` e a variável `DATABASE_URL`.
+- [x] 9.4 Rodar E2E, axe e contrato OpenAPI localmente.
 
 ## Detalhes de Implementação
+
+Resultado: os 43 testes Playwright passaram contra o Postgres local. `schema.d.ts` não precisou mudar (a diferença de texto "Unprocessable Content" vem da versão do Starlette do ambiente local, não do código).
 
 Techspec: "Testes E2E" e "Endpoints de API". PRD: RF-02.
 
@@ -31,8 +33,8 @@ Techspec: "Testes E2E" e "Endpoints de API". PRD: RF-02.
 
 ## Testes da Tarefa
 
-- [ ] Suíte Playwright completa.
-- [ ] Geração de tipos do OpenAPI sem diferença.
+- [x] Suíte Playwright completa.
+- [x] Geração de tipos do OpenAPI sem diferença.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

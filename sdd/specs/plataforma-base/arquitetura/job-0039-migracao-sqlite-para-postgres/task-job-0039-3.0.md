@@ -15,10 +15,10 @@ Converte os repositórios que usam dados binários e JSON, que exigem conversão
 
 ## Subtarefas
 
-- [ ] 3.1 Adaptar e ampliar os testes (PDF de ida e volta, JSON de ida e volta, upsert) (red).
-- [ ] 3.2 Converter `CurriculoSalvoRepositoryImpl`.
-- [ ] 3.3 Converter `PerfilEstruturadoRepositoryImpl`.
-- [ ] 3.4 Confirmar que `Idioma.nivel` continua gravado e lido pelo nome do enum.
+- [x] 3.1 Adaptar e ampliar os testes (PDF de ida e volta, JSON de ida e volta, upsert) (red).
+- [x] 3.2 Converter `CurriculoSalvoRepositoryImpl`.
+- [x] 3.3 Converter `PerfilEstruturadoRepositoryImpl`.
+- [x] 3.4 Confirmar que `Idioma.nivel` continua gravado e lido pelo nome do enum.
 
 ## Detalhes de Implementação
 
@@ -31,8 +31,8 @@ Techspec: "Modelos de Dados" e Riscos (tipos retornados pelo driver). PRD: RF-01
 
 ## Testes da Tarefa
 
-- [ ] `test_curriculo_salvo_repository_impl` e `test_perfil_estruturado_repository_impl` sobre Postgres real.
-- [ ] Regressão: services de currículo salvo e perfil estruturado.
+- [x] `test_curriculo_salvo_repository_impl` e `test_perfil_estruturado_repository_impl` sobre Postgres real.
+- [x] Regressão: services de currículo salvo e perfil estruturado.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

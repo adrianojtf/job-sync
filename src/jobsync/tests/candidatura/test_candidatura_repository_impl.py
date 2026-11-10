@@ -1,30 +1,42 @@
 """Testes de integração do CandidaturaRepositoryImpl."""
 
-import os
-import sqlite3
-import tempfile
-from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 
 import pytest
 
 from jobsync.candidatura import Candidatura, CandidaturaNaoEncontrada, MudancaStatus, StatusCandidatura
 from jobsync.candidatura.adapters import CandidaturaRepositoryImpl
+from jobsync.curriculo_salvo import CurriculoSalvo
+from jobsync.curriculo_salvo.adapters import CurriculoSalvoRepositoryImpl
 from jobsync.perfil.adapters.perfil_repository_impl import PerfilRepositoryImpl
+from jobsync.vaga import Vaga
+from jobsync.vaga.adapters import VagaRepositoryImpl
 
 
 @pytest.fixture
-def caminho_banco():
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    yield caminho
-    os.remove(caminho)
-
-
-@pytest.fixture
-def repositorio(caminho_banco):
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("matheus")
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("outra-pessoa")
-    return CandidaturaRepositoryImpl(caminho_banco=caminho_banco)
+def repositorio(pool_postgres):
+    PerfilRepositoryImpl(pool_postgres).criar("matheus")
+    PerfilRepositoryImpl(pool_postgres).criar("outra-pessoa")
+    VagaRepositoryImpl(pool_postgres).salvar(
+        Vaga(
+            id="vaga-1",
+            perfil_identificador="matheus",
+            texto_descricao="Vaga",
+            url_origem=None,
+            data_captura=datetime(2026, 7, 26, tzinfo=timezone.utc),
+        )
+    )
+    CurriculoSalvoRepositoryImpl(pool_postgres).salvar(
+        CurriculoSalvo(
+            id="curriculo-1",
+            perfil_identificador="matheus",
+            nome_referencia="curriculo",
+            pdf_bytes=b"%PDF",
+            data_upload=datetime(2026, 7, 26, tzinfo=timezone.utc),
+        )
+    )
+    return CandidaturaRepositoryImpl(pool_postgres)
 
 
 def _criar_candidatura(**overrides) -> Candidatura:
@@ -36,8 +48,8 @@ def _criar_candidatura(**overrides) -> Candidatura:
         empresa="TechCorp",
         cargo="Engenheiro de Software",
         status=StatusCandidatura.APLICADO,
-        data_aplicacao=datetime(2026, 7, 26, 10, 0, 0),
-        historico_status=(MudancaStatus(status=StatusCandidatura.APLICADO, data=datetime(2026, 7, 26, 10, 0, 0)),),
+        data_aplicacao=datetime(2026, 7, 26, 10, 0, 0, tzinfo=timezone.utc),
+        historico_status=(MudancaStatus(status=StatusCandidatura.APLICADO, data=datetime(2026, 7, 26, 10, 0, 0, tzinfo=timezone.utc)),),
     )
     dados.update(overrides)
     return Candidatura(**dados)
@@ -173,56 +185,13 @@ class TestAplicarMovimento:
         assert [c.posicao for c in tres_aplicadas.listar_por_perfil("matheus")] == [0, 1, 2]
 
 
-class TestMigracaoDaPosicao:
-    def _criar_banco_antigo(self, caminho: str) -> None:
-        conexao = sqlite3.connect(caminho)
-        conexao.executescript(
-            """
-            CREATE TABLE perfil (identificador TEXT PRIMARY KEY);
-            INSERT INTO perfil VALUES ('matheus');
-            CREATE TABLE candidatura (
-                id TEXT PRIMARY KEY,
-                perfil_identificador TEXT NOT NULL REFERENCES perfil(identificador),
-                vaga_id TEXT,
-                curriculo_salvo_id TEXT,
-                empresa TEXT NOT NULL,
-                cargo TEXT NOT NULL,
-                status TEXT NOT NULL,
-                data_aplicacao TEXT NOT NULL,
-                data_ultima_mudanca_status TEXT NOT NULL
-            );
-            INSERT INTO candidatura VALUES
-              ('antiga', 'matheus', NULL, NULL, 'E', 'C', 'APLICADO', '2026-01-01T10:00:00', '2026-01-01T10:00:00'),
-              ('nova', 'matheus', NULL, NULL, 'E', 'C', 'APLICADO', '2026-03-01T10:00:00', '2026-03-01T10:00:00'),
-              ('meio', 'matheus', NULL, NULL, 'E', 'C', 'APLICADO', '2026-02-01T10:00:00', '2026-02-01T10:00:00'),
-              ('outra-coluna', 'matheus', NULL, NULL, 'E', 'C', 'OFERTA', '2026-02-01T10:00:00', '2026-02-01T10:00:00');
-            """
-        )
-        conexao.commit()
-        conexao.close()
+class TestConcorrenciaNoBoard:
+    def test_salvamentos_simultaneos_no_mesmo_perfil_geram_posicoes_distintas(self, repositorio):
+        def salvar(indice):
+            repositorio.salvar(_criar_candidatura(id=f"c-{indice}"))
 
-    def test_banco_antigo_ordena_por_data_de_aplicacao_mais_recente(self, caminho_banco):
-        self._criar_banco_antigo(caminho_banco)
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            list(executor.map(salvar, range(6)))
 
-        repositorio = CandidaturaRepositoryImpl(caminho_banco=caminho_banco)
-
-        aplicadas = [c for c in repositorio.listar_por_perfil("matheus") if c.status == StatusCandidatura.APLICADO]
-        assert _ids(aplicadas) == ["nova", "meio", "antiga"]
-        assert [c.posicao for c in aplicadas] == [0, 1, 2]
-
-    def test_banco_antigo_numera_cada_coluna_separadamente(self, caminho_banco):
-        self._criar_banco_antigo(caminho_banco)
-
-        repositorio = CandidaturaRepositoryImpl(caminho_banco=caminho_banco)
-
-        assert repositorio.buscar_por_id("outra-coluna").posicao == 0
-
-    def test_abrir_o_banco_duas_vezes_nao_renumera_nem_falha(self, caminho_banco):
-        self._criar_banco_antigo(caminho_banco)
-        primeiro = CandidaturaRepositoryImpl(caminho_banco=caminho_banco)
-        primeiro.aplicar_movimento("antiga", StatusCandidatura.APLICADO, ("antiga", "nova", "meio"))
-
-        segundo = CandidaturaRepositoryImpl(caminho_banco=caminho_banco)
-
-        aplicadas = [c for c in segundo.listar_por_perfil("matheus") if c.status == StatusCandidatura.APLICADO]
-        assert _ids(aplicadas) == ["antiga", "nova", "meio"]
+        candidaturas = repositorio.listar_por_perfil("matheus")
+        assert sorted(c.posicao for c in candidaturas) == list(range(6))

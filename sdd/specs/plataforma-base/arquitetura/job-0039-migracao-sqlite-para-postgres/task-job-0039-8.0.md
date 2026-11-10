@@ -16,10 +16,10 @@ Atualiza a configuração de execução e documenta instalação, troca e retorn
 
 ## Subtarefas
 
-- [ ] 8.1 Atualizar `.env.example`, `docker-compose.yml` e `Dockerfile`.
-- [ ] 8.2 Escrever no README o passo a passo do Postgres local e da `DATABASE_URL`.
-- [ ] 8.3 Escrever o roteiro de troca e o de retorno, com o aviso sobre dados gravados após a troca.
-- [ ] 8.4 Revisar todas as menções a SQLite e `DATABASE_PATH` no repositório.
+- [x] 8.1 Atualizar `.env.example`, `docker-compose.yml` e `Dockerfile`.
+- [x] 8.2 Escrever no README o passo a passo do Postgres local e da `DATABASE_URL`.
+- [x] 8.3 Escrever o roteiro de troca e o de retorno, com o aviso sobre dados gravados após a troca.
+- [x] 8.4 Revisar todas as menções a SQLite e `DATABASE_PATH` no repositório.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Techspec: "Pontos de Integração" e "Sequenciamento". PRD: RF-14, RF-15; histó
 
 ## Testes da Tarefa
 
-- [ ] `docker compose config` válido.
-- [ ] Conferência por busca: `grep -rn "DATABASE_PATH\|sqlite"`.
+- [x] `docker compose config` válido.
+- [x] Conferência por busca: `grep -rn "DATABASE_PATH\|sqlite"`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

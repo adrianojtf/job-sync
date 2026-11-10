@@ -16,13 +16,15 @@ Converte os três repositórios mais simples para o pool PostgreSQL, sem alterar
 
 ## Subtarefas
 
-- [ ] 2.1 Adaptar os testes de `perfil`, `token_captura` e `vaga` para a fixture de pool (red).
-- [ ] 2.2 Converter `PerfilRepositoryImpl`.
-- [ ] 2.3 Converter `TokenCapturaRepositoryImpl`.
-- [ ] 2.4 Converter `VagaRepositoryImpl` (boolean e datas).
-- [ ] 2.5 Conferir os fakes: nenhum deve mudar.
+- [x] 2.1 Adaptar os testes de `perfil`, `token_captura` e `vaga` para a fixture de pool (red).
+- [x] 2.2 Converter `PerfilRepositoryImpl`.
+- [x] 2.3 Converter `TokenCapturaRepositoryImpl`.
+- [x] 2.4 Converter `VagaRepositoryImpl` (boolean e datas).
+- [x] 2.5 Conferir os fakes: nenhum deve mudar.
 
 ## Detalhes de Implementação
+
+Observação: o PostgreSQL valida as chaves estrangeiras (o SQLite antigo não validava). Os testes de candidatura precisaram criar a vaga e o currículo referenciados.
 
 Techspec: "Interfaces Principais" e "Modelos de Dados" (ajustes de SQL). PRD: RF-01, RF-02.
 
@@ -33,8 +35,8 @@ Techspec: "Interfaces Principais" e "Modelos de Dados" (ajustes de SQL). PRD: RF
 
 ## Testes da Tarefa
 
-- [ ] `test_perfil_repository_impl`, `test_token_captura_repository_impl`, `test_vaga_repository_impl` sobre Postgres real.
-- [ ] Regressão: testes dos fakes e dos services dos três domínios.
+- [x] `test_perfil_repository_impl`, `test_token_captura_repository_impl`, `test_vaga_repository_impl` sobre Postgres real.
+- [x] Regressão: testes dos fakes e dos services dos três domínios.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

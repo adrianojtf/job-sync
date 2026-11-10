@@ -116,5 +116,5 @@ Requisitos funcionais:
 1. Qual é a motivação principal da troca (concorrência, deploy fora da máquina local, outra)? Isso ajusta prioridades de teste.
 2. Qual o tamanho atual do `job_sync.db` e o número de registros por tabela?
 3. Resolvida: o sistema não está em produção, então não há limite de janela de parada por enquanto. Retomar este ponto antes de qualquer uso em produção.
-4. As datas atuais são horários locais sem fuso. Mantemos "sem fuso" na migração? A Tech Spec propõe manter e tratar fuso em outra demanda.
+4. Resolvida: datas passam a ser guardadas com fuso (UTC) e exibidas no fuso do navegador do usuário. Datas antigas são lidas no fuso local da máquina de origem, ou em `--fuso-origem`.
 5. Quem fará o backup do PostgreSQL após a troca? Fica fora do escopo, mas precisa de responsável.

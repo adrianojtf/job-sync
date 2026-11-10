@@ -16,11 +16,11 @@ Liga a aplicação ao pool, aplica as migrações na subida e remove o código S
 
 ## Subtarefas
 
-- [ ] 5.1 Escrever testes da composição e do `lifespan` (red).
-- [ ] 5.2 Implementar pool singleton e ajustar `dependencies.py`.
-- [ ] 5.3 Implementar o `lifespan` e os logs.
-- [ ] 5.4 Remover `_conexao_sqlite.py`, `CaminhoBancoDep` e referências a `sqlite3` fora da CLI.
-- [ ] 5.5 Ajustar os testes de API e rodar `lint-imports`.
+- [x] 5.1 Escrever testes da composição e do `lifespan` (red).
+- [x] 5.2 Implementar pool singleton e ajustar `dependencies.py`.
+- [x] 5.3 Implementar o `lifespan` e os logs.
+- [x] 5.4 Remover `_conexao_sqlite.py`, `CaminhoBancoDep` e referências a `sqlite3` fora da CLI.
+- [x] 5.5 Ajustar os testes de API e rodar `lint-imports`.
 
 ## Detalhes de Implementação
 
@@ -34,9 +34,9 @@ Techspec: "Visão Geral dos Componentes", "Monitoramento e Observabilidade" e "C
 
 ## Testes da Tarefa
 
-- [ ] Subida sem `DATABASE_URL` falha com mensagem sem senha.
-- [ ] Suíte completa de API e services.
-- [ ] `test_arquitetura.py` e `lint-imports`.
+- [x] Subida sem `DATABASE_URL` falha com mensagem sem senha.
+- [x] Suíte completa de API e services.
+- [x] `test_arquitetura.py` e `lint-imports`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

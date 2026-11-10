@@ -5,8 +5,11 @@ services:
     env_file:
       - path: .env
         required: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      DATABASE_PATH: /app/storage/job_sync.db
+      # Postgres instalado na máquina hospedeira (veja o README).
+      DATABASE_URL: postgresql://job_sync:troque_a_senha@host.docker.internal:5432/job_sync
     volumes:
       - ./storage:/app/storage
     ports:

@@ -1,7 +1,5 @@
 """Testes de integração do TokenCapturaRepositoryImpl."""
 
-import os
-import tempfile
 
 import pytest
 
@@ -10,17 +8,9 @@ from jobsync.token_captura.adapters import TokenCapturaRepositoryImpl
 
 
 @pytest.fixture
-def caminho_banco():
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    yield caminho
-    os.remove(caminho)
-
-
-@pytest.fixture
-def repositorio(caminho_banco):
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("matheus")
-    return TokenCapturaRepositoryImpl(caminho_banco=caminho_banco)
+def repositorio(pool_postgres):
+    PerfilRepositoryImpl(pool_postgres).criar("matheus")
+    return TokenCapturaRepositoryImpl(pool_postgres)
 
 
 class TestTokenCapturaRepositoryImpl:

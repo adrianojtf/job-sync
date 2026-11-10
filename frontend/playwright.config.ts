@@ -5,7 +5,7 @@ const PORTA_UI = 5180;
 const PYTHON = process.env.E2E_PYTHON ?? "python3";
 
 /**
- * E2E contra a API real (SQLite, casos de uso e PDF reais) com dublês só nas portas de IA
+ * E2E contra a API real (PostgreSQL, casos de uso e PDF reais) com dublês só nas portas de IA
  * (src/jobsync/tests/e2e/app_e2e.py) e a UI no build de produção (vite preview + proxy /v1).
  */
 export default defineConfig({
@@ -23,7 +23,10 @@ export default defineConfig({
     {
       command: `${PYTHON} -m uvicorn jobsync.tests.e2e.app_e2e:app --port ${PORTA_API}`,
       cwd: "..",
-      env: { PYTHONPATH: "src", DATABASE_PATH: "frontend/e2e/.dados/job_sync_e2e.db" },
+      env: {
+        PYTHONPATH: "src",
+        DATABASE_URL: process.env.E2E_DATABASE_URL ?? "postgresql://localhost:5432/job_sync_e2e",
+      },
       url: `http://localhost:${PORTA_API}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from jobsync.shared_kernel.domain.relogio import agora_utc
 
 from jobsync.curriculo_salvo.domain.curriculo_salvo import CurriculoSalvo
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import CurriculoSalvoRepository
@@ -41,6 +41,6 @@ class SalvarCurriculo:
             perfil_identificador=input_dto.perfil_identificador,
             nome_referencia=input_dto.nome_referencia,
             pdf_bytes=input_dto.pdf_bytes,
-            data_upload=datetime.now(),
+            data_upload=agora_utc(),
         )
         return self._repositorio_curriculo_salvo.salvar(curriculo)

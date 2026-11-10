@@ -5,47 +5,57 @@ nos services, mantendo os entrypoints livres de lógica de composição.
 """
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from functools import lru_cache
+
+from psycopg_pool import ConnectionPool
 
 from jobsync.candidatura.adapters import CandidaturaRepositoryImpl
 from jobsync.curriculo_salvo.adapters import CurriculoSalvoRepositoryImpl
 from jobsync.perfil.adapters import PerfilRepositoryImpl
 from jobsync.perfil_estruturado.adapters import PerfilEstruturadoRepositoryImpl
+from jobsync.shared_kernel.adapters.persistence.conexao_postgres import criar_pool, obter_url_banco
+from jobsync.shared_kernel.adapters.persistence.executor_migracoes import executar_migracoes
 from jobsync.token_captura.adapters import TokenCapturaRepositoryImpl
 from jobsync.vaga.adapters import VagaRepositoryImpl
 
-_DIRETORIO_ARMAZENAMENTO = Path(__file__).resolve().parent.parent.parent.parent / "storage"
-_CAMINHO_BANCO_PADRAO = str(_DIRETORIO_ARMAZENAMENTO / "job_sync.db")
+
+@lru_cache(maxsize=1)
+def obter_pool_conexoes() -> ConnectionPool:
+    """Pool único do processo, aberto na primeira necessidade a partir de DATABASE_URL."""
+    return criar_pool(obter_url_banco())
 
 
-def obter_caminho_banco() -> str:
-    """Permite apontar para um banco alternativo (ex: testes) via variável de ambiente."""
-    return os.getenv(
-        "DATABASE_PATH",
-        os.getenv("JOB_SYNC_DB_PATH", _CAMINHO_BANCO_PADRAO),
-    )
+def preparar_banco() -> None:
+    """Abre o pool (falha rápido sem banco) e aplica as migrações pendentes."""
+    with obter_pool_conexoes().connection() as conexao:
+        executar_migracoes(conexao)
+
+
+def fechar_pool_conexoes() -> None:
+    if obter_pool_conexoes.cache_info().currsize:
+        obter_pool_conexoes().close()
+        obter_pool_conexoes.cache_clear()
 
 
 def obter_repositorio_token() -> TokenCapturaRepositoryImpl:
-    return TokenCapturaRepositoryImpl(caminho_banco=obter_caminho_banco())
+    return TokenCapturaRepositoryImpl(obter_pool_conexoes())
 
 
 def obter_repositorio_vaga() -> VagaRepositoryImpl:
-    return VagaRepositoryImpl(caminho_banco=obter_caminho_banco())
+    return VagaRepositoryImpl(obter_pool_conexoes())
 
 
 def obter_repositorio_candidatura() -> CandidaturaRepositoryImpl:
-    return CandidaturaRepositoryImpl(caminho_banco=obter_caminho_banco())
+    return CandidaturaRepositoryImpl(obter_pool_conexoes())
 
 
 def obter_repositorio_curriculo_salvo() -> CurriculoSalvoRepositoryImpl:
-    return CurriculoSalvoRepositoryImpl(caminho_banco=obter_caminho_banco())
+    return CurriculoSalvoRepositoryImpl(obter_pool_conexoes())
 
 
 def obter_repositorio_perfil() -> PerfilRepositoryImpl:
-    return PerfilRepositoryImpl(caminho_banco=obter_caminho_banco())
+    return PerfilRepositoryImpl(obter_pool_conexoes())
 
 
 def obter_repositorio_perfil_estruturado() -> PerfilEstruturadoRepositoryImpl:
-    return PerfilEstruturadoRepositoryImpl(caminho_banco=obter_caminho_banco())
+    return PerfilEstruturadoRepositoryImpl(obter_pool_conexoes())

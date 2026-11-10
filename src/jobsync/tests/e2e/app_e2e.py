@@ -1,14 +1,12 @@
 """API real para os testes E2E da UI, com dublês apenas nas portas de IA e de busca externa.
 
-Repositórios (SQLite), casos de uso, gerador de PDF e cálculo de ATS são os de produção.
+Repositórios (PostgreSQL), casos de uso, gerador de PDF e cálculo de ATS são os de produção.
 Os dublês devolvem respostas determinísticas, sem rede e sem chaves de API.
 
-Uso: PYTHONPATH=src DATABASE_PATH=<arquivo.db> uvicorn jobsync.tests.e2e.app_e2e:app --port 8010
+Uso: PYTHONPATH=src DATABASE_URL=<url do postgres> uvicorn jobsync.tests.e2e.app_e2e:app --port 8010
 """
 from __future__ import annotations
 
-import os
-from pathlib import Path
 
 from jobsync.ats_score import CalcularAtsScore, ResultadoAtsScore
 from jobsync.curriculo import AvaliacaoExperiencia, ContextoVaga, Curriculo, DiretrizesExperiencia, EquivalenciaTecnologia, PedidoRefino, ExperienciaAdaptada, ExperienciaParaAvaliacao, SecaoCurriculo, TipoSecao
@@ -256,7 +254,3 @@ app.dependency_overrides.update(
         ),
     }
 )
-
-_banco = os.getenv("DATABASE_PATH")
-if _banco:
-    Path(_banco).parent.mkdir(parents=True, exist_ok=True)

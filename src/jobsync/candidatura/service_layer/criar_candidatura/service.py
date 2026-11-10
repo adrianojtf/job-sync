@@ -6,7 +6,7 @@ da lista de "vagas capturadas pendentes" (VagaRepository).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from jobsync.shared_kernel.domain.relogio import agora_utc
 
 from jobsync.candidatura.domain.candidatura import Candidatura
 from jobsync.candidatura.domain.candidatura_repository import CandidaturaRepository
@@ -31,7 +31,7 @@ class CriarCandidatura:
             curriculo_salvo_id=input_dto.curriculo_salvo_id,
             empresa=input_dto.empresa,
             cargo=input_dto.cargo,
-            agora=datetime.now(),
+            agora=agora_utc(),
         )
         candidatura_salva = self.repositorio_candidatura.salvar(candidatura)
         self.repositorio_vaga.marcar_como_convertida(input_dto.vaga_id)

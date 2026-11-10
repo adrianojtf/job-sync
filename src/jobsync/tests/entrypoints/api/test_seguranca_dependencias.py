@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from jobsync.entrypoints.api.main import app
@@ -17,10 +16,8 @@ class TestSegurancaDependencias:
 
         assert [p for p in parametros if p[2] == "caminho_banco"] == []
 
-    def test_query_caminho_banco_e_ignorada(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        banco_configurado = tmp_path / "configurado.db"
+    def test_query_caminho_banco_e_ignorada(self, tmp_path: Path):
         banco_injetado = tmp_path / "injetado.db"
-        monkeypatch.setenv("DATABASE_PATH", str(banco_configurado))
 
         response = TestClient(app).get(
             "/v1/vagas",
@@ -28,5 +25,4 @@ class TestSegurancaDependencias:
         )
 
         assert response.status_code == 200
-        assert banco_configurado.exists()
         assert not banco_injetado.exists()

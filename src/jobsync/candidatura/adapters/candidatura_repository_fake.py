@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime
+from jobsync.shared_kernel.domain.relogio import agora_utc
 
 from jobsync.candidatura.domain.candidatura import (
     Candidatura,
@@ -63,7 +63,7 @@ class CandidaturaRepositoryFake(CandidaturaRepository):
 
         status_origem = candidatura.status
         if status_origem != novo_status:
-            nova_mudanca = MudancaStatus(novo_status, datetime.now())
+            nova_mudanca = MudancaStatus(novo_status, agora_utc())
             self._candidaturas[candidatura_id] = replace(
                 candidatura,
                 status=novo_status,

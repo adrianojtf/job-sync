@@ -1,7 +1,5 @@
 """Testes de integração do PerfilEstruturadoRepositoryImpl."""
 
-import os
-import tempfile
 
 import pytest
 
@@ -18,17 +16,9 @@ from jobsync.perfil_estruturado.adapters import PerfilEstruturadoRepositoryImpl
 
 
 @pytest.fixture
-def caminho_banco():
-    fd, caminho = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    yield caminho
-    os.remove(caminho)
-
-
-@pytest.fixture
-def repositorio(caminho_banco):
-    PerfilRepositoryImpl(caminho_banco=caminho_banco).criar("matheus")
-    return PerfilEstruturadoRepositoryImpl(caminho_banco=caminho_banco)
+def repositorio(pool_postgres):
+    PerfilRepositoryImpl(pool_postgres).criar("matheus")
+    return PerfilEstruturadoRepositoryImpl(pool_postgres)
 
 
 def _perfil_completo(**overrides) -> PerfilEstruturado:
@@ -68,7 +58,7 @@ class TestPerfilEstruturadoRepositoryImpl:
 
         assert repositorio.buscar_por_perfil("matheus") == perfil
 
-    def test_salvar_duas_vezes_atualiza_sem_duplicar(self, repositorio):
+    def test_salvar_duas_vezes_atualiza_sem_duplicar(self, repositorio, pool_postgres):
         perfil_v1 = _perfil_completo(resumo_profissional="Versão 1")
         perfil_v2 = _perfil_completo(resumo_profissional="Versão 2")
 
@@ -78,10 +68,11 @@ class TestPerfilEstruturadoRepositoryImpl:
         resultado = repositorio.buscar_por_perfil("matheus")
         assert resultado.resumo_profissional == "Versão 2"
 
-        cursor = repositorio._conexao.execute(
-            "SELECT COUNT(*) FROM perfil_estruturado WHERE perfil_identificador = ?", ("matheus",)
-        )
-        assert cursor.fetchone()[0] == 1
+        with pool_postgres.connection() as conexao:
+            total = conexao.execute(
+                "SELECT COUNT(*) FROM perfil_estruturado WHERE perfil_identificador = %s", ("matheus",)
+            ).fetchone()[0]
+        assert total == 1
 
     def test_buscar_perfil_inexistente_retorna_none(self, repositorio):
         assert repositorio.buscar_por_perfil("nao-existe") is None

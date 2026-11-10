@@ -1,62 +1,61 @@
-"""Implementação SQLite de CurriculoSalvoRepository."""
+"""Implementação PostgreSQL de CurriculoSalvoRepository."""
 from __future__ import annotations
 
-from datetime import datetime
-
-from jobsync.shared_kernel.adapters.persistence._conexao_sqlite import criar_conexao
+from psycopg_pool import ConnectionPool
 
 from jobsync.curriculo_salvo.domain.curriculo_salvo import CurriculoSalvo
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import CurriculoSalvoRepository
 
 
 class CurriculoSalvoRepositoryImpl(CurriculoSalvoRepository):
-    """Implementação SQLite da porta de biblioteca de currículos salvos."""
+    """Implementação PostgreSQL da porta de biblioteca de currículos salvos."""
 
-    def __init__(self, caminho_banco: str) -> None:
-        self._conexao = criar_conexao(caminho_banco)
+    def __init__(self, pool: ConnectionPool) -> None:
+        self._pool = pool
 
     def salvar(self, curriculo: CurriculoSalvo) -> CurriculoSalvo:
-        self._conexao.execute(
-            """
-            INSERT INTO curriculo_salvo (id, perfil_identificador, nome_referencia, pdf_bytes, data_upload)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                curriculo.id,
-                curriculo.perfil_identificador,
-                curriculo.nome_referencia,
-                curriculo.pdf_bytes,
-                curriculo.data_upload.isoformat(),
-            ),
-        )
-        self._conexao.commit()
+        with self._pool.connection() as conexao:
+            conexao.execute(
+                """
+                INSERT INTO curriculo_salvo (id, perfil_identificador, nome_referencia, pdf_bytes, data_upload)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    curriculo.id,
+                    curriculo.perfil_identificador,
+                    curriculo.nome_referencia,
+                    curriculo.pdf_bytes,
+                    curriculo.data_upload,
+                ),
+            )
         return curriculo
 
     def listar_por_perfil(self, perfil_identificador: str) -> tuple[CurriculoSalvo, ...]:
-        cursor = self._conexao.execute(
-            """
-            SELECT id, perfil_identificador, nome_referencia, pdf_bytes, data_upload
-            FROM curriculo_salvo
-            WHERE perfil_identificador = ?
-            ORDER BY data_upload DESC
-            """,
-            (perfil_identificador,),
-        )
-        return tuple(self._linha_para_curriculo_salvo(linha) for linha in cursor.fetchall())
+        with self._pool.connection() as conexao:
+            linhas = conexao.execute(
+                """
+                SELECT id, perfil_identificador, nome_referencia, pdf_bytes, data_upload
+                FROM curriculo_salvo
+                WHERE perfil_identificador = %s
+                ORDER BY data_upload DESC, id COLLATE "C" ASC
+                """,
+                (perfil_identificador,),
+            ).fetchall()
+        return tuple(self._linha_para_curriculo_salvo(linha) for linha in linhas)
 
     def remover(self, curriculo_id: str, perfil_identificador: str) -> None:
-        self._conexao.execute(
-            "DELETE FROM curriculo_salvo WHERE id = ? AND perfil_identificador = ?",
-            (curriculo_id, perfil_identificador),
-        )
-        self._conexao.commit()
+        with self._pool.connection() as conexao:
+            conexao.execute(
+                "DELETE FROM curriculo_salvo WHERE id = %s AND perfil_identificador = %s",
+                (curriculo_id, perfil_identificador),
+            )
 
     def contar_por_perfil(self, perfil_identificador: str) -> int:
-        cursor = self._conexao.execute(
-            "SELECT COUNT(*) FROM curriculo_salvo WHERE perfil_identificador = ?",
-            (perfil_identificador,),
-        )
-        return cursor.fetchone()[0]
+        with self._pool.connection() as conexao:
+            return conexao.execute(
+                "SELECT COUNT(*) FROM curriculo_salvo WHERE perfil_identificador = %s",
+                (perfil_identificador,),
+            ).fetchone()[0]
 
     @staticmethod
     def _linha_para_curriculo_salvo(linha: tuple) -> CurriculoSalvo:
@@ -65,6 +64,6 @@ class CurriculoSalvoRepositoryImpl(CurriculoSalvoRepository):
             id=id_,
             perfil_identificador=perfil_identificador,
             nome_referencia=nome_referencia,
-            pdf_bytes=pdf_bytes,
-            data_upload=datetime.fromisoformat(data_upload),
+            pdf_bytes=bytes(pdf_bytes),
+            data_upload=data_upload,
         )

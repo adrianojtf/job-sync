@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from jobsync.shared_kernel.domain.relogio import agora_utc
 
 from jobsync.vaga.domain.vaga import Vaga
 from jobsync.vaga.domain.vaga_repository import VagaRepository
@@ -25,6 +25,6 @@ class CapturarVaga:
             perfil_identificador=input_dto.perfil_identificador,
             texto_descricao=input_dto.texto_descricao,
             url_origem=input_dto.url_origem,
-            data_captura=datetime.now(),
+            data_captura=agora_utc(),
         )
         return self._repositorio_vaga.salvar(vaga)

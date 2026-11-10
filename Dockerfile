@@ -11,7 +11,6 @@ COPY src/ ./src/
 RUN mkdir -p /app/storage
 
 ENV PYTHONPATH=src
-ENV DATABASE_PATH=storage/job_sync.db
 ENV PORT=8000
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=info

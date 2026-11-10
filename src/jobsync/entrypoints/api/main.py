@@ -1,9 +1,12 @@
 """Aplicação FastAPI do backend job-sync."""
 
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, status
 
 load_dotenv()
+from jobsync.entrypoints.dependencies import fechar_pool_conexoes, preparar_banco
 from jobsync.entrypoints.api.cors import configurar_cors, obter_origens_cors
 from jobsync.entrypoints.api.exceptions import adicionar_handlers_excecao
 from jobsync.entrypoints.api.routers import (
@@ -17,7 +20,15 @@ from jobsync.entrypoints.api.routers import (
     vaga_router,
 )
 
+@asynccontextmanager
+async def _ciclo_de_vida(_: FastAPI):
+    preparar_banco()
+    yield
+    fechar_pool_conexoes()
+
+
 app = FastAPI(
+    lifespan=_ciclo_de_vida,
     title="Job Sync API",
     version="1.0.0",
     description="API do hexágono de domínio do job-sync",

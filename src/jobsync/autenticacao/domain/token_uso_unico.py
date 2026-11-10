@@ -17,13 +17,18 @@ class Finalidade(str, Enum):
 
 @dataclass(frozen=True)
 class TokenUsoUnico:
-    """Só pode ser usado uma vez e dentro da validade; guarda apenas o hash do token."""
+    """Só pode ser usado uma vez e dentro da validade; guarda apenas o hash do token.
+
+    `carga` leva um dado opaco que só passa a valer quando o token é consumido
+    (ex.: o hash da senha escolhida no cadastro, ativado só após confirmar o e-mail).
+    """
 
     token_hash: bytes
     usuario_id: UUID
     finalidade: Finalidade
     expira_em: datetime
     usado_em: Optional[datetime] = None
+    carga: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.token_hash:
@@ -38,11 +43,12 @@ class TokenUsoUnico:
         finalidade: Finalidade,
         agora: datetime,
         validade: timedelta,
+        carga: Optional[str] = None,
     ) -> "TokenUsoUnico":
         exigir_fuso(agora)
         if validade <= timedelta(0):
             raise ValueError("A validade do token deve ser positiva.")
-        return cls(token_hash, usuario_id, finalidade, agora + validade)
+        return cls(token_hash, usuario_id, finalidade, agora + validade, carga=carga)
 
     def utilizavel(self, agora: datetime) -> bool:
         return self.usado_em is None and agora < self.expira_em

@@ -7,9 +7,9 @@
 Implementar os casos de uso do login por e-mail e senha e do ciclo de vida da sessão, usando fakes das portas. Complexidade: high.
 
 <requirements>
-- `CadastrarUsuario`: resposta idêntica para e-mail novo e já existente; cria `Usuario` e `Perfil` (`u-` + 12 hex) para e-mail novo; aproveita `Usuario` pré-criado pelo mantenedor (sem credencial); envia confirmação.
-- `ConfirmarEmail`: token de uso único, validade de 24 h; marca `email_verificado`.
-- `EntrarComSenha`: erro genérico para e-mail desconhecido e senha errada (com verificação de hash fictício para igualar o tempo); `email_nao_confirmado` só depois de senha correta; cria sessão.
+- `CadastrarUsuario`: resposta idêntica para e-mail novo e já existente; cria `Usuario` e `Perfil` (`u-` + 12 hex) para e-mail novo; aproveita `Usuario` pré-criado pelo mantenedor; **não grava a senha**: o hash vai na `carga` do token de confirmação; envia confirmação (ou aviso, se a conta já está verificada).
+- `ConfirmarEmail`: token de uso único, validade de 24 h; marca `email_verificado` e ativa a senha da `carga` (só se a conta ainda não estava verificada).
+- `EntrarComSenha`: erro genérico para e-mail desconhecido, senha errada e conta sem senha ativada (com verificação de hash fictício para igualar o tempo); cria sessão.
 - `SolicitarRedefinicaoSenha`: resposta sempre igual; link com validade de 1 h.
 - `RedefinirSenha`: token de uso único; troca o hash e apaga todas as sessões do usuário.
 - `ResolverSessao`: valida expiração por inatividade (7 dias) e absoluta (30 dias), renova `ultimo_acesso_em` com limite de frequência.
@@ -20,11 +20,11 @@ Implementar os casos de uso do login por e-mail e senha e do ciclo de vida da se
 
 ## Subtarefas
 
-- [ ] 4.1 `CadastrarUsuario` e `ConfirmarEmail` (testes primeiro).
-- [ ] 4.2 `EntrarComSenha` com limite de tentativas.
-- [ ] 4.3 `SolicitarRedefinicaoSenha` e `RedefinirSenha`.
-- [ ] 4.4 `ResolverSessao` e `EncerrarSessao`.
-- [ ] 4.5 Logs estruturados (INFO e WARNING) conforme "Monitoramento e Observabilidade".
+- [x] 4.1 `CadastrarUsuario` e `ConfirmarEmail` (testes primeiro).
+- [x] 4.2 `EntrarComSenha` com limite de tentativas.
+- [x] 4.3 `SolicitarRedefinicaoSenha` e `RedefinirSenha`.
+- [x] 4.4 `ResolverSessao` e `EncerrarSessao`.
+- [x] 4.5 Logs estruturados (INFO e WARNING) conforme "Monitoramento e Observabilidade".
 
 ## Detalhes de Implementação
 
@@ -37,7 +37,7 @@ Ver "Visão Geral dos Componentes", "Decisões Principais" e "Monitoramento" em 
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade com fakes e relógio controlado
+- [x] Testes de unidade com fakes e relógio controlado
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

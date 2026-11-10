@@ -46,3 +46,21 @@ def usuario(repositorios):
     novo = Usuario.novo(Email("ana@exemplo.com"), "u-aaaaaaaaaaaa", AGORA, nome="Ana")
     repositorios.usuarios.salvar_novo(novo)
     return novo
+
+
+@pytest.fixture
+def ambiente():
+    from jobsync.autenticacao.domain.configuracao import ConfiguracaoAutenticacao
+    from jobsync.tests.autenticacao.dobles import EnviadorEmailFalso, HasherSenhaFalso, RelogioFalso
+
+    return SimpleNamespace(
+        usuarios=UsuarioRepositoryFake(),
+        sessoes=SessaoRepositoryFake(),
+        tokens=TokenUsoUnicoRepositoryFake(),
+        estados=EstadoOAuthRepositoryFake(),
+        limites=LimiteTentativasRepositoryFake(),
+        hasher=HasherSenhaFalso(),
+        enviador=EnviadorEmailFalso(),
+        relogio=RelogioFalso(),
+        config=ConfiguracaoAutenticacao(),
+    )

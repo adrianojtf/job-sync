@@ -42,7 +42,7 @@ Componentes existentes alterados:
 **Resolução da identidade** (`ConcluirLoginOAuth`):
 1. Existe `identidade_externa(google, sub)`: usa o usuário dela.
 2. Senão, o ID token precisa ter `email_verified = true`; sem isso, recusa.
-3. Existe `usuario` com esse e-mail: cria a identidade, marca `email_verificado = true` e **apaga credencial de senha criada antes da verificação**.
+3. Existe `usuario` com esse e-mail: cria a identidade, marca `email_verificado = true` e **descarta os links de confirmação pendentes** (que carregariam uma senha escolhida antes da verificação).
 4. Senão, cria `Perfil` (identificador `u-` + 12 hex aleatórios, sem dado pessoal em URL ou log), `Usuario` e identidade, na mesma transação.
 
 A identidade é a dupla `(provedor, sub)`, nunca o e-mail. Isso responde à questão 8 do PRD: mudar o e-mail no Google não quebra o vínculo, e o `usuario.email` não é atualizado sozinho.
@@ -105,7 +105,8 @@ CREATE TABLE token_uso_unico (
     token_hash BYTEA PRIMARY KEY,
     usuario_id UUID NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
     finalidade TEXT NOT NULL CHECK (finalidade IN ('confirmacao_email','redefinicao_senha')),
-    expira_em TIMESTAMPTZ NOT NULL, usado_em TIMESTAMPTZ);
+    expira_em TIMESTAMPTZ NOT NULL, usado_em TIMESTAMPTZ,
+    carga TEXT);
 CREATE TABLE estado_oauth (
     estado_hash BYTEA PRIMARY KEY, provedor TEXT NOT NULL,
     code_verifier TEXT NOT NULL, nonce TEXT NOT NULL,
@@ -153,9 +154,9 @@ Segue `testing-rules.md`: sem comentários, blocos AAA, classes `TestNomeDaClass
 
 Com fakes dos repositórios (padrão `*_repository_fake.py`), relógio injetado e um `ProvedorIdentidade` fake:
 
-- `ConcluirLoginOAuth`: identidade já vinculada; e-mail verificado que vincula a usuário legado; e-mail **não** verificado recusado; usuário novo cria perfil; credencial de senha não confirmada removida no vínculo.
+- `ConcluirLoginOAuth`: identidade já vinculada; e-mail verificado que vincula a usuário legado; e-mail **não** verificado recusado; usuário novo cria perfil; links de confirmação pendentes descartados no vínculo.
 - `CadastrarUsuario`: resposta idêntica para e-mail novo e existente; senha fora da política rejeitada.
-- `EntrarComSenha`: erro genérico para e-mail desconhecido e senha errada; e-mail não confirmado só informado após senha correta; bloqueio após N falhas.
+- `EntrarComSenha`: erro genérico para e-mail desconhecido, senha errada e conta sem senha ativada (e-mail ainda não confirmado); bloqueio após N falhas. A mensagem genérica orienta a confirmar o e-mail, sem confirmar a existência da conta.
 - `ResolverSessao`: expiração por inatividade e absoluta; renovação do último acesso.
 - `RedefinirSenha`: token usado ou expirado falha; todas as sessões do usuário são apagadas.
 - `exigir_acesso_ao_perfil`: perfil igual passa, diferente gera `AcessoNegado`.
@@ -205,7 +206,7 @@ Os dois contadores do PRD (logins por método e vínculos de perfis legados) sae
 - **Argon2id para senhas**, com os parâmetros-padrão da biblioteca, conforme o [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) e a [RFC 9106](https://www.rfc-editor.org/rfc/rfc9106). Política: mínimo de 10 e máximo de 128 caracteres, sem regras de composição e com lista embutida de senhas comuns, na linha do [NIST SP 800-63B](https://pages.nist.gov/800-63-3/sp800-63b.html).
 - **PKCE + `state` + `nonce`** ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)), com `state` amarrado ao navegador pelo cookie `js_oauth`, contra login CSRF.
 - **CSRF:** `SameSite=Lax` mais checagem de `Origin` em métodos de escrita ([OWASP CSRF](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)). Token duplo (double submit) foi descartado por ora: a API é JSON, e a checagem de origem cobre o caso sem custo no frontend.
-- **Vínculo por e-mail verificado e remoção de credenciais não confirmadas:** impede o pré-sequestro, em que um atacante cadastra a senha no e-mail da vítima antes dela.
+- **Vínculo por e-mail verificado e senha ativada só na confirmação:** impede o pré-sequestro, em que um atacante cadastra a senha no e-mail da vítima antes dela. O cadastro não grava a credencial: o hash da senha vai na `carga` do token de confirmação e só vira credencial quando o e-mail é confirmado (e só se a conta ainda não estava verificada). Um cadastro novo invalida o link anterior. Assim não há "credencial não confirmada" para remover no vínculo com o Google; o vínculo apenas descarta os links de confirmação pendentes.
 - **`Perfil` intacto:** nenhuma tabela de dados é migrada; só se acrescenta `usuario` apontando para `perfil`. Rollback é descartar a migração `0003`.
 - **Padrões de prazo (premissas, configuráveis):** sessão expira com 7 dias de inatividade e 30 dias no máximo; confirmação de e-mail vale 24 h; redefinição vale 1 h; bloqueio após 5 falhas por e-mail em 15 min (também por IP).
 

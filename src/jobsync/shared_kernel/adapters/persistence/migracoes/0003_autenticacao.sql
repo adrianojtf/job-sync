@@ -39,7 +39,8 @@ CREATE TABLE token_uso_unico (
     usuario_id UUID NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
     finalidade TEXT NOT NULL CHECK (finalidade IN ('confirmacao_email', 'redefinicao_senha')),
     expira_em TIMESTAMPTZ NOT NULL,
-    usado_em TIMESTAMPTZ
+    usado_em TIMESTAMPTZ,
+    carga TEXT
 );
 
 CREATE INDEX ix_token_uso_unico_usuario ON token_uso_unico (usuario_id);

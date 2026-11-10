@@ -1,15 +1,21 @@
 """Camada de domínio da Autenticação."""
 
+from jobsync.autenticacao.domain.configuracao import ConfiguracaoAutenticacao
 from jobsync.autenticacao.domain.email import Email
 from jobsync.autenticacao.domain.enviador_email import EnviadorEmail
 from jobsync.autenticacao.domain.estado_oauth import EstadoOAuth
 from jobsync.autenticacao.domain.estado_oauth_repository import EstadoOAuthRepository
 from jobsync.autenticacao.domain.exceptions import (
+    AcessoNegado,
+    CredenciaisInvalidas,
     EmailInvalido,
     EnvioEmailFalhou,
     IdentidadeJaVinculada,
+    LimiteTentativasExcedido,
+    NaoAutenticado,
     ProvedorIndisponivel,
     SenhaInvalida,
+    TokenInvalido,
     UsuarioDuplicado,
 )
 from jobsync.autenticacao.domain.hasher_senha import HasherSenha
@@ -26,6 +32,12 @@ from jobsync.autenticacao.domain.usuario import Usuario, novo_identificador_de_p
 from jobsync.autenticacao.domain.usuario_repository import UsuarioRepository
 
 __all__ = [
+    "AcessoNegado",
+    "ConfiguracaoAutenticacao",
+    "CredenciaisInvalidas",
+    "LimiteTentativasExcedido",
+    "NaoAutenticado",
+    "TokenInvalido",
     "Email",
     "EmailInvalido",
     "EnviadorEmail",

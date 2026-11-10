@@ -48,3 +48,11 @@ class TestTokenUsoUnico:
     def test_hash_vazio_gera_erro(self):
         with pytest.raises(ValueError):
             TokenUsoUnico.emitir(b"", uuid4(), Finalidade.CONFIRMACAO_EMAIL, AGORA, timedelta(hours=1))
+
+    def test_emitir_guarda_a_carga(self):
+        token = TokenUsoUnico.emitir(
+            b"hash", uuid4(), Finalidade.CONFIRMACAO_EMAIL, AGORA, timedelta(hours=1), carga="hash-da-senha"
+        )
+
+        assert token.carga == "hash-da-senha"
+        assert token.marcar_usado(AGORA).carga == "hash-da-senha"

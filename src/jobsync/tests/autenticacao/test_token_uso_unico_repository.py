@@ -49,3 +49,13 @@ class TestTokenUsoUnicoRepository:
 
         assert repositorios.tokens.consumir(b"reset", Finalidade.REDEFINICAO_SENHA, AGORA) is None
         assert repositorios.tokens.consumir(b"confirma", Finalidade.CONFIRMACAO_EMAIL, AGORA) is not None
+
+    def test_consumir_devolve_a_carga(self, repositorios, usuario):
+        token = TokenUsoUnico.emitir(
+            b"tok-carga", usuario.id, Finalidade.CONFIRMACAO_EMAIL, AGORA, timedelta(hours=1), carga="hash-da-senha"
+        )
+        repositorios.tokens.salvar(token)
+
+        consumido = repositorios.tokens.consumir(b"tok-carga", Finalidade.CONFIRMACAO_EMAIL, AGORA)
+
+        assert consumido.carga == "hash-da-senha"

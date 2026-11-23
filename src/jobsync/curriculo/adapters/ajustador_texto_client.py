@@ -11,6 +11,7 @@ from collections.abc import Sequence
 
 from jobsync.curriculo.adapters.prompt_contexto_vaga import (
     REGRA_RESPONSABILIDADES_IMPLICITAS,
+    REGRA_RESUMO_ADERENTE_A_VAGA,
     linha_cargo_alvo,
 )
 from jobsync.curriculo.adapters.prompt_refino import bloco_refino
@@ -31,11 +32,7 @@ _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
         "Se o original tiver categorias no formato 'Rótulo: itens', mantenha uma categoria por linha, "
         "no formato 'Rótulo: item1, item2'; se não tiver, não crie categorias."
     ),
-    TipoSecao.PERFIL: (
-        "Reescreva o resumo profissional para enfatizar a experiência e competências "
-        "mais alinhadas à vaga, mantendo-se fiel aos fatos originais (não invente "
-        "anos de experiência ou cargos que não constam no texto original)."
-    ),
+    TipoSecao.PERFIL: REGRA_RESUMO_ADERENTE_A_VAGA,
     TipoSecao.FORMACAO: (
         "Apenas traduza/adapte o idioma, se necessário. Não altere instituições, "
         "cursos ou datas."

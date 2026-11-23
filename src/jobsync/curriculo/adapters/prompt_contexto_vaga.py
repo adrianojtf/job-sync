@@ -18,3 +18,12 @@ REGRA_RESPONSABILIDADES_IMPLICITAS = (
     "atípicas para o cargo exercido e não invente métricas para elas."
 )
 """Regra genérica (JOB-0037): o que é implícito ao cargo exercido pode aparecer no currículo."""
+
+
+REGRA_RESUMO_ADERENTE_A_VAGA = (
+    "Reescreva o resumo profissional em até 3 frases. Mostre os temas centrais da vaga e o que é "
+    "comum ao cargo-alvo, mesmo quando a vaga não os detalha, apenas se o histórico do candidato "
+    "os sustentar. Escreva com frases próprias e não copie trechos da vaga. Mantenha-se fiel aos "
+    "fatos originais: não invente anos de experiência ou cargos, nem métricas."
+)
+"""Regra do resumo (JOB-0040): cobre os temas da vaga e do cargo sem copiar a vaga nem inventar fatos."""

@@ -31,12 +31,12 @@ Sem novas interfaces. `AjustadorTextoPort` não muda.
 REGRA_RESUMO_ADERENTE_A_VAGA = (
     "Reescreva o resumo profissional em até 3 frases. Mostre os temas centrais da vaga e o que é "
     "comum ao cargo-alvo, mesmo quando a vaga não os detalha, apenas se o histórico do candidato "
-    "os sustentar. Use frases próprias: não copie trechos da vaga. Não invente anos de experiência, "
-    "cargos, empresas, tecnologias nem métricas."
+    "os sustentar. Escreva com frases próprias e não copie trechos da vaga. Mantenha-se fiel aos "
+    "fatos originais: não invente anos de experiência ou cargos, nem métricas."
 )
 ```
 
-O texto acima é uma proposta. A redação final será ajustada contra o conjunto de vagas de teste.
+O texto acima é a redação implementada na task 1.0; "tecnologias" ficou fora da lista de proibições para não conflitar com as tecnologias equivalentes (JOB-0037). A redação final será ajustada contra o conjunto de vagas de teste.
 
 ### Modelos de Dados
 

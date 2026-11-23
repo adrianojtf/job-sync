@@ -48,6 +48,7 @@ _LINHA_DE_IDIOMA = re.compile(r"^(?P<idioma>.+?)(?:(?P<travessao>\s+[—–-]\s+
 _SEPARADOR_DO_CONTATO = "&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;"  # mais largo que um espaço, como no modelo
 _FOLGA_LATERAL_DO_FRAME = 6  # padding interno do Frame do ReportLab, somado à margem do documento
 _MARCADORES_DE_TOPICO = ("-", "•", "*")
+_ROTULO_DE_CATEGORIA = re.compile(r"^(?P<prefixo>[-•*]\s*)?(?P<label>[^:\n]+?)\s*:", re.MULTILINE)
 
 
 class GeradorPdfClient(GeradorPdfPort):
@@ -177,15 +178,11 @@ class GeradorPdfClient(GeradorPdfPort):
         idioma_alvo: str = "en",
         catalogo: CatalogoLocalizacao | None = None,
     ) -> str:
-        catalogo = catalogo or CatalogoLocalizacao()
+        """Destaca o texto antes do primeiro ":" de cada linha, seja ele do catálogo ou criado pelo usuário."""
         texto_localizado = GeradorPdfClient._traduzir_categorias_tecnologia(conteudo, idioma_alvo, catalogo)
-        idioma_normalizado = catalogo.normalizar_idioma(idioma_alvo)
-        categorias = [
-            mapeamento[idioma_normalizado] if idioma_normalizado in mapeamento else mapeamento["pt"]
-            for mapeamento in catalogo.categorias_tecnologia.values()
-        ]
-        padrao = re.compile(rf"(?P<prefixo>^|[-•*]\s*)(?P<label>{'|'.join(re.escape(c) for c in categorias)})(?P<separador>\s*:)", re.MULTILINE)
-        return padrao.sub(lambda m: f"{m.group('prefixo')}<b>{m.group('label')}:</b>", texto_localizado)
+        return _ROTULO_DE_CATEGORIA.sub(
+            lambda m: f"{m.group('prefixo') or ''}<b>{m.group('label').strip()}:</b>", texto_localizado
+        )
 
     def _formatar_conteudo(
         self,

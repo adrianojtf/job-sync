@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from jobsync.curriculo_salvo.domain.curriculo_salvo import CurriculoSalvo
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
     CurriculoSalvoRepository,
@@ -38,3 +40,10 @@ class CurriculoSalvoRepositoryFake(CurriculoSalvoRepository):
             for c in self._curriculos.values()
             if c.perfil_identificador == perfil_identificador
         )
+
+    def atualizar_pdf(self, curriculo_id: str, perfil_identificador: str, pdf_bytes: bytes) -> bool:
+        curriculo = self._curriculos.get(curriculo_id)
+        if curriculo is None or curriculo.perfil_identificador != perfil_identificador:
+            return False
+        self._curriculos[curriculo_id] = replace(curriculo, pdf_bytes=pdf_bytes)
+        return True

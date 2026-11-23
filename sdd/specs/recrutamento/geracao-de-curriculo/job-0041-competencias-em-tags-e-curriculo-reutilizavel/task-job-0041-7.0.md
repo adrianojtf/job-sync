@@ -17,11 +17,11 @@ Liga o currículo adaptado ao `curriculo_salvo` criado na confirmação da candi
 
 ## Subtarefas
 
-- [ ] 7.1 Testes da confirmação: com e sem `curriculo_adaptado_id`, compensação em falha (red).
-- [ ] 7.2 Testes do novo método do repositório de `curriculo_salvo`, Postgres e fake (red).
-- [ ] 7.3 Testes de `AtualizarCurriculoAdaptado`: atualiza o PDF vinculado, vínculo ausente, falha parcial registrada (red).
-- [ ] 7.4 Implementar o vínculo, o método de repositório e a atualização (green).
-- [ ] 7.5 Atualizar DTO, schema e router de candidatura ajustada.
+- [x] 7.1 Testes da confirmação: com e sem `curriculo_adaptado_id`, compensação em falha (red).
+- [x] 7.2 Testes do novo método do repositório de `curriculo_salvo`, Postgres e fake (red).
+- [x] 7.3 Testes de `AtualizarCurriculoAdaptado`: atualiza o PDF vinculado, vínculo ausente, falha parcial registrada (red).
+- [x] 7.4 Implementar o vínculo, o método de repositório e a atualização (green).
+- [x] 7.5 Atualizar DTO, schema e router de candidatura ajustada.
 
 ## Detalhes de Implementação
 
@@ -34,9 +34,9 @@ Techspec: "Pontos de Integração" e "Riscos Conhecidos". PRD: RF 10 e casos ext
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos serviços.
-- [ ] Teste do repositório de `curriculo_salvo` sobre Postgres real.
-- [ ] Regressão: `src/jobsync/tests/candidatura/` e `src/jobsync/tests/curriculo_salvo/`.
+- [x] Testes de unidade dos serviços.
+- [x] Teste do repositório de `curriculo_salvo` sobre Postgres real (contrato único para o fake e o Postgres).
+- [x] Regressão: `src/jobsync/tests/candidatura/` e `src/jobsync/tests/curriculo_salvo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

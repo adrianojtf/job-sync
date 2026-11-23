@@ -50,9 +50,13 @@ function servirSugestoes() {
   const pedidos: { rota: string; corpo: Record<string, unknown> }[] = [];
   servidorApi.use(
     http.post(`${API_TESTE}/v1/secoes-curriculo/sugestoes`, async ({ request }) => {
-      pedidos.push({ rota: "secao", corpo: (await request.json()) as Record<string, unknown> });
+      const corpo = (await request.json()) as { secao: { tipo: string } };
+      pedidos.push({ rota: "secao", corpo });
       return HttpResponse.json({
-        conteudo_sugerido: "Seção sugerida pela IA.",
+        conteudo_sugerido:
+          corpo.secao.tipo === "TECNOLOGIAS"
+            ? "Linguagens: Java, Go\nFerramentas: Git"
+            : "Seção sugerida pela IA.",
         foco: "aderencia_vaga",
       });
     }),
@@ -99,7 +103,10 @@ describe("RevisaoCurriculoAdaptado", () => {
     expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
     expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto da IA.");
     expect(screen.queryByLabelText("Descrição")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Tecnologias")).toHaveValue("Linguagens: Java");
+    expect(
+      within(screen.getByRole("group", { name: "Linguagens" })).getByText("Java"),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tecnologias")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Formação")).toHaveValue("ADS — Estácio");
     expect(screen.queryByRole("heading", { name: "Certificações" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /confirmar e gerar pdf/i })).toHaveLength(1);
@@ -124,9 +131,10 @@ describe("RevisaoCurriculoAdaptado", () => {
       ...rascunhoDoPerfil,
       secoes: [
         { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo revisado." },
-        { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
         { tipo: "FORMACAO", titulo: "Formação acadêmica", conteudo: "" },
       ],
+      competencias: [{ nome: "Linguagens", tags: ["Java"] }],
+      titulo_competencias: "Tecnologias",
       experiencias: [
         {
           cargo: "Dev",
@@ -136,6 +144,79 @@ describe("RevisaoCurriculoAdaptado", () => {
           contexto: "Contexto revisado.",
         },
       ],
+    });
+  });
+
+  describe("competências por categoria e tag", () => {
+    it("a tag removida e a criada seguem na confirmação, e a seção de texto não é enviada", async () => {
+      const usuario = userEvent.setup();
+      const { aoConfirmar } = renderizar();
+
+      const linguagens = within(screen.getByRole("group", { name: "Linguagens" }));
+      await usuario.click(linguagens.getByRole("button", { name: "Remover Java" }));
+      await usuario.type(linguagens.getByRole("textbox", { name: "Nova tag" }), "Kotlin{Enter}");
+      await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
+
+      const enviado = aoConfirmar.mock.calls[0]?.[0];
+      expect(enviado.competencias).toEqual([{ nome: "Linguagens", tags: ["Kotlin"] }]);
+      expect(enviado.secoes.map((secao: { tipo: string }) => secao.tipo)).toEqual([
+        "PERFIL",
+        "FORMACAO",
+      ]);
+    });
+
+    it("cria uma categoria nova, com nome e tags, e a envia na confirmação", async () => {
+      const usuario = userEvent.setup();
+      const { aoConfirmar } = renderizar();
+
+      await usuario.click(screen.getByRole("button", { name: "Adicionar categoria" }));
+      const [, nova] = screen.getAllByRole("group", { name: /Linguagens|Categoria 2/ });
+      await usuario.type(
+        within(nova!).getByRole("textbox", { name: "Nome da categoria" }),
+        "Ferramentas",
+      );
+      await usuario.type(
+        within(screen.getByRole("group", { name: "Ferramentas" })).getByRole("textbox", {
+          name: "Nova tag",
+        }),
+        "Git{Enter}",
+      );
+      await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
+
+      expect(aoConfirmar.mock.calls[0]?.[0].competencias).toEqual([
+        { nome: "Linguagens", tags: ["Java"] },
+        { nome: "Ferramentas", tags: ["Git"] },
+      ]);
+    });
+
+    it("excluir todas as categorias envia competências vazias", async () => {
+      const usuario = userEvent.setup();
+      const { aoConfirmar } = renderizar();
+
+      await usuario.click(screen.getByRole("button", { name: "Excluir categoria Linguagens" }));
+      await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
+
+      expect(aoConfirmar.mock.calls[0]?.[0].competencias).toEqual([]);
+    });
+
+    it("editar as tags marca o formulário como alterado", async () => {
+      const usuario = userEvent.setup();
+      renderizar();
+
+      await usuario.click(
+        within(screen.getByRole("group", { name: "Linguagens" })).getByRole("button", {
+          name: "Remover Java",
+        }),
+      );
+
+      expect(screen.getByText("Alterações não confirmadas")).toBeInTheDocument();
+    });
+
+    it("com o rascunho de PDF sem tecnologias, permite criar a primeira categoria", () => {
+      renderizar({ rascunho: rascunhoDePdf });
+
+      expect(screen.getByText("Nenhuma categoria adicionada.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Adicionar categoria" })).toBeInTheDocument();
     });
   });
 
@@ -335,7 +416,8 @@ describe("RevisaoCurriculoAdaptado", () => {
       renderizar({ rascunho: rascunhoDePdf });
 
       expect(botao("experiências")).toBeInTheDocument();
-      expect(screen.getAllByRole("button", { name: /^Sugestões de IA/ })).toHaveLength(2);
+      expect(botao("tecnologias")).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /^Sugestões de IA/ })).toHaveLength(3);
     });
 
     it("envia o resumo editado com o contexto da vaga e só o altera ao aplicar", async () => {
@@ -370,13 +452,17 @@ describe("RevisaoCurriculoAdaptado", () => {
       renderizar();
 
       await usuario.click(botao("tecnologias"));
-      await screen.findByText("Seção sugerida pela IA.");
+      await screen.findByText(/Ferramentas: Git/);
       await usuario.click(screen.getByRole("button", { name: "Aplicar sugestão em tecnologias" }));
 
       expect(pedidos[0]?.corpo).toMatchObject({
         secao: { tipo: "TECNOLOGIAS", conteudo: "Linguagens: Java" },
       });
-      expect(screen.getByLabelText("Tecnologias")).toHaveValue("Seção sugerida pela IA.");
+      const linguagens = within(screen.getByRole("group", { name: "Linguagens" }));
+      expect(linguagens.getByText("Go")).toBeInTheDocument();
+      expect(
+        within(screen.getByRole("group", { name: "Ferramentas" })).getByText("Git"),
+      ).toBeInTheDocument();
       expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo da IA.");
       expect(screen.getByLabelText("Formação")).toHaveValue("ADS — Estácio");
     });

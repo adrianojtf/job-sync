@@ -184,7 +184,11 @@ test("confirmar candidatura na tela de ajuste: Aplicado no board, PDF no detalhe
   ).toHaveCount(0);
 
   await page.getByRole("link", { name: /Meus currículos/ }).click();
-  await expect(page.getByText(/-StaffPlatformEngineer-Initech\.pdf/)).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: "Biblioteca" })
+      .getByText(/-StaffPlatformEngineer-Initech\.pdf/),
+  ).toBeVisible();
 
   await page.getByRole("link", { name: /Candidaturas/ }).click();
   await page.reload();
@@ -300,4 +304,106 @@ test("pedidos seguidos de sugestão na revisão mudam o foco da IA", async ({ pa
   await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
 
   await expect(sugestao).toContainText("Foco: impacto e resultados");
+});
+
+test("competências em tags e currículo adaptado: editar na revisão, reabrir depois, atualizar o PDF da candidatura e usar como base", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-adaptado");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Staff Platform Engineer");
+  await page.getByLabel("Empresa").fill("Initech");
+  await page
+    .getByLabel("Descrição da vaga")
+    .fill("Staff Platform Engineer\nGo, Kubernetes e Kafka.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+
+  const tecnologias = page.getByRole("group", { name: "Tecnologias", exact: true });
+  await expect(tecnologias.getByText("Python")).toBeVisible();
+  await expect(tecnologias.getByText("FastAPI")).toBeVisible();
+  await tecnologias.getByRole("button", { name: "Remover FastAPI" }).click();
+  await tecnologias.getByLabel("Nova tag").fill("Kafka");
+  await tecnologias.getByLabel("Nova tag").press("Enter");
+  await expect(tecnologias.getByText("Kafka")).toBeVisible();
+  await expect(tecnologias.getByText("FastAPI")).toHaveCount(0);
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeVisible();
+
+  const [primeiro] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Baixar PDF" }).click(),
+  ]);
+  const pdfConfirmado = await readFile((await primeiro.path())!);
+  expect(pdfConfirmado.subarray(0, 5).toString()).toBe("%PDF-");
+
+  await page.getByRole("button", { name: "Confirmar candidatura" }).click();
+  await expect(page.getByText("Candidatura confirmada em Aplicado.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Editar currículo" }).click();
+  await expect(page.getByRole("heading", { name: "Edite o currículo adaptado" })).toBeVisible();
+  const emEdicao = page.getByRole("group", { name: "Tecnologias", exact: true });
+  await expect(emEdicao.getByText("Kafka")).toBeVisible();
+  await emEdicao.getByRole("button", { name: "Remover Python" }).click();
+  await page.getByRole("button", { name: "Salvar alterações" }).click();
+  const [editado] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Baixar PDF" }).click(),
+  ]);
+  const pdfEditado = await readFile((await editado.path())!);
+  expect(pdfEditado.equals(pdfConfirmado)).toBe(false);
+
+  await page.reload();
+  await page.getByRole("link", { name: /Meus currículos/ }).click();
+  const adaptados = page.getByRole("region", { name: "Currículos adaptados" });
+  await expect(adaptados).toContainText("Staff Platform Engineer · Initech");
+  await adaptados.getByRole("link", { name: /^Editar / }).click();
+  await expect(page.getByRole("heading", { name: "Edite o currículo adaptado" })).toBeVisible();
+  const reaberto = page.getByRole("group", { name: "Tecnologias", exact: true });
+  await expect(reaberto.getByText("Kafka")).toBeVisible();
+  await expect(reaberto.getByText("Python")).toHaveCount(0);
+  await expect(reaberto.getByText("FastAPI")).toHaveCount(0);
+
+  await page.getByRole("link", { name: /Candidaturas/ }).click();
+  await page.getByRole("button", { name: "Staff Platform Engineer", exact: true }).click();
+  const detalhe = page.getByRole("dialog", { name: "Staff Platform Engineer" });
+  await expect(detalhe.getByRole("link", { name: "Editar currículo" })).toBeVisible();
+  const [daCandidatura] = await Promise.all([
+    page.waitForEvent("download"),
+    detalhe.getByRole("button", { name: "Baixar PDF do currículo usado" }).click(),
+  ]);
+  const pdfDaCandidatura = await readFile((await daCandidatura.path())!);
+  expect(pdfDaCandidatura.equals(pdfEditado)).toBe(true);
+  await page.keyboard.press("Escape");
+
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Principal Engineer");
+  await page.getByLabel("Empresa").fill("Hooli");
+  await page.getByLabel("Descrição da vaga").fill("Principal Engineer\nKafka e Terraform.");
+  const base = page.getByLabel("Currículo base");
+  const valorDaBase = await base
+    .locator("option", { hasText: /^Adaptado: .*StaffPlatformEngineer/ })
+    .getAttribute("value");
+  await base.selectOption(valorDaBase!);
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+  const daBase = page.getByRole("group", { name: "Tecnologias", exact: true });
+  await expect(daBase.getByText("Kafka")).toBeVisible();
+  await expect(daBase.getByText("Python")).toHaveCount(0);
+  await daBase.getByLabel("Nova tag").fill("Terraform");
+  await daBase.getByLabel("Nova tag").press("Enter");
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeVisible();
+
+  await page.getByRole("link", { name: /Meus currículos/ }).click();
+  const doisAdaptados = page.getByRole("region", { name: "Currículos adaptados" });
+  await expect(doisAdaptados.getByRole("link", { name: /^Editar / })).toHaveCount(2);
+  await doisAdaptados.getByRole("link", { name: /^Editar .*StaffPlatformEngineer/ }).click();
+  const original = page.getByRole("group", { name: "Tecnologias", exact: true });
+  await expect(original.getByText("Kafka")).toBeVisible();
+  await expect(original.getByText("Terraform")).toHaveCount(0);
 });

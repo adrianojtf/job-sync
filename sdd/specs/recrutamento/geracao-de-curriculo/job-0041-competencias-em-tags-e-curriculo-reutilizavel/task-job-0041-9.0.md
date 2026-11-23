@@ -17,11 +17,11 @@ Permite editar um currículo adaptado depois de fechar ou recarregar a tela, por
 
 ## Subtarefas
 
-- [ ] 9.1 Testes da página de edição: carrega, edita, salva, baixa, não encontrado (red).
-- [ ] 9.2 Testes de `CurriculosPage` e `DetalheCandidaturaModal` com a ação de editar (red).
-- [ ] 9.3 Expor o vínculo candidatura e currículo adaptado na leitura da candidatura (backend, mínimo necessário) com teste.
-- [ ] 9.4 Implementar a página, a rota e a ação nos dois pontos de entrada (green).
-- [ ] 9.5 Rodar lint e tipos do frontend.
+- [x] 9.1 Testes da página de edição: carrega, edita, salva, baixa, não encontrado (red).
+- [x] 9.2 Testes de `CurriculosPage` e `DetalheCandidaturaModal` com a ação de editar (red).
+- [x] 9.3 Dispensada: a listagem de currículos adaptados já traz `curriculo_salvo_id`, e o frontend cruza com o `curriculo_salvo_id` da candidatura. Nenhuma mudança de backend.
+- [x] 9.4 Implementar a página, a rota e a ação nos dois pontos de entrada (green).
+- [x] 9.5 Rodar lint e tipos do frontend.
 
 ## Detalhes de Implementação
 
@@ -34,8 +34,8 @@ Techspec: "Componentes" (frontend). PRD: RF 11 e Questões em Aberto 2. Reaprove
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade (Vitest e Testing Library) e do backend tocado.
-- [ ] Regressão: `frontend/src/features/curriculos/` e `frontend/src/features/candidaturas/`.
+- [x] Testes de unidade (Vitest e Testing Library); sem backend tocado.
+- [x] Regressão: `frontend/src/features/curriculos/` e `frontend/src/features/candidaturas/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

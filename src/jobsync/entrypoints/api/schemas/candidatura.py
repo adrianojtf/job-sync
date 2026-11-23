@@ -71,6 +71,13 @@ class CandidaturaConfirmarRequest(BaseModel):
     descricao_vaga: str = Field(description="Texto da descrição da vaga usada no ajuste.")
     nome_arquivo: str = Field(description="Nome do arquivo do PDF gerado.")
     pdf_base64: str = Field(description="Conteúdo do PDF gerado, codificado em base64.")
+    curriculo_adaptado_id: str | None = Field(
+        default=None,
+        description=(
+            "Currículo adaptado (JOB-0041) de onde o PDF saiu; passa a apontar para o PDF salvo, "
+            "para a edição posterior atualizar o PDF da candidatura."
+        ),
+    )
 
     def to_dto(self) -> ConfirmarCandidaturaAjustadaInputDto:
         return ConfirmarCandidaturaAjustadaInputDto(
@@ -80,6 +87,7 @@ class CandidaturaConfirmarRequest(BaseModel):
             descricao_vaga=self.descricao_vaga,
             nome_arquivo=self.nome_arquivo,
             pdf_bytes=self._decodificar_pdf(),
+            curriculo_adaptado_id=self.curriculo_adaptado_id,
         )
 
     def _decodificar_pdf(self) -> bytes:

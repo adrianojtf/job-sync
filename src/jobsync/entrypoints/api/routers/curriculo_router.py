@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.curriculo import (
-    ExperienciaParaAvaliacao,
     RascunhoCurriculoAdaptado,
     SecaoCurriculo,
     TipoSecao,
@@ -24,10 +23,10 @@ from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service impor
 )
 from jobsync.curriculo_salvo.service_layer.salvar_curriculo import SalvarCurriculo
 from jobsync.entrypoints.api.curriculo_pre_montado import (
-    buscar_perfil_estruturado,
-    montar_curriculo_pre_montado,
+    resolver_fonte_do_curriculo,
 )
 from jobsync.entrypoints.api.dependencies import (
+    ServiceBuscarCurriculoAdaptadoDep,
     ServiceAdaptarCurriculoDep,
     ServiceAnalisarAtsVagaDep,
     ServiceAvaliarExperienciaDep,
@@ -65,7 +64,6 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     SugerirAjusteSecaoResponse,
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
-from jobsync.perfil_estruturado.domain.perfil_estruturado import PerfilEstruturado
 
 router = APIRouter(tags=["currículos"], dependencies=[Depends(exigir_perfil_da_requisicao)])
 
@@ -123,22 +121,6 @@ def salvar_curriculo(
     location = f"{request.url.path}/{salvo.id}"
     response.headers["Location"] = location
     return CurriculoSalvoResponse.from_dto(salvo)
-
-
-def _experiencias_do_perfil(
-    perfil: PerfilEstruturado | None,
-) -> tuple[ExperienciaParaAvaliacao, ...] | None:
-    if perfil is None or not perfil.experiencias:
-        return None
-    return tuple(
-        ExperienciaParaAvaliacao(
-            cargo=experiencia.cargo,
-            empresa=experiencia.empresa,
-            periodo=experiencia.periodo,
-            descricao=experiencia.descricao,
-        )
-        for experiencia in perfil.experiencias
-    )
 
 
 @router.get(
@@ -237,14 +219,18 @@ def gerar_carta_apresentacao(
     adaptar: ServiceAdaptarCurriculoDep,
     gerar: ServiceGerarCartaApresentacaoDep,
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+    buscar_adaptado: ServiceBuscarCurriculoAdaptadoDep,
 ) -> CartaApresentacaoResponse:
     """Gera uma carta de apresentação personalizada para a vaga."""
-    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
+    fonte = resolver_fonte_do_curriculo(
+        body.perfil_identificador,
+        body.curriculo_adaptado_id,
+        body.pdf_base64,
+        buscar_perfil,
+        buscar_adaptado,
+    )
     try:
-        output = adaptar.executar(
-            body.to_dto(curriculo_pre_montado=curriculo_pre_montado)
-        )
+        output = adaptar.executar(body.to_dto(curriculo_pre_montado=fonte.curriculo))
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -269,15 +255,21 @@ def adaptar_curriculo(
     service: ServiceAdaptarCurriculoDep,
     gerar_pdf: ServiceGerarPdfCurriculoRevisadoDep,
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+    buscar_adaptado: ServiceBuscarCurriculoAdaptadoDep,
     download: bool = False,
 ) -> AdaptarCurriculoResponse | Response:
     """Adapta o currículo à descrição da vaga e gera o PDF sem revisão (fluxo legado)."""
-    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
+    fonte = resolver_fonte_do_curriculo(
+        body.perfil_identificador,
+        None,
+        body.pdf_base64,
+        buscar_perfil,
+        buscar_adaptado,
+    )
     try:
         input_dto = body.to_dto(
-            curriculo_pre_montado=curriculo_pre_montado,
-            experiencias_profissionais=_experiencias_do_perfil(perfil),
+            curriculo_pre_montado=fonte.curriculo,
+            experiencias_profissionais=fonte.experiencias,
         )
         output = service.executar(input_dto)
         pdf = _gerar_pdf_sem_revisao(gerar_pdf, input_dto, output.rascunho)
@@ -338,15 +330,21 @@ def gerar_rascunho_adaptado(
     body: AdaptarCurriculoRequest,
     service: ServiceAdaptarCurriculoDep,
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+    buscar_adaptado: ServiceBuscarCurriculoAdaptadoDep,
 ) -> RascunhoAdaptadoResponse:
     """Adapta o currículo à vaga e devolve o rascunho para revisão."""
-    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
+    fonte = resolver_fonte_do_curriculo(
+        body.perfil_identificador,
+        body.curriculo_adaptado_id,
+        body.pdf_base64,
+        buscar_perfil,
+        buscar_adaptado,
+    )
     try:
         output = service.executar(
             body.to_dto(
-                curriculo_pre_montado=curriculo_pre_montado,
-                experiencias_profissionais=_experiencias_do_perfil(perfil),
+                curriculo_pre_montado=fonte.curriculo,
+                experiencias_profissionais=fonte.experiencias,
             )
         )
     except ValueError as erro:
@@ -510,14 +508,18 @@ def analisar_ats(
     body: AnalisarAtsRequest,
     service: ServiceAnalisarAtsVagaDep,
     buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+    buscar_adaptado: ServiceBuscarCurriculoAdaptadoDep,
 ) -> AnalisarAtsResponse:
     """Retorna nota, requisitos faltantes e sugestões de melhoria ATS."""
-    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
-    curriculo_pre_montado = montar_curriculo_pre_montado(perfil)
+    fonte = resolver_fonte_do_curriculo(
+        body.perfil_identificador,
+        body.curriculo_adaptado_id,
+        body.pdf_base64,
+        buscar_perfil,
+        buscar_adaptado,
+    )
     try:
-        output = service.executar(
-            body.to_dto(curriculo_pre_montado=curriculo_pre_montado)
-        )
+        output = service.executar(body.to_dto(curriculo_pre_montado=fonte.curriculo))
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

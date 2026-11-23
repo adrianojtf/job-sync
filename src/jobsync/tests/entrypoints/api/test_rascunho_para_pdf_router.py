@@ -185,3 +185,60 @@ def test_o_rotulo_do_contexto_segue_o_idioma_da_confirmacao(client):
     texto, _ = _confirmar(client, rascunho, idioma="pt")
 
     assert f"Contexto: {CONTEXTO_DA_IA}" in texto
+
+
+def test_o_rascunho_traz_as_competencias_por_categoria_e_tag(client):
+    rascunho = _gerar_rascunho(client)
+
+    assert rascunho["competencias"] == [{"nome": "Tecnologias", "tags": ["Python"]}]
+    assert rascunho["titulo_competencias"] == "Tecnologias"
+    assert all(secao["tipo"] != "TECNOLOGIAS" for secao in rascunho["secoes"])
+
+
+def test_o_pdf_reflete_as_tags_editadas_pelo_usuario(client):
+    rascunho = _gerar_rascunho(client)
+    rascunho["competencias"] = [
+        {"nome": "Linguagens", "tags": ["Python", "Kotlin"]},
+        {"nome": "Ferramentas", "tags": ["Git"]},
+    ]
+
+    texto, _ = _confirmar(client, rascunho)
+
+    assert "Python, Kotlin" in texto
+    assert "Git" in texto
+
+
+def test_a_tag_removida_pelo_usuario_sai_do_pdf(client):
+    rascunho = _gerar_rascunho(client)
+    rascunho["competencias"] = [{"nome": "Linguagens", "tags": ["Kotlin"]}]
+
+    texto, _ = _confirmar(client, rascunho)
+
+    assert "Kotlin" in texto
+    assert "Linguagens: Python" not in texto
+
+
+def test_o_contrato_antigo_com_secao_de_tecnologias_em_texto_continua_aceito(client):
+    rascunho = _gerar_rascunho(client)
+    rascunho["competencias"] = None
+    rascunho["secoes"].append(
+        {"tipo": "TECNOLOGIAS", "titulo": "Tecnologias", "conteudo": "Java, Go"}
+    )
+
+    texto, _ = _confirmar(client, rascunho)
+
+    assert "Java, Go" in texto
+
+
+def test_competencias_junto_com_a_secao_de_tecnologias_em_texto_devolve_422(client):
+    rascunho = _gerar_rascunho(client)
+    rascunho["secoes"].append(
+        {"tipo": "TECNOLOGIAS", "titulo": "Tecnologias", "conteudo": "Java, Go"}
+    )
+
+    response = client.post(
+        "/v1/curriculos-revisados",
+        json={"rascunho": rascunho, "idioma_alvo": "en", "cargo_alvo": "A", "empresa_alvo": "B"},
+    )
+
+    assert response.status_code == 422

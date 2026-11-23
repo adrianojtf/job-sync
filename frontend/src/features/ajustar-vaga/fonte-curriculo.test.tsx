@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { HttpApiClient } from "../../api/http-api-client";
 import { AppProviders } from "../../app/AppProviders";
 import { CHAVE_QUERY_SESSAO } from "../../shared/sessao/sessao-context";
-import { PERFIL_ESTRUTURADO } from "../../test/fixtures";
+import { CURRICULO_ADAPTADO_RESUMO, PERFIL_ESTRUTURADO } from "../../test/fixtures";
 import { API_TESTE } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 import { usuarioDeTeste } from "../../test/usuario-de-teste";
@@ -86,5 +86,80 @@ describe("useFontesCurriculo", () => {
     await waitFor(() => expect(result.current.carregando).toBe(false));
     expect(result.current.padrao).toBe("");
     expect(result.current.opcoes).toEqual([]);
+  });
+
+  describe("currículos adaptados como fonte (JOB-0041)", () => {
+    const servirAdaptados = () =>
+      servidorApi.use(
+        http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+          HttpResponse.json({ items: [CURRICULO_ADAPTADO_RESUMO], total: 1 }),
+        ),
+      );
+
+    it("lista os adaptados depois do perfil mestre e antes dos PDFs", async () => {
+      servirAdaptados();
+      servidorApi.use(
+        http.get(`${API_TESTE}/v1/curriculos`, () =>
+          HttpResponse.json({ items: [CURRICULO], total: 1 }),
+        ),
+        http.get(`${API_TESTE}/v1/perfil-estruturado/:perfil`, () =>
+          HttpResponse.json(PERFIL_ESTRUTURADO),
+        ),
+      );
+
+      const { result } = montar();
+
+      await waitFor(() => expect(result.current.carregando).toBe(false));
+      expect(result.current.opcoes.map((opcao) => opcao.valor)).toEqual([
+        FONTE_PERFIL,
+        "adaptado:ad1",
+        "c1",
+      ]);
+      expect(result.current.opcoes[1]?.rotulo).toBe(
+        `Adaptado: ${CURRICULO_ADAPTADO_RESUMO.nome_referencia}`,
+      );
+      expect(result.current.padrao).toBe(FONTE_PERFIL);
+    });
+
+    it("resolve o adaptado com o perfil dono e o id, sem PDF", async () => {
+      servirAdaptados();
+      const { result } = montar();
+      await waitFor(() => expect(result.current.carregando).toBe(false));
+
+      const fonte = await result.current.resolver("adaptado:ad1");
+
+      expect(fonte).toEqual({
+        curriculoId: "adaptado-base",
+        perfil_identificador: "adriano",
+        curriculo_adaptado_id: "ad1",
+      });
+    });
+
+    it("sem perfil mestre nem PDFs, o padrão é o primeiro adaptado", async () => {
+      servirAdaptados();
+
+      const { result } = montar();
+
+      await waitFor(() => expect(result.current.carregando).toBe(false));
+      expect(result.current.padrao).toBe("adaptado:ad1");
+    });
+
+    it("não define um padrão enquanto a lista de adaptados está pendente", async () => {
+      servidorApi.use(
+        http.get(`${API_TESTE}/v1/curriculos-adaptados`, async () => {
+          await atrasar(80);
+          return HttpResponse.json({ items: [CURRICULO_ADAPTADO_RESUMO], total: 1 });
+        }),
+        http.get(`${API_TESTE}/v1/curriculos`, () =>
+          HttpResponse.json({ items: [CURRICULO], total: 1 }),
+        ),
+      );
+
+      const { result } = montar();
+      await waitFor(() => expect(result.current.opcoes.length).toBeGreaterThan(0));
+
+      expect(result.current.carregando).toBe(true);
+      expect(result.current.padrao).toBe("");
+    });
   });
 });

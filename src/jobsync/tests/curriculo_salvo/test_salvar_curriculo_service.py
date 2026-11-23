@@ -32,6 +32,10 @@ class CurriculoSalvoRepositoryFake(CurriculoSalvoRepository):
     def contar_por_perfil(self, perfil_identificador: str) -> int:
         return self._quantidade_inicial + len(self._curriculos)
 
+    def atualizar_pdf(self, curriculo_id: str, perfil_identificador: str, pdf_bytes: bytes) -> bool:
+        return False
+
+
 
 class TestSalvarCurriculo:
     def test_salva_curriculo_quando_abaixo_do_limite(self):

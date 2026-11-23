@@ -2,9 +2,16 @@ import type { DndContextProps, DragCancelEvent, DragEndEvent } from "@dnd-kit/co
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { CANDIDATURA, CURRICULO_SALVO, servirDadosBase } from "../../test/fixtures";
+import {
+  CANDIDATURA,
+  CURRICULO_ADAPTADO_RESUMO,
+  CURRICULO_SALVO,
+  servirDadosBase,
+} from "../../test/fixtures";
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
+
+import type { CurriculoAdaptadoResumo } from "../../api/tipos";
 
 type Candidatura = typeof CANDIDATURA;
 const STATUS = ["APLICADO", "ENTREVISTA", "OFERTA", "REJEITADO"];
@@ -358,8 +365,16 @@ describe("CandidaturasPage", () => {
       return nomes;
     }
 
-    async function abrirDetalhe(candidatura: Candidatura) {
+    async function abrirDetalhe(
+      candidatura: Candidatura,
+      adaptados: CurriculoAdaptadoResumo[] = [],
+    ) {
       servirCandidaturas([candidatura]);
+      servidorApi.use(
+        http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+          HttpResponse.json({ items: adaptados, total: adaptados.length }),
+        ),
+      );
       renderizarApp({ caminho: "/candidaturas", perfil: "adriano" });
       await userEvent.click(await screen.findByRole("button", { name: candidatura.cargo }));
       return screen.getByRole("dialog", { name: candidatura.cargo });
@@ -398,6 +413,27 @@ describe("CandidaturasPage", () => {
 
       await waitFor(() => expect(downloads).toEqual(["PDF gerado.pdf"]));
       expect(idsBaixados).toEqual(["pdf-gerado-9"]);
+    });
+
+    it("oferece Editar currículo quando o PDF veio de um currículo adaptado", async () => {
+      const dialogo = await abrirDetalhe({ ...CANDIDATURA, curriculo_salvo_id: "c1" }, [
+        { ...CURRICULO_ADAPTADO_RESUMO, curriculo_salvo_id: "c1" },
+      ]);
+
+      expect(
+        await within(dialogo).findByRole("link", { name: "Editar currículo" }),
+      ).toHaveAttribute("href", "/curriculos-adaptados/ad1");
+    });
+
+    it("não oferece Editar currículo quando nenhum currículo adaptado gerou o PDF", async () => {
+      const dialogo = await abrirDetalhe({ ...CANDIDATURA, curriculo_salvo_id: "c1" }, [
+        { ...CURRICULO_ADAPTADO_RESUMO, curriculo_salvo_id: "outro" },
+      ]);
+      await within(dialogo).findByText("CV LinkedIn");
+
+      expect(
+        within(dialogo).queryByRole("link", { name: "Editar currículo" }),
+      ).not.toBeInTheDocument();
     });
 
     it("sem o currículo na biblioteca avisa que foi removido e não oferece o download", async () => {

@@ -4,6 +4,7 @@ import type {
   AdaptarCurriculoEntrada,
   AnalisarAtsEntrada,
   AnaliseAts,
+  AtualizarCurriculoAdaptadoEntrada,
   AvaliacaoDescricaoVaga,
   AvaliacaoExperiencia,
   AvaliarExperienciaEntrada,
@@ -15,6 +16,9 @@ import type {
   CartaApresentacao,
   ConfirmarCandidaturaEntrada,
   CriarCandidaturaEntrada,
+  CurriculoAdaptado,
+  CurriculoAdaptadoPdf,
+  CurriculoAdaptadoResumo,
   CurriculoConteudo,
   CurriculoRevisado,
   CurriculoSalvo,
@@ -25,6 +29,7 @@ import type {
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
   Problema,
+  SalvarCurriculoAdaptadoEntrada,
   SalvarCurriculoEntrada,
   StatusCandidatura,
   SugerirAjusteExperienciaAdaptadaEntrada,
@@ -236,6 +241,32 @@ export class HttpApiClient implements ApiClient {
 
   gerarPdfCurriculoRevisado(dados: GerarPdfCurriculoRevisadoEntrada): Promise<CurriculoRevisado> {
     return this.requisitar("POST", "/v1/curriculos-revisados", { corpo: dados });
+  }
+
+  salvarCurriculoAdaptado(dados: SalvarCurriculoAdaptadoEntrada): Promise<CurriculoAdaptadoPdf> {
+    return this.requisitar("POST", "/v1/curriculos-adaptados", { corpo: dados });
+  }
+
+  atualizarCurriculoAdaptado(
+    id: string,
+    dados: AtualizarCurriculoAdaptadoEntrada,
+  ): Promise<CurriculoAdaptadoPdf> {
+    return this.requisitar("PUT", caminho`/v1/curriculos-adaptados/${id}`, { corpo: dados });
+  }
+
+  obterCurriculoAdaptado(id: string, perfil: string): Promise<CurriculoAdaptado> {
+    return this.requisitar("GET", caminho`/v1/curriculos-adaptados/${id}`, {
+      query: { perfil_identificador: perfil },
+    });
+  }
+
+  async listarCurriculosAdaptados(perfil: string): Promise<CurriculoAdaptadoResumo[]> {
+    const resposta = await this.requisitar<Listagem<CurriculoAdaptadoResumo>>(
+      "GET",
+      "/v1/curriculos-adaptados",
+      { query: { perfil_identificador: perfil } },
+    );
+    return resposta.items;
   }
 
   analisarAts(curriculoId: string, dados: AnalisarAtsEntrada): Promise<AnaliseAts> {

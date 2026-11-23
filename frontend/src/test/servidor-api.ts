@@ -36,6 +36,9 @@ const leiturasPadrao = [
     ),
   ),
   http.get(`${API_TESTE}/v1/curriculos`, () => HttpResponse.json({ items: [], total: 0 })),
+  http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+    HttpResponse.json({ items: [], total: 0 }),
+  ),
   http.get(`${API_TESTE}/v1/vagas`, () =>
     HttpResponse.json({ items: [], total: 0, limite: 100, offset: 0 }),
   ),

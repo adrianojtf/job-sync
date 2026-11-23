@@ -50,6 +50,21 @@ from jobsync.curriculo.service_layer.sugerir_ajuste_secao_curriculo import (
 )
 from jobsync.curriculo.service_layer.gerar_carta_apresentacao.service import GerarCartaApresentacao
 from jobsync.curriculo.adapters.gerar_carta_apresentacao_client import GerarCartaApresentacaoClient
+from jobsync.curriculo_adaptado.domain.curriculo_adaptado_repository import (
+    CurriculoAdaptadoRepository,
+)
+from jobsync.curriculo_adaptado.service_layer.atualizar_curriculo_adaptado import (
+    AtualizarCurriculoAdaptado,
+)
+from jobsync.curriculo_adaptado.service_layer.buscar_curriculo_adaptado import (
+    BuscarCurriculoAdaptado,
+)
+from jobsync.curriculo_adaptado.service_layer.listar_curriculos_adaptados import (
+    ListarCurriculosAdaptados,
+)
+from jobsync.curriculo_adaptado.service_layer.salvar_curriculo_adaptado import (
+    SalvarCurriculoAdaptado,
+)
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import (
     CurriculoSalvoRepository,
 )
@@ -62,6 +77,7 @@ from jobsync.entrypoints.autenticacao_servicos import ServicosAutenticacao
 from jobsync.entrypoints.dependencies import (
     obter_servicos_autenticacao,
     obter_repositorio_candidatura,
+    obter_repositorio_curriculo_adaptado,
     obter_repositorio_curriculo_salvo,
     obter_repositorio_perfil,
     obter_repositorio_perfil_estruturado,
@@ -129,6 +145,9 @@ RepositorioCandidaturaDep = Annotated[
 RepositorioCurriculoSalvoDep = Annotated[
     CurriculoSalvoRepository, Depends(obter_repositorio_curriculo_salvo)
 ]
+RepositorioCurriculoAdaptadoDep = Annotated[
+    CurriculoAdaptadoRepository, Depends(obter_repositorio_curriculo_adaptado)
+]
 RepositorioPerfilDep = Annotated[PerfilRepository, Depends(obter_repositorio_perfil)]
 RepositorioPerfilEstruturadoDep = Annotated[
     PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
@@ -146,6 +165,53 @@ def obter_service_salvar_curriculo(
 
 ServiceSalvarCurriculoDep = Annotated[
     SalvarCurriculo, Depends(obter_service_salvar_curriculo)
+]
+
+
+def obter_service_salvar_curriculo_adaptado(
+    repositorio: RepositorioCurriculoAdaptadoDep,
+) -> SalvarCurriculoAdaptado:
+    return SalvarCurriculoAdaptado(repositorio, GeradorPdfClient())
+
+
+ServiceSalvarCurriculoAdaptadoDep = Annotated[
+    SalvarCurriculoAdaptado, Depends(obter_service_salvar_curriculo_adaptado)
+]
+
+
+def obter_service_atualizar_curriculo_adaptado(
+    repositorio: RepositorioCurriculoAdaptadoDep,
+    repositorio_curriculo_salvo: RepositorioCurriculoSalvoDep,
+) -> AtualizarCurriculoAdaptado:
+    return AtualizarCurriculoAdaptado(
+        repositorio, GeradorPdfClient(), repositorio_curriculo_salvo=repositorio_curriculo_salvo
+    )
+
+
+ServiceAtualizarCurriculoAdaptadoDep = Annotated[
+    AtualizarCurriculoAdaptado, Depends(obter_service_atualizar_curriculo_adaptado)
+]
+
+
+def obter_service_buscar_curriculo_adaptado(
+    repositorio: RepositorioCurriculoAdaptadoDep,
+) -> BuscarCurriculoAdaptado:
+    return BuscarCurriculoAdaptado(repositorio)
+
+
+ServiceBuscarCurriculoAdaptadoDep = Annotated[
+    BuscarCurriculoAdaptado, Depends(obter_service_buscar_curriculo_adaptado)
+]
+
+
+def obter_service_listar_curriculos_adaptados(
+    repositorio: RepositorioCurriculoAdaptadoDep,
+) -> ListarCurriculosAdaptados:
+    return ListarCurriculosAdaptados(repositorio)
+
+
+ServiceListarCurriculosAdaptadosDep = Annotated[
+    ListarCurriculosAdaptados, Depends(obter_service_listar_curriculos_adaptados)
 ]
 
 
@@ -362,11 +428,13 @@ def obter_service_confirmar_candidatura_ajustada(
     repositorio_candidatura: RepositorioCandidaturaDep,
     repositorio_vaga: RepositorioVagaDep,
     repositorio_curriculo_salvo: RepositorioCurriculoSalvoDep,
+    repositorio_curriculo_adaptado: RepositorioCurriculoAdaptadoDep,
 ) -> ConfirmarCandidaturaAjustada:
     return ConfirmarCandidaturaAjustada(
         repositorio_candidatura=repositorio_candidatura,
         repositorio_vaga=repositorio_vaga,
         repositorio_curriculo_salvo=repositorio_curriculo_salvo,
+        repositorio_curriculo_adaptado=repositorio_curriculo_adaptado,
     )
 
 

@@ -17,8 +17,9 @@ const rascunhoDoPerfil: RascunhoCurriculoAdaptado = {
   secoes: [
     { tipo: "FORMACAO", titulo: "Formação acadêmica", conteudo: "ADS — Estácio" },
     { tipo: "PERFIL", titulo: "Profile", conteudo: "Engenheira backend." },
-    { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
   ],
+  competencias: [{ nome: "Linguagens", tags: ["Java"] }],
+  titulo_competencias: "Tecnologias",
   experiencias: [
     {
       cargo: "Dev",
@@ -29,6 +30,19 @@ const rascunhoDoPerfil: RascunhoCurriculoAdaptado = {
     },
   ],
   titulo_experiencias: "Experience",
+};
+
+const rascunhoComTecnologiasEmTexto: RascunhoCurriculoAdaptado = {
+  nome_completo: "Ana Souza",
+  secoes: [
+    { tipo: "PERFIL", titulo: "Perfil", conteudo: "Engenheira backend." },
+    {
+      tipo: "TECNOLOGIAS",
+      titulo: "Technical Skills",
+      conteudo: "Linguagens: Java, Go\nBancos de Dados: SQL",
+    },
+  ],
+  experiencias: null,
 };
 
 const rascunhoDePdf: RascunhoCurriculoAdaptado = {
@@ -42,7 +56,8 @@ describe("rascunhoParaFormulario", () => {
     const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
 
     expect(formulario.resumo_profissional).toBe("Engenheira backend.");
-    expect(formulario.secoes.map((secao) => secao.tipo)).toEqual(["TECNOLOGIAS", "FORMACAO"]);
+    expect(formulario.secoes.map((secao) => secao.tipo)).toEqual(["FORMACAO"]);
+    expect(formulario.competencias).toEqual([{ nome: "Linguagens", tags: ["Java"] }]);
     expect(formulario.experiencias).toEqual([
       {
         cargo: "Dev",
@@ -52,6 +67,20 @@ describe("rascunhoParaFormulario", () => {
         contexto: "Empresa de TI.",
       },
     ]);
+  });
+
+  it("converte a seção de tecnologias em texto em categorias e tags", () => {
+    const formulario = rascunhoParaFormulario(rascunhoComTecnologiasEmTexto);
+
+    expect(formulario.competencias).toEqual([
+      { nome: "Linguagens", tags: ["Java", "Go"] },
+      { nome: "Bancos de Dados", tags: ["SQL"] },
+    ]);
+    expect(formulario.secoes.map((secao) => secao.tipo)).toEqual([]);
+  });
+
+  it("fica sem categorias quando o rascunho não traz competências nem tecnologias", () => {
+    expect(rascunhoParaFormulario(rascunhoDePdf).competencias).toEqual([]);
   });
 
   it("preenche campos ausentes com texto vazio quando a fonte é PDF", () => {
@@ -77,10 +106,57 @@ describe("formularioParaRascunho", () => {
       ...rascunhoDoPerfil,
       secoes: [
         { tipo: "PERFIL", titulo: "Profile", conteudo: "Engenheira backend." },
-        { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
         { tipo: "FORMACAO", titulo: "Formação acadêmica", conteudo: "ADS — Estácio" },
       ],
     });
+  });
+
+  it("envia as competências por categoria e nunca a seção de tecnologias em texto", () => {
+    const formulario = rascunhoParaFormulario(rascunhoComTecnologiasEmTexto);
+
+    const rascunho = formularioParaRascunho(formulario, rascunhoComTecnologiasEmTexto);
+
+    expect(rascunho.secoes.map((secao) => secao.tipo)).toEqual(["PERFIL"]);
+    expect(rascunho.competencias).toEqual([
+      { nome: "Linguagens", tags: ["Java", "Go"] },
+      { nome: "Bancos de Dados", tags: ["SQL"] },
+    ]);
+    expect(rascunho.titulo_competencias).toBe("Technical Skills");
+  });
+
+  it("leva as tags e os nomes de categoria editados e apara os nomes", () => {
+    const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
+    formulario.competencias = [
+      { nome: "  Linguagens ", tags: ["Java", "Go"] },
+      { nome: "Ferramentas", tags: ["Git"] },
+    ];
+
+    const rascunho = formularioParaRascunho(formulario, rascunhoDoPerfil);
+
+    expect(rascunho.competencias).toEqual([
+      { nome: "Linguagens", tags: ["Java", "Go"] },
+      { nome: "Ferramentas", tags: ["Git"] },
+    ]);
+  });
+
+  it("descarta categorias sem nome ou sem tags, como o servidor faz ao salvar", () => {
+    const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
+    formulario.competencias = [
+      { nome: "Linguagens", tags: [] },
+      { nome: "  ", tags: ["Git"] },
+      { nome: "Ferramentas", tags: ["Docker"] },
+    ];
+
+    const rascunho = formularioParaRascunho(formulario, rascunhoDoPerfil);
+
+    expect(rascunho.competencias).toEqual([{ nome: "Ferramentas", tags: ["Docker"] }]);
+  });
+
+  it("envia lista vazia quando todas as categorias foram excluídas", () => {
+    const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
+    formulario.competencias = [];
+
+    expect(formularioParaRascunho(formulario, rascunhoDoPerfil).competencias).toEqual([]);
   });
 
   it("leva as edições de todas as seções e apara os espaços", () => {
@@ -89,7 +165,7 @@ describe("formularioParaRascunho", () => {
     formulario.resumo_profissional = "Resumo novo.";
     formulario.experiencias[0]!.conquistas = " Texto editado. \n\n Outra conquista. ";
     formulario.experiencias[0]!.contexto = " Contexto editado. ";
-    formulario.secoes[0]!.conteudo = "Linguagens: Java, Go";
+    formulario.secoes[0]!.conteudo = "ADS — Estácio, 2024";
 
     const rascunho = formularioParaRascunho(formulario, rascunhoDoPerfil);
 
@@ -99,7 +175,7 @@ describe("formularioParaRascunho", () => {
       titulo: "Profile",
       conteudo: "Resumo novo.",
     });
-    expect(rascunho.secoes[1]?.conteudo).toBe("Linguagens: Java, Go");
+    expect(rascunho.secoes[1]?.conteudo).toBe("ADS — Estácio, 2024");
     expect(rascunho.experiencias?.[0]).toEqual({
       cargo: "Dev",
       empresa: "TechCorp",

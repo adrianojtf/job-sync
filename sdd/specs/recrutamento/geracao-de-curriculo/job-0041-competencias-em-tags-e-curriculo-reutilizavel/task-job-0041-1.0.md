@@ -16,12 +16,12 @@ Cria o modelo de domínio de competências (categorias com tags) e o campo `comp
 
 ## Subtarefas
 
-- [ ] 1.1 Testes de `CategoriaCompetencia.revisada` (red).
-- [ ] 1.2 Testes de `de_texto`/`para_texto`: ida e volta, marcadores, linha sem rótulo, ":" no meio do texto (red).
-- [ ] 1.3 Testes do rascunho: exclusão mútua e `para_curriculo` (red).
-- [ ] 1.4 Implementar `curriculo/domain/competencias.py` (green).
-- [ ] 1.5 Alterar `rascunho_curriculo_adaptado.py` (green) e exportar pela API do pacote `curriculo`.
-- [ ] 1.6 Refatorar.
+- [x] 1.1 Testes de `CategoriaCompetencia.revisada` (red).
+- [x] 1.2 Testes de `de_texto`/`para_texto`: ida e volta, marcadores, linha sem rótulo, ":" no meio do texto (red).
+- [x] 1.3 Testes do rascunho: exclusão mútua e `para_curriculo` (red).
+- [x] 1.4 Implementar `curriculo/domain/competencias.py` (green).
+- [x] 1.5 Alterar `rascunho_curriculo_adaptado.py` (green) e exportar pela API do pacote `curriculo`.
+- [x] 1.6 Refatorar.
 
 ## Detalhes de Implementação
 
@@ -35,8 +35,8 @@ Techspec: "Interfaces Principais" e "Modelos de Dados". PRD: RF 1, 4 e 5 e casos
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do domínio.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade do domínio.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

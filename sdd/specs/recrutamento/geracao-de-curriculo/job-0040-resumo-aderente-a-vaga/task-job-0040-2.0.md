@@ -7,15 +7,15 @@
 Faz o botão "Sugestões de IA" do resumo respeitar a mesma regra, e valida a qualidade do texto com vagas de teste.
 
 <requirements>
-- `refinar_secao` do Perfil com foco `ADERENCIA_VAGA` inclui a regra do resumo; as outras seções e os outros focos não mudam.
-- A forma de passar a regra a `bloco_refino` é decidida no TDD (primeira opção: passar o tipo da seção).
+- `refinar_secao` do Perfil inclui a regra do resumo em qualquer foco, porque a instrução da seção já entra no prompt do refino; não há mudança em `prompt_refino.py`.
+- As outras seções não mudam.
 - Avaliação manual com ao menos três vagas: engenharia de software, Forward Deployed Engineer e cargo fora de TI.
 </requirements>
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes do refino do Perfil (red): foco de aderência traz a regra; outras seções não.
-- [ ] 2.2 Ajustar `prompt_refino.py` e `refinar_secao` (green).
+- [x] 2.1 Escrever os testes do refino do Perfil: a regra aparece em todos os focos e o texto atual é a base (passaram de primeira: o comportamento já existia).
+- [x] 2.2 Confirmar que `prompt_refino.py` e `refinar_secao` não precisam de ajuste.
 - [ ] 2.3 Rodar a avaliação manual: temas cobertos, sem cópia da vaga, sem fato inventado, até o limite de tamanho.
 - [ ] 2.4 Ajustar a redação da regra conforme a avaliação e registrar o resultado e as vagas usadas no fim deste arquivo.
 - [ ] 2.5 Fechar as questões em aberto 1 e 2 do PRD (tamanho máximo e limite do senso comum) com o resultado.
@@ -32,8 +32,8 @@ Techspec: "Decisões Principais" (reuso no refino) e "Avaliação manual". PRD: 
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do refino.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade do refino.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 - [ ] Avaliação manual registrada neste arquivo (não há teste automatizado da qualidade do texto).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
@@ -44,3 +44,19 @@ Techspec: "Decisões Principais" (reuso no refino) e "Avaliação manual". PRD: 
 - `src/jobsync/curriculo/adapters/ajustador_texto_client.py`
 - `src/jobsync/curriculo/domain/refino.py`
 - `src/jobsync/tests/curriculo/test_ajustador_texto_client.py`
+
+## Roteiro da avaliação manual (2.3 a 2.5)
+
+Pendente: exige `OPENAI_API_KEY` e `TYPESAFE_API_KEY` reais, que o ambiente de desenvolvimento da IA não tem. Executar localmente, com o perfil real, em "Ajustar para uma vaga".
+
+Vagas de teste: engenharia de software (arquitetura hexagonal e code review), Forward Deployed Engineer e um cargo fora de TI. Há exemplos em `files_examples/vaga-teste.txt`.
+
+Para cada vaga, gerar o currículo adaptado, ler o resumo na revisão e pedir "Sugestões de IA" duas vezes. Conferir:
+
+- [ ] Cobre os temas centrais da vaga e do cargo, de forma natural.
+- [ ] Não copia trechos da vaga.
+- [ ] Não afirma anos de experiência, cargos ou métricas que o perfil não sustenta.
+- [ ] Tem até 3 frases (e cerca de 60 palavras).
+- [ ] As sugestões de IA mantêm a regra.
+
+Resultado por vaga (preencher): | Vaga | Resumo gerado | Cobertura | Cópia | Fato inventado | Tamanho |

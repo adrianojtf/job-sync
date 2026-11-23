@@ -324,3 +324,19 @@ def test_prompt_de_outras_secoes_nao_traz_a_regra_do_resumo(tipo: TipoSecao) -> 
 
     assert "temas centrais da vaga" not in prompt
     assert "não copie trechos da vaga" not in prompt
+
+
+@pytest.mark.parametrize("tentativa", [1, 2, 3, 4])
+def test_refinar_o_perfil_traz_a_regra_do_resumo_em_qualquer_foco(tentativa: int) -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino(tentativa=tentativa))
+
+    assert "temas centrais da vaga" in usuario
+    assert "não copie trechos da vaga" in usuario
+
+
+def test_refinar_o_perfil_com_foco_de_aderencia_parte_do_texto_atual_com_a_regra() -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino(tentativa=1))
+
+    assert "Foco desta versão: aderência à vaga" in usuario
+    assert "Texto atual:\nResumo atual editado." in usuario
+    assert "em até 3 frases" in usuario

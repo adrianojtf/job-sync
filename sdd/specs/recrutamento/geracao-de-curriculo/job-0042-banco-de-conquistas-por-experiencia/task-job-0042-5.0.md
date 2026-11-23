@@ -14,10 +14,10 @@ Valida com o modelo real que a seleção muda conforme a vaga e não inventa fat
 
 ## Subtarefas
 
-- [ ] 5.1 (a cargo do usuário) Gerar o currículo adaptado para as duas vagas e comparar as conquistas escolhidas.
-- [ ] 5.2 (a cargo do usuário) Conferir: entre 3 e 5 por experiência, mudam conforme a vaga, sem fato ou número fora do banco.
-- [ ] 5.3 (a cargo do usuário) Medir o impacto do tamanho do banco na latência e decidir o limite de envio (Questão em Aberto 2 do PRD).
-- [ ] 5.4 (a cargo do usuário) Ajustar o limite de similaridade se houver muitos falsos positivos.
+- [x] 5.1 (a cargo do usuário) Gerar o currículo adaptado para as duas vagas e comparar as conquistas escolhidas.
+- [x] 5.2 (a cargo do usuário) Conferir: entre 3 e 5 por experiência, mudam conforme a vaga, sem fato ou número fora do banco.
+- [x] 5.3 (a cargo do usuário) Medir o impacto do tamanho do banco na latência e decidir o limite de envio (Questão em Aberto 2 do PRD).
+- [x] 5.4 (a cargo do usuário) Ajustar o limite de similaridade se houver muitos falsos positivos.
 
 ## Detalhes de Implementação
 
@@ -31,7 +31,7 @@ Techspec: "Avaliação manual" e "Riscos Conhecidos". PRD: Objetivos e Questões
 
 ## Testes da Tarefa
 
-- [ ] Avaliação manual registrada neste arquivo (não há teste automatizado da qualidade do texto).
+- [x] Avaliação manual registrada neste arquivo (não há teste automatizado da qualidade do texto).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -52,12 +52,19 @@ Com `--dry-run`, o roteiro só imprime o prompt enviado, sem chamar a IA (valida
 
 ## Status
 
-Não executada pela IA: o ambiente de desenvolvimento não tem `OPENAI_API_KEY`. Preencha a tabela abaixo após a execução local.
+Executada pelo usuário em 2026-11-23, com o roteiro `avaliar-banco-conquistas.py`, uma execução por vaga, banco sintético de 8 conquistas e uma experiência. O modelo e a chave vieram do `.env` local.
 
 | Vaga | Conquistas escolhidas (qtd) | Mudou entre vagas? | Número fora do banco | Latência |
 |------|-----------------------------|--------------------|----------------------|----------|
-| FDE Sênior | | | | |
-| Engenheiro de Dados | | | | |
+| FDE Sênior | 5: MVP com o cliente, legado, observabilidade, mentoria, APIs | Sim (referência) | nenhum | 4,8 s |
+| Engenheiro de Dados | 4: migração do banco, legado, APIs, observabilidade | Sim: saíram MVP e mentoria, entrou a migração do banco; 3 de 4 se repetem | nenhum | 4,8 s |
 
-Decisões a registrar: limite de conquistas enviadas por experiência (Questão em Aberto 2 do PRD) e ajuste do limite de similaridade (`LIMITE_DE_SIMILARIDADE`, hoje 0,6).
+## Resultado e decisões
+
+- Critérios atendidos nesta amostra: de 3 a 5 conquistas por experiência, a mais relevante primeiro, nenhum número fora do banco e conquistas diferentes entre as duas vagas. A conferência automática olha só dígitos; a leitura das frases não mostrou fato acrescentado (as redações trocaram o vocabulário, mantendo o conteúdo).
+- Na vaga de dados, o banco não tem conquista de pipeline ou governança. O modelo escolheu as 4 mais próximas, sem inventar relação, como a regra pede.
+- Latência: cerca de 4,8 s por experiência, com 8 conquistas no banco. As experiências são ajustadas em sequência, então um perfil com várias experiências soma esse tempo (estimativa, não medida). Dentro do aviso de 1 minuto para perfis pequenos.
+- Limite de envio (Questão em Aberto 2): sem teto por enquanto (YAGNI). Reavaliar se algum banco passar de cerca de 20 conquistas por experiência; a amostra de 8 não testa isso.
+- Limite de similaridade (`LIMITE_DE_SIMILARIDADE`, 0,6): mantido. Nenhum par do banco de teste foi marcado como parecido (sem falso positivo). Paráfrases próximas com reordenação passam (ex.: "Atuei junto ao cliente..." contra "Entreguei, em parceria com o cliente...": 0,40). Reduzir o limite arrisca falsos positivos; aceito como limitação já prevista na techspec.
+- Limites da avaliação: uma execução por vaga, um banco sintético, resposta do modelo pode variar. Repetir com o perfil real em "Ajustar para uma vaga" antes de confiar no fluxo completo.
 

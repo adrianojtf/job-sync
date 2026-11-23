@@ -14,10 +14,10 @@ Valida com o modelo real que as perguntas cobrem as lacunas certas e que o resum
 
 ## Subtarefas
 
-- [ ] 7.1 (a cargo do usuário) Gerar as lacunas e conferir que cobrem os temas centrais ausentes e não repetem o que o perfil mostra.
-- [ ] 7.2 (a cargo do usuário) Responder Sim a uma e Não a outra, e conferir o resumo e as conquistas.
-- [ ] 7.3 (a cargo do usuário) Medir a latência da etapa contra o limite de 1 minuto.
-- [ ] 7.4 (a cargo do usuário) Fechar as Questões em Aberto 2, 4 e 5 do PRD.
+- [x] 7.1 (a cargo do usuário) Gerar as lacunas e conferir que cobrem os temas centrais ausentes e não repetem o que o perfil mostra.
+- [x] 7.2 (a cargo do usuário) Responder Sim a uma e Não a outra, e conferir o resumo e as conquistas.
+- [x] 7.3 (a cargo do usuário) Medir a latência da etapa contra o limite de 1 minuto.
+- [x] 7.4 (a cargo do usuário) Fechar as Questões em Aberto 2, 4 e 5 do PRD.
 
 ## Detalhes de Implementação
 
@@ -30,7 +30,7 @@ Techspec: "Avaliação manual" e "Riscos Conhecidos". PRD: Objetivos e Questões
 
 ## Testes da Tarefa
 
-- [ ] Avaliação manual registrada neste arquivo (não há teste automatizado da qualidade do texto).
+- [x] Avaliação manual registrada neste arquivo (não há teste automatizado da qualidade do texto).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -51,12 +51,21 @@ Com `--dry-run` só imprime os prompts, sem chamar a IA (validado na execução 
 
 ## Status
 
-Não executada pela IA: o ambiente de desenvolvimento não tem `OPENAI_API_KEY`. Preencha a tabela após a execução local.
+Executada pelo usuário em 2026-11-23, com o roteiro `avaliar-lacunas.py`, uma execução por vaga e histórico sintético de backend Java. O modelo e a chave vieram do `.env` local.
 
 | Vaga | Lacunas (qtd) | Repete o que o perfil mostra? | Número fora do caso | Latência |
 |------|---------------|-------------------------------|---------------------|----------|
-| FDE | | | | |
-| Engenheiro de Software | | | | |
+| FDE | 5: clientes, MVPs, agentes de IA com avaliações, observabilidade, aprovação humana | Não: nenhum dos 5 aparece no histórico | nenhum | 5,3 s |
+| Engenheiro de Software | 1: desenvolvimento de APIs em Java com PostgreSQL | Em parte: o histórico cita "Backend em Java e PostgreSQL", que sustenta APIs sem dizer a palavra | nenhum | 2,9 s |
 
-Decisões a registrar: Questões em Aberto 2, 4 e 5 do PRD (lembrar o "Não", o aviso de experiência incompatível e a latência da etapa).
+## Resultado e decisões
+
+- **Vaga FDE:** as 5 lacunas são temas centrais da vaga e todos ausentes do histórico (clientes, MVPs, agentes de IA, observabilidade, aprovação humana), em ordem plausível de centralidade. Nenhuma repetiu o que o perfil mostra (deploy automatizado, integração com legado, Java, PostgreSQL, Kafka).
+- **Vaga aderente:** a IA apontou 1 lacuna, "desenvolvimento de APIs". É um falso positivo parcial: o histórico diz "Backend em Java e PostgreSQL". Em uma amostra não dá para saber se é recorrente; se aparecer de novo, ajustar o prompt para tratar "backend" como sustentação de APIs.
+- **Redação:** a conquista usou só o caso ("dois meses", "MVP de conciliação", "equipe do cliente"), sem acrescentar fato. A checagem automática olha dígitos e o caso tem o número por extenso, então a conferência foi pela leitura. O roteiro usa o mesmo caso nas duas vagas; por isso a conquista da segunda vaga não responde à lacuna de APIs. É limite do roteiro, não do redator.
+- **Latência:** 5,3 s e 2,9 s para identificar as lacunas. O tempo da geração depois das perguntas não foi medido aqui; só o fluxo completo com o perfil real mostra se a soma cabe no aviso de 1 minuto.
+- **Questão em Aberto 2 (lembrar o "Não"):** mantido sem guardar (YAGNI). Esta amostra não testa o incômodo de repetir perguntas em várias vagas; reavaliar se o uso real mostrar repetição.
+- **Questão em Aberto 4 (experiência incompatível com o caso):** mantido só aceitar, com o aviso de revisão. Não avaliado.
+- **Questão em Aberto 5 (latência da etapa):** a etapa de lacunas custa de 3 a 5 s; o botão de pular fica sempre visível. Falta medir o fluxo completo.
+- **Limites da avaliação:** uma execução por vaga, histórico sintético, modelo pode variar.
 

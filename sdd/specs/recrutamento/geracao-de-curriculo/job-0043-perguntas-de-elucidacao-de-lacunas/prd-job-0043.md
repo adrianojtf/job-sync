@@ -113,7 +113,7 @@ Requisitos de UX:
 ## Questões em Aberto
 
 1. Perguntas por vez ou em lista? Decidir no desenho de UX, priorizando menos atrito.
-2. Guardar "Não" para não repetir a pergunta em outra vaga evita atrito, mas pode esconder uma experiência que o candidato passou a ter. Decidir depois da primeira avaliação.
-3. Como medir se uma lacuna está bem identificada? Proposta: revisão manual com vagas de teste, e um conjunto fixo de casos para evolução futura.
-4. O candidato aponta uma experiência que, pelo cargo e pelo período, não combina com o caso. O sistema deve apenas aceitar, ou deve avisar? Proposta: apenas aceitar nesta versão, mantendo o aviso de revisão.
-5. A latência da etapa de lacunas cabe no limite de 1 minuto do fluxo de geração? Medir na techspec.
+2. Resolvida por ora: o "Não" não é guardado (YAGNI). Reavaliar se o uso real mostrar perguntas repetidas entre vagas.
+3. Como medir se uma lacuna está bem identificada? Primeira avaliação: na vaga de FDE, 5 de 5 lacunas eram temas ausentes do histórico; na vaga aderente houve 1 falso positivo parcial (APIs). Segue a revisão manual, e um conjunto fixo de casos fica para evolução futura.
+4. Resolvida por ora: o sistema apenas aceita a experiência escolhida, mantendo o aviso de revisão. Não foi avaliada.
+5. A etapa de lacunas levou de 3 a 5 s na avaliação, com o botão de pular sempre visível. O tempo somado à geração ainda não foi medido com o perfil real.

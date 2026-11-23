@@ -8,7 +8,7 @@
 - [x] 4.0 Comando AdicionarConquistaAExperiencia e endpoint
 - [x] 5.0 Resumo usando as conquistas do histórico
 - [x] 6.0 Frontend: etapa Perguntas sobre a vaga
-- [ ] 7.0 Avaliação manual das perguntas de elucidação
+- [x] 7.0 Avaliação manual das perguntas de elucidação
 
 ## Dependências
 

@@ -18,12 +18,12 @@ Cria o núcleo da etapa de perguntas: o que é uma lacuna, a porta de IA que as 
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de `LacunaDaVaga` e `principais` (red); implementar (green).
-- [ ] 1.2 Declarar a porta e o `HistoricoDoCandidato`.
-- [ ] 1.3 Escrever os testes de `IdentificarLacunasDaVaga` (red): limite de 5, falha da IA, histórico vazio.
-- [ ] 1.4 Implementar o caso de uso, o DTO e o `__init__` (green).
-- [ ] 1.5 Escrever os testes do prompt do adapter (red) e implementar o adapter (green), incluindo a resposta fora do formato levantando `ValueError`.
-- [ ] 1.6 Refatorar e rodar os testes de `curriculo`.
+- [x] 1.1 Escrever os testes de `LacunaDaVaga` e `principais` (red); implementar (green).
+- [x] 1.2 Declarar a porta e o `HistoricoDoCandidato`.
+- [x] 1.3 Escrever os testes de `IdentificarLacunasDaVaga` (red): limite de 5, falha da IA, histórico vazio.
+- [x] 1.4 Implementar o caso de uso, o DTO e o `__init__` (green).
+- [x] 1.5 Escrever os testes do prompt do adapter (red) e implementar o adapter (green), incluindo a resposta fora do formato levantando `ValueError`.
+- [x] 1.6 Refatorar e rodar os testes de `curriculo`.
 
 ## Detalhes de Implementação
 
@@ -37,8 +37,8 @@ Techspec: "Interfaces Principais", "Pontos de Integração" (lacunas) e "Decisõ
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do domínio, do caso de uso e do adapter (cliente falso).
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade do domínio, do caso de uso e do adapter (cliente falso).
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -49,3 +49,9 @@ Techspec: "Interfaces Principais", "Pontos de Integração" (lacunas) e "Decisõ
 - `src/jobsync/curriculo/adapters/identificador_lacunas_openai_client.py (novo)`
 - `src/jobsync/curriculo/service_layer/identificar_lacunas_da_vaga/ (novo)`
 - `src/jobsync/curriculo/__init__.py`
+
+## Resultado da execução
+
+- `LacunaDaVaga`, `HistoricoDoCandidato` e `principais` (limite 5, sem tema repetido) em `curriculo/domain/lacuna_da_vaga.py`; porta `IdentificadorLacunasPort`, adapter `IdentificadorLacunasOpenAIClient` e caso de uso `IdentificarLacunasDaVaga` (falha da IA vira lista vazia com aviso; sem experiências não chama a IA).
+- A normalização de texto virou `shared_kernel/domain/texto_normalizado.py`, reutilizada pelo banco de conquistas (JOB-0042), porque os domínios não podem se importar.
+- O prompt omite a linha de requisitos técnicos quando a análise da vaga está vazia.

@@ -4,6 +4,7 @@ import type {
   AdaptarCurriculoEntrada,
   AnalisarAtsEntrada,
   ConfirmarCandidaturaEntrada,
+  LacunasEntrada,
   RascunhoCurriculoAdaptado,
   SalvarCurriculoAdaptadoEntrada,
 } from "../../api/tipos";
@@ -29,6 +30,8 @@ export function useAjustarVaga() {
   const queryClient = useQueryClient();
   return {
     avaliar: useMutation({ mutationFn: (descricao: string) => api.avaliarVaga(descricao) }),
+    // Perguntas sobre os temas da vaga que o perfil não mostra (JOB-0043); nunca bloqueiam a geração.
+    lacunas: useMutation({ mutationFn: (dados: LacunasEntrada) => api.identificarLacunas(dados) }),
     gerarRascunho: useMutation({
       mutationFn: ({ curriculoId, dados }: ComCurriculo<AdaptarCurriculoEntrada>) =>
         api.gerarRascunhoAdaptado(curriculoId, dados),

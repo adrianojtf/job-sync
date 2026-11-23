@@ -25,7 +25,11 @@ import type {
   DescobrirVagasEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
+  ConquistaRascunho,
+  ConquistaRascunhoEntrada,
   ConquistasParecidas,
+  Lacunas,
+  LacunasEntrada,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
@@ -180,6 +184,29 @@ export class HttpApiClient implements ApiClient {
       { corpo: { texto, conquistas } },
     );
     return resposta.parecidas;
+  }
+
+  identificarLacunas(dados: LacunasEntrada): Promise<Lacunas> {
+    return this.requisitar("POST", "/v1/curriculos/lacunas", { corpo: dados, ia: true });
+  }
+
+  redigirConquistaDeLacuna(dados: ConquistaRascunhoEntrada): Promise<ConquistaRascunho> {
+    return this.requisitar("POST", "/v1/curriculos/lacunas/conquista-rascunho", {
+      corpo: dados,
+      ia: true,
+    });
+  }
+
+  adicionarConquistaAExperiencia(
+    perfil: string,
+    experienciaIndice: number,
+    texto: string,
+  ): Promise<PerfilEstruturado> {
+    return this.requisitar(
+      "POST",
+      caminho`/v1/perfil-estruturado/${perfil}/experiencias/${String(experienciaIndice)}/conquistas`,
+      { corpo: { texto } },
+    );
   }
 
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia> {

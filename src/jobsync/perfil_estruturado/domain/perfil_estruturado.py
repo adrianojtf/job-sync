@@ -8,10 +8,12 @@ devolvido pela extração de um PDF, antes de ser associado a um login e salvo.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum, auto
 
-from jobsync.perfil_estruturado.domain.conquistas_parecidas import normalizar_texto, sao_parecidas
+from jobsync.perfil_estruturado.domain.conquistas_parecidas import sao_parecidas
+from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada
+from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
 
 class NivelIdioma(Enum):
@@ -157,3 +159,12 @@ class PerfilEstruturado:
             raise ValueError("O nome completo do perfil não pode ser vazio.")
         if not self.email or not self.email.strip():
             raise ValueError("O email do perfil não pode ser vazio.")
+
+    def com_conquista_na_experiencia(self, indice: int, conquista: Conquista) -> PerfilEstruturado:
+        """Perfil novo com a conquista no fim do banco da experiência; o resto não muda."""
+        if not 0 <= indice < len(self.experiencias):
+            raise ExperienciaNaoEncontrada()
+        experiencia = self.experiencias[indice]
+        atualizada = replace(experiencia, conquistas=(*experiencia.conquistas, conquista))
+        experiencias = (*self.experiencias[:indice], atualizada, *self.experiencias[indice + 1 :])
+        return replace(self, experiencias=experiencias)

@@ -3,22 +3,30 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 
 from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.entrypoints.api.dependencies import (
+    ServiceAdicionarConquistaAExperienciaDep,
     ServiceBuscarPerfilEstruturadoDep,
     ServiceImportarPerfilDePdfDep,
     ServiceSalvarPerfilEstruturadoDep,
     ServiceVerificarConquistasParecidasDep,
 )
 from jobsync.entrypoints.api.schemas.perfil_estruturado import (
+    ConquistaAprovadaRequest,
     ConquistasParecidasRequest,
     ConquistasParecidasResponse,
     PerfilEstruturadoRequest,
     PerfilEstruturadoResponse,
     PerfilImportarPdfRequest,
+)
+
+from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada, PerfilEstruturadoNaoEncontrado
+from jobsync.perfil_estruturado.service_layer.adicionar_conquista_a_experiencia import (
+    AdicionarConquistaAExperienciaInputDto,
 )
 
 router = APIRouter(tags=["perfil estruturado"], dependencies=[Depends(exigir_perfil_da_requisicao)])
@@ -136,3 +144,35 @@ def verificar_conquistas_parecidas(
             detail=str(erro),
         )
     return ConquistasParecidasResponse(parecidas=list(parecidas))
+
+
+@router.post(
+    "/perfil-estruturado/{perfil_identificador}/experiencias/{experiencia_indice}/conquistas",
+    response_model=PerfilEstruturadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Adicionar conquista aprovada a uma experiência",
+    description=(
+        "Guarda no banco de conquistas da experiência a conquista que o candidato aprovou ao responder "
+        "uma pergunta sobre a vaga, com origem RESPOSTA_PERGUNTA. O resto do perfil não muda."
+    ),
+)
+def adicionar_conquista_a_experiencia(
+    perfil_identificador: str,
+    experiencia_indice: Annotated[int, Path(ge=0, description="Posição da experiência no perfil.")],
+    body: ConquistaAprovadaRequest,
+    service: ServiceAdicionarConquistaAExperienciaDep,
+) -> PerfilEstruturadoResponse:
+    """Acrescenta a conquista aprovada à experiência e devolve o perfil atualizado."""
+    try:
+        perfil = service.executar(
+            AdicionarConquistaAExperienciaInputDto(
+                perfil_identificador=perfil_identificador,
+                experiencia_indice=experiencia_indice,
+                texto=body.texto,
+            )
+        )
+    except (PerfilEstruturadoNaoEncontrado, ExperienciaNaoEncontrada) as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro))
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro))
+    return PerfilEstruturadoResponse.from_dto(perfil)

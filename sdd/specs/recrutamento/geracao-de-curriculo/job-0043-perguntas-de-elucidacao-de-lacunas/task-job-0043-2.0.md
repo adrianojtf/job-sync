@@ -17,9 +17,9 @@ Expõe as lacunas à tela: o router lê o perfil do usuário, monta o `Historico
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes do router (red).
-- [ ] 2.2 Implementar os schemas, a injeção e o endpoint (green).
-- [ ] 2.3 Refatorar e rodar os testes de `entrypoints/api`.
+- [x] 2.1 Escrever os testes do router (red).
+- [x] 2.2 Implementar os schemas, a injeção e o endpoint (green).
+- [x] 2.3 Refatorar e rodar os testes de `entrypoints/api`.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Techspec: "Endpoints de API". PRD: RF 1, 3 e 12 (a tela pode pular a etapa). O c
 
 ## Testes da Tarefa
 
-- [ ] Testes do router com `TestClient` e IA falsa.
-- [ ] Regressão: `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes do router com `TestClient` e IA falsa.
+- [x] Regressão: `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -43,3 +43,8 @@ Techspec: "Endpoints de API". PRD: RF 1, 3 e 12 (a tela pode pular a etapa). O c
 - `src/jobsync/entrypoints/api/schemas/curriculo.py`
 - `src/jobsync/entrypoints/dependencies.py`
 - `src/jobsync/tests/entrypoints/api/test_routers.py`
+
+## Resultado da execução
+
+- `POST /v1/curriculos/lacunas` (corpo com `perfil_identificador`, `descricao_vaga`, `cargo_alvo`, `idioma_alvo`). O router monta o `HistoricoDoCandidato` a partir do perfil (`historico_do_candidato`) e o contexto com análise vazia, sem chamada extra de IA para analisar a vaga.
+- 422 para perfil inexistente, vaga em branco ou idioma inválido.

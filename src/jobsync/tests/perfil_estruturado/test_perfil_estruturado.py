@@ -2,6 +2,7 @@
 
 import pytest
 
+from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada
 from jobsync.perfil_estruturado import (
     Certificacao,
     Conquista,
@@ -174,3 +175,50 @@ class TestConquistasDaExperiencia:
         exp = _experiencia(Conquista("Liderei a migração do banco de dados."))
 
         assert exp.conquistas_parecidas_com("Construí uma API de pagamentos.") == ()
+
+
+class TestComConquistaNaExperiencia:
+    def _perfil_com_duas_experiencias(self) -> PerfilEstruturado:
+        return _perfil_estruturado(
+            experiencias=(
+                _experiencia(Conquista("Reduzi o tempo de deploy.")),
+                ExperienciaProfissional("Outra", "Dev", "2018", "Serviços em Go."),
+            )
+        )
+
+    def test_devolve_um_perfil_novo_com_a_conquista_no_fim_da_experiencia_escolhida(self):
+        perfil = self._perfil_com_duas_experiencias()
+        nova = Conquista("Atuei com o cliente em um MVP.", OrigemConquista.RESPOSTA_PERGUNTA)
+
+        atualizado = perfil.com_conquista_na_experiencia(1, nova)
+
+        assert atualizado.experiencias[1].conquistas == (nova,)
+        assert atualizado.experiencias[0] == perfil.experiencias[0]
+
+    def test_nao_altera_o_perfil_original(self):
+        perfil = self._perfil_com_duas_experiencias()
+
+        perfil.com_conquista_na_experiencia(0, Conquista("Entreguei um MVP."))
+
+        assert len(perfil.experiencias[0].conquistas) == 1
+
+    def test_mantem_as_conquistas_existentes_da_experiencia(self):
+        perfil = self._perfil_com_duas_experiencias()
+
+        atualizado = perfil.com_conquista_na_experiencia(0, Conquista("Entreguei um MVP."))
+
+        assert [c.texto for c in atualizado.experiencias[0].conquistas] == [
+            "Reduzi o tempo de deploy.",
+            "Entreguei um MVP.",
+        ]
+
+    @pytest.mark.parametrize("indice", [-1, 2, 10])
+    def test_indice_fora_das_experiencias_levanta_erro(self, indice):
+        with pytest.raises(ExperienciaNaoEncontrada):
+            self._perfil_com_duas_experiencias().com_conquista_na_experiencia(indice, Conquista("Qualquer."))
+
+    def test_conquista_duplicada_na_experiencia_levanta_erro(self):
+        with pytest.raises(ValueError, match="duplicadas"):
+            self._perfil_com_duas_experiencias().com_conquista_na_experiencia(
+                0, Conquista("reduzi o TEMPO de deploy")
+            )

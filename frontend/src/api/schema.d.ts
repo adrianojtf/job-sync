@@ -386,6 +386,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/curriculos/lacunas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Identificar lacunas da vaga
+         * @description Compara a vaga com o perfil estruturado e devolve até 5 temas centrais que o perfil não sustenta, cada um com uma pergunta. Lista vazia quando não há o que perguntar ou a IA está indisponível: a geração do currículo nunca depende desta etapa.
+         */
+        post: operations["identificar_lacunas_v1_curriculos_lacunas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculos/lacunas/conquista-rascunho": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redigir a conquista de uma lacuna
+         * @description Transforma o caso que o candidato descreveu em uma conquista, usando só o que ele informou. Não persiste nada: o candidato revisa e só a conquista aprovada é salva no banco.
+         */
+        post: operations["redigir_conquista_de_lacuna_v1_curriculos_lacunas_conquista_rascunho_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/curriculos/{id}/rascunhos-adaptados": {
         parameters: {
             query?: never;
@@ -820,6 +860,26 @@ export interface paths {
          * @description Compara o texto de uma conquista nova com as conquistas informadas e devolve as parecidas. Não consulta nem altera o perfil salvo.
          */
         post: operations["verificar_conquistas_parecidas_v1_perfil_estruturado_conquistas_parecidas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/perfil-estruturado/{perfil_identificador}/experiencias/{experiencia_indice}/conquistas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adicionar conquista aprovada a uma experiência
+         * @description Guarda no banco de conquistas da experiência a conquista que o candidato aprovou ao responder uma pergunta sobre a vaga, com origem RESPOSTA_PERGUNTA. O resto do perfil não muda.
+         */
+        post: operations["adicionar_conquista_a_experiencia_v1_perfil_estruturado__perfil_identificador__experiencias__experiencia_indice__conquistas_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1532,6 +1592,73 @@ export interface components {
              * @description Ano de obtenção da certificação.
              */
             ano: string;
+        };
+        /**
+         * ConquistaAprovadaRequest
+         * @description Conquista aprovada pelo candidato a partir de uma pergunta sobre a vaga (JOB-0043).
+         */
+        ConquistaAprovadaRequest: {
+            /**
+             * Texto
+             * @description Texto da conquista, já revisado pelo candidato.
+             */
+            texto: string;
+        };
+        /**
+         * ConquistaRascunhoRequest
+         * @description Resposta "Sim" do candidato a uma pergunta: o caso e a experiência em que aconteceu.
+         * @example {
+         *       "caso": "Montei o MVP de pagamentos em 6 semanas junto ao cliente.",
+         *       "experiencia_indice": 0,
+         *       "idioma_alvo": "pt",
+         *       "perfil_identificador": "adriano",
+         *       "pergunta": "Você já construiu um MVP do zero?",
+         *       "tema": "Construção de MVPs"
+         *     }
+         */
+        ConquistaRascunhoRequest: {
+            /**
+             * Perfil Identificador
+             * @description Identificador do perfil estruturado.
+             */
+            perfil_identificador: string;
+            /**
+             * Tema
+             * @description Tema da lacuna respondida.
+             */
+            tema: string;
+            /**
+             * Pergunta
+             * @description Pergunta que o candidato respondeu com Sim.
+             */
+            pergunta: string;
+            /**
+             * Caso
+             * @description O que o candidato fez, para quem e o resultado, se houver.
+             */
+            caso: string;
+            /**
+             * Experiencia Indice
+             * @description Posição da experiência do perfil em que isso aconteceu.
+             */
+            experiencia_indice: number;
+            /**
+             * Idioma Alvo
+             * @description Idioma em que a conquista deve ser escrita.
+             * @default pt
+             */
+            idioma_alvo?: string;
+        };
+        /**
+         * ConquistaRascunhoResponse
+         * @description Conquista redigida pela IA, para o candidato revisar antes de salvar no banco.
+         */
+        ConquistaRascunhoResponse: {
+            /**
+             * Texto
+             * @description Texto da conquista redigida; nada foi salvo.
+             */
+            texto: string;
         };
         /**
          * ConquistaRequest
@@ -2289,6 +2416,67 @@ export interface components {
              * @description Nível de proficiência (BASICO, INTERMEDIARIO, AVANCADO, FLUENTE, NATIVO).
              */
             nivel: string;
+        };
+        /**
+         * LacunaResponse
+         * @description Um tema da vaga que o perfil não sustenta e a pergunta feita ao candidato.
+         */
+        LacunaResponse: {
+            /**
+             * Tema
+             * @description Tema da vaga sem sustentação no perfil.
+             */
+            tema: string;
+            /**
+             * Pergunta
+             * @description Pergunta fechada que o candidato responde com Sim ou Não.
+             */
+            pergunta: string;
+        };
+        /**
+         * LacunasRequest
+         * @description Vaga a comparar com o perfil estruturado do usuário.
+         * @example {
+         *       "cargo_alvo": "Forward Deployed Engineer",
+         *       "descricao_vaga": "Atuar junto ao cliente e construir MVPs.",
+         *       "idioma_alvo": "pt",
+         *       "perfil_identificador": "adriano"
+         *     }
+         */
+        LacunasRequest: {
+            /**
+             * Perfil Identificador
+             * @description Identificador do perfil estruturado a comparar com a vaga.
+             */
+            perfil_identificador: string;
+            /**
+             * Descricao Vaga
+             * @description Texto completo da descrição da vaga.
+             */
+            descricao_vaga: string;
+            /**
+             * Cargo Alvo
+             * @description Título da vaga (cargo-alvo).
+             * @default
+             */
+            cargo_alvo?: string;
+            /**
+             * Idioma Alvo
+             * @description Idioma de destino do currículo adaptado.
+             * @default pt
+             */
+            idioma_alvo?: string;
+        };
+        /**
+         * LacunasResponse
+         * @description Até 5 lacunas, do tema mais central ao menos central; vazio quando não há o que perguntar.
+         */
+        LacunasResponse: {
+            /**
+             * Lacunas
+             * @description Lacunas identificadas, vazio quando não há.
+             */
+            lacunas: components["schemas"]["LacunaResponse"][];
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3882,6 +4070,90 @@ export interface operations {
             };
         };
     };
+    identificar_lacunas_v1_curriculos_lacunas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LacunasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LacunasResponse"];
+                };
+            };
+            /** @description Perfil inexistente ou dados da vaga inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    redigir_conquista_de_lacuna_v1_curriculos_lacunas_conquista_rascunho_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConquistaRascunhoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConquistaRascunhoResponse"];
+                };
+            };
+            /** @description Experiência inexistente. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Perfil inexistente ou caso inválido. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description IA indisponível. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
     gerar_rascunho_adaptado_v1_curriculos__id__rascunhos_adaptados_post: {
         parameters: {
             query?: never;
@@ -4779,6 +5051,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConquistasParecidasResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adicionar_conquista_a_experiencia_v1_perfil_estruturado__perfil_identificador__experiencias__experiencia_indice__conquistas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                perfil_identificador: string;
+                /** @description Posição da experiência no perfil. */
+                experiencia_indice: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConquistaAprovadaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilEstruturadoResponse"];
                 };
             };
             /** @description Validation Error */

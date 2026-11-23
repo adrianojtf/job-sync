@@ -13,6 +13,8 @@ import type {
   CapturarVagaEntrada,
   CartaApresentacao,
   ConfirmarCandidaturaEntrada,
+  ConquistaRascunho,
+  ConquistaRascunhoEntrada,
   CriarCandidaturaEntrada,
   CurriculoAdaptado,
   CurriculoAdaptadoPdf,
@@ -23,6 +25,8 @@ import type {
   DescobrirVagasEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
+  Lacunas,
+  LacunasEntrada,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
@@ -67,6 +71,16 @@ export interface ApiClient {
   importarPerfilDePdf(pdfBase64: string): Promise<PerfilEstruturado>;
   /** Conquistas da experiência que se parecem com o texto novo (JOB-0042); não altera o perfil salvo. */
   verificarConquistasParecidas(texto: string, conquistas: string[]): Promise<string[]>;
+  /** Temas da vaga que o perfil não sustenta, com a pergunta de cada um (JOB-0043). */
+  identificarLacunas(dados: LacunasEntrada): Promise<Lacunas>;
+  /** Conquista redigida pela IA a partir do caso do candidato; não salva nada (JOB-0043). */
+  redigirConquistaDeLacuna(dados: ConquistaRascunhoEntrada): Promise<ConquistaRascunho>;
+  /** Guarda a conquista aprovada no banco da experiência e devolve o perfil atualizado (JOB-0043). */
+  adicionarConquistaAExperiencia(
+    perfil: string,
+    experienciaIndice: number,
+    texto: string,
+  ): Promise<PerfilEstruturado>;
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia>;
   /** Sugere, via IA, um novo texto para uma seção (JOB-0034). Nada é alterado no servidor. */
   sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao>;

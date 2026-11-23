@@ -21,12 +21,12 @@ Adiciona à tela de ajuste a etapa que pergunta pelas lacunas, recolhe o caso, m
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever os testes do hook e do estado da etapa (red): sem lacunas, erro, pular.
-- [ ] 6.2 Implementar o hook e a navegação da etapa (green).
-- [ ] 6.3 Escrever os testes do fluxo Sim: experiência, caso, revisão, aprovação (red).
-- [ ] 6.4 Implementar os componentes de pergunta e de revisão da conquista (green).
-- [ ] 6.5 Escrever os testes do aviso de duplicidade e dos fluxos Não e Prefiro não responder; implementar.
-- [ ] 6.6 Revisar acessibilidade e rodar o lint e os testes do frontend.
+- [x] 6.1 Escrever os testes do hook e do estado da etapa (red): sem lacunas, erro, pular.
+- [x] 6.2 Implementar o hook e a navegação da etapa (green).
+- [x] 6.3 Escrever os testes do fluxo Sim: experiência, caso, revisão, aprovação (red).
+- [x] 6.4 Implementar os componentes de pergunta e de revisão da conquista (green).
+- [x] 6.5 Escrever os testes do aviso de duplicidade e dos fluxos Não e Prefiro não responder; implementar.
+- [x] 6.6 Revisar acessibilidade e rodar o lint e os testes do frontend.
 
 ## Detalhes de Implementação
 
@@ -40,8 +40,8 @@ Techspec: "Visão Geral dos Componentes" (frontend) e "Endpoints de API". PRD: s
 
 ## Testes da Tarefa
 
-- [ ] Testes vitest de `ajustar-vaga`.
-- [ ] `npm run lint` no `frontend/`.
+- [x] Testes vitest de `ajustar-vaga`.
+- [x] `npm run lint` no `frontend/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -51,3 +51,10 @@ Techspec: "Visão Geral dos Componentes" (frontend) e "Endpoints de API". PRD: s
 - `frontend/src/features/ajustar-vaga/use-ajustar-vaga.ts`
 - `frontend/src/features/ajustar-vaga/navegacao.ts`
 - `frontend/src/features/ajustar-vaga/AjustarVagaPage.test.tsx`
+
+## Resultado da execução
+
+- Etapa `PerguntasSobreAVaga` em `features/ajustar-vaga`, chamada só quando a fonte é o perfil estruturado. Sem lacunas, com erro ou com o botão "Pular perguntas e gerar" (visível também enquanto as lacunas carregam), a geração segue como antes.
+- Em "Sim": experiência obrigatória, caso, texto redigido editável e aviso de duplicidade (reaproveita `/perfil-estruturado/conquistas/parecidas`); só a conquista aprovada é salva.
+- `servidor-api.ts` ganhou um handler padrão de lacunas vazias nos testes.
+- Testes: `tsc -b`, `npm run lint` e `vitest run` (460 testes) passando. O E2E (Playwright) não foi executado neste ambiente.

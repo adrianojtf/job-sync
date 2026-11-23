@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from jobsync.curriculo.adapters.prompt_contexto_vaga import (
     REGRA_RESPONSABILIDADES_IMPLICITAS,
     REGRA_RESUMO_ADERENTE_A_VAGA,
+    bloco_conquistas_do_historico,
     linha_cargo_alvo,
 )
 from jobsync.curriculo.adapters.prompt_refino import bloco_refino
@@ -171,6 +172,7 @@ class AjustadorTextoClient(AjustadorTextoPort):
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
         instrucao_tecnologias_da_vaga = _instrucao_de_tecnologias_da_vaga(secao.tipo)
         bloco_tecnologias_da_vaga = f"{instrucao_tecnologias_da_vaga}\n\n" if instrucao_tecnologias_da_vaga else ""
+        bloco_conquistas = bloco_conquistas_do_historico(contexto) if secao.tipo == TipoSecao.PERFIL else ""
 
         requisitos_explicitos = [
             requisito.nome for requisito in analise_vaga.requisitos
@@ -187,6 +189,7 @@ class AjustadorTextoClient(AjustadorTextoPort):
             f"{rotulo_texto}:\n{secao.conteudo}\n\n"
             f"{instrucao_refino}"
             f"{linha_cargo_alvo(contexto)}"
+            f"{bloco_conquistas}"
             f"Descrição da vaga-alvo:\n{contexto.descricao_vaga}\n\n"
             f"Análise de vaga estruturada:\n"
             f"- Requisitos explícitos: {', '.join(requisitos_explicitos) or 'nenhum'}\n"

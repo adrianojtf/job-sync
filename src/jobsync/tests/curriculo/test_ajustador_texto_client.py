@@ -88,6 +88,7 @@ def _prompt_da_secao(
     idioma: str,
     cargo_alvo: str = "",
     ajustes: tuple[EquivalenciaTecnologia, ...] = (),
+    itens_permitidos: tuple[str, ...] | None = None,
 ) -> str:
     cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": "Conteúdo ajustado"})
     ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
@@ -103,6 +104,7 @@ def _prompt_da_secao(
             cargo_alvo=cargo_alvo,
         ),
         ajustes,
+        itens_permitidos,
     )
 
     assert cliente_fake.prompt_usuario is not None
@@ -378,3 +380,70 @@ def test_refinar_o_perfil_com_foco_de_aderencia_parte_do_texto_atual_com_a_regra
     assert "Foco desta versão: aderência à vaga" in usuario
     assert "Texto atual:\nResumo atual editado." in usuario
     assert "em até 3 frases" in usuario
+
+
+@pytest.mark.parametrize("tipo", list(TipoSecao))
+def test_nenhum_prompt_manda_incluir_todas_as_tecnologias_da_vaga(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt", itens_permitidos=("Java",))
+
+    assert "todas as tecnologias" not in prompt
+    assert "deve aparecer no texto final" not in prompt
+
+
+def test_o_refino_tambem_nao_manda_incluir_todas_as_tecnologias_da_vaga() -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino())
+
+    assert "todas as tecnologias" not in usuario
+
+
+def test_tecnologias_com_itens_permitidos_lista_cada_item_e_proibe_os_demais() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt", itens_permitidos=("Java", "PostgreSQL", "Docker"))
+
+    assert "Itens permitidos: Java, PostgreSQL, Docker" in prompt
+    assert "use somente estes itens" in prompt
+    assert "não acrescente nenhum outro" in prompt
+
+
+def test_tecnologias_com_itens_permitidos_pede_ordenar_pelo_que_a_vaga_mais_pede() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt", itens_permitidos=("Java",))
+
+    assert "mais relevantes para a vaga" in prompt
+
+
+def test_tecnologias_sem_a_lista_permitida_nao_acrescenta_tecnologias_da_vaga() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "Itens permitidos" not in prompt
+    assert "não acrescente tecnologias da vaga" in prompt
+
+
+def test_tecnologias_com_equivalencia_continua_pedindo_a_original_ao_lado_da_alvo() -> None:
+    prompt = _prompt_da_secao(
+        TipoSecao.TECNOLOGIAS, "pt", ajustes=(REACT_ANGULAR,), itens_permitidos=("React", "Angular")
+    )
+
+    assert "Liste também Angular ao lado de React" in prompt
+
+
+@pytest.mark.parametrize("tipo", [tipo for tipo in TipoSecao if tipo != TipoSecao.TECNOLOGIAS])
+def test_as_outras_secoes_nao_recebem_a_lista_de_itens_permitidos(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt", itens_permitidos=("Java",))
+
+    assert "Itens permitidos" not in prompt
+
+
+def test_o_refino_de_tecnologias_nao_acrescenta_tecnologias_da_vaga() -> None:
+    cliente = Mock(spec=ClienteOpenAI)
+    cliente.solicitar_json.return_value = {"conteudo_ajustado": "Linguagens: Java"}
+
+    AjustadorTextoClient(cliente_openai=cliente).refinar_secao(
+        SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Competências", "Linguagens: Java"),
+        ContextoVaga(
+            descricao_vaga="Vaga Kafka",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga Kafka"),
+        ),
+        PedidoRefino(),
+    )
+
+    assert "não acrescente tecnologias da vaga" in cliente.solicitar_json.call_args.kwargs["prompt_usuario"]

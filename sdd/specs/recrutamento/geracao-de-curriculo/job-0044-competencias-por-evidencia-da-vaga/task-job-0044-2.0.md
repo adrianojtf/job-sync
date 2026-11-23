@@ -17,10 +17,10 @@ Complexidade: medium.
 
 ## Subtarefas
 
-- [ ] 2.1 Testes de prompt (red): sem a frase obrigatória; tecnologias com a lista e a proibição; outras seções inalteradas.
-- [ ] 2.2 Alterar `ajustador_texto_client.py` e `ajustador_texto_port.py` (green).
-- [ ] 2.3 Atualizar os fakes do port nos testes existentes.
-- [ ] 2.4 Refatorar.
+- [x] 2.1 Testes de prompt (red): sem a frase obrigatória; tecnologias com a lista e a proibição; outras seções inalteradas.
+- [x] 2.2 Alterar `ajustador_texto_client.py` e `ajustador_texto_port.py` (green).
+- [x] 2.3 Atualizar os fakes do port nos testes existentes.
+- [x] 2.4 Refatorar.
 
 ## Detalhes de Implementação
 
@@ -33,8 +33,8 @@ Techspec: "Design de Implementação" e "Abordagem de Testes". PRD: requisitos f
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade de `test_ajustador_texto_client.py`.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade de `test_ajustador_texto_client.py`.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

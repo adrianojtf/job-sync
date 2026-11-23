@@ -27,8 +27,6 @@ _NOME_IDIOMA = {"pt": "português do Brasil", "en": "inglês (formato americano 
 
 _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
     TipoSecao.TECNOLOGIAS: (
-        "Reordene e destaque as tecnologias mais relevantes para a vaga primeiro, "
-        "mantendo TODAS as tecnologias originais (não remova nenhuma). "
         "Escreva uma categoria por linha, no formato 'Rótulo: item1, item2'. "
         "Se o original já tiver categorias, mantenha-as. "
         "Se o original for uma lista única, agrupe as tecnologias em categorias e use, de preferência, "
@@ -66,15 +64,33 @@ def _instrucao_experiencias(rotulo_contexto: str) -> str:
     )
 
 
+def _instrucao_de_tecnologias(itens_permitidos: Sequence[str] | None) -> str:
+    """Competências: o domínio decide o que entra (JOB-0044); a IA só agrupa e ordena."""
+    if itens_permitidos is None:
+        return "Use só as tecnologias que já estão no conteúdo e não acrescente tecnologias da vaga."
+    return (
+        f"Itens permitidos: {', '.join(itens_permitidos) or 'nenhum'}. "
+        "Organize e ordene com as mais relevantes para a vaga primeiro, "
+        "use somente estes itens, sem remover nenhum, e não acrescente nenhum outro, "
+        "mesmo que a vaga o peça."
+    )
+
+
 def _instrucao_da_secao(
-    tipo: TipoSecao, idioma_alvo: str, ajustes: Sequence[EquivalenciaTecnologia]
+    tipo: TipoSecao,
+    idioma_alvo: str,
+    ajustes: Sequence[EquivalenciaTecnologia],
+    itens_permitidos: Sequence[str] | None = None,
 ) -> str:
     """Instrução específica do tipo de seção, com as trocas de tecnologia quando houver."""
     if tipo == TipoSecao.EXPERIENCIAS:
         return _instrucao_experiencias(ROTULO_CONTEXTO.get(idioma_alvo, ROTULO_CONTEXTO["pt"]))
     instrucao = _INSTRUCOES_POR_TIPO.get(tipo, "Traduza/adapte o idioma, mantendo os fatos originais.")
     if tipo == TipoSecao.TECNOLOGIAS:
-        complementos = [f"Liste também {ajuste.alvo} ao lado de {ajuste.original}." for ajuste in ajustes]
+        complementos = [
+            _instrucao_de_tecnologias(itens_permitidos),
+            *(f"Liste também {ajuste.alvo} ao lado de {ajuste.original}." for ajuste in ajustes),
+        ]
     elif tipo == TipoSecao.PERFIL:
         complementos = [
             f"Pode citar {ajuste.alvo}, equivalente a {ajuste.original}, já usada pelo candidato."
@@ -109,8 +125,11 @@ class AjustadorTextoClient(AjustadorTextoPort):
         secao: SecaoCurriculo,
         contexto: ContextoVaga,
         ajustes: Sequence[EquivalenciaTecnologia] = (),
+        itens_permitidos: Sequence[str] | None = None,
     ) -> SecaoCurriculo:
-        return self._solicitar(secao, contexto, ajustes, rotulo_texto="Conteúdo original")
+        return self._solicitar(
+            secao, contexto, ajustes, rotulo_texto="Conteúdo original", itens_permitidos=itens_permitidos
+        )
 
     def refinar_secao(
         self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino
@@ -130,10 +149,11 @@ class AjustadorTextoClient(AjustadorTextoPort):
         ajustes: Sequence[EquivalenciaTecnologia],
         rotulo_texto: str,
         instrucao_refino: str = "",
+        itens_permitidos: Sequence[str] | None = None,
     ) -> SecaoCurriculo:
         idioma_alvo = contexto.idioma_alvo
         analise_vaga = contexto.analise_vaga
-        instrucao_especifica = _instrucao_da_secao(secao.tipo, idioma_alvo, ajustes)
+        instrucao_especifica = _instrucao_da_secao(secao.tipo, idioma_alvo, ajustes, itens_permitidos)
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
 
         requisitos_explicitos = [
@@ -158,9 +178,6 @@ class AjustadorTextoClient(AjustadorTextoPort):
             f"- Trechos ambíguos: {', '.join(ambiguidade) or 'nenhum'}\n\n"
             f"Idioma de saída obrigatório: {nome_idioma}\n\n"
             f"Instrução específica para esta seção: {instrucao_especifica}\n\n"
-            "Inclua explicitamente na seção reescrita todas as tecnologias listadas acima "
-            "em requisitos explícitos e implícitos, mesmo que não estejam no conteúdo original. "
-            "Cada tecnologia da análise de vaga deve aparecer no texto final.\n\n"
             "Não inclua idiomas (ex.: inglês, espanhol, português) como se fossem tecnologias, "
             "mesmo que apareçam nos requisitos explícitos ou implícitos — idiomas pertencem a "
             "outra seção do currículo e devem ser ignorados aqui, independentemente da seção "

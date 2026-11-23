@@ -60,7 +60,7 @@ class AjustadorTextoFake(AjustadorTextoPort):
         self._eventos = eventos
 
     def ajustar_secao(
-        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=(), itens_permitidos=None
     ) -> SecaoCurriculo:
         self.chamadas.append((secao.tipo, contexto))
         self.ajustes.append(tuple(ajustes))
@@ -709,7 +709,7 @@ class AjustadorTextoDeTecnologiasFake(AjustadorTextoFake):
         self._conteudo_tecnologias = conteudo_tecnologias
 
     def ajustar_secao(
-        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=(), itens_permitidos=None
     ) -> SecaoCurriculo:
         if secao.tipo == TipoSecao.TECNOLOGIAS:
             return secao.com_novo_conteudo(self._conteudo_tecnologias)

@@ -95,7 +95,9 @@ class AnalisadorVagaE2E(JobDescriptionAnalyzerPort):
 
 
 class AjustadorTextoE2E(AjustadorTextoPort):
-    def ajustar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()) -> SecaoCurriculo:
+    def ajustar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=(), itens_permitidos=None
+    ) -> SecaoCurriculo:
         return secao
 
     def refinar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino) -> SecaoCurriculo:
@@ -133,7 +135,9 @@ class AjustadorExperienciaE2E(AjustadorExperienciaPort):
 class AjustadorTextoSugestaoE2E(AjustadorTextoPort):
     """Sugestão com vaga: marca o texto recebido, para o E2E provar de onde veio."""
 
-    def ajustar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()) -> SecaoCurriculo:
+    def ajustar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=(), itens_permitidos=None
+    ) -> SecaoCurriculo:
         raise NotImplementedError("As sugestões com vaga usam refinar_secao.")
 
     def refinar_secao(self, secao: SecaoCurriculo, contexto: ContextoVaga, refino: PedidoRefino) -> SecaoCurriculo:

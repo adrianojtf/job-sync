@@ -492,6 +492,13 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
         default=TITULO_COMPETENCIAS_PADRAO,
         description="Título da seção de competências.",
     )
+    lacunas_tecnologia: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Tecnologias e ferramentas que a vaga pede e o perfil não mostra (JOB-0044); "
+            "não entraram em Competências. Informativo: ignorado na geração do PDF revisado."
+        ),
+    )
     ajustes_tecnologia: list[AjusteTecnologiaSchema] = Field(
         default_factory=list,
         description=(
@@ -531,6 +538,7 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 ]
             ),
             titulo_competencias=rascunho.titulo_competencias,
+            lacunas_tecnologia=list(rascunho.lacunas_tecnologia),
             ajustes_tecnologia=[
                 AjusteTecnologiaSchema(
                     indice_experiencia=ajuste.indice_experiencia,

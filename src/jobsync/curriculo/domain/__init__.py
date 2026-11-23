@@ -6,6 +6,12 @@ from jobsync.curriculo.domain.competencias import (
     categorias_para_texto,
 )
 from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
+from jobsync.curriculo.domain.selecao_de_competencias import (
+    ResultadoDaSelecao,
+    SelecaoDeCompetencias,
+    limitar_ao_teto,
+    restringir_aos_permitidos,
+)
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.curriculo.domain.equivalencia_tecnologia import (
@@ -34,6 +40,10 @@ from jobsync.curriculo.domain.rascunho_curriculo_adaptado import RascunhoCurricu
 from jobsync.curriculo.domain.refino import FocoRefino, PedidoRefino, SugestaoRefinada
 
 __all__ = [
+    "ResultadoDaSelecao",
+    "SelecaoDeCompetencias",
+    "limitar_ao_teto",
+    "restringir_aos_permitidos",
     "CategoriaCompetencia",
     "categorias_de_texto",
     "categorias_para_texto",

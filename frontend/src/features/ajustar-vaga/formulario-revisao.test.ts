@@ -8,6 +8,7 @@ import {
   formularioParaRascunho,
   linhasParaConquistas,
   rascunhoParaFormulario,
+  tituloCompetencias,
 } from "./formulario-revisao";
 
 const rascunhoDoPerfil: RascunhoCurriculoAdaptado = {
@@ -93,6 +94,16 @@ describe("rascunhoParaFormulario", () => {
     expect(formulario.secoes).toEqual([
       { tipo: "EXPERIENCIAS", titulo: "Experiências", conteudo: "Dev — TechCorp" },
     ]);
+  });
+});
+
+describe("tituloCompetencias", () => {
+  it("sem título no rascunho nem seção de tecnologias, usa Competências", () => {
+    expect(tituloCompetencias(rascunhoDePdf)).toBe("Competências");
+  });
+
+  it("usa o título que o rascunho traz", () => {
+    expect(tituloCompetencias(rascunhoDoPerfil)).toBe("Tecnologias");
   });
 });
 

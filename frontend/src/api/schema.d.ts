@@ -2703,9 +2703,14 @@ export interface components {
             /**
              * Titulo Competencias
              * @description Título da seção de competências.
-             * @default Tecnologias
+             * @default Competências
              */
             titulo_competencias?: string;
+            /**
+             * Lacunas Tecnologia
+             * @description Tecnologias e ferramentas que a vaga pede e o perfil não mostra (JOB-0044); não entraram em Competências. Informativo: ignorado na geração do PDF revisado.
+             */
+            lacunas_tecnologia?: string[];
             /**
              * Ajustes Tecnologia
              * @description Trocas de tecnologia feitas pela IA nas experiências (informativo). Ignorado na geração do PDF revisado.

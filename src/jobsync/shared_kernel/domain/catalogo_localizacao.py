@@ -28,7 +28,7 @@ class CatalogoLocalizacao:
     @staticmethod
     def _secoes_padrao() -> dict[str, dict[str, str]]:
         return {
-            "tecnologias": {"pt": "Tecnologias", "en": "Technical Skills"},
+            "tecnologias": {"pt": "Competências", "en": "Skills"},
             "perfil": {"pt": "Perfil", "en": "Profile"},
             "experiencias": {"pt": "Experiências", "en": "Experience"},
             "formacao": {"pt": "Formação", "en": "Education"},

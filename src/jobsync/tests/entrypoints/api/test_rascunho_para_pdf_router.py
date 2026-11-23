@@ -29,7 +29,13 @@ from jobsync.perfil_estruturado.domain.perfil_estruturado import (
     ExperienciaProfissional,
     PerfilEstruturado,
 )
-from jobsync.vaga import AnaliseVaga
+from jobsync.vaga import (
+    AnaliseVaga,
+    CategoriaRequisitoTecnico,
+    OrigemRequisitoTecnico,
+    RequisitoTecnico,
+    TipoRequisitoTecnico,
+)
 from jobsync.vaga.domain.job_description_analyzer_port import JobDescriptionAnalyzerPort
 
 CONQUISTAS_DA_IA = ("Criei APIs em Python.", "Reduzi custos em 30%.")
@@ -242,3 +248,47 @@ def test_competencias_junto_com_a_secao_de_tecnologias_em_texto_devolve_422(clie
     )
 
     assert response.status_code == 422
+
+
+def _servico_com_requisitos(*nomes: str) -> AdaptarCurriculoParaVaga:
+    servico = _servico_de_adaptacao()
+    analisador = Mock(spec=JobDescriptionAnalyzerPort)
+    analisador.analisar.return_value = AnaliseVaga(
+        requisitos=tuple(
+            RequisitoTecnico(
+                nome=nome,
+                categoria=CategoriaRequisitoTecnico.TECNOLOGIA,
+                tipo=TipoRequisitoTecnico.EXPLICITO,
+                origem=OrigemRequisitoTecnico.DESCRICAO_VAGA,
+            )
+            for nome in nomes
+        ),
+        ambiguidade=(),
+        texto_original="Vaga",
+    )
+    servico._analisador_vaga = analisador
+    return servico
+
+
+def test_o_rascunho_traz_as_tecnologias_da_vaga_sem_evidencia_como_lacunas(client):
+    app.dependency_overrides[obter_service_adaptar_curriculo] = lambda: _servico_com_requisitos("Kafka", "Python")
+
+    rascunho = _gerar_rascunho(client)
+
+    assert rascunho["lacunas_tecnologia"] == ["Kafka"]
+    assert [tag for categoria in rascunho["competencias"] for tag in categoria["tags"]] == ["Python"]
+
+
+def test_o_rascunho_sem_lacunas_traz_a_lista_vazia(client):
+    rascunho = _gerar_rascunho(client)
+
+    assert rascunho["lacunas_tecnologia"] == []
+
+
+def test_as_lacunas_enviadas_na_confirmacao_sao_ignoradas(client):
+    rascunho = _gerar_rascunho(client)
+    rascunho["lacunas_tecnologia"] = ["Kafka"]
+
+    texto, _ = _confirmar(client, rascunho)
+
+    assert "Kafka" not in texto

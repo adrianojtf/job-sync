@@ -58,12 +58,14 @@ class AjustadorTextoFake(AjustadorTextoPort):
     def __init__(self, eventos: list[str] | None = None):
         self.chamadas: list[tuple[TipoSecao, ContextoVaga]] = []
         self.ajustes: list[tuple[EquivalenciaTecnologia, ...]] = []
+        self.permitidos: dict[TipoSecao, tuple[str, ...] | None] = {}
         self._eventos = eventos
 
     def ajustar_secao(
-        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=(), itens_permitidos=None
     ) -> SecaoCurriculo:
         self.chamadas.append((secao.tipo, contexto))
+        self.permitidos[secao.tipo] = itens_permitidos
         self.ajustes.append(tuple(ajustes))
         if self._eventos is not None:
             self._eventos.append("ajustar_secao")
@@ -756,7 +758,7 @@ class AjustadorTextoDeTecnologiasFake(AjustadorTextoFake):
         self._conteudo_tecnologias = conteudo_tecnologias
 
     def ajustar_secao(
-        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=(), itens_permitidos=None
     ) -> SecaoCurriculo:
         if secao.tipo == TipoSecao.TECNOLOGIAS:
             return secao.com_novo_conteudo(self._conteudo_tecnologias)
@@ -782,13 +784,13 @@ def _adaptar(curriculo: Curriculo, ajustador: AjustadorTextoPort):
 
 class TestAdaptarCurriculoComCompetencias:
     def test_secao_de_tecnologias_da_ia_vira_competencias_por_categoria(self):
-        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java, Python\nBancos de Dados: SQL")
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java, Python\nOutros: Go")
 
         rascunho = _adaptar(_curriculo_exemplo(), ajustador).rascunho
 
         assert rascunho.competencias == (
             CategoriaCompetencia("Linguagens", ("Java", "Python")),
-            CategoriaCompetencia("Bancos de Dados", ("SQL",)),
+            CategoriaCompetencia("Outros", ("Go",)),
         )
 
     def test_a_secao_de_tecnologias_em_texto_sai_das_secoes(self):
@@ -831,3 +833,166 @@ class TestAdaptarCurriculoComCompetencias:
         rascunho = _adaptar(curriculo, AjustadorTextoFake()).rascunho
 
         assert rascunho.competencias is None
+
+
+def _requisito(nome, categoria=CategoriaRequisitoTecnico.TECNOLOGIA):
+    return RequisitoTecnico(
+        nome=nome,
+        categoria=categoria,
+        tipo=TipoRequisitoTecnico.EXPLICITO,
+        origem=OrigemRequisitoTecnico.DESCRICAO_VAGA,
+    )
+
+
+def _adaptar_vaga(curriculo, ajustador, requisitos=(), experiencias=None, **servicos):
+    analise = AnaliseVaga(requisitos=tuple(requisitos), ambiguidade=(), texto_original="Vaga")
+    caso_de_uso = AdaptarCurriculoParaVaga(
+        ExtratorFake(curriculo), JobDescriptionAnalyzerFake(analise), ajustador, **servicos
+    )
+    return caso_de_uso.executar(
+        AdaptarCurriculoParaVagaInputDto(
+            pdf_curriculo=b"pdf",
+            descricao_vaga="Vaga",
+            idioma_alvo="pt",
+            cargo_alvo="Engenheiro",
+            empresa_alvo="TechCorp",
+            experiencias_profissionais=experiencias,
+        )
+    )
+
+
+def _curriculo_com_tecnologias(conteudo: str) -> Curriculo:
+    return Curriculo(
+        nome_completo="Ana Souza",
+        email="ana@ex.com",
+        linkedin="",
+        secoes=(
+            SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", conteudo),
+            SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Engenheira."),
+        ),
+    )
+
+
+def _tags(rascunho) -> list[str]:
+    return [tag for categoria in rascunho.competencias or () for tag in categoria.tags]
+
+
+class TestCompetenciasPorEvidencia:
+    def test_a_ia_recebe_so_os_itens_do_candidato_como_permitidos(self):
+        ajustador = AjustadorTextoFake()
+
+        _adaptar_vaga(_curriculo_com_tecnologias("Java, Python"), ajustador, requisitos=(_requisito("Kafka"),))
+
+        assert ajustador.permitidos[TipoSecao.TECNOLOGIAS] == ("Java", "Python")
+
+    def test_as_outras_secoes_nao_recebem_itens_permitidos(self):
+        ajustador = AjustadorTextoFake()
+
+        _adaptar_vaga(_curriculo_com_tecnologias("Java"), ajustador)
+
+        assert ajustador.permitidos[TipoSecao.PERFIL] is None
+
+    def test_item_que_a_ia_acrescenta_fora_dos_permitidos_e_descartado(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java, Python\nMensageria: Kafka")
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Java, Python"), ajustador, requisitos=(_requisito("Kafka"),)
+        ).rascunho
+
+        assert _tags(rascunho) == ["Java", "Python"]
+
+    def test_tecnologia_da_vaga_sem_evidencia_vira_lacuna(self):
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Java"), AjustadorTextoFake(), requisitos=(_requisito("Kafka"),)
+        ).rascunho
+
+        assert rascunho.lacunas_tecnologia == ("Kafka",)
+
+    def test_requisito_que_nao_e_tecnologia_nao_vira_lacuna_nem_entra(self):
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Java"),
+            AjustadorTextoFake(),
+            requisitos=(_requisito("aprovação humana", CategoriaRequisitoTecnico.HABILIDADE),),
+        ).rascunho
+
+        assert rascunho.lacunas_tecnologia == ()
+
+    def test_tecnologia_citada_numa_experiencia_tem_evidencia_e_pode_entrar(self):
+        ajustador = AjustadorTextoFake()
+        experiencias = (
+            ExperienciaParaAvaliacao(
+                cargo="Dev", empresa="Acme", periodo="2024", descricao="Mensageria com RabbitMQ."
+            ),
+        )
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Java"),
+            ajustador,
+            requisitos=(_requisito("RabbitMQ"),),
+            experiencias=experiencias,
+            ajustador_experiencia=AjustadorExperienciaFake(),
+        ).rascunho
+
+        assert ajustador.permitidos[TipoSecao.TECNOLOGIAS] == ("Java", "RabbitMQ")
+        assert rascunho.lacunas_tecnologia == ()
+
+    def test_equivalencia_aplicada_entra_nos_permitidos(self):
+        ajustador = AjustadorTextoFake()
+        experiencias = (
+            ExperienciaParaAvaliacao(cargo="Dev", empresa="Acme", periodo="2024", descricao="Telas em React."),
+        )
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("React"),
+            ajustador,
+            requisitos=(_requisito("Angular"),),
+            experiencias=experiencias,
+            ajustador_experiencia=AjustadorExperienciaFake(),
+            identificador_equivalencias=IdentificadorEquivalenciasFake(
+                (EquivalenciaTecnologia(original="React", alvo="Angular"),)
+            ),
+        ).rascunho
+
+        assert ajustador.permitidos[TipoSecao.TECNOLOGIAS] == ("React", "Angular")
+        assert rascunho.lacunas_tecnologia == ()
+
+    def test_acima_do_teto_a_lista_e_cortada_e_os_relevantes_ficam(self):
+        itens = ", ".join(f"Tec{numero}" for numero in range(60))
+        conteudo_da_ia = "Tudo: " + itens
+        ajustador = AjustadorTextoDeTecnologiasFake(conteudo_da_ia)
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias(itens), ajustador, requisitos=(_requisito("Tec59"),)
+        ).rascunho
+
+        assert len(_tags(rascunho)) == 45
+        assert "Tec59" in _tags(rascunho)
+        assert "Tec0" in _tags(rascunho)
+
+    def test_se_a_ia_devolve_so_itens_fora_dos_permitidos_nao_ha_competencias(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Mensageria: Kafka")
+
+        rascunho = _adaptar_vaga(_curriculo_com_tecnologias("Java"), ajustador).rascunho
+
+        assert rascunho.competencias is None
+        assert all(secao.tipo != TipoSecao.TECNOLOGIAS for secao in rascunho.secoes)
+
+    def test_sem_secao_de_tecnologias_nao_ha_competencias_e_a_vaga_gera_lacunas(self):
+        curriculo = Curriculo(
+            nome_completo="Ana Souza",
+            email="ana@ex.com",
+            linkedin="",
+            secoes=(SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Engenheira."),),
+        )
+
+        rascunho = _adaptar_vaga(curriculo, AjustadorTextoFake(), requisitos=(_requisito("Kafka"),)).rascunho
+
+        assert rascunho.competencias is None
+        assert rascunho.lacunas_tecnologia == ("Kafka",)
+
+    def test_o_curriculo_adaptado_do_resultado_traz_so_as_competencias_filtradas(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java\nMensageria: Kafka")
+
+        resultado = _adaptar_vaga(_curriculo_com_tecnologias("Java"), ajustador)
+
+        assert resultado.curriculo_adaptado.obter_secao(TipoSecao.TECNOLOGIAS).conteudo == "Linguagens: Java"

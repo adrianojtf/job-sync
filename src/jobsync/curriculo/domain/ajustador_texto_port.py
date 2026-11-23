@@ -18,6 +18,7 @@ class AjustadorTextoPort(ABC):
         secao: SecaoCurriculo,
         contexto: ContextoVaga,
         ajustes: Sequence[EquivalenciaTecnologia] = (),
+        itens_permitidos: Sequence[str] | None = None,
     ) -> SecaoCurriculo:
         """Retorna uma nova SecaoCurriculo com o conteúdo reescrito.
 
@@ -27,17 +28,17 @@ class AjustadorTextoPort(ABC):
                 e cargo-alvo) que orienta o ajuste.
                 ajustes: tecnologias equivalentes trocadas nas experiências (JOB-0037). A seção
                 de tecnologias lista a original e a equivalente; o resumo pode citar a equivalente.
+                itens_permitidos: só para a seção de tecnologias (JOB-0044). Os únicos itens que
+                podem aparecer; a IA agrupa e ordena, sem acrescentar outros. Sem ela, a seção
+                usa só o que já está no conteúdo.
 
             Regras de reescrita:
                 - Preservar fatos verificáveis: empresas e datas do currículo original
                 não podem ser alteradas.
-                - Priorizar e reformular a ênfase e o idioma conforme a vaga-alvo.
-                - Sempre extrair todas as tecnologias, ferramentas, frameworks e metodologias
-                mencionadas em `contexto.analise_vaga` como DESCRICAO_VAGA e incluir cada
-                uma delas na seção de tecnologias reescrita, mesmo que não constem
-                na secao.
-                - Objetivo: maximizar a correspondência de palavras-chave com a vaga
-                para otimizar a leitura por sistemas ATS (Applicant Tracking System).
+                - Priorizar e reformular a ênfase e o idioma conforme a vaga-alvo, sem
+                copiar trechos da vaga.
+                - Tecnologias da vaga só entram na seção de tecnologias se o domínio as
+                permitiu (`itens_permitidos`); a vaga não obriga a citar tudo.
 
             Returns:
                 Nova instância de SecaoCurriculo com o conteúdo ajustado.

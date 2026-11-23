@@ -6,8 +6,8 @@ from jobsync.shared_kernel.domain import CatalogoLocalizacao
 def test_mapeia_secao_para_pt_e_en():
     catalogo = CatalogoLocalizacao()
 
-    assert catalogo.localizar_secao("pt", "tecnologias") == "Tecnologias"
-    assert catalogo.localizar_secao("en", "tecnologias") == "Technical Skills"
+    assert catalogo.localizar_secao("pt", "tecnologias") == "Competências"
+    assert catalogo.localizar_secao("en", "tecnologias") == "Skills"
 
 
 def test_fallback_para_idioma_desconhecido_usa_portugues():

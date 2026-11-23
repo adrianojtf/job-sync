@@ -88,6 +88,7 @@ def _prompt_da_secao(
     idioma: str,
     cargo_alvo: str = "",
     ajustes: tuple[EquivalenciaTecnologia, ...] = (),
+    itens_permitidos: tuple[str, ...] | None = None,
 ) -> str:
     cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": "Conteúdo ajustado"})
     ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
@@ -103,6 +104,7 @@ def _prompt_da_secao(
             cargo_alvo=cargo_alvo,
         ),
         ajustes,
+        itens_permitidos,
     )
 
     assert cliente_fake.prompt_usuario is not None
@@ -280,12 +282,50 @@ def test_prompt_de_qualquer_secao_pede_para_preservar_linhas_e_topicos(tipo: Tip
     assert "Nunca junte tópicos ou linhas em um parágrafo" in prompt
 
 
-def test_prompt_de_tecnologias_pede_uma_categoria_por_linha_sem_criar_categorias() -> None:
+def test_prompt_de_tecnologias_pede_uma_categoria_por_linha_no_formato_rotulo_e_itens() -> None:
     prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "en")
 
     assert "uma categoria por linha" in prompt
     assert "Rótulo: item1, item2" in prompt
-    assert "não crie categorias" in prompt
+
+
+def test_prompt_de_tecnologias_mantem_as_categorias_que_o_original_ja_tem() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "Se o original já tiver categorias, mantenha-as" in prompt
+
+
+@pytest.mark.parametrize(
+    "rotulo",
+    [
+        "Linguagens",
+        "Backend e APIs",
+        "IA no Desenvolvimento",
+        "Qualidade e Testes",
+        "Práticas de Engenharia",
+        "Bancos de Dados",
+        "Frontend",
+        "Ferramentas",
+    ],
+)
+def test_prompt_de_tecnologias_sugere_as_categorias_padrao_quando_a_lista_vem_solta(rotulo: str) -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert rotulo in prompt
+    assert "lista única" in prompt
+
+
+def test_prompt_de_tecnologias_nao_manda_deixar_tudo_em_uma_categoria() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "não crie categorias" not in prompt
+
+
+def test_prompt_de_tecnologias_pede_rotulos_no_idioma_de_saida_e_sem_inventar_tecnologias() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "en")
+
+    assert "no idioma de saída" in prompt
+    assert "não repita a mesma tecnologia" in prompt
 
 
 @pytest.mark.parametrize("tipo", [TipoSecao.PERFIL, TipoSecao.FORMACAO, TipoSecao.IDIOMAS])
@@ -340,10 +380,11 @@ def test_perfil_nao_recebe_a_ordem_de_incluir_as_tecnologias_da_vaga() -> None:
 
 
 @pytest.mark.parametrize("tipo", [tipo for tipo in TipoSecao if tipo != TipoSecao.PERFIL])
-def test_outras_secoes_continuam_recebendo_a_ordem_de_incluir_as_tecnologias_da_vaga(tipo: TipoSecao) -> None:
+def test_nenhuma_outra_secao_recebe_a_ordem_de_incluir_as_tecnologias_da_vaga(tipo: TipoSecao) -> None:
     prompt = _prompt_da_secao(tipo, "pt")
 
-    assert "Cada tecnologia da análise de vaga deve aparecer no texto final" in prompt
+    assert "Cada tecnologia da análise de vaga deve aparecer no texto final" not in prompt
+    assert "Inclua explicitamente na seção reescrita todas as tecnologias" not in prompt
 
 
 def test_perfil_mantem_o_complemento_de_tecnologia_equivalente_com_a_nova_regra() -> None:
@@ -385,3 +426,70 @@ def test_refino_do_perfil_com_foco_palavras_chave_mantem_a_proibicao_de_copiar_a
     assert "não copie trechos da vaga" in usuario
     assert "não faça listas de termos" in usuario
     assert "Cada tecnologia da análise de vaga deve aparecer no texto final" not in usuario
+
+
+@pytest.mark.parametrize("tipo", list(TipoSecao))
+def test_nenhum_prompt_manda_incluir_todas_as_tecnologias_da_vaga(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt", itens_permitidos=("Java",))
+
+    assert "todas as tecnologias" not in prompt
+    assert "deve aparecer no texto final" not in prompt
+
+
+def test_o_refino_tambem_nao_manda_incluir_todas_as_tecnologias_da_vaga() -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino())
+
+    assert "todas as tecnologias" not in usuario
+
+
+def test_tecnologias_com_itens_permitidos_lista_cada_item_e_proibe_os_demais() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt", itens_permitidos=("Java", "PostgreSQL", "Docker"))
+
+    assert "Itens permitidos: Java, PostgreSQL, Docker" in prompt
+    assert "use somente estes itens" in prompt
+    assert "não acrescente nenhum outro" in prompt
+
+
+def test_tecnologias_com_itens_permitidos_pede_ordenar_pelo_que_a_vaga_mais_pede() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt", itens_permitidos=("Java",))
+
+    assert "mais relevantes para a vaga" in prompt
+
+
+def test_tecnologias_sem_a_lista_permitida_nao_acrescenta_tecnologias_da_vaga() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "Itens permitidos" not in prompt
+    assert "não acrescente tecnologias da vaga" in prompt
+
+
+def test_tecnologias_com_equivalencia_continua_pedindo_a_original_ao_lado_da_alvo() -> None:
+    prompt = _prompt_da_secao(
+        TipoSecao.TECNOLOGIAS, "pt", ajustes=(REACT_ANGULAR,), itens_permitidos=("React", "Angular")
+    )
+
+    assert "Liste também Angular ao lado de React" in prompt
+
+
+@pytest.mark.parametrize("tipo", [tipo for tipo in TipoSecao if tipo != TipoSecao.TECNOLOGIAS])
+def test_as_outras_secoes_nao_recebem_a_lista_de_itens_permitidos(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt", itens_permitidos=("Java",))
+
+    assert "Itens permitidos" not in prompt
+
+
+def test_o_refino_de_tecnologias_nao_acrescenta_tecnologias_da_vaga() -> None:
+    cliente = Mock(spec=ClienteOpenAI)
+    cliente.solicitar_json.return_value = {"conteudo_ajustado": "Linguagens: Java"}
+
+    AjustadorTextoClient(cliente_openai=cliente).refinar_secao(
+        SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Competências", "Linguagens: Java"),
+        ContextoVaga(
+            descricao_vaga="Vaga Kafka",
+            idioma_alvo="pt",
+            analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga Kafka"),
+        ),
+        PedidoRefino(),
+    )
+
+    assert "não acrescente tecnologias da vaga" in cliente.solicitar_json.call_args.kwargs["prompt_usuario"]

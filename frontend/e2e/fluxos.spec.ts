@@ -407,3 +407,51 @@ test("competências em tags e currículo adaptado: editar na revisão, reabrir d
   await expect(original.getByText("Kafka")).toBeVisible();
   await expect(original.getByText("Terraform")).toHaveCount(0);
 });
+
+test("competências por evidência: a tecnologia da vaga sem evidência fica de fora e aparece como lacuna", async ({
+  page,
+  request,
+}) => {
+  const perfil = novoPerfil("e2e-lacunas");
+  await semearPerfilCompleto(request, perfil);
+  await entrar(page, perfil);
+
+  await page.goto("/ajustar-vaga");
+  await page.getByLabel("Título da vaga").fill("Staff Platform Engineer");
+  await page.getByLabel("Empresa").fill("Initech");
+  await page
+    .getByLabel("Descrição da vaga")
+    .fill("Staff Platform Engineer\nPython, FastAPI, Kafka e Docker.");
+  await page.getByRole("button", { name: "Gerar currículo adaptado" }).click();
+  await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
+
+  const competencias = page.getByRole("region", { name: "Competências", exact: true });
+  await expect(competencias.getByText("Python")).toBeVisible();
+  await expect(competencias.getByText("FastAPI")).toBeVisible();
+  await expect(competencias.getByText("Kafka")).toHaveCount(0);
+  await expect(competencias.getByText("Docker")).toHaveCount(0);
+
+  const lacunas = page.getByRole("region", { name: "Tecnologias da vaga fora das competências" });
+  await expect(lacunas).toContainText("Kafka, Docker");
+
+  const categoria = competencias.getByRole("group").first();
+  await categoria.getByLabel("Nova tag").fill("Kafka");
+  await categoria.getByLabel("Nova tag").press("Enter");
+  await expect(lacunas).toContainText("Docker");
+  await expect(lacunas).not.toContainText("Kafka");
+
+  await categoria.getByLabel("Nova tag").fill("Docker");
+  await categoria.getByLabel("Nova tag").press("Enter");
+  await expect(lacunas).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
+  await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeVisible();
+  await page.getByRole("button", { name: "Editar currículo" }).click();
+  await expect(page.getByRole("heading", { name: "Edite o currículo adaptado" })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Tecnologias da vaga fora das competências" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Competências", exact: true }).getByText("Docker"),
+  ).toBeVisible();
+});

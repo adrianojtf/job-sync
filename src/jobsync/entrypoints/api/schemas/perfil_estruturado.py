@@ -60,6 +60,12 @@ class ConquistasParecidasRequest(BaseModel):
         return VerificarConquistasParecidasInputDto(texto=self.texto, conquistas=tuple(self.conquistas))
 
 
+class ConquistaAprovadaRequest(BaseModel):
+    """Conquista aprovada pelo candidato a partir de uma pergunta sobre a vaga (JOB-0043)."""
+
+    texto: str = Field(description="Texto da conquista, já revisado pelo candidato.")
+
+
 class ConquistasParecidasResponse(BaseModel):
     """Conquistas existentes que se parecem com a conquista nova."""
 

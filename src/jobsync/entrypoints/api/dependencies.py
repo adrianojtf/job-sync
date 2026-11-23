@@ -91,6 +91,9 @@ from jobsync.entrypoints.dependencies import (
 from jobsync.perfil.domain.perfil_repository import PerfilRepository
 from jobsync.perfil.service_layer.entrar_ou_criar_perfil import EntrarOuCriarPerfil
 from jobsync.perfil_estruturado.domain.perfil_estruturado_repository import PerfilEstruturadoRepository
+from jobsync.perfil_estruturado.service_layer.adicionar_conquista_a_experiencia import (
+    AdicionarConquistaAExperiencia,
+)
 from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service import BuscarPerfilEstruturado
 from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.service import ImportarPerfilDePdf
 from jobsync.perfil_estruturado.adapters.extrator_perfil_estruturado_client import ExtratorPerfilEstruturadoClient
@@ -515,6 +518,19 @@ def obter_service_salvar_perfil_estruturado(
 
 ServiceSalvarPerfilEstruturadoDep = Annotated[
     SalvarPerfilEstruturado, Depends(obter_service_salvar_perfil_estruturado)
+]
+
+
+def obter_service_adicionar_conquista_a_experiencia(
+    repositorio: Annotated[
+        PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
+    ],
+) -> AdicionarConquistaAExperiencia:
+    return AdicionarConquistaAExperiencia(repositorio=repositorio)
+
+
+ServiceAdicionarConquistaAExperienciaDep = Annotated[
+    AdicionarConquistaAExperiencia, Depends(obter_service_adicionar_conquista_a_experiencia)
 ]
 
 

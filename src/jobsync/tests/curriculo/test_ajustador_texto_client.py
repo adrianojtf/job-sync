@@ -280,12 +280,50 @@ def test_prompt_de_qualquer_secao_pede_para_preservar_linhas_e_topicos(tipo: Tip
     assert "Nunca junte tópicos ou linhas em um parágrafo" in prompt
 
 
-def test_prompt_de_tecnologias_pede_uma_categoria_por_linha_sem_criar_categorias() -> None:
+def test_prompt_de_tecnologias_pede_uma_categoria_por_linha_no_formato_rotulo_e_itens() -> None:
     prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "en")
 
     assert "uma categoria por linha" in prompt
     assert "Rótulo: item1, item2" in prompt
-    assert "não crie categorias" in prompt
+
+
+def test_prompt_de_tecnologias_mantem_as_categorias_que_o_original_ja_tem() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "Se o original já tiver categorias, mantenha-as" in prompt
+
+
+@pytest.mark.parametrize(
+    "rotulo",
+    [
+        "Linguagens",
+        "Backend e APIs",
+        "IA no Desenvolvimento",
+        "Qualidade e Testes",
+        "Práticas de Engenharia",
+        "Bancos de Dados",
+        "Frontend",
+        "Ferramentas",
+    ],
+)
+def test_prompt_de_tecnologias_sugere_as_categorias_padrao_quando_a_lista_vem_solta(rotulo: str) -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert rotulo in prompt
+    assert "lista única" in prompt
+
+
+def test_prompt_de_tecnologias_nao_manda_deixar_tudo_em_uma_categoria() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "não crie categorias" not in prompt
+
+
+def test_prompt_de_tecnologias_pede_rotulos_no_idioma_de_saida_e_sem_inventar_tecnologias() -> None:
+    prompt = _prompt_da_secao(TipoSecao.TECNOLOGIAS, "en")
+
+    assert "no idioma de saída" in prompt
+    assert "não repita a mesma tecnologia" in prompt
 
 
 @pytest.mark.parametrize("tipo", [TipoSecao.PERFIL, TipoSecao.FORMACAO, TipoSecao.IDIOMAS])

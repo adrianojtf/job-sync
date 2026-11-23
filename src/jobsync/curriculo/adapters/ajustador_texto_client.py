@@ -29,8 +29,13 @@ _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
     TipoSecao.TECNOLOGIAS: (
         "Reordene e destaque as tecnologias mais relevantes para a vaga primeiro, "
         "mantendo TODAS as tecnologias originais (não remova nenhuma). "
-        "Se o original tiver categorias no formato 'Rótulo: itens', mantenha uma categoria por linha, "
-        "no formato 'Rótulo: item1, item2'; se não tiver, não crie categorias."
+        "Escreva uma categoria por linha, no formato 'Rótulo: item1, item2'. "
+        "Se o original já tiver categorias, mantenha-as. "
+        "Se o original for uma lista única, agrupe as tecnologias em categorias e use, de preferência, "
+        "estes rótulos: Linguagens, Backend e APIs, IA no Desenvolvimento, Qualidade e Testes, "
+        "Práticas de Engenharia, Bancos de Dados, Frontend, Ferramentas. "
+        "Use só as categorias que tiverem itens, escreva os rótulos no idioma de saída e "
+        "não repita a mesma tecnologia em duas categorias."
     ),
     TipoSecao.PERFIL: REGRA_RESUMO_ADERENTE_A_VAGA,
     TipoSecao.FORMACAO: (

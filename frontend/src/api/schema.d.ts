@@ -1393,6 +1393,22 @@ export interface components {
             carta: string;
         };
         /**
+         * CategoriaCompetenciaSchema
+         * @description Categoria de competências com as suas tags (ex.: Linguagens: Java, Python).
+         */
+        CategoriaCompetenciaSchema: {
+            /**
+             * Nome
+             * @description Nome da categoria, editável pelo usuário.
+             */
+            nome: string;
+            /**
+             * Tags
+             * @description Tags da categoria; tags vazias e repetidas são descartadas.
+             */
+            tags: string[];
+        };
+        /**
          * CertificacaoRequest
          * @description Uma certificação profissional para criação/edição do perfil.
          */
@@ -2317,6 +2333,17 @@ export interface components {
              */
             titulo_experiencias?: string;
             /**
+             * Competencias
+             * @description Competências por categoria e tag; nulo quando as tecnologias vêm como seção de texto TECNOLOGIAS (as duas formas não podem vir juntas).
+             */
+            competencias?: components["schemas"]["CategoriaCompetenciaSchema"][] | null;
+            /**
+             * Titulo Competencias
+             * @description Título da seção de competências.
+             * @default Tecnologias
+             */
+            titulo_competencias?: string;
+            /**
              * Ajustes Tecnologia
              * @description Trocas de tecnologia feitas pela IA nas experiências (informativo). Ignorado na geração do PDF revisado.
              */
@@ -2750,6 +2777,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;

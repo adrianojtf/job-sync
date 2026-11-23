@@ -1161,7 +1161,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Resposta valida (sucesso ou erro controlado)', () => pm.expect([200,422,500,503]).to.include(pm.response.code));",
-              "if (pm.response.code === 200) { pm.test('Rascunho presente e sem PDF', () => { const j = pm.response.json(); pm.expect(j).to.have.property('rascunho'); pm.expect(j.rascunho).to.have.property('secoes'); pm.expect(j).to.not.have.property('pdf_base64'); pm.expect(j.rascunho).to.have.property('ajustes_tecnologia'); }); }",
+              "if (pm.response.code === 200) { pm.test('Rascunho presente e sem PDF', () => { const j = pm.response.json(); pm.expect(j).to.have.property('rascunho'); pm.expect(j.rascunho).to.have.property('secoes'); pm.expect(j).to.not.have.property('pdf_base64'); pm.expect(j.rascunho).to.have.property('ajustes_tecnologia'); pm.expect(j.rascunho).to.have.property('competencias'); pm.expect(j.rascunho).to.have.property('titulo_competencias'); }); }",
               "if (pm.response.code !== 200) { pm.test('Problem Details em erro', () => { const j = pm.response.json(); pm.expect(j).to.have.property('status'); pm.expect(j).to.have.property('detail'); }); }"
             ]
           }

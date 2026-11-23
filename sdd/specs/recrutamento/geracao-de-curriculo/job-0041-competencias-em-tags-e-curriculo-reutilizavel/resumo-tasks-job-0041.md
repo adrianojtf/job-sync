@@ -10,7 +10,7 @@
 - [x] 6.0 Casos de uso e endpoints de `/curriculos-adaptados`
 - [x] 7.0 Vínculo com a candidatura e atualização do PDF salvo
 - [x] 8.0 Frontend: salvar ao confirmar, "Editar currículo" e modo edição
-- [ ] 9.0 Reabrir o currículo depois de fechar a tela
+- [x] 9.0 Reabrir o currículo depois de fechar a tela
 - [ ] 10.0 Currículo adaptado como fonte de outra vaga e E2E do fluxo
 
 ## Dependências

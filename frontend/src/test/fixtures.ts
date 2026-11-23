@@ -1,5 +1,11 @@
 import { http, HttpResponse } from "msw";
-import type { CurriculoSalvo, PerfilEstruturado, Vaga } from "../api/tipos";
+import type {
+  CurriculoAdaptado,
+  CurriculoAdaptadoResumo,
+  CurriculoSalvo,
+  PerfilEstruturado,
+  Vaga,
+} from "../api/tipos";
 import { API_TESTE } from "./renderizar-app";
 import { servidorApi } from "./servidor-api";
 
@@ -23,6 +29,50 @@ export const CURRICULO_SALVO: CurriculoSalvo = {
   perfil_identificador: "adriano",
   nome_referencia: "CV LinkedIn",
   data_upload: "2026-11-01T10:00:00",
+};
+
+export const CURRICULO_ADAPTADO_RESUMO: CurriculoAdaptadoResumo = {
+  id: "ad1",
+  nome_referencia: "AdrianoTeixeira-2026-11-06-SeniorJava-Olist.pdf",
+  cargo_alvo: "Senior Java",
+  empresa_alvo: "Olist",
+  idioma_alvo: "pt",
+  curriculo_salvo_id: "c1",
+  criado_em: "2026-11-06T12:00:00Z",
+  atualizado_em: "2026-11-07T09:30:00Z",
+};
+
+export const CURRICULO_ADAPTADO: CurriculoAdaptado = {
+  ...CURRICULO_ADAPTADO_RESUMO,
+  descricao_vaga: "Java, Kafka e AWS.",
+  analise_vaga: {
+    requisitos: [
+      { nome: "Java", categoria: "TECNOLOGIA", tipo: "EXPLICITO", origem: "DESCRICAO_VAGA" },
+    ],
+    ambiguidade: [],
+    texto_original: "Java, Kafka e AWS.",
+  },
+  rascunho: {
+    nome_completo: "Adriano Teixeira",
+    email: "adriano@email.com",
+    linkedin: "",
+    secoes: [{ tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo salvo." }],
+    experiencias: [
+      {
+        cargo: "Dev Java",
+        empresa: "Neoway",
+        periodo: "2020-2024",
+        conquistas: ["APIs em Java."],
+        contexto: "Empresa de dados.",
+      },
+    ],
+    titulo_experiencias: "Experiências",
+    competencias: [
+      { nome: "Linguagens", tags: ["Java", "Python"] },
+      { nome: "Bancos de Dados", tags: ["SQL"] },
+    ],
+    titulo_competencias: "Tecnologias",
+  },
 };
 
 export const VAGA_SALVA: Vaga = {
@@ -55,6 +105,7 @@ interface Base {
   perfil?: PerfilEstruturado | null;
   curriculos?: CurriculoSalvo[];
   vagas?: Vaga[];
+  adaptados?: CurriculoAdaptadoResumo[];
 }
 
 /** Handlers de leitura usados pelas telas: perfil estruturado, biblioteca e vagas salvas. */
@@ -62,6 +113,7 @@ export function servirDadosBase({
   perfil = PERFIL_ESTRUTURADO,
   curriculos = [CURRICULO_SALVO],
   vagas = [VAGA_SALVA],
+  adaptados = [],
 }: Base = {}) {
   servidorApi.use(
     http.get(`${API_TESTE}/v1/perfil-estruturado/:perfil`, () =>
@@ -79,6 +131,9 @@ export function servirDadosBase({
     ),
     http.get(`${API_TESTE}/v1/vagas`, () =>
       HttpResponse.json({ items: vagas, total: vagas.length, limite: 100, offset: 0 }),
+    ),
+    http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+      HttpResponse.json({ items: adaptados, total: adaptados.length }),
     ),
   );
 }

@@ -87,3 +87,11 @@ export interface DadosPessoaisFormulario {
   linkedin: string;
   resumo_profissional: string;
 }
+
+/** Categoria de competências da revisão (JOB-0041): um nome e as suas tags. */
+export interface CategoriaFormulario {
+  nome: string;
+  tags: string[];
+}
+
+export const CATEGORIA_VAZIA: CategoriaFormulario = { nome: "", tags: [] };

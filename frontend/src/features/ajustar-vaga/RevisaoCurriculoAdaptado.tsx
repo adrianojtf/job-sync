@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import type { ContextoVaga, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import {
   CAMPOS_EXPERIENCIA_ADAPTADA,
@@ -7,9 +7,15 @@ import {
   type ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
+import {
+  categoriasDeTexto,
+  categoriasParaTexto,
+} from "../../shared/formulario-curriculo/competencias";
+import { EditorCompetencias } from "../../shared/formulario-curriculo/EditorCompetencias";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
 import { SugestaoCampo } from "../../shared/formulario-curriculo/SugestaoCampo";
+import { SugestaoIA } from "../../shared/formulario-curriculo/SugestaoIA";
 import { useSugestoes } from "../../shared/formulario-curriculo/use-sugestoes";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
@@ -23,6 +29,7 @@ import {
   experienciaAdaptadaParaAvaliacao,
   formularioParaRascunho,
   rascunhoParaFormulario,
+  tituloCompetencias,
   tituloSecaoPerfil,
   type FormularioRevisao,
   type TipoSecao,
@@ -46,12 +53,6 @@ const SECOES_TEXTO: Partial<
     titulo: "Experiências profissionais",
     rotulo: "Experiências",
     ajuda: "Separe cada experiência por uma linha em branco.",
-    sugerir: true,
-  },
-  TECNOLOGIAS: {
-    titulo: "Tecnologias e ferramentas",
-    rotulo: "Tecnologias",
-    ajuda: "Use uma linha por categoria. Ex.: Linguagens: Java, Python",
     sugerir: true,
   },
   FORMACAO: { titulo: "Formação acadêmica", rotulo: "Formação" },
@@ -143,6 +144,26 @@ export function RevisaoCurriculoAdaptado({
             )}
           />
         )}
+
+        <Controller
+          control={form.control}
+          name="competencias"
+          render={({ field }) => (
+            <EditorCompetencias
+              valor={field.value}
+              aoMudar={field.onChange}
+              titulo="Tecnologias e ferramentas"
+              complemento={
+                <SugestaoIA
+                  rotuloBloco="tecnologias"
+                  textoAtual={categoriasParaTexto(field.value)}
+                  sugerir={sugestoes.secao("TECNOLOGIAS", tituloCompetencias(rascunho))}
+                  aplicar={(texto) => field.onChange(categoriasDeTexto(texto))}
+                />
+              }
+            />
+          )}
+        />
 
         {valoresIniciais.secoes.map((secao, indice) => {
           const bloco = SECOES_TEXTO[secao.tipo];

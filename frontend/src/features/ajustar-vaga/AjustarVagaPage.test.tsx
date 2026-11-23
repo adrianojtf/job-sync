@@ -262,10 +262,9 @@ describe("AjustarVagaPage", () => {
     expect(chamadas.find((c) => c.rota === "pdf")?.corpo).toEqual({
       rascunho: {
         ...RASCUNHO,
-        secoes: [
-          { tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo revisado." },
-          { tipo: "TECNOLOGIAS", titulo: "Tecnologias", conteudo: "Linguagens: Java" },
-        ],
+        secoes: [{ tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo revisado." }],
+        competencias: [{ nome: "Linguagens", tags: ["Java"] }],
+        titulo_competencias: "Tecnologias",
       },
       idioma_alvo: "en",
       cargo_alvo: "Senior Java",

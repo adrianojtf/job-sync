@@ -1,23 +1,28 @@
 import type { ExperienciaAdaptada, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import type {
+  CategoriaFormulario,
   DadosPessoaisFormulario,
   ExperienciaAdaptadaFormulario,
   ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
+import { categoriasDeTexto } from "../../shared/formulario-curriculo/competencias";
 
 type SecaoRascunho = RascunhoCurriculoAdaptado["secoes"][number];
 export type TipoSecao = SecaoRascunho["tipo"];
 
-/** Seções de texto editáveis na revisão, na ordem de exibição do cadastro. */
+/**
+ * Seções de texto editáveis na revisão, na ordem de exibição do cadastro. As tecnologias não
+ * entram: viram as competências por categoria e tag (JOB-0041).
+ */
 export const ORDEM_SECOES_TEXTO: TipoSecao[] = [
   "EXPERIENCIAS",
-  "TECNOLOGIAS",
   "FORMACAO",
   "CERTIFICACOES",
   "IDIOMAS",
 ];
 
 const TITULO_PERFIL_PADRAO = "Perfil";
+const TITULO_COMPETENCIAS_PADRAO = "Tecnologias";
 
 /**
  * Estado do formulário de revisão: o resumo (seção PERFIL) fica nos dados pessoais, como no
@@ -25,6 +30,7 @@ const TITULO_PERFIL_PADRAO = "Perfil";
  */
 export interface FormularioRevisao extends DadosPessoaisFormulario {
   experiencias: ExperienciaAdaptadaFormulario[];
+  competencias: CategoriaFormulario[];
   secoes: SecaoRascunho[];
 }
 
@@ -35,6 +41,7 @@ export function rascunhoParaFormulario(rascunho: RascunhoCurriculoAdaptado): For
     linkedin: rascunho.linkedin ?? "",
     resumo_profissional: secaoPerfil(rascunho)?.conteudo ?? "",
     experiencias: (rascunho.experiencias ?? []).map(experienciaAdaptadaParaFormulario),
+    competencias: competenciasDoRascunho(rascunho),
     secoes: ORDEM_SECOES_TEXTO.flatMap((tipo) =>
       rascunho.secoes.filter((secao) => secao.tipo === tipo).map((secao) => ({ ...secao })),
     ),
@@ -63,7 +70,38 @@ export function formularioParaRascunho(
       original.experiencias == null
         ? null
         : formulario.experiencias.map(formularioParaExperienciaAdaptada),
+    competencias: formulario.competencias.map((categoria) => ({
+      nome: categoria.nome.trim(),
+      tags: categoria.tags,
+    })),
+    titulo_competencias: tituloCompetencias(original),
   };
+}
+
+/**
+ * Competências do rascunho: as categorias da API ou, quando a fonte ainda traz as tecnologias em
+ * texto ("Rótulo: a, b"), as categorias lidas desse texto.
+ */
+export function competenciasDoRascunho(rascunho: RascunhoCurriculoAdaptado): CategoriaFormulario[] {
+  if (rascunho.competencias != null) {
+    return rascunho.competencias.map((categoria) => ({
+      nome: categoria.nome,
+      tags: [...categoria.tags],
+    }));
+  }
+  const tecnologias = secaoTecnologias(rascunho);
+  return tecnologias ? categoriasDeTexto(tecnologias.conteudo) : [];
+}
+
+/** Título da seção de competências; o padrão vale quando a IA não devolveu o título. */
+export function tituloCompetencias(rascunho: RascunhoCurriculoAdaptado): string {
+  return (
+    rascunho.titulo_competencias ?? secaoTecnologias(rascunho)?.titulo ?? TITULO_COMPETENCIAS_PADRAO
+  );
+}
+
+function secaoTecnologias(rascunho: RascunhoCurriculoAdaptado): SecaoRascunho | undefined {
+  return rascunho.secoes.find((secao) => secao.tipo === "TECNOLOGIAS");
 }
 
 /** Título da seção de resumo do rascunho; o padrão vale quando a IA não devolveu o resumo. */

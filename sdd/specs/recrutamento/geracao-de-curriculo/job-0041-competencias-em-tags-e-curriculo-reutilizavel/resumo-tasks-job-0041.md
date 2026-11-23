@@ -4,7 +4,7 @@
 
 - [x] 1.0 Domínio de competências e campo `competencias` no rascunho
 - [x] 2.0 Adaptação, schemas e API do rascunho com competências
-- [ ] 3.0 Gerador de PDF com rótulo de categoria genérico
+- [x] 3.0 Gerador de PDF com rótulo de categoria genérico
 - [ ] 4.0 Componente `EditorCompetencias` integrado à revisão
 - [ ] 5.0 Migração, domínio e repositório de `curriculo_adaptado`
 - [ ] 6.0 Casos de uso e endpoints de `/curriculos-adaptados`

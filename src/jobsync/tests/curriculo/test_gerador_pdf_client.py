@@ -688,3 +688,55 @@ def test_formacao_no_formato_antigo_continua_gerando_pdf_sem_perder_texto():
     texto = " ".join(_linhas_de_texto(pagina))
     for trecho in ("Education:", "Estácio,", "Jun 2022 - Jun 2024,", "Associate Degree in Systems Analysis and Development"):
         assert trecho in texto
+
+
+def test_aplica_enfase_tecnologias_com_rotulo_criado_pelo_usuario():
+    resultado = GeradorPdfClient._aplicar_enfase("Minhas Ferramentas: Git, Docker", TipoSecao.TECNOLOGIAS)
+
+    assert resultado == "<b>Minhas Ferramentas:</b> Git, Docker"
+
+
+def test_aplica_enfase_tecnologias_so_o_primeiro_dois_pontos_separa_o_rotulo():
+    resultado = GeradorPdfClient._aplicar_enfase("Versões: Java 17, Node: 20", TipoSecao.TECNOLOGIAS)
+
+    assert resultado == "<b>Versões:</b> Java 17, Node: 20"
+
+
+def test_aplica_enfase_tecnologias_linha_sem_dois_pontos_nao_recebe_negrito():
+    resultado = GeradorPdfClient._aplicar_enfase("Java, Go, Python", TipoSecao.TECNOLOGIAS)
+
+    assert resultado == "Java, Go, Python"
+
+
+def test_aplica_enfase_tecnologias_rotulo_do_catalogo_continua_traduzido_e_o_do_usuario_nao():
+    texto = "Languages: Java\nMinhas Ferramentas: Git"
+
+    resultado = GeradorPdfClient._aplicar_enfase(texto, TipoSecao.TECNOLOGIAS, "pt")
+
+    assert "<b>Linguagens:</b> Java" in resultado
+    assert "<b>Minhas Ferramentas:</b> Git" in resultado
+
+
+def test_aplica_enfase_tecnologias_escapa_o_rotulo_do_usuario():
+    resultado = GeradorPdfClient._aplicar_enfase("R&D <beta>: Git", TipoSecao.TECNOLOGIAS)
+
+    assert resultado == "<b>R&amp;D &lt;beta&gt;:</b> Git"
+
+
+def test_layout_tecnologias_com_rotulos_do_usuario_uma_categoria_por_linha_com_rotulo_em_negrito():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Minhas Ferramentas: Git, Docker\nIA no Dia a Dia: Claude Code")))
+
+    linhas = {linha["text"]: linha for linha in pagina.extract_text_lines()}
+    for texto in ("Minhas Ferramentas: Git, Docker", "IA no Dia a Dia: Claude Code"):
+        assert texto in linhas
+        caracteres = linhas[texto]["chars"]
+        assert caracteres[0]["fontname"].endswith("Carlito-Bold")
+        assert caracteres[-1]["fontname"].endswith("Carlito-Regular")
+
+
+def test_layout_tecnologias_rotulo_do_usuario_com_dois_pontos_do_rotulo_tambem_em_negrito():
+    pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Minhas Ferramentas: Git")))
+
+    linha = next(l for l in pagina.extract_text_lines() if l["text"] == "Minhas Ferramentas: Git")
+    dois_pontos = next(c for c in linha["chars"] if c["text"] == ":")
+    assert dois_pontos["fontname"].endswith("Carlito-Bold")

@@ -18,11 +18,11 @@ Transforma o caso descrito pelo candidato em uma conquista redigida, para ele re
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever os testes do prompt do adapter (red) e implementar (green).
-- [ ] 3.2 Escrever os testes do service (red) e implementar (green).
-- [ ] 3.3 Escrever os testes do router (red): sucesso, 404, 422, IA indisponível.
-- [ ] 3.4 Implementar o endpoint, os schemas e a injeção (green).
-- [ ] 3.5 Refatorar e rodar os testes de `curriculo` e `entrypoints/api`.
+- [x] 3.1 Escrever os testes do prompt do adapter (red) e implementar (green).
+- [x] 3.2 Escrever os testes do service (red) e implementar (green).
+- [x] 3.3 Escrever os testes do router (red): sucesso, 404, 422, IA indisponível.
+- [x] 3.4 Implementar o endpoint, os schemas e a injeção (green).
+- [x] 3.5 Refatorar e rodar os testes de `curriculo` e `entrypoints/api`.
 
 ## Detalhes de Implementação
 
@@ -35,9 +35,9 @@ Techspec: "Pontos de Integração" (redação) e "Endpoints de API". PRD: RF 7 a
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do adapter e do service.
-- [ ] Testes do router.
-- [ ] Regressão: `src/jobsync/tests/curriculo/` e `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes de unidade do adapter e do service.
+- [x] Testes do router.
+- [x] Regressão: `src/jobsync/tests/curriculo/` e `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -48,3 +48,8 @@ Techspec: "Pontos de Integração" (redação) e "Endpoints de API". PRD: RF 7 a
 - `src/jobsync/curriculo/service_layer/redigir_conquista_de_lacuna/ (novo)`
 - `src/jobsync/curriculo/service_layer/sugestao_ia_indisponivel.py`
 - `src/jobsync/entrypoints/api/routers/curriculo_router.py`
+
+## Resultado da execução
+
+- `RedatorConquistaPort`, `RedatorConquistaOpenAIClient` (só o que o candidato informou) e `RedigirConquistaDeLacuna` (falha da IA vira `SugestaoIAIndisponivel`, 502).
+- `POST /v1/curriculos/lacunas/conquista-rascunho`: 404 para experiência inexistente, 422 para caso vazio; nada é salvo.

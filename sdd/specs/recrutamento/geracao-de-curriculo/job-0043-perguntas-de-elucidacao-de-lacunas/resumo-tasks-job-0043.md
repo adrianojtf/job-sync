@@ -2,12 +2,12 @@
 
 ## Tarefas
 
-- [ ] 1.0 Domínio de lacunas, porta, adapter de IA e caso de uso IdentificarLacunasDaVaga
-- [ ] 2.0 Endpoint POST /curriculo/lacunas
-- [ ] 3.0 Redator de conquista a partir do caso e endpoint de rascunho
-- [ ] 4.0 Comando AdicionarConquistaAExperiencia e endpoint
-- [ ] 5.0 Resumo usando as conquistas do histórico
-- [ ] 6.0 Frontend: etapa Perguntas sobre a vaga
+- [x] 1.0 Domínio de lacunas, porta, adapter de IA e caso de uso IdentificarLacunasDaVaga
+- [x] 2.0 Endpoint POST /curriculo/lacunas
+- [x] 3.0 Redator de conquista a partir do caso e endpoint de rascunho
+- [x] 4.0 Comando AdicionarConquistaAExperiencia e endpoint
+- [x] 5.0 Resumo usando as conquistas do histórico
+- [x] 6.0 Frontend: etapa Perguntas sobre a vaga
 - [ ] 7.0 Avaliação manual das perguntas de elucidação
 
 ## Dependências

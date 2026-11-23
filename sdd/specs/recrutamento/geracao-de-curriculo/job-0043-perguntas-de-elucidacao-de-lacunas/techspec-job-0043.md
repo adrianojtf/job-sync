@@ -150,3 +150,13 @@ Logs informativos: número de lacunas identificadas e quantas foram respondidas 
 - `frontend/src/features/ajustar-vaga/`
 - `sdd/specs/recrutamento/geracao-de-curriculo/job-0042-banco-de-conquistas-por-experiencia/`
 - `sdd/specs/recrutamento/geracao-de-curriculo/job-0040-resumo-aderente-a-vaga/`
+
+## Ajustes feitos na execução
+
+- **Caminhos dos endpoints:** `POST /v1/curriculos/lacunas`, `POST /v1/curriculos/lacunas/conquista-rascunho` e `POST /v1/perfil-estruturado/{perfil_identificador}/experiencias/{experiencia_indice}/conquistas`. O perfil vai no corpo ou no caminho para a autorização por perfil funcionar.
+- **Sem análise da vaga:** o endpoint de lacunas usa um `ContextoVaga` com análise vazia. A IA lê a descrição da vaga direto, sem uma segunda chamada de análise antes da geração.
+- **`conquistas_do_historico`** é preenchido pelo caso de uso de adaptação, a partir das experiências que ele já recebe, e não pelo router.
+- **Evidência de competências:** as conquistas entram no texto de evidência da `SelecaoDeCompetencias` (JOB-0044), então tecnologia citada numa conquista aprovada deixa de ser lacuna de tecnologia.
+- **Normalização de texto** movida para `shared_kernel/domain/texto_normalizado.py`, usada pelas lacunas e pelo banco de conquistas.
+- **Lacunas de tecnologia da JOB-0044** continuam calculadas pela seleção de competências, depois da geração. As perguntas desta JOB vêm da IA, que também vê as tecnologias da vaga na descrição; unir as duas listas fica como evolução.
+

@@ -16,10 +16,10 @@ Grava a conquista aprovada no banco da experiência escolhida, com origem `RESPO
 
 ## Subtarefas
 
-- [ ] 4.1 Escrever os testes do método de domínio (red); implementar (green).
-- [ ] 4.2 Escrever os testes do service com o repositório falso existente (red); implementar (green).
-- [ ] 4.3 Escrever os testes do router (red); implementar o endpoint e a injeção (green).
-- [ ] 4.4 Refatorar e rodar os testes de `perfil_estruturado` e `entrypoints/api`.
+- [x] 4.1 Escrever os testes do método de domínio (red); implementar (green).
+- [x] 4.2 Escrever os testes do service com o repositório falso existente (red); implementar (green).
+- [x] 4.3 Escrever os testes do router (red); implementar o endpoint e a injeção (green).
+- [x] 4.4 Refatorar e rodar os testes de `perfil_estruturado` e `entrypoints/api`.
 
 ## Detalhes de Implementação
 
@@ -32,9 +32,9 @@ Techspec: "Visão Geral dos Componentes" e "Decisões Principais" (comando próp
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do domínio e do service (`perfil_estruturado_repository_fake`).
-- [ ] Testes do router.
-- [ ] Regressão: `src/jobsync/tests/perfil_estruturado/`.
+- [x] Testes de unidade do domínio e do service (`perfil_estruturado_repository_fake`).
+- [x] Testes do router.
+- [x] Regressão: `src/jobsync/tests/perfil_estruturado/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -44,3 +44,8 @@ Techspec: "Visão Geral dos Componentes" e "Decisões Principais" (comando próp
 - `src/jobsync/perfil_estruturado/adapters/perfil_estruturado_repository_fake.py`
 - `src/jobsync/perfil_estruturado/service_layer/adicionar_conquista_a_experiencia/ (novo)`
 - `src/jobsync/entrypoints/api/routers/perfil_estruturado_router.py`
+
+## Resultado da execução
+
+- `PerfilEstruturado.com_conquista_na_experiencia`, exceções de domínio (`PerfilEstruturadoNaoEncontrado`, `ExperienciaNaoEncontrada`) e o caso de uso `AdicionarConquistaAExperiencia` (origem `RESPOSTA_PERGUNTA`).
+- Endpoint `POST /v1/perfil-estruturado/{perfil_identificador}/experiencias/{experiencia_indice}/conquistas`, com o perfil no caminho para a autorização por perfil valer.

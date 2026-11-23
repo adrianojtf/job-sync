@@ -38,3 +38,25 @@ Techspec: "Avaliação manual" e "Riscos Conhecidos". PRD: Objetivos e Questões
 
 - `src/jobsync/curriculo/adapters/identificador_lacunas_openai_client.py`
 - `src/jobsync/curriculo/adapters/redator_conquista_openai_client.py`
+
+## Roteiro executável
+
+O arquivo `avaliar-lacunas.py`, nesta pasta, usa o `IdentificadorLacunasOpenAIClient` e o `RedatorConquistaOpenAIClient` reais com um histórico sintético de backend Java e duas vagas (Forward Deployed Engineer e Engenheiro de Software aderente ao histórico). Imprime as lacunas, a latência e, para a primeira lacuna, a conquista escrita a partir de um caso de exemplo, com os números fora do caso.
+
+```bash
+PYTHONPATH=src python sdd/specs/recrutamento/geracao-de-curriculo/job-0043-perguntas-de-elucidacao-de-lacunas/avaliar-lacunas.py
+```
+
+Com `--dry-run` só imprime os prompts, sem chamar a IA (validado na execução da task). Para o fluxo completo e a latência da etapa dentro do aviso de 1 minuto, repita com o perfil real em "Ajustar para uma vaga".
+
+## Status
+
+Não executada pela IA: o ambiente de desenvolvimento não tem `OPENAI_API_KEY`. Preencha a tabela após a execução local.
+
+| Vaga | Lacunas (qtd) | Repete o que o perfil mostra? | Número fora do caso | Latência |
+|------|---------------|-------------------------------|---------------------|----------|
+| FDE | | | | |
+| Engenheiro de Software | | | | |
+
+Decisões a registrar: Questões em Aberto 2, 4 e 5 do PRD (lembrar o "Não", o aviso de experiência incompatível e a latência da etapa).
+

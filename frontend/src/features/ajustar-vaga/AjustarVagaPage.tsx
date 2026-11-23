@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import type {
   AdaptarCurriculoEntrada,
   CurriculoAdaptadoPdf,
+  Lacuna,
   RascunhoAdaptado,
   RascunhoCurriculoAdaptado,
 } from "../../api/tipos";
@@ -18,12 +19,25 @@ import estilos from "./AjustarVagaPage.module.css";
 import { AnaliseAtsResultado } from "./AnaliseAtsResultado";
 import { AvaliacaoVagaResultado } from "./AvaliacaoVagaResultado";
 import { CartaGerada } from "./CartaGerada";
-import { useFontesCurriculo } from "./fonte-curriculo";
+import { FONTE_PERFIL, useFontesCurriculo } from "./fonte-curriculo";
 import type { EstadoAjustarVaga } from "./navegacao";
+import { PerguntasSobreAVaga } from "./PerguntasSobreAVaga";
 import resultados from "./Resultados.module.css";
 import { RevisaoCurriculoAdaptado } from "./RevisaoCurriculoAdaptado";
 import { SeletorFonteCurriculo } from "./SeletorFonteCurriculo";
+import { usePerfilEstruturado } from "../perfil/use-perfil-estruturado";
 import { useAjustarVaga } from "./use-ajustar-vaga";
+
+interface EntradaDaAdaptacao {
+  curriculoId: string;
+  dados: AdaptarCurriculoEntrada;
+}
+
+/** Perguntas sobre a vaga em andamento e o pedido de adaptação que elas liberam (JOB-0043). */
+interface PerguntasEmAndamento {
+  lacunas: Lacuna[];
+  entrada: EntradaDaAdaptacao;
+}
 
 interface Formulario {
   cargo: string;
@@ -53,8 +67,10 @@ export function AjustarVagaPage() {
 
 function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const fontes = useFontesCurriculo();
+  const perfilEstruturado = usePerfilEstruturado();
   const {
     avaliar,
+    lacunas,
     gerarRascunho,
     salvarAdaptado,
     atualizarAdaptado,
@@ -70,6 +86,11 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const [pdfAtual, setPdfAtual] = useState<CurriculoAdaptadoPdf | null>(null);
   const [rascunhoSalvo, setRascunhoSalvo] = useState<RascunhoCurriculoAdaptado | null>(null);
   const [editando, setEditando] = useState(false);
+  // Perguntas sobre a vaga (JOB-0043): o pedido guardado vale enquanto o candidato as responde ou
+  // enquanto as lacunas carregam; pular descarta qualquer resposta que chegar depois.
+  const [perguntas, setPerguntas] = useState<PerguntasEmAndamento | null>(null);
+  const pedidoEmEspera = useRef<EntradaDaAdaptacao | null>(null);
+  const perguntasDispensadas = useRef(false);
   const form = useForm<Formulario>({
     defaultValues: {
       cargo: estado.cargo ?? "",
@@ -111,10 +132,7 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
     return () => clearTimeout(agendamento);
   }, [estado, avaliarVaga, navegar, pathname]);
 
-  const montarEntrada = async (): Promise<{
-    curriculoId: string;
-    dados: AdaptarCurriculoEntrada;
-  }> => {
+  const montarEntrada = async (): Promise<EntradaDaAdaptacao> => {
     const valores = form.getValues();
     const { curriculoId, ...fonte } = await fontes.resolver(valores.fonte);
     return {
@@ -132,9 +150,46 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const gerarCurriculo = async () => {
     if (!(await form.trigger(["cargo", "empresa", "descricao"]))) return;
     limparCurriculoSalvo();
-    gerarRascunho.mutate(await montarEntrada(), {
-      onSuccess: (_rascunho, entrada) => setVagaEmRevisao(entrada.dados),
+    const entrada = await montarEntrada();
+    // Só o perfil estruturado tem experiências para comparar com a vaga.
+    if (form.getValues("fonte") !== FONTE_PERFIL) {
+      iniciarGeracao(entrada);
+      return;
+    }
+    pedidoEmEspera.current = entrada;
+    perguntasDispensadas.current = false;
+    lacunas.mutate(
+      {
+        perfil_identificador: entrada.dados.perfil_identificador ?? "",
+        descricao_vaga: entrada.dados.descricao_vaga,
+        cargo_alvo: entrada.dados.cargo_alvo,
+        idioma_alvo: entrada.dados.idioma_alvo,
+      },
+      {
+        onSuccess: ({ lacunas: itens }) => {
+          if (perguntasDispensadas.current) return;
+          if (itens.length > 0) setPerguntas({ lacunas: itens, entrada });
+          else iniciarGeracao(entrada);
+        },
+        // As perguntas nunca bloqueiam a geração: sem elas, o currículo sai como antes.
+        onError: () => {
+          if (!perguntasDispensadas.current) iniciarGeracao(entrada);
+        },
+      },
+    );
+  };
+
+  function iniciarGeracao(entrada: EntradaDaAdaptacao) {
+    setPerguntas(null);
+    gerarRascunho.mutate(entrada, {
+      onSuccess: (_rascunho, enviada) => setVagaEmRevisao(enviada.dados),
     });
+  }
+
+  const pularPerguntas = () => {
+    perguntasDispensadas.current = true;
+    const entrada = perguntas?.entrada ?? pedidoEmEspera.current;
+    if (entrada) iniciarGeracao(entrada);
   };
 
   function limparCurriculoSalvo() {
@@ -222,6 +277,21 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
       descricao="Analise a vaga, gere um currículo adaptado e prepare a candidatura."
     />
   );
+
+  if (perguntas) {
+    return (
+      <>
+        {cabecalho}
+        <PerguntasSobreAVaga
+          lacunas={perguntas.lacunas}
+          experiencias={perfilEstruturado.data?.experiencias ?? []}
+          idiomaAlvo={perguntas.entrada.dados.idioma_alvo}
+          aoConcluir={() => iniciarGeracao(perguntas.entrada)}
+          aoPular={pularPerguntas}
+        />
+      </>
+    );
+  }
 
   if (vagaEmRevisao && adaptado) {
     return (
@@ -319,13 +389,22 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
               <Button carregando={avaliar.isPending} onClick={analisarVaga}>
                 {avaliar.isPending ? "Analisando vaga…" : "Analisar vaga"}
               </Button>
+              {lacunas.isPending && !gerarRascunho.isPending && (
+                <Button variante="text" onClick={pularPerguntas}>
+                  Pular perguntas e gerar
+                </Button>
+              )}
               <Button
                 variante="primary"
                 disabled={semFonte}
-                carregando={gerarRascunho.isPending}
+                carregando={gerarRascunho.isPending || lacunas.isPending}
                 onClick={gerarCurriculo}
               >
-                {gerarRascunho.isPending ? `Gerando… ${AVISO_DEMORA}` : "Gerar currículo adaptado"}
+                {gerarRascunho.isPending
+                  ? `Gerando… ${AVISO_DEMORA}`
+                  : lacunas.isPending
+                    ? "Buscando perguntas…"
+                    : "Gerar currículo adaptado"}
               </Button>
             </div>
           </form>

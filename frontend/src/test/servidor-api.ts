@@ -36,6 +36,8 @@ const leiturasPadrao = [
     ),
   ),
   http.get(`${API_TESTE}/v1/curriculos`, () => HttpResponse.json({ items: [], total: 0 })),
+  // Consulta, sem efeito colateral: sem lacunas, "Gerar currículo adaptado" segue direto para a geração.
+  http.post(`${API_TESTE}/v1/curriculos/lacunas`, () => HttpResponse.json({ lacunas: [] })),
   http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
     HttpResponse.json({ items: [], total: 0 }),
   ),

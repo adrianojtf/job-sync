@@ -147,6 +147,59 @@ describe("RevisaoCurriculoAdaptado", () => {
     });
   });
 
+  describe("lacunas de tecnologia da vaga (JOB-0044)", () => {
+    const comLacunas = { ...rascunhoDoPerfil, lacunas_tecnologia: ["Kafka", "RabbitMQ"] };
+    const aviso = () =>
+      screen.queryByRole("region", { name: "Tecnologias da vaga fora das competências" });
+
+    it("mostra as lacunas do rascunho com a orientação de adicionar a tag", () => {
+      renderizar({ rascunho: comLacunas });
+
+      expect(aviso()).toHaveTextContent("Kafka, RabbitMQ");
+    });
+
+    it("não mostra o aviso quando não há lacunas", () => {
+      renderizar();
+
+      expect(aviso()).not.toBeInTheDocument();
+    });
+
+    it("a lacuna some quando o usuário adiciona a tag, sem diferenciar maiúsculas e minúsculas", async () => {
+      const usuario = userEvent.setup();
+      renderizar({ rascunho: comLacunas });
+
+      await usuario.type(
+        within(screen.getByRole("group", { name: "Linguagens" })).getByRole("textbox", {
+          name: "Nova tag",
+        }),
+        "kafka{Enter}",
+      );
+
+      expect(aviso()).toHaveTextContent("RabbitMQ");
+      expect(aviso()).not.toHaveTextContent("Kafka");
+    });
+
+    it("o aviso desaparece quando todas as lacunas viram tags", async () => {
+      const usuario = userEvent.setup();
+      renderizar({ rascunho: { ...rascunhoDoPerfil, lacunas_tecnologia: ["Kafka"] } });
+
+      await usuario.type(
+        within(screen.getByRole("group", { name: "Linguagens" })).getByRole("textbox", {
+          name: "Nova tag",
+        }),
+        "Kafka{Enter}",
+      );
+
+      expect(aviso()).not.toBeInTheDocument();
+    });
+
+    it("na edição de um currículo salvo o aviso não aparece", () => {
+      renderizar({ rascunho: comLacunas, modo: "edicao" });
+
+      expect(aviso()).not.toBeInTheDocument();
+    });
+  });
+
   describe("competências por categoria e tag", () => {
     it("o bloco chama-se Competências", () => {
       renderizar();

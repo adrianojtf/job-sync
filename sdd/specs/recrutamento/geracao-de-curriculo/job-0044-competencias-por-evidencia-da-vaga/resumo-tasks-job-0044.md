@@ -7,7 +7,7 @@
 - [x] 3.0 Serviço de adaptação: seleção antes da IA, filtro e teto depois, e `lacunas_tecnologia`
 - [x] 4.0 API e tipos: `lacunas_tecnologia` no schema, `schema.d.ts` e Postman
 - [x] 5.0 Título "Competências" e "Skills": catálogo, PDF, tela e testes existentes
-- [ ] 6.0 Aviso das lacunas na revisão
+- [x] 6.0 Aviso das lacunas na revisão
 - [ ] 7.0 E2E e fechamento
 
 ## Dependências

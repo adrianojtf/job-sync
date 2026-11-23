@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import type { ContextoVaga, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import {
   CAMPOS_EXPERIENCIA_ADAPTADA,
@@ -24,6 +24,7 @@ import { Field } from "../../shared/ui/Field";
 import { Panel } from "../../shared/ui/Panel";
 import { AvaliarExperienciaModal } from "../perfil/AvaliarExperienciaModal";
 import { AjusteTecnologiaLista } from "./AjusteTecnologiaLista";
+import { LacunasTecnologiaAviso } from "./LacunasTecnologiaAviso";
 import { SugestaoExperienciaAdaptada } from "./SugestaoExperienciaAdaptada";
 import {
   experienciaAdaptadaParaAvaliacao,
@@ -79,6 +80,7 @@ export function RevisaoCurriculoAdaptado({
   const valoresIniciais = useMemo(() => rascunhoParaFormulario(rascunho), [rascunho]);
   const form = useForm<FormularioRevisao>({ defaultValues: valoresIniciais });
   const { isDirty } = form.formState;
+  const competenciasAtuais = useWatch({ control: form.control, name: "competencias" });
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
   const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaFormulario | null>(
     null,
@@ -114,6 +116,11 @@ export function RevisaoCurriculoAdaptado({
         </Aviso>
       )}
       <AjusteTecnologiaLista ajustes={rascunho.ajustes_tecnologia ?? []} />
+      {!emEdicao && (
+        <LacunasTecnologiaAviso
+          lacunas={lacunasPendentes(rascunho.lacunas_tecnologia ?? [], competenciasAtuais)}
+        />
+      )}
 
       <form onSubmit={confirmar} noValidate className={estilos.secoes}>
         <PainelDadosPessoais
@@ -221,4 +228,15 @@ export function RevisaoCurriculoAdaptado({
       />
     </section>
   );
+}
+
+/** As lacunas que o usuário já adicionou como tag deixam de aparecer (sem diferenciar a caixa). */
+function lacunasPendentes(
+  lacunas: string[],
+  competencias: { tags: string[] }[] | undefined,
+): string[] {
+  const tags = new Set(
+    (competencias ?? []).flatMap((categoria) => categoria.tags.map((tag) => tag.toLowerCase())),
+  );
+  return lacunas.filter((lacuna) => !tags.has(lacuna.toLowerCase()));
 }

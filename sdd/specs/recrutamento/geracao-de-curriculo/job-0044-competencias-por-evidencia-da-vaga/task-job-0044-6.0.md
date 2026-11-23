@@ -16,9 +16,9 @@ Complexidade: low.
 
 ## Subtarefas
 
-- [ ] 6.1 Testes do componente e da revisão (red).
-- [ ] 6.2 Implementar o componente `LacunasTecnologiaAviso` e integrar na revisão (green).
-- [ ] 6.3 Rodar lint e tipos do frontend.
+- [x] 6.1 Testes do componente e da revisão (red).
+- [x] 6.2 Implementar o componente `LacunasTecnologiaAviso` e integrar na revisão (green).
+- [x] 6.3 Rodar lint e tipos do frontend.
 
 ## Detalhes de Implementação
 
@@ -31,8 +31,8 @@ Techspec: "Design de Implementação" e "Abordagem de Testes". PRD: requisitos f
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade (Vitest e Testing Library).
-- [ ] Regressão: `frontend/src/features/ajustar-vaga/`.
+- [x] Testes de unidade (Vitest e Testing Library).
+- [x] Regressão: `frontend/src/features/ajustar-vaga/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

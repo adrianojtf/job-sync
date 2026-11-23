@@ -6,7 +6,7 @@
 - [x] 2.0 Prompt: tirar a frase "todas as tecnologias" e pôr a lista permitida na instrução de tecnologias
 - [x] 3.0 Serviço de adaptação: seleção antes da IA, filtro e teto depois, e `lacunas_tecnologia`
 - [x] 4.0 API e tipos: `lacunas_tecnologia` no schema, `schema.d.ts` e Postman
-- [ ] 5.0 Título "Competências" e "Skills": catálogo, PDF, tela e testes existentes
+- [x] 5.0 Título "Competências" e "Skills": catálogo, PDF, tela e testes existentes
 - [ ] 6.0 Aviso das lacunas na revisão
 - [ ] 7.0 E2E e fechamento
 

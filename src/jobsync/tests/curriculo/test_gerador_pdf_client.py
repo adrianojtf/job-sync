@@ -264,8 +264,8 @@ def test_layout_nao_tem_linha_divisoria_abaixo_do_cabecalho():
 def test_layout_titulo_de_secao_em_caixa_alta_bold_11_azul_com_linha_de_largura_total():
     pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Languages: Java"), _perfil("Texto")))
 
-    titulos = [linha for linha in pagina.extract_text_lines() if linha["text"] in ("TECHNICAL SKILLS", "PROFILE")]
-    assert [titulo["text"] for titulo in titulos] == ["TECHNICAL SKILLS", "PROFILE"]
+    titulos = [linha for linha in pagina.extract_text_lines() if linha["text"] in ("SKILLS", "PROFILE")]
+    assert [titulo["text"] for titulo in titulos] == ["SKILLS", "PROFILE"]
     caractere = titulos[0]["chars"][0]
     assert caractere["fontname"].endswith("Carlito-Bold")
     assert round(caractere["size"]) == 11
@@ -282,7 +282,7 @@ def test_layout_titulo_de_secao_em_caixa_alta_bold_11_azul_com_linha_de_largura_
 def test_layout_titulos_de_secao_seguem_o_idioma_alvo():
     pagina = _pagina_do_pdf(_curriculo_com(_tecnologias("Linguagens: Java"), _perfil("Texto")), idioma="pt")
 
-    assert "TECNOLOGIAS" in _linhas_de_texto(pagina)
+    assert "COMPETÊNCIAS" in _linhas_de_texto(pagina)
     assert "PERFIL" in _linhas_de_texto(pagina)
 
 
@@ -584,7 +584,7 @@ def test_layout_ritmo_vertical_das_secoes_segue_o_modelo():
     pagina = _pagina_do_pdf(_curriculo_com(*secoes))
 
     topos = _topos(pagina)
-    assert abs((topos["Languages: Java"] - topos["TECHNICAL SKILLS"]) - 22.1) < 0.7
+    assert abs((topos["Languages: Java"] - topos["SKILLS"]) - 22.1) < 0.7
     assert abs((topos["Frameworks: Spring Boot"] - topos["Languages: Java"]) - 14.8) < 0.3
     assert abs((topos["PROFILE"] - topos["Frameworks: Spring Boot"]) - 27.9) < 1.0
     assert abs((topos["EXPERIENCE"] - topos["Resumo."]) - 27.9) < 1.0

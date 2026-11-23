@@ -21,7 +21,7 @@ from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.curriculo.domain.rotulos_experiencia import rotulo_contexto
 
 TITULO_EXPERIENCIAS_PADRAO = "Experiências"
-TITULO_COMPETENCIAS_PADRAO = "Tecnologias"
+TITULO_COMPETENCIAS_PADRAO = "Competências"
 
 ExperienciaEditada = tuple[str, str, str, Iterable[str], str]
 """Experiência como o usuário a editou: cargo, empresa, período, conquistas e contexto."""

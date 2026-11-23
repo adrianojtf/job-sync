@@ -17,9 +17,9 @@ Complexidade: low.
 
 ## Subtarefas
 
-- [ ] 5.1 Testes do catálogo e do PDF (red).
-- [ ] 5.2 Alterar o catálogo, `TITULO_COMPETENCIAS_PADRAO` e o frontend (green).
-- [ ] 5.3 Atualizar os testes e o E2E existentes.
+- [x] 5.1 Testes do catálogo e do PDF (red).
+- [x] 5.2 Alterar o catálogo, `TITULO_COMPETENCIAS_PADRAO` e o frontend (green).
+- [x] 5.3 Atualizar os testes e o E2E existentes.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Techspec: "Design de Implementação" e "Abordagem de Testes". PRD: requisitos f
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do catálogo e do PDF.
-- [ ] Regressão: backend e frontend.
+- [x] Testes de unidade do catálogo e do PDF.
+- [x] Regressão: backend e frontend.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

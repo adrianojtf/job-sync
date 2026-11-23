@@ -2,7 +2,7 @@
 
 Orquestra as portas de extração e de ajuste de texto por seção sem conhecer os
 detalhes de infraestrutura de cada uma (Dependency Inversion). Cada seção do
-currículo é ajustada de forma independente: TECHNICAL SKILLS (Tecnologias),
+currículo é ajustada de forma independente: SKILLS (Competências),
 Perfil, Experiências e Formação são lidos e reescritos separadamente.
 
 O resultado é um `RascunhoCurriculoAdaptado`, não um PDF (JOB-0033): o usuário

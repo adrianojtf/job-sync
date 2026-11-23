@@ -22,7 +22,7 @@ export const ORDEM_SECOES_TEXTO: TipoSecao[] = [
 ];
 
 const TITULO_PERFIL_PADRAO = "Perfil";
-const TITULO_COMPETENCIAS_PADRAO = "Tecnologias";
+const TITULO_COMPETENCIAS_PADRAO = "Competências";
 
 /**
  * Estado do formulário de revisão: o resumo (seção PERFIL) fica nos dados pessoais, como no

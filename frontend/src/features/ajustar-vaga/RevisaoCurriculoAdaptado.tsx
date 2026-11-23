@@ -160,7 +160,7 @@ export function RevisaoCurriculoAdaptado({
             <EditorCompetencias
               valor={field.value}
               aoMudar={field.onChange}
-              titulo="Tecnologias e ferramentas"
+              titulo="Competências"
               complemento={
                 <SugestaoIA
                   rotuloBloco="tecnologias"

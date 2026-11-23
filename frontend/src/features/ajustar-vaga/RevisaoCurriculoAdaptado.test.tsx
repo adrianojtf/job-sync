@@ -148,6 +148,15 @@ describe("RevisaoCurriculoAdaptado", () => {
   });
 
   describe("competências por categoria e tag", () => {
+    it("o bloco chama-se Competências", () => {
+      renderizar();
+
+      expect(screen.getByRole("region", { name: "Competências" })).toBeInTheDocument();
+      expect(
+        screen.queryByRole("region", { name: "Tecnologias e ferramentas" }),
+      ).not.toBeInTheDocument();
+    });
+
     it("a tag removida e a criada seguem na confirmação, e a seção de texto não é enviada", async () => {
       const usuario = userEvent.setup();
       const { aoConfirmar } = renderizar();

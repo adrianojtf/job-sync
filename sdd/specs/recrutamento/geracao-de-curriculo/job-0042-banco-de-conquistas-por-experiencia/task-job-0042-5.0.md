@@ -39,3 +39,25 @@ Techspec: "Avaliação manual" e "Riscos Conhecidos". PRD: Objetivos e Questões
 
 - `src/jobsync/curriculo/adapters/prompt_contexto_vaga.py`
 - `src/jobsync/perfil_estruturado/domain/conquistas_parecidas.py`
+
+## Roteiro executável
+
+O arquivo `avaliar-banco-conquistas.py`, nesta pasta, roda o `AjustadorExperienciaOpenAIClient` real com um banco de 8 conquistas e duas vagas de áreas diferentes (Forward Deployed Engineer e Engenheiro de Dados). Imprime as conquistas escolhidas, a quantidade, a latência e os números que aparecem na saída sem existir no banco.
+
+```bash
+PYTHONPATH=src python sdd/specs/recrutamento/geracao-de-curriculo/job-0042-banco-de-conquistas-por-experiencia/avaliar-banco-conquistas.py
+```
+
+Com `--dry-run`, o roteiro só imprime o prompt enviado, sem chamar a IA (validado na execução da task: o bloco de conquistas, a regra de 3 a 5 e o cargo-alvo aparecem no prompt). O roteiro cobre a experiência isolada; para o fluxo completo, repita com o perfil real em "Ajustar para uma vaga".
+
+## Status
+
+Não executada pela IA: o ambiente de desenvolvimento não tem `OPENAI_API_KEY`. Preencha a tabela abaixo após a execução local.
+
+| Vaga | Conquistas escolhidas (qtd) | Mudou entre vagas? | Número fora do banco | Latência |
+|------|-----------------------------|--------------------|----------------------|----------|
+| FDE Sênior | | | | |
+| Engenheiro de Dados | | | | |
+
+Decisões a registrar: limite de conquistas enviadas por experiência (Questão em Aberto 2 do PRD) e ajuste do limite de similaridade (`LIMITE_DE_SIMILARIDADE`, hoje 0,6).
+

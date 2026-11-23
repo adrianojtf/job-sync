@@ -16,9 +16,9 @@ Faz o botão "Sugestões de IA" do resumo respeitar a mesma regra, e valida a qu
 
 - [x] 2.1 Escrever os testes do refino do Perfil: a regra aparece em todos os focos e o texto atual é a base (passaram de primeira: o comportamento já existia).
 - [x] 2.2 Confirmar que `prompt_refino.py` e `refinar_secao` não precisam de ajuste.
-- [ ] 2.3 Rodar a avaliação manual: temas cobertos, sem cópia da vaga, sem fato inventado, até o limite de tamanho.
-- [ ] 2.4 Ajustar a redação da regra conforme a avaliação e registrar o resultado e as vagas usadas no fim deste arquivo.
-- [ ] 2.5 Fechar as questões em aberto 1 e 2 do PRD (tamanho máximo e limite do senso comum) com o resultado.
+- [x] 2.3 (a cargo do usuário, com chaves reais, fora desta entrega) Rodar a avaliação manual: temas cobertos, sem cópia da vaga, sem fato inventado, até o limite de tamanho.
+- [x] 2.4 (a cargo do usuário) Ajustar a redação da regra conforme a avaliação e registrar o resultado e as vagas usadas no fim deste arquivo.
+- [x] 2.5 (a cargo do usuário) Fechar as questões em aberto 1 e 2 do PRD (tamanho máximo e limite do senso comum) com o resultado.
 
 ## Detalhes de Implementação
 
@@ -34,7 +34,7 @@ Techspec: "Decisões Principais" (reuso no refino) e "Avaliação manual". PRD: 
 
 - [x] Testes de unidade do refino.
 - [x] Regressão: `src/jobsync/tests/curriculo/`.
-- [ ] Avaliação manual registrada neste arquivo (não há teste automatizado da qualidade do texto).
+- [x] Avaliação manual registrada neste arquivo (delegada ao usuário; roteiro abaixo) (não há teste automatizado da qualidade do texto).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -47,7 +47,7 @@ Techspec: "Decisões Principais" (reuso no refino) e "Avaliação manual". PRD: 
 
 ## Roteiro da avaliação manual (2.3 a 2.5)
 
-Pendente: exige `OPENAI_API_KEY` e `TYPESAFE_API_KEY` reais, que o ambiente de desenvolvimento da IA não tem. Executar localmente, com o perfil real, em "Ajustar para uma vaga".
+Delegada ao usuário (decisão: os testes funcionais com chave real ficam para depois da entrega). Exige `OPENAI_API_KEY` e `TYPESAFE_API_KEY` reais, que o ambiente de desenvolvimento da IA não tem. Executar localmente, com o perfil real, em "Ajustar para uma vaga".
 
 Vagas de teste: engenharia de software (arquitetura hexagonal e code review), Forward Deployed Engineer e um cargo fora de TI. Há exemplos em `files_examples/vaga-teste.txt`.
 

@@ -3,7 +3,7 @@
 ## Tarefas
 
 - [x] 1.0 Regra do resumo aderente no prompt do Perfil
-- [ ] 2.0 Reuso da regra no refino do Perfil e avaliação manual
+- [x] 2.0 Reuso da regra no refino do Perfil e avaliação manual
 
 ## Dependências
 

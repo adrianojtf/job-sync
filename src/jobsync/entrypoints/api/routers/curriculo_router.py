@@ -19,8 +19,12 @@ from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
     GerarPdfCurriculoRevisadoInputDto,
     GerarPdfCurriculoRevisadoOutputDto,
 )
+from jobsync.curriculo.domain.lacuna_da_vaga import LacunaDaVaga
 from jobsync.curriculo.service_layer.identificar_lacunas_da_vaga import (
     IdentificarLacunasDaVagaInputDto,
+)
+from jobsync.curriculo.service_layer.redigir_conquista_de_lacuna import (
+    RedigirConquistaDeLacunaInputDto,
 )
 from jobsync.curriculo_salvo.service_layer.remover_curriculo_salvo.service import (
     CurriculoSalvoNaoEncontrado,
@@ -41,6 +45,7 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceGerarPdfCurriculoRevisadoDep,
     ServiceIdentificarLacunasDaVagaDep,
     ServiceListarCurriculosSalvosDep,
+    ServiceRedigirConquistaDeLacunaDep,
     ServiceRemoverCurriculoSalvoDep,
     ServiceSalvarCurriculoDep,
     ServiceSugerirAjusteExperienciaAdaptadaDep,
@@ -71,7 +76,12 @@ from jobsync.entrypoints.api.schemas.curriculo import (
     SugerirAjusteSecaoResponse,
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
-from jobsync.entrypoints.api.schemas.lacunas import LacunasRequest, LacunasResponse
+from jobsync.entrypoints.api.schemas.lacunas import (
+    ConquistaRascunhoRequest,
+    ConquistaRascunhoResponse,
+    LacunasRequest,
+    LacunasResponse,
+)
 from jobsync.vaga import AnaliseVaga
 
 router = APIRouter(tags=["currículos"], dependencies=[Depends(exigir_perfil_da_requisicao)])
@@ -355,6 +365,49 @@ def identificar_lacunas(
         IdentificarLacunasDaVagaInputDto(historico=historico_do_candidato(perfil), contexto=contexto)
     )
     return LacunasResponse.from_dto(lacunas)
+
+
+@router.post(
+    "/curriculos/lacunas/conquista-rascunho",
+    response_model=ConquistaRascunhoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Redigir a conquista de uma lacuna",
+    description=(
+        "Transforma o caso que o candidato descreveu em uma conquista, usando só o que ele informou. "
+        "Não persiste nada: o candidato revisa e só a conquista aprovada é salva no banco."
+    ),
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": ProblemaResponse, "description": "Experiência inexistente."},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Perfil inexistente ou caso inválido.",
+        },
+        status.HTTP_502_BAD_GATEWAY: {"model": ProblemaResponse, "description": "IA indisponível."},
+    },
+)
+def redigir_conquista_de_lacuna(
+    body: ConquistaRascunhoRequest,
+    service: ServiceRedigirConquistaDeLacunaDep,
+    buscar_perfil: ServiceBuscarPerfilEstruturadoDep,
+) -> ConquistaRascunhoResponse:
+    """Redige a conquista da lacuna respondida com Sim, para o candidato revisar."""
+    perfil = buscar_perfil_estruturado(body.perfil_identificador, buscar_perfil)
+    if body.experiencia_indice >= len(perfil.experiencias):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Experiência não encontrada no perfil."
+        )
+    try:
+        texto = service.executar(
+            RedigirConquistaDeLacunaInputDto(
+                lacuna=LacunaDaVaga(tema=body.tema, pergunta=body.pergunta),
+                caso=body.caso,
+                cargo=perfil.experiencias[body.experiencia_indice].cargo,
+                idioma_alvo=body.idioma_alvo,
+            )
+        )
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro))
+    return ConquistaRascunhoResponse(texto=texto)
 
 
 @router.post(

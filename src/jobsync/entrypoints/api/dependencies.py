@@ -27,6 +27,7 @@ from jobsync.curriculo.adapters.avaliador_experiencia_jev_client import (
 )
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
 from jobsync.curriculo.adapters.identificador_lacunas_openai_client import IdentificadorLacunasOpenAIClient
+from jobsync.curriculo.adapters.redator_conquista_openai_client import RedatorConquistaOpenAIClient
 from jobsync.curriculo.adapters.identificador_equivalencias_openai_client import (
     IdentificadorEquivalenciasOpenAIClient,
 )
@@ -40,6 +41,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
 from jobsync.curriculo.service_layer.identificar_lacunas_da_vaga import IdentificarLacunasDaVaga
+from jobsync.curriculo.service_layer.redigir_conquista_de_lacuna import RedigirConquistaDeLacuna
 from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
     GerarPdfCurriculoRevisado,
 )
@@ -256,6 +258,16 @@ def obter_service_identificar_lacunas_da_vaga() -> IdentificarLacunasDaVaga:
 
 ServiceIdentificarLacunasDaVagaDep = Annotated[
     IdentificarLacunasDaVaga, Depends(obter_service_identificar_lacunas_da_vaga)
+]
+
+
+def obter_service_redigir_conquista_de_lacuna() -> RedigirConquistaDeLacuna:
+    """Monta o caso de uso que redige a conquista de uma lacuna respondida (JOB-0043)."""
+    return RedigirConquistaDeLacuna(redator=RedatorConquistaOpenAIClient())
+
+
+ServiceRedigirConquistaDeLacunaDep = Annotated[
+    RedigirConquistaDeLacuna, Depends(obter_service_redigir_conquista_de_lacuna)
 ]
 
 

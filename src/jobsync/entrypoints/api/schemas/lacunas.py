@@ -41,3 +41,33 @@ class LacunasResponse(BaseModel):
     @classmethod
     def from_dto(cls, lacunas: tuple[LacunaDaVaga, ...]) -> LacunasResponse:
         return cls(lacunas=[LacunaResponse(tema=lacuna.tema, pergunta=lacuna.pergunta) for lacuna in lacunas])
+
+
+class ConquistaRascunhoRequest(BaseModel):
+    """Resposta "Sim" do candidato a uma pergunta: o caso e a experiência em que aconteceu."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "perfil_identificador": "adriano",
+                "tema": "Construção de MVPs",
+                "pergunta": "Você já construiu um MVP do zero?",
+                "caso": "Montei o MVP de pagamentos em 6 semanas junto ao cliente.",
+                "experiencia_indice": 0,
+                "idioma_alvo": "pt",
+            }
+        }
+    )
+
+    perfil_identificador: str = Field(min_length=1, description="Identificador do perfil estruturado.")
+    tema: str = Field(description="Tema da lacuna respondida.")
+    pergunta: str = Field(description="Pergunta que o candidato respondeu com Sim.")
+    caso: str = Field(description="O que o candidato fez, para quem e o resultado, se houver.")
+    experiencia_indice: int = Field(ge=0, description="Posição da experiência do perfil em que isso aconteceu.")
+    idioma_alvo: str = Field(default="pt", description="Idioma em que a conquista deve ser escrita.")
+
+
+class ConquistaRascunhoResponse(BaseModel):
+    """Conquista redigida pela IA, para o candidato revisar antes de salvar no banco."""
+
+    texto: str = Field(description="Texto da conquista redigida; nada foi salvo.")

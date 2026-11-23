@@ -139,6 +139,19 @@ describe("formularioParaRascunho", () => {
     ]);
   });
 
+  it("descarta categorias sem nome ou sem tags, como o servidor faz ao salvar", () => {
+    const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
+    formulario.competencias = [
+      { nome: "Linguagens", tags: [] },
+      { nome: "  ", tags: ["Git"] },
+      { nome: "Ferramentas", tags: ["Docker"] },
+    ];
+
+    const rascunho = formularioParaRascunho(formulario, rascunhoDoPerfil);
+
+    expect(rascunho.competencias).toEqual([{ nome: "Ferramentas", tags: ["Docker"] }]);
+  });
+
   it("envia lista vazia quando todas as categorias foram excluídas", () => {
     const formulario = rascunhoParaFormulario(rascunhoDoPerfil);
     formulario.competencias = [];

@@ -12,9 +12,13 @@ import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 
 const PDF_REVISADO = {
+  id: "adaptado-1",
   nome_arquivo: "AdrianoTeixeira-2026-11-06-SeniorJava-Olist.pdf",
   pdf_base64: btoa("%PDF-adaptado"),
+  atualizado_em: "2026-11-06T12:00:00Z",
 };
+
+const PDF_EDITADO = { ...PDF_REVISADO, pdf_base64: btoa("%PDF-editado") };
 
 const RASCUNHO = {
   nome_completo: "Adriano Teixeira",
@@ -94,9 +98,13 @@ function servirIa() {
       await registrar("sugestao-secao")(info);
       return HttpResponse.json({ conteudo_sugerido: "Resumo sugerido.", foco: "aderencia_vaga" });
     }),
-    http.post(`${API_TESTE}/v1/curriculos-revisados`, async (info) => {
-      await registrar("pdf")(info);
-      return HttpResponse.json(PDF_REVISADO);
+    http.post(`${API_TESTE}/v1/curriculos-adaptados`, async (info) => {
+      await registrar("salvar")(info);
+      return HttpResponse.json(PDF_REVISADO, { status: 201 });
+    }),
+    http.put(`${API_TESTE}/v1/curriculos-adaptados/:id`, async (info) => {
+      await registrar(`atualizar:${info.params.id}`)(info);
+      return HttpResponse.json(PDF_EDITADO);
     }),
     http.post(`${API_TESTE}/v1/curriculos/:id/analises-ats`, async (info) => {
       await registrar("ats")(info);
@@ -253,13 +261,14 @@ describe("AjustarVagaPage", () => {
 
     await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
     expect(screen.queryByRole("button", { name: "Baixar PDF" })).not.toBeInTheDocument();
-    expect(chamadas.map((c) => c.rota)).not.toContain("pdf");
+    expect(chamadas.map((c) => c.rota)).not.toContain("salvar");
     await userEvent.clear(screen.getByLabelText("Resumo profissional"));
     await userEvent.type(screen.getByLabelText("Resumo profissional"), "Resumo revisado.");
     await confirmarRevisao();
 
     expect(await screen.findByText(PDF_REVISADO.nome_arquivo)).toBeInTheDocument();
-    expect(chamadas.find((c) => c.rota === "pdf")?.corpo).toEqual({
+    expect(chamadas.find((c) => c.rota === "salvar")?.corpo).toEqual({
+      perfil_identificador: "adriano",
       rascunho: {
         ...RASCUNHO,
         secoes: [{ tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo revisado." }],
@@ -269,6 +278,8 @@ describe("AjustarVagaPage", () => {
       idioma_alvo: "en",
       cargo_alvo: "Senior Java",
       empresa_alvo: "Olist",
+      descricao_vaga: "Java, Kafka e AWS.",
+      analise_vaga: ANALISE_VAGA,
     });
     expect(chamadas.find((c) => c.rota.startsWith("rascunhos"))?.corpo).toMatchObject({
       descricao_vaga: "Java, Kafka e AWS.",
@@ -424,7 +435,7 @@ describe("AjustarVagaPage", () => {
 
     expect(screen.getByLabelText("Título da vaga")).toHaveValue("Senior Java");
     expect(screen.queryByRole("button", { name: "Baixar PDF" })).not.toBeInTheDocument();
-    expect(chamadas.map((c) => c.rota)).not.toContain("pdf");
+    expect(chamadas.map((c) => c.rota)).not.toContain("salvar");
   });
 
   it("as sugestões da revisão usam a vaga adaptada e a análise devolvida com o rascunho", async () => {
@@ -457,7 +468,7 @@ describe("AjustarVagaPage", () => {
     servirDadosBase();
     servirIa();
     servidorApi.use(
-      http.post(`${API_TESTE}/v1/curriculos-revisados`, () =>
+      http.post(`${API_TESTE}/v1/curriculos-adaptados`, () =>
         HttpResponse.json(
           { type: "t", title: "Erro", status: 422, detail: "Rascunho inválido.", instance: "i" },
           { status: 422 },
@@ -558,6 +569,7 @@ describe("Ajustar para uma vaga — confirmar candidatura", () => {
         descricao_vaga: "Java, Kafka e AWS.",
         nome_arquivo: PDF_REVISADO.nome_arquivo,
         pdf_base64: PDF_REVISADO.pdf_base64,
+        curriculo_adaptado_id: PDF_REVISADO.id,
       },
     ]);
   });
@@ -699,5 +711,154 @@ describe("Ajustar para uma vaga — confirmar candidatura", () => {
         ["vagas", "adriano"],
       ]),
     );
+  });
+});
+
+describe("Ajustar para uma vaga — editar o currículo adaptado", () => {
+  async function gerarPdfDaVaga() {
+    const app = renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+    await confirmarRevisao();
+    await screen.findByText(PDF_REVISADO.nome_arquivo);
+    return app;
+  }
+
+  function capturarConteudoBaixado() {
+    const conteudos: Promise<string>[] = [];
+    Object.assign(URL, {
+      createObjectURL: vi.fn((blob: Blob) => {
+        conteudos.push(
+          new Promise<string>((resolve) => {
+            const leitor = new FileReader();
+            leitor.onload = () => resolve(String(leitor.result));
+            leitor.readAsText(blob);
+          }),
+        );
+        return "blob:x";
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    return conteudos;
+  }
+
+  const problema = (status: number, detail: string) =>
+    HttpResponse.json({ type: "t", title: "Erro", status, detail, instance: "i" }, { status });
+
+  it("a tela do PDF oferece Editar currículo, que reabre a revisão com o conteúdo confirmado", async () => {
+    servirDadosBase();
+    servirIa();
+    await gerarPdfDaVaga();
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+
+    await screen.findByRole("heading", { name: "Edite o currículo adaptado" });
+    expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo adaptado pela IA.");
+    expect(
+      within(screen.getByRole("group", { name: "Linguagens" })).getByText("Java"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar e gerar PDF" })).not.toBeInTheDocument();
+  });
+
+  it("salvar a edição envia o rascunho ao currículo salvo e troca o PDF da tela", async () => {
+    servirDadosBase();
+    const chamadas = servirIa();
+    const conteudos = capturarConteudoBaixado();
+    await gerarPdfDaVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+    await screen.findByRole("heading", { name: "Edite o currículo adaptado" });
+    await userEvent.click(
+      within(screen.getByRole("group", { name: "Linguagens" })).getByRole("button", {
+        name: "Remover Java",
+      }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByRole("button", { name: "Baixar PDF" })).toBeInTheDocument();
+    const atualizacao = chamadas.find((c) => c.rota === "atualizar:adaptado-1");
+    expect(atualizacao?.corpo).toMatchObject({
+      perfil_identificador: "adriano",
+      rascunho: { competencias: [] },
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Baixar PDF" }));
+    expect(await Promise.all(conteudos)).toEqual(["%PDF-editado"]);
+  });
+
+  it("voltar da edição retorna ao PDF sem salvar", async () => {
+    servirDadosBase();
+    const chamadas = servirIa();
+    await gerarPdfDaVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+    await screen.findByRole("heading", { name: "Edite o currículo adaptado" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Voltar" }));
+
+    expect(screen.getByRole("button", { name: "Baixar PDF" })).toBeInTheDocument();
+    expect(chamadas.map((c) => c.rota.split(":")[0])).not.toContain("atualizar");
+  });
+
+  it("a edição reaberta parte do que foi salvo por último", async () => {
+    servirDadosBase();
+    servirIa();
+    await gerarPdfDaVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+    await screen.findByRole("heading", { name: "Edite o currículo adaptado" });
+    await userEvent.clear(screen.getByLabelText("Resumo profissional"));
+    await userEvent.type(screen.getByLabelText("Resumo profissional"), "Resumo editado.");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    await screen.findByRole("button", { name: "Baixar PDF" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+
+    expect(await screen.findByLabelText("Resumo profissional")).toHaveValue("Resumo editado.");
+  });
+
+  it("falha ao salvar a edição mantém a tela de edição com o conteúdo digitado", async () => {
+    servirDadosBase();
+    servirIa();
+    servidorApi.use(
+      http.put(`${API_TESTE}/v1/curriculos-adaptados/:id`, () =>
+        problema(422, "Rascunho inválido."),
+      ),
+    );
+    await gerarPdfDaVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+    await screen.findByRole("heading", { name: "Edite o currículo adaptado" });
+    await userEvent.type(screen.getByLabelText("Resumo profissional"), " Mais.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByText(/Rascunho inválido\./)).toBeInTheDocument();
+    expect(screen.getByLabelText("Resumo profissional")).toHaveValue(
+      "Resumo adaptado pela IA. Mais.",
+    );
+  });
+
+  it("confirmar a candidatura depois de editar envia o PDF editado e o id do currículo adaptado", async () => {
+    servirDadosBase();
+    servirIa();
+    const corpos: Record<string, unknown>[] = [];
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/candidaturas-ajustadas`, async ({ request }) => {
+        corpos.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json(CANDIDATURA, { status: 201 });
+      }),
+    );
+    await gerarPdfDaVaga();
+    await userEvent.click(screen.getByRole("button", { name: "Editar currículo" }));
+    await screen.findByRole("heading", { name: "Edite o currículo adaptado" });
+    await userEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    await screen.findByRole("button", { name: "Baixar PDF" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar candidatura" }));
+
+    await screen.findByText("Candidatura confirmada em Aplicado.");
+    expect(corpos[0]).toMatchObject({
+      pdf_base64: PDF_EDITADO.pdf_base64,
+      curriculo_adaptado_id: "adaptado-1",
+    });
   });
 });

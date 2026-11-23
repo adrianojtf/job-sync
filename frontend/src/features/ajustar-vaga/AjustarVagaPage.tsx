@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type {
   AdaptarCurriculoEntrada,
-  CurriculoRevisado,
+  CurriculoAdaptadoPdf,
   RascunhoAdaptado,
   RascunhoCurriculoAdaptado,
 } from "../../api/tipos";
@@ -53,11 +53,23 @@ export function AjustarVagaPage() {
 
 function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const fontes = useFontesCurriculo();
-  const { avaliar, gerarRascunho, gerarPdf, ats, carta, confirmarCandidatura } = useAjustarVaga();
+  const {
+    avaliar,
+    gerarRascunho,
+    salvarAdaptado,
+    atualizarAdaptado,
+    ats,
+    carta,
+    confirmarCandidatura,
+  } = useAjustarVaga();
   // Dados da vaga usados na adaptação em revisão; null fora da etapa de revisão.
   const [vagaEmRevisao, setVagaEmRevisao] = useState<AdaptarCurriculoEntrada | null>(null);
   // Vaga que gerou o PDF atual: a candidatura leva esses dados, não o formulário (editável depois).
   const [vagaDoPdf, setVagaDoPdf] = useState<AdaptarCurriculoEntrada | null>(null);
+  // Currículo adaptado salvo (JOB-0041): o PDF atual, o rascunho que o gerou e se está em edição.
+  const [pdfAtual, setPdfAtual] = useState<CurriculoAdaptadoPdf | null>(null);
+  const [rascunhoSalvo, setRascunhoSalvo] = useState<RascunhoCurriculoAdaptado | null>(null);
+  const [editando, setEditando] = useState(false);
   const form = useForm<Formulario>({
     defaultValues: {
       cargo: estado.cargo ?? "",
@@ -119,43 +131,71 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
 
   const gerarCurriculo = async () => {
     if (!(await form.trigger(["cargo", "empresa", "descricao"]))) return;
-    gerarPdf.reset();
-    confirmarCandidatura.reset();
+    limparCurriculoSalvo();
     gerarRascunho.mutate(await montarEntrada(), {
       onSuccess: (_rascunho, entrada) => setVagaEmRevisao(entrada.dados),
     });
   };
 
-  const confirmarRevisao = (vaga: AdaptarCurriculoEntrada, rascunho: RascunhoCurriculoAdaptado) =>
-    gerarPdf.mutate(
+  function limparCurriculoSalvo() {
+    salvarAdaptado.reset();
+    atualizarAdaptado.reset();
+    confirmarCandidatura.reset();
+    setPdfAtual(null);
+    setRascunhoSalvo(null);
+    setEditando(false);
+  }
+
+  const confirmarRevisao = (
+    vaga: AdaptarCurriculoEntrada,
+    rascunho: RascunhoCurriculoAdaptado,
+    analise: RascunhoAdaptado["analise_vaga"],
+  ) =>
+    salvarAdaptado.mutate(
       {
         rascunho,
         idioma_alvo: vaga.idioma_alvo,
         cargo_alvo: vaga.cargo_alvo,
         empresa_alvo: vaga.empresa_alvo,
+        descricao_vaga: vaga.descricao_vaga,
+        analise_vaga: analise,
       },
       {
-        onSuccess: () => {
+        onSuccess: (pdf) => {
           setVagaEmRevisao(null);
           setVagaDoPdf(vaga);
+          setPdfAtual(pdf);
+          setRascunhoSalvo(rascunho);
           confirmarCandidatura.reset();
         },
       },
     );
 
-  const confirmarCandidaturaDoPdf = (pdf: CurriculoRevisado, vaga: AdaptarCurriculoEntrada) =>
+  const salvarEdicao = (id: string, rascunho: RascunhoCurriculoAdaptado) =>
+    atualizarAdaptado.mutate(
+      { id, rascunho },
+      {
+        onSuccess: (pdf) => {
+          setPdfAtual(pdf);
+          setRascunhoSalvo(rascunho);
+          setEditando(false);
+        },
+      },
+    );
+
+  const confirmarCandidaturaDoPdf = (pdf: CurriculoAdaptadoPdf, vaga: AdaptarCurriculoEntrada) =>
     confirmarCandidatura.mutate({
       cargo: vaga.cargo_alvo,
       empresa: vaga.empresa_alvo,
       descricao_vaga: vaga.descricao_vaga,
       nome_arquivo: pdf.nome_arquivo,
       pdf_base64: pdf.pdf_base64,
+      curriculo_adaptado_id: pdf.id,
     });
 
   const descartarRevisao = () => {
     gerarRascunho.reset();
-    gerarPdf.reset();
-    confirmarCandidatura.reset();
+    limparCurriculoSalvo();
     setVagaEmRevisao(null);
   };
 
@@ -195,10 +235,37 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
             analise_vaga: adaptado.analise_vaga,
             cargo_alvo: vagaEmRevisao.cargo_alvo,
           }}
-          gerando={gerarPdf.isPending}
-          erro={gerarPdf.error?.message}
-          aoConfirmar={(rascunho) => confirmarRevisao(vagaEmRevisao, rascunho)}
+          gerando={salvarAdaptado.isPending}
+          erro={salvarAdaptado.error?.message}
+          aoConfirmar={(rascunho) =>
+            confirmarRevisao(vagaEmRevisao, rascunho, adaptado.analise_vaga)
+          }
           aoVoltar={descartarRevisao}
+        />
+      </>
+    );
+  }
+
+  if (editando && pdfAtual && rascunhoSalvo && vagaDoPdf && adaptado) {
+    return (
+      <>
+        {cabecalho}
+        <RevisaoCurriculoAdaptado
+          modo="edicao"
+          rascunho={rascunhoSalvo}
+          contextoVaga={{
+            descricao_vaga: vagaDoPdf.descricao_vaga,
+            idioma_alvo: vagaDoPdf.idioma_alvo,
+            analise_vaga: adaptado.analise_vaga,
+            cargo_alvo: vagaDoPdf.cargo_alvo,
+          }}
+          gerando={atualizarAdaptado.isPending}
+          erro={atualizarAdaptado.error?.message}
+          aoConfirmar={(rascunho) => salvarEdicao(pdfAtual.id, rascunho)}
+          aoVoltar={() => {
+            atualizarAdaptado.reset();
+            setEditando(false);
+          }}
         />
       </>
     );
@@ -287,16 +354,17 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
 
           <Panel titulo="Currículo adaptado">
             {gerarRascunho.isError && <Aviso tom="erro">{gerarRascunho.error.message}</Aviso>}
-            {adaptado && gerarPdf.data ? (
+            {adaptado && pdfAtual ? (
               <CurriculoGerado
-                pdf={gerarPdf.data}
+                pdf={pdfAtual}
                 adaptado={adaptado}
+                aoEditar={() => setEditando(true)}
                 confirmacao={{
                   pendente: confirmarCandidatura.isPending,
                   confirmada: confirmarCandidatura.isSuccess,
                   erro: confirmarCandidatura.error?.message,
                 }}
-                aoConfirmar={() => vagaDoPdf && confirmarCandidaturaDoPdf(gerarPdf.data, vagaDoPdf)}
+                aoConfirmar={() => vagaDoPdf && confirmarCandidaturaDoPdf(pdfAtual, vagaDoPdf)}
               />
             ) : (
               !gerarRascunho.isError && (
@@ -373,11 +441,13 @@ function CurriculoGerado({
   adaptado,
   confirmacao,
   aoConfirmar,
+  aoEditar,
 }: {
-  pdf: CurriculoRevisado;
+  pdf: CurriculoAdaptadoPdf;
   adaptado: RascunhoAdaptado;
   confirmacao: ConfirmacaoCandidatura;
   aoConfirmar: () => void;
+  aoEditar: () => void;
 }) {
   const idTitulo = useId();
   const baixar = () => baixarArquivo(base64ParaBlob(pdf.pdf_base64), pdf.nome_arquivo);
@@ -404,6 +474,7 @@ function CurriculoGerado({
           >
             {rotuloConfirmar}
           </Button>
+          <Button onClick={aoEditar}>Editar currículo</Button>
           <Button variante="primary" onClick={baixar}>
             Baixar PDF
           </Button>

@@ -43,6 +43,8 @@ interface Props {
   erro?: string;
   aoConfirmar: (rascunho: RascunhoCurriculoAdaptado) => void;
   aoVoltar: () => void;
+  /** "edicao": currículo já salvo (JOB-0041); salvar gera o PDF de novo, e voltar não perde a vaga. */
+  modo?: "revisao" | "edicao";
 }
 
 /** Bloco de cada seção de texto, com os mesmos títulos da tela de cadastro (Meu perfil). */
@@ -71,7 +73,9 @@ export function RevisaoCurriculoAdaptado({
   erro,
   aoConfirmar,
   aoVoltar,
+  modo = "revisao",
 }: Props) {
+  const emEdicao = modo === "edicao";
   const valoresIniciais = useMemo(() => rascunhoParaFormulario(rascunho), [rascunho]);
   const form = useForm<FormularioRevisao>({ defaultValues: valoresIniciais });
   const { isDirty } = form.formState;
@@ -94,9 +98,13 @@ export function RevisaoCurriculoAdaptado({
   return (
     <section aria-labelledby={idTitulo}>
       <h2 id={idTitulo} ref={titulo} tabIndex={-1}>
-        Revise o currículo adaptado
+        {emEdicao ? "Edite o currículo adaptado" : "Revise o currículo adaptado"}
       </h2>
-      <Aviso>Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar.</Aviso>
+      <Aviso>
+        {emEdicao
+          ? "Ao salvar, o PDF é gerado de novo com o conteúdo editado."
+          : "Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar."}
+      </Aviso>
       {experienciasEstruturadas && (
         <Aviso tom="alerta">
           A IA pode ter estimado métricas e volumes nas experiências, trocado tecnologias por
@@ -192,16 +200,16 @@ export function RevisaoCurriculoAdaptado({
 
         <div className={estilos.rodape}>
           {isDirty && <span className={estilos.pendente}>Alterações não confirmadas</span>}
-          <Button onClick={voltar}>Voltar para a vaga</Button>
+          <Button onClick={voltar}>{emEdicao ? "Voltar" : "Voltar para a vaga"}</Button>
           <Button type="submit" variante="primary" carregando={gerando}>
-            {gerando ? "Gerando PDF…" : "Confirmar e gerar PDF"}
+            {gerando ? "Gerando PDF…" : emEdicao ? "Salvar alterações" : "Confirmar e gerar PDF"}
           </Button>
         </div>
       </form>
 
       <ConfirmacaoModal
         aberto={confirmandoSaida}
-        titulo="Descartar a revisão?"
+        titulo={emEdicao ? "Descartar a edição?" : "Descartar a revisão?"}
         descricao="As alterações feitas no currículo adaptado serão perdidas."
         rotuloConfirmar="Descartar alterações"
         aoConfirmar={aoVoltar}

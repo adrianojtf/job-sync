@@ -70,10 +70,9 @@ export function formularioParaRascunho(
       original.experiencias == null
         ? null
         : formulario.experiencias.map(formularioParaExperienciaAdaptada),
-    competencias: formulario.competencias.map((categoria) => ({
-      nome: categoria.nome.trim(),
-      tags: categoria.tags,
-    })),
+    competencias: formulario.competencias
+      .filter((categoria) => categoria.nome.trim() !== "" && categoria.tags.length > 0)
+      .map((categoria) => ({ nome: categoria.nome.trim(), tags: categoria.tags })),
     titulo_competencias: tituloCompetencias(original),
   };
 }

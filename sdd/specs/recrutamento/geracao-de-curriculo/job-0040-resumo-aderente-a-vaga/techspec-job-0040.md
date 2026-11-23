@@ -14,7 +14,6 @@ Modificados:
 
 - `src/jobsync/curriculo/adapters/prompt_contexto_vaga.py`: nova constante `REGRA_RESUMO_ADERENTE_A_VAGA`.
 - `src/jobsync/curriculo/adapters/ajustador_texto_client.py`: `_INSTRUCOES_POR_TIPO[PERFIL]` passa a usar a nova regra; `_instrucao_da_secao` mantém o complemento de tecnologia equivalente já existente para o Perfil.
-- `src/jobsync/curriculo/adapters/prompt_refino.py`: o foco `ADERENCIA_VAGA` aponta para a mesma regra quando a seção é o Perfil (ver Decisões).
 - `src/jobsync/tests/curriculo/test_ajustador_texto_client.py`: novos testes de prompt.
 
 Não modificados: `ContextoVaga` (já traz `cargo_alvo`, `descricao_vaga` e `analise_vaga`), `AdaptarCurriculoParaVaga`, routers e schemas.
@@ -31,12 +30,12 @@ Sem novas interfaces. `AjustadorTextoPort` não muda.
 REGRA_RESUMO_ADERENTE_A_VAGA = (
     "Reescreva o resumo profissional em até 3 frases. Mostre os temas centrais da vaga e o que é "
     "comum ao cargo-alvo, mesmo quando a vaga não os detalha, apenas se o histórico do candidato "
-    "os sustentar. Use frases próprias: não copie trechos da vaga. Não invente anos de experiência, "
-    "cargos, empresas, tecnologias nem métricas."
+    "os sustentar. Escreva com frases próprias e não copie trechos da vaga. Mantenha-se fiel aos "
+    "fatos originais: não invente anos de experiência ou cargos, nem métricas."
 )
 ```
 
-O texto acima é uma proposta. A redação final será ajustada contra o conjunto de vagas de teste.
+O texto acima é a redação implementada na task 1.0; "tecnologias" ficou fora da lista de proibições para não conflitar com as tecnologias equivalentes (JOB-0037). A redação final será ajustada contra o conjunto de vagas de teste.
 
 ### Modelos de Dados
 
@@ -70,7 +69,7 @@ Conjunto de vagas de teste (engenharia de software, Forward Deployed Engineer, c
 ## Sequenciamento de Desenvolvimento
 
 1. Teste vermelho do prompt do Perfil, depois a constante e o uso em `ajustador_texto_client.py`.
-2. Reuso no refino (`prompt_refino.py`) com teste.
+2. Testes de caracterização do refino do Perfil (sem mudança de código).
 3. Avaliação manual e ajuste da redação.
 
 Sem dependências bloqueantes.
@@ -85,7 +84,7 @@ Sem novos logs. O log de adaptação existente do serviço basta.
 
 - **Só prompt, sem verificador em tempo de execução.** Mantém KISS/YAGNI e não adiciona chamada à IA. Alternativa rejeitada: validar cópia por n-gramas e regerar. Custa latência e só se justifica se a avaliação manual mostrar cópia recorrente.
 - **Regra genérica, sem lista de cargos.** Mesma decisão da JOB-0037: o modelo usa o senso comum do cargo-alvo.
-- **Reuso no refino do Perfil.** Evita que "Sugestões de IA" desfaça a regra. A forma exata (parâmetro de `bloco_refino` ou regra por seção) será decidida no TDD; a primeira opção é passar o tipo da seção a `bloco_refino`.
+- **Refino do Perfil sem mudança de código.** `_solicitar` inclui a instrução da seção em todo pedido, inclusive em `refinar_secao`. A regra do resumo já chega ao refino em qualquer foco (aderência, impacto, palavras-chave, clareza), e o limite de 3 frases e a proibição de copiar a vaga valem para todos. `prompt_refino.py` não muda; testes de caracterização fixam o comportamento (task 2.0).
 
 ### Riscos Conhecidos
 

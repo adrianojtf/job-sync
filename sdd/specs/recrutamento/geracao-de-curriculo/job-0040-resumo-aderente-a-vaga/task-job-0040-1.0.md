@@ -16,10 +16,10 @@ Troca a instrução da seção Perfil em `AjustadorTextoClient` por uma regra qu
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de prompt do Perfil (red): traz a regra, o cargo-alvo e o complemento de equivalência.
-- [ ] 1.2 Escrever o teste de isolamento: as outras seções não recebem a regra.
-- [ ] 1.3 Criar a constante e usá-la em `ajustador_texto_client.py` (green).
-- [ ] 1.4 Refatorar e rodar os testes de `curriculo`.
+- [x] 1.1 Escrever os testes de prompt do Perfil (red): traz a regra, o cargo-alvo e o complemento de equivalência.
+- [x] 1.2 Escrever o teste de isolamento: as outras seções não recebem a regra.
+- [x] 1.3 Criar a constante e usá-la em `ajustador_texto_client.py` (green).
+- [x] 1.4 Refatorar e rodar os testes de `curriculo`.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Techspec: "Componentes", "Interfaces Principais" e "Abordagem de Testes". PRD: R
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade em `test_ajustador_texto_client.py`.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade em `test_ajustador_texto_client.py`.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

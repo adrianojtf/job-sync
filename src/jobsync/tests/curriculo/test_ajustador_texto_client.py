@@ -293,3 +293,50 @@ def test_prompt_de_outras_secoes_nao_traz_a_regra_de_categorias_de_tecnologia(ti
     prompt = _prompt_da_secao(tipo, "pt")
 
     assert "uma categoria por linha" not in prompt
+
+
+def test_perfil_pede_resumo_curto_com_os_temas_da_vaga_e_do_cargo() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "em até 3 frases" in prompt
+    assert "temas centrais da vaga" in prompt
+    assert "comum ao cargo-alvo" in prompt
+    assert "apenas se o histórico do candidato os sustentar" in prompt
+
+
+def test_perfil_pede_frases_proprias_sem_copiar_a_vaga() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "não copie trechos da vaga" in prompt
+
+
+def test_perfil_mantem_o_complemento_de_tecnologia_equivalente_com_a_nova_regra() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", ajustes=(REACT_ANGULAR,), cargo_alvo="Code Reviewer")
+
+    assert "temas centrais da vaga" in prompt
+    assert "Pode citar Angular, equivalente a React" in prompt
+    assert "Cargo-alvo (título da vaga): Code Reviewer" in prompt
+
+
+@pytest.mark.parametrize("tipo", [tipo for tipo in TipoSecao if tipo != TipoSecao.PERFIL])
+def test_prompt_de_outras_secoes_nao_traz_a_regra_do_resumo(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt")
+
+    assert "temas centrais da vaga" not in prompt
+    assert "não copie trechos da vaga" not in prompt
+
+
+@pytest.mark.parametrize("tentativa", [1, 2, 3, 4])
+def test_refinar_o_perfil_traz_a_regra_do_resumo_em_qualquer_foco(tentativa: int) -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino(tentativa=tentativa))
+
+    assert "temas centrais da vaga" in usuario
+    assert "não copie trechos da vaga" in usuario
+
+
+def test_refinar_o_perfil_com_foco_de_aderencia_parte_do_texto_atual_com_a_regra() -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino(tentativa=1))
+
+    assert "Foco desta versão: aderência à vaga" in usuario
+    assert "Texto atual:\nResumo atual editado." in usuario
+    assert "em até 3 frases" in usuario

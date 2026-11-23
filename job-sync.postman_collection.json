@@ -1347,6 +1347,164 @@
       ]
     },
     {
+      "name": "15f - Salvar curriculo adaptado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos-adaptados",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos-adaptados"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"rascunho\": {\"nome_completo\": \"Ana Souza\", \"email\": \"ana@example.com\", \"linkedin\": \"\", \"secoes\": [{\"tipo\": \"PERFIL\", \"titulo\": \"Perfil\", \"conteudo\": \"Engenheira backend.\"}], \"competencias\": [{\"nome\": \"Linguagens\", \"tags\": [\"Java\", \"Python\"]}], \"titulo_competencias\": \"Competencias\"}, \"idioma_alvo\": \"pt\", \"cargo_alvo\": \"Engenheira de Software\", \"empresa_alvo\": \"TechCorp\", \"descricao_vaga\": \"Vaga Java com code review.\", \"analise_vaga\": {\"requisitos\": [], \"ambiguidade\": [], \"texto_original\": \"Vaga Java com code review.\"}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Criado (201) ou erro controlado', () => pm.expect([201,422]).to.include(pm.response.code));",
+              "if (pm.response.code === 201) { const j = pm.response.json(); pm.collectionVariables.set('curriculo_adaptado_id', j.id); pm.test('Traz id e PDF', () => { pm.expect(j).to.have.property('id'); pm.expect(j).to.have.property('pdf_base64'); pm.expect(j).to.have.property('nome_arquivo'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15g - Listar curriculos adaptados",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos-adaptados?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos-adaptados"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Listagem (200)', () => pm.response.to.have.status(200));",
+              "pm.test('Itens sem conteudo pesado', () => { const j = pm.response.json(); pm.expect(j).to.have.property('items'); pm.expect(j).to.have.property('total'); j.items.forEach(i => { pm.expect(i).to.not.have.property('rascunho'); pm.expect(i).to.not.have.property('pdf_base64'); }); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15h - Abrir curriculo adaptado",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos-adaptados/{{curriculo_adaptado_id}}?perfil_identificador={{perfil}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos-adaptados",
+            "{{curriculo_adaptado_id}}"
+          ],
+          "query": [
+            {
+              "key": "perfil_identificador",
+              "value": "{{perfil}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Aberto (200) ou nao encontrado (404)', () => pm.expect([200,404]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Traz rascunho com competencias e a vaga', () => { const j = pm.response.json(); pm.expect(j).to.have.property('descricao_vaga'); pm.expect(j).to.have.property('analise_vaga'); pm.expect(j.rascunho).to.have.property('competencias'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15i - Salvar edicao do curriculo adaptado",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/curriculos-adaptados/{{curriculo_adaptado_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "curriculos-adaptados",
+            "{{curriculo_adaptado_id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"perfil_identificador\": \"{{perfil}}\", \"rascunho\": {\"nome_completo\": \"Ana Souza\", \"email\": \"ana@example.com\", \"linkedin\": \"\", \"secoes\": [{\"tipo\": \"PERFIL\", \"titulo\": \"Perfil\", \"conteudo\": \"Engenheira backend.\"}], \"competencias\": [{\"nome\": \"Linguagens\", \"tags\": [\"Go\"]}], \"titulo_competencias\": \"Competencias\"}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Atualizado (200), nao encontrado (404) ou invalido (422)', () => pm.expect([200,404,422]).to.include(pm.response.code));",
+              "if (pm.response.code === 200) { pm.test('Traz o PDF regenerado', () => { const j = pm.response.json(); pm.expect(j).to.have.property('pdf_base64'); pm.expect(j).to.have.property('atualizado_em'); }); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "16 - Analisar ATS (IA)",
       "request": {
         "method": "POST",
@@ -1571,6 +1729,10 @@
       "key": "nova_senha",
       "value": "outra-senha-bem-longa-2",
       "type": "string"
+    },
+    {
+      "key": "curriculo_adaptado_id",
+      "value": ""
     }
   ]
 }

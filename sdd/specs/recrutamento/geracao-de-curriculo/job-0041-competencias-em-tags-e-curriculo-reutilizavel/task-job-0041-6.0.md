@@ -19,12 +19,12 @@ Cria os casos de uso de salvar, atualizar, buscar e listar currículos adaptados
 
 ## Subtarefas
 
-- [ ] 6.1 Testes dos serviços com repositório fake e gerador de PDF falso (red): salvar, atualizar, buscar, listar, isolamento por perfil, 404, validação.
-- [ ] 6.2 Testes de routers e schemas (red).
-- [ ] 6.3 Implementar os quatro casos de uso (green).
-- [ ] 6.4 Criar `curriculo_adaptado_router.py`, schemas e registro na aplicação (green).
-- [ ] 6.5 Atualizar a collection Postman com os novos endpoints.
-- [ ] 6.6 Logs `info` ao salvar e atualizar, sem o conteúdo do currículo.
+- [x] 6.1 Testes dos serviços com repositório fake e gerador de PDF falso (red): salvar, atualizar, buscar, listar, isolamento por perfil, 404, validação.
+- [x] 6.2 Testes de routers e schemas (red).
+- [x] 6.3 Implementar os quatro casos de uso (green).
+- [x] 6.4 Criar `curriculo_adaptado_router.py`, schemas e registro na aplicação (green).
+- [x] 6.5 Atualizar a collection Postman com os novos endpoints.
+- [x] 6.6 Logs `info` ao salvar e atualizar, sem o conteúdo do currículo.
 
 ## Detalhes de Implementação
 
@@ -37,9 +37,9 @@ Techspec: "Endpoints de API", "Pontos de Integração" e "Monitoramento e Observ
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade dos serviços.
-- [ ] Testes de routers e schemas.
-- [ ] Regressão: `src/jobsync/tests/entrypoints/api/` e `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade dos serviços.
+- [x] Testes de routers e schemas.
+- [x] Regressão: `src/jobsync/tests/entrypoints/api/` e `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

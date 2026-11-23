@@ -13,6 +13,7 @@ from jobsync.entrypoints.autenticacao_config import obter_configuracao_http
 from jobsync.entrypoints.api.exceptions import adicionar_handlers_excecao
 from jobsync.entrypoints.api.routers import (
     candidatura_router,
+    curriculo_adaptado_router,
     curriculo_router,
     health,
     perfil_estruturado_router,
@@ -56,6 +57,7 @@ app.include_router(sessao_router.router, prefix="/v1")
 app.include_router(usuario_router.router, prefix="/v1")
 app.include_router(provedor_router.router, prefix="/v1")
 app.include_router(curriculo_router.router, prefix="/v1")
+app.include_router(curriculo_adaptado_router.router, prefix="/v1")
 app.include_router(vaga_router.router, prefix="/v1")
 app.include_router(vaga_externa_router.router, prefix="/v1")
 app.include_router(candidatura_router.router, prefix="/v1")

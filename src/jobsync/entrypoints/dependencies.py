@@ -11,6 +11,7 @@ from functools import lru_cache
 from psycopg_pool import ConnectionPool
 
 from jobsync.candidatura.adapters import CandidaturaRepositoryImpl
+from jobsync.curriculo_adaptado.adapters import CurriculoAdaptadoRepositoryImpl
 from jobsync.curriculo_salvo.adapters import CurriculoSalvoRepositoryImpl
 from jobsync.entrypoints.autenticacao_servicos import ServicosAutenticacao, servicos_autenticacao_do_ambiente
 from jobsync.perfil.adapters import PerfilRepositoryImpl
@@ -60,6 +61,10 @@ def obter_repositorio_candidatura() -> CandidaturaRepositoryImpl:
 
 def obter_repositorio_curriculo_salvo() -> CurriculoSalvoRepositoryImpl:
     return CurriculoSalvoRepositoryImpl(obter_pool_conexoes())
+
+
+def obter_repositorio_curriculo_adaptado() -> CurriculoAdaptadoRepositoryImpl:
+    return CurriculoAdaptadoRepositoryImpl(obter_pool_conexoes())
 
 
 def obter_repositorio_perfil() -> PerfilRepositoryImpl:

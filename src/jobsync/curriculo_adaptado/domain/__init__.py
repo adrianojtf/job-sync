@@ -4,5 +4,6 @@ from jobsync.curriculo_adaptado.domain.curriculo_adaptado import CurriculoAdapta
 from jobsync.curriculo_adaptado.domain.curriculo_adaptado_repository import (
     CurriculoAdaptadoRepository,
 )
+from jobsync.curriculo_adaptado.domain.exceptions import CurriculoAdaptadoNaoEncontrado
 
-__all__ = ["CurriculoAdaptado", "CurriculoAdaptadoRepository"]
+__all__ = ["CurriculoAdaptado", "CurriculoAdaptadoNaoEncontrado", "CurriculoAdaptadoRepository"]

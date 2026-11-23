@@ -506,6 +506,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/curriculos-adaptados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar currículos adaptados
+         * @description Lista os currículos adaptados do perfil, do editado mais recentemente ao mais antigo.
+         */
+        get: operations["listar_curriculos_adaptados_v1_curriculos_adaptados_get"];
+        put?: never;
+        /**
+         * Salvar currículo adaptado
+         * @description Guarda o currículo adaptado confirmado na revisão, com a vaga usada, e devolve o PDF gerado a partir dele. Substitui a geração de PDF sem persistência da tela de ajuste.
+         */
+        post: operations["salvar_curriculo_adaptado_v1_curriculos_adaptados_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculos-adaptados/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Abrir currículo adaptado
+         * @description Devolve o conteúdo salvo e a vaga usada, para reabrir a revisão.
+         */
+        get: operations["obter_curriculo_adaptado_v1_curriculos_adaptados__id__get"];
+        /**
+         * Salvar a edição do currículo adaptado
+         * @description Substitui o conteúdo salvo e devolve o PDF regenerado a partir dele.
+         */
+        put: operations["atualizar_curriculo_adaptado_v1_curriculos_adaptados__id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vagas/avaliacoes": {
         parameters: {
             query?: never;
@@ -1475,6 +1523,196 @@ export interface components {
             cargo_alvo?: string;
         };
         /**
+         * CurriculoAdaptadoAtualizarRequest
+         * @description Rascunho editado de um currículo adaptado já salvo.
+         */
+        CurriculoAdaptadoAtualizarRequest: {
+            /**
+             * Perfil Identificador
+             * @description Perfil dono do currículo.
+             */
+            perfil_identificador: string;
+            /** @description Rascunho no estado em que o usuário confirmou a edição. */
+            rascunho: components["schemas"]["RascunhoCurriculoAdaptadoSchema"];
+            /**
+             * Data Referencia
+             * @description Data de referência para o nome do arquivo.
+             */
+            data_referencia?: string | null;
+        };
+        /**
+         * CurriculoAdaptadoPdfResponse
+         * @description Currículo adaptado salvo e o PDF gerado a partir dele.
+         */
+        CurriculoAdaptadoPdfResponse: {
+            /**
+             * Id
+             * @description Identificador do currículo adaptado.
+             */
+            id: string;
+            /**
+             * Nome Arquivo
+             * @description Nome padronizado do PDF gerado.
+             */
+            nome_arquivo: string;
+            /**
+             * Pdf Base64
+             * @description PDF codificado em base64.
+             */
+            pdf_base64: string;
+            /**
+             * Atualizado Em
+             * Format: date-time
+             * @description Instante da última gravação, em UTC.
+             */
+            atualizado_em: string;
+        };
+        /**
+         * CurriculoAdaptadoResponse
+         * @description Currículo adaptado completo: o conteúdo para a revisão e a vaga para as sugestões de IA.
+         */
+        CurriculoAdaptadoResponse: {
+            /**
+             * Id
+             * @description Identificador do currículo adaptado.
+             */
+            id: string;
+            /**
+             * Nome Referencia
+             * @description Nome de referência (nome do arquivo gerado).
+             */
+            nome_referencia: string;
+            /**
+             * Cargo Alvo
+             * @description Cargo da vaga usada na adaptação.
+             */
+            cargo_alvo: string;
+            /**
+             * Empresa Alvo
+             * @description Empresa da vaga usada na adaptação.
+             */
+            empresa_alvo: string;
+            /**
+             * Idioma Alvo
+             * @description Idioma do currículo.
+             */
+            idioma_alvo: string;
+            /**
+             * Curriculo Salvo Id
+             * @description Currículo salvo (PDF) gerado a partir deste, quando já houve candidatura.
+             */
+            curriculo_salvo_id: string | null;
+            /**
+             * Criado Em
+             * Format: date-time
+             * @description Instante da criação, em UTC.
+             */
+            criado_em: string;
+            /**
+             * Atualizado Em
+             * Format: date-time
+             * @description Instante da última edição, em UTC.
+             */
+            atualizado_em: string;
+            /**
+             * Descricao Vaga
+             * @description Descrição da vaga usada na adaptação.
+             */
+            descricao_vaga: string;
+            /** @description Análise da vaga usada na adaptação. */
+            analise_vaga: components["schemas"]["AnaliseVagaSchema"];
+            /** @description Conteúdo salvo, para a revisão. */
+            rascunho: components["schemas"]["RascunhoCurriculoAdaptadoSchema"];
+        };
+        /**
+         * CurriculoAdaptadoResumoResponse
+         * @description Currículo adaptado na listagem, sem o conteúdo.
+         */
+        CurriculoAdaptadoResumoResponse: {
+            /**
+             * Id
+             * @description Identificador do currículo adaptado.
+             */
+            id: string;
+            /**
+             * Nome Referencia
+             * @description Nome de referência (nome do arquivo gerado).
+             */
+            nome_referencia: string;
+            /**
+             * Cargo Alvo
+             * @description Cargo da vaga usada na adaptação.
+             */
+            cargo_alvo: string;
+            /**
+             * Empresa Alvo
+             * @description Empresa da vaga usada na adaptação.
+             */
+            empresa_alvo: string;
+            /**
+             * Idioma Alvo
+             * @description Idioma do currículo.
+             */
+            idioma_alvo: string;
+            /**
+             * Curriculo Salvo Id
+             * @description Currículo salvo (PDF) gerado a partir deste, quando já houve candidatura.
+             */
+            curriculo_salvo_id: string | null;
+            /**
+             * Criado Em
+             * Format: date-time
+             * @description Instante da criação, em UTC.
+             */
+            criado_em: string;
+            /**
+             * Atualizado Em
+             * Format: date-time
+             * @description Instante da última edição, em UTC.
+             */
+            atualizado_em: string;
+        };
+        /**
+         * CurriculoAdaptadoSalvarRequest
+         * @description Rascunho confirmado na revisão e a vaga usada na adaptação.
+         */
+        CurriculoAdaptadoSalvarRequest: {
+            /**
+             * Perfil Identificador
+             * @description Perfil dono do currículo.
+             */
+            perfil_identificador: string;
+            /** @description Rascunho no estado em que o usuário confirmou. */
+            rascunho: components["schemas"]["RascunhoCurriculoAdaptadoSchema"];
+            /**
+             * Idioma Alvo
+             * @description Idioma de destino do currículo.
+             */
+            idioma_alvo: string;
+            /**
+             * Cargo Alvo
+             * @description Cargo alvo (usado no nome do arquivo).
+             */
+            cargo_alvo: string;
+            /**
+             * Empresa Alvo
+             * @description Empresa alvo (usada no nome do arquivo).
+             */
+            empresa_alvo: string;
+            /**
+             * Descricao Vaga
+             * @description Descrição da vaga usada na adaptação.
+             */
+            descricao_vaga: string;
+            /** @description Análise da vaga devolvida na adaptação; guardada para as sugestões de IA. */
+            analise_vaga: components["schemas"]["AnaliseVagaSchema"];
+            /**
+             * Data Referencia
+             * @description Data de referência para o nome do arquivo.
+             */
+            data_referencia?: string | null;
+        };
+        /**
          * CurriculoRevisadoResponse
          * @description PDF gerado a partir do rascunho revisado.
          */
@@ -1563,6 +1801,19 @@ export interface components {
              * @description Data e hora do upload do currículo.
              */
             data_upload: string;
+        };
+        /** CurriculosAdaptadosListagemResponse */
+        CurriculosAdaptadosListagemResponse: {
+            /**
+             * Items
+             * @description Currículos adaptados do perfil.
+             */
+            items: components["schemas"]["CurriculoAdaptadoResumoResponse"][];
+            /**
+             * Total
+             * @description Total de currículos retornados.
+             */
+            total: number;
         };
         /**
          * CurriculosListagemResponse
@@ -3745,6 +3996,156 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_curriculos_adaptados_v1_curriculos_adaptados_get: {
+        parameters: {
+            query: {
+                perfil_identificador: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculosAdaptadosListagemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    salvar_curriculo_adaptado_v1_curriculos_adaptados_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculoAdaptadoSalvarRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculoAdaptadoPdfResponse"];
+                };
+            };
+            /** @description Rascunho ou dados da vaga inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+        };
+    };
+    obter_curriculo_adaptado_v1_curriculos_adaptados__id__get: {
+        parameters: {
+            query: {
+                perfil_identificador: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculoAdaptadoResponse"];
+                };
+            };
+            /** @description Currículo adaptado inexistente ou de outro perfil. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    atualizar_curriculo_adaptado_v1_curriculos_adaptados__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculoAdaptadoAtualizarRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculoAdaptadoPdfResponse"];
+                };
+            };
+            /** @description Currículo adaptado inexistente ou de outro perfil. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Rascunho ou dados da vaga inválidos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
                 };
             };
         };

@@ -32,3 +32,15 @@ REGRA_RESUMO_ADERENTE_A_VAGA = (
     "nesta instrução."
 )
 """Regra do resumo (JOB-0040): curto, no eixo do cargo-alvo, sem copiar a vaga nem inventar fatos."""
+
+
+REGRA_SELECAO_DE_CONQUISTAS = (
+    "Há conquistas cadastradas pelo usuário para esta experiência. Escolha de 3 a 5 delas, as mais "
+    "aderentes à vaga e ao cargo-alvo, com a mais relevante primeiro; esta faixa substitui a de 2 a 6 "
+    "conquistas. Reescreva a redação para adequar o vocabulário à vaga, sem acrescentar fato, número, "
+    "resultado, tecnologia ou prática que a conquista não tenha; esta regra prevalece sobre a permissão "
+    "de propor métricas. Se houver menos de 3 conquistas cadastradas, use todas e complete as demais a "
+    "partir da descrição original. Se nenhuma se relacionar com a vaga, escolha as 3 mais próximas, sem "
+    "forçar uma relação inexistente."
+)
+"""Regra da seleção (JOB-0042): escolhe de 3 a 5 conquistas do banco sem acrescentar fato."""

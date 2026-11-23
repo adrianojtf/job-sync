@@ -52,3 +52,12 @@ export function useAvaliarExperiencia() {
     mutationFn: (dados: AvaliarExperienciaEntrada) => api.avaliarExperiencia(dados),
   });
 }
+
+/** Pergunta à API quais conquistas da experiência se parecem com a nova (JOB-0042, RF 5). */
+export function useVerificarConquistasParecidas() {
+  const api = useApiClient();
+  return useMutation({
+    mutationFn: ({ texto, conquistas }: { texto: string; conquistas: string[] }) =>
+      api.verificarConquistasParecidas(texto, conquistas),
+  });
+}

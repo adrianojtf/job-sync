@@ -806,6 +806,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/perfil-estruturado/conquistas/parecidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verificar conquistas parecidas
+         * @description Compara o texto de uma conquista nova com as conquistas informadas e devolve as parecidas. Não consulta nem altera o perfil salvo.
+         */
+        post: operations["verificar_conquistas_parecidas_v1_perfil_estruturado_conquistas_parecidas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tokens-captura": {
         parameters: {
             query?: never;
@@ -1514,6 +1534,68 @@ export interface components {
             ano: string;
         };
         /**
+         * ConquistaRequest
+         * @description Uma conquista guardada no banco de conquistas da experiência.
+         */
+        ConquistaRequest: {
+            /**
+             * Texto
+             * @description Texto da conquista, escrito ou aprovado pelo usuário.
+             */
+            texto: string;
+            /**
+             * Origem
+             * @description Origem da conquista: cadastro manual ou resposta às perguntas sobre a vaga.
+             * @default MANUAL
+             * @enum {string}
+             */
+            origem?: "MANUAL" | "RESPOSTA_PERGUNTA";
+        };
+        /**
+         * ConquistaResponse
+         * @description Uma conquista do banco de conquistas na resposta da API.
+         */
+        ConquistaResponse: {
+            /**
+             * Texto
+             * @description Texto da conquista.
+             */
+            texto: string;
+            /**
+             * Origem
+             * @description Origem da conquista.
+             * @enum {string}
+             */
+            origem: "MANUAL" | "RESPOSTA_PERGUNTA";
+        };
+        /**
+         * ConquistasParecidasRequest
+         * @description Texto de uma conquista nova e as conquistas que a tela já tem na experiência.
+         */
+        ConquistasParecidasRequest: {
+            /**
+             * Texto
+             * @description Texto da conquista nova.
+             */
+            texto: string;
+            /**
+             * Conquistas
+             * @description Conquistas já presentes na experiência.
+             */
+            conquistas?: string[];
+        };
+        /**
+         * ConquistasParecidasResponse
+         * @description Conquistas existentes que se parecem com a conquista nova.
+         */
+        ConquistasParecidasResponse: {
+            /**
+             * Parecidas
+             * @description Textos das conquistas parecidas, vazio quando não há.
+             */
+            parecidas: string[];
+        };
+        /**
          * ContextoVagaSchema
          * @description Contexto da vaga-alvo; presente na revisão do currículo adaptado, ausente em Meu perfil.
          */
@@ -2006,6 +2088,11 @@ export interface components {
              * @description Descrição das atividades e responsabilidades do cargo.
              */
             descricao: string;
+            /**
+             * Conquistas
+             * @description Banco de conquistas da experiência (opcional).
+             */
+            conquistas?: components["schemas"]["ConquistaRequest"][];
         };
         /**
          * ExperienciaProfissionalResponse
@@ -2032,6 +2119,11 @@ export interface components {
              * @description Descrição das atividades e responsabilidades do cargo.
              */
             descricao: string;
+            /**
+             * Conquistas
+             * @description Banco de conquistas da experiência.
+             */
+            conquistas?: components["schemas"]["ConquistaResponse"][];
         };
         /**
          * FocoRefino
@@ -4649,6 +4741,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PerfilEstruturadoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verificar_conquistas_parecidas_v1_perfil_estruturado_conquistas_parecidas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConquistasParecidasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConquistasParecidasResponse"];
                 };
             };
             /** @description Validation Error */

@@ -7,6 +7,7 @@ from jobsync.curriculo.domain.contexto_vaga import ContextoVaga
 from jobsync.curriculo.domain.equivalencia_tecnologia import DiretrizesExperiencia
 from jobsync.curriculo.adapters.prompt_contexto_vaga import (
     REGRA_RESPONSABILIDADES_IMPLICITAS,
+    REGRA_SELECAO_DE_CONQUISTAS,
     linha_cargo_alvo,
 )
 from jobsync.curriculo.adapters.prompt_refino import bloco_refino
@@ -52,7 +53,7 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
         contexto: ContextoVaga,
         diretrizes: DiretrizesExperiencia,
     ) -> ExperienciaAdaptada:
-        if not experiencia.descricao.strip():
+        if not experiencia.descricao.strip() and not experiencia.conquistas:
             return self._sem_conteudo(experiencia)
 
         return self._solicitar(
@@ -60,7 +61,9 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
             texto_da_experiencia=(
-                f"- Descrição original: {experiencia.descricao}{self._ajustes_de_tecnologia(diretrizes)}"
+                f"- Descrição original: {experiencia.descricao.strip() or '(não informada)'}"
+                f"{self._conquistas_cadastradas(experiencia.conquistas)}"
+                f"{self._ajustes_de_tecnologia(diretrizes)}"
             ),
             contexto=contexto,
         )
@@ -82,6 +85,14 @@ class AjustadorExperienciaOpenAIClient(AjustadorExperienciaPort):
             ),
             contexto=contexto,
         )
+
+    @staticmethod
+    def _conquistas_cadastradas(conquistas: tuple[str, ...]) -> str:
+        """Bloco do banco de conquistas (JOB-0042); vazio quando a experiência não tem conquistas."""
+        if not conquistas:
+            return ""
+        lista = "\n".join(f"- {conquista}" for conquista in conquistas)
+        return f"\n\nConquistas cadastradas pelo usuário:\n{lista}\n\n{REGRA_SELECAO_DE_CONQUISTAS}"
 
     @staticmethod
     def _ajustes_de_tecnologia(diretrizes: DiretrizesExperiencia) -> str:

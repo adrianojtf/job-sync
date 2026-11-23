@@ -91,6 +91,7 @@ from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service 
 from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.service import ImportarPerfilDePdf
 from jobsync.perfil_estruturado.adapters.extrator_perfil_estruturado_client import ExtratorPerfilEstruturadoClient
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.service import SalvarPerfilEstruturado
+from jobsync.perfil_estruturado.service_layer.verificar_conquistas_parecidas import VerificarConquistasParecidas
 from jobsync.vaga.adapters.job_description_analyzer_client import (
     JobDescriptionAnalyzerClient,
 )
@@ -490,6 +491,15 @@ def obter_service_salvar_perfil_estruturado(
 
 ServiceSalvarPerfilEstruturadoDep = Annotated[
     SalvarPerfilEstruturado, Depends(obter_service_salvar_perfil_estruturado)
+]
+
+
+def obter_service_verificar_conquistas_parecidas() -> VerificarConquistasParecidas:
+    return VerificarConquistasParecidas()
+
+
+ServiceVerificarConquistasParecidasDep = Annotated[
+    VerificarConquistasParecidas, Depends(obter_service_verificar_conquistas_parecidas)
 ]
 
 

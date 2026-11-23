@@ -6,10 +6,12 @@ import pytest
 from jobsync.perfil.adapters.perfil_repository_impl import PerfilRepositoryImpl
 from jobsync.perfil_estruturado import (
     Certificacao,
+    Conquista,
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
     NivelIdioma,
+    OrigemConquista,
     PerfilEstruturado,
 )
 from jobsync.perfil_estruturado.adapters import PerfilEstruturadoRepositoryImpl
@@ -76,3 +78,34 @@ class TestPerfilEstruturadoRepositoryImpl:
 
     def test_buscar_perfil_inexistente_retorna_none(self, repositorio):
         assert repositorio.buscar_por_perfil("nao-existe") is None
+
+    def test_salvar_e_buscar_perfil_com_conquistas_e_origem(self, repositorio):
+        perfil = _perfil_completo(
+            experiencias=(
+                ExperienciaProfissional(
+                    "TechCorp", "Eng. de Software", "2020-2022", "Backend em Python.",
+                    conquistas=(
+                        Conquista("Reduzi o tempo de deploy."),
+                        Conquista("Atuei com o cliente na entrega de um MVP.", OrigemConquista.RESPOSTA_PERGUNTA),
+                    ),
+                ),
+            )
+        )
+
+        repositorio.salvar(perfil)
+
+        assert repositorio.buscar_por_perfil("matheus") == perfil
+
+    def test_buscar_perfil_salvo_antes_das_conquistas_devolve_lista_vazia(self, repositorio, pool_postgres):
+        with pool_postgres.connection() as conexao:
+            conexao.execute(
+                """
+                INSERT INTO perfil_estruturado (perfil_identificador, nome_completo, email, experiencias_json)
+                VALUES ('matheus', 'Matheus', 'm@example.com',
+                        '[{"empresa": "TechCorp", "cargo": "Eng.", "periodo": "2020", "descricao": "Backend."}]')
+                """
+            )
+
+        perfil = repositorio.buscar_por_perfil("matheus")
+
+        assert perfil.experiencias[0].conquistas == ()

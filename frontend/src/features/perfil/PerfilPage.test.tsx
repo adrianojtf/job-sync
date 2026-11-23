@@ -12,7 +12,13 @@ const PERFIL: PerfilEstruturado = {
   linkedin: "",
   resumo_profissional: "Backend.",
   experiencias: [
-    { empresa: "Neoway", cargo: "Dev Java", periodo: "2020-2024", descricao: "APIs em Java." },
+    {
+      empresa: "Neoway",
+      cargo: "Dev Java",
+      periodo: "2020-2024",
+      descricao: "APIs em Java.",
+      conquistas: [],
+    },
   ],
   formacoes: [],
   certificacoes: [],
@@ -114,7 +120,9 @@ describe("PerfilPage", () => {
           email: "ana@email.com",
           linkedin: "",
           resumo_profissional: "",
-          experiencias: [{ empresa: "Olist", cargo: "Backend", periodo: "", descricao: "" }],
+          experiencias: [
+            { empresa: "Olist", cargo: "Backend", periodo: "", descricao: "", conquistas: [] },
+          ],
           formacoes: [],
           certificacoes: [],
           idiomas: [{ idioma: "Inglês", nivel: "FLUENTE" }],
@@ -384,5 +392,201 @@ describe("PerfilPage", () => {
       expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Backend.");
       expect(screen.queryByText("Alterações não salvas")).not.toBeInTheDocument();
     });
+  });
+});
+
+const CONQUISTA_DEPLOY = { texto: "Reduzi o tempo de deploy.", origem: "MANUAL" } as const;
+
+const PERFIL_COM_CONQUISTAS: PerfilEstruturado = {
+  ...PERFIL,
+  experiencias: [{ ...PERFIL.experiencias![0]!, conquistas: [CONQUISTA_DEPLOY] }],
+};
+
+function servirParecidas(parecidas: string[]) {
+  const consultas: unknown[] = [];
+  servidorApi.use(
+    http.post(`${API_TESTE}/v1/perfil-estruturado/conquistas/parecidas`, async ({ request }) => {
+      consultas.push(await request.json());
+      return HttpResponse.json({ parecidas });
+    }),
+  );
+  return { consultas };
+}
+
+function conquistasDaExperiencia(indice = 1) {
+  return screen.getByRole("group", { name: `Conquistas da experiência ${indice}` });
+}
+
+describe("PerfilPage — banco de conquistas", () => {
+  it("mostra as conquistas salvas na experiência", async () => {
+    servirPerfil(PERFIL_COM_CONQUISTAS);
+
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    expect(within(conquistasDaExperiencia()).getByLabelText("Conquista 1")).toHaveValue(
+      "Reduzi o tempo de deploy.",
+    );
+  });
+
+  it("sem conquistas, indica que o banco está vazio", async () => {
+    servirPerfil(PERFIL);
+
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    expect(
+      within(conquistasDaExperiencia()).getByText("Nenhuma conquista cadastrada."),
+    ).toBeInTheDocument();
+  });
+
+  it("cadastra uma conquista nova, consulta as parecidas e salva com origem manual", async () => {
+    const { envios } = servirPerfil(PERFIL_COM_CONQUISTAS);
+    const { consultas } = servirParecidas([]);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = conquistasDaExperiencia();
+    await userEvent.type(
+      within(grupo).getByLabelText("Nova conquista"),
+      "Liderei a migração do banco.",
+    );
+    await userEvent.click(within(grupo).getByRole("button", { name: "Adicionar conquista" }));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+    expect(consultas).toEqual([
+      { texto: "Liderei a migração do banco.", conquistas: ["Reduzi o tempo de deploy."] },
+    ]);
+    expect(envios[0]?.corpo).toMatchObject({
+      experiencias: [
+        {
+          conquistas: [
+            { texto: "Reduzi o tempo de deploy.", origem: "MANUAL" },
+            { texto: "Liderei a migração do banco.", origem: "MANUAL" },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("avisa quando a conquista nova se parece com outra e não a adiciona até o usuário decidir", async () => {
+    servirPerfil(PERFIL_COM_CONQUISTAS);
+    servirParecidas(["Reduzi o tempo de deploy."]);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = conquistasDaExperiencia();
+    await userEvent.type(
+      within(grupo).getByLabelText("Nova conquista"),
+      "Reduzi o deploy com pipeline.",
+    );
+    await userEvent.click(within(grupo).getByRole("button", { name: "Adicionar conquista" }));
+
+    expect(await within(grupo).findByText(/se parece com outra já cadastrada/)).toBeInTheDocument();
+    expect(
+      within(grupo).getByText("Reduzi o tempo de deploy.", { selector: "li" }),
+    ).toBeInTheDocument();
+    expect(within(grupo).queryByLabelText("Conquista 2")).not.toBeInTheDocument();
+  });
+
+  it("'Salvar mesmo assim' adiciona a conquista parecida", async () => {
+    servirPerfil(PERFIL_COM_CONQUISTAS);
+    servirParecidas(["Reduzi o tempo de deploy."]);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = conquistasDaExperiencia();
+    await userEvent.type(
+      within(grupo).getByLabelText("Nova conquista"),
+      "Reduzi o deploy com pipeline.",
+    );
+    await userEvent.click(within(grupo).getByRole("button", { name: "Adicionar conquista" }));
+    await userEvent.click(await within(grupo).findByRole("button", { name: "Salvar mesmo assim" }));
+
+    expect(within(grupo).getByLabelText("Conquista 2")).toHaveValue(
+      "Reduzi o deploy com pipeline.",
+    );
+    expect(within(grupo).queryByText(/se parece com outra já cadastrada/)).not.toBeInTheDocument();
+  });
+
+  it("'Cancelar' descarta o aviso sem adicionar a conquista", async () => {
+    servirPerfil(PERFIL_COM_CONQUISTAS);
+    servirParecidas(["Reduzi o tempo de deploy."]);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = conquistasDaExperiencia();
+    await userEvent.type(
+      within(grupo).getByLabelText("Nova conquista"),
+      "Reduzi o deploy com pipeline.",
+    );
+    await userEvent.click(within(grupo).getByRole("button", { name: "Adicionar conquista" }));
+    await userEvent.click(await within(grupo).findByRole("button", { name: "Cancelar" }));
+
+    expect(within(grupo).queryByText(/se parece com outra já cadastrada/)).not.toBeInTheDocument();
+    expect(within(grupo).queryByLabelText("Conquista 2")).not.toBeInTheDocument();
+  });
+
+  it("edita e exclui conquistas e salva o resultado", async () => {
+    const { envios } = servirPerfil({
+      ...PERFIL_COM_CONQUISTAS,
+      experiencias: [
+        {
+          ...PERFIL.experiencias![0]!,
+          conquistas: [CONQUISTA_DEPLOY, { texto: "Entreguei um MVP.", origem: "MANUAL" }],
+        },
+      ],
+    });
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = conquistasDaExperiencia();
+    const primeira = within(grupo).getByLabelText("Conquista 1");
+    await userEvent.clear(primeira);
+    await userEvent.type(primeira, "Cortei o deploy de 40 para 10 minutos.");
+    await userEvent.click(
+      within(grupo).getByRole("button", { name: "Remover conquista 2 da experiência 1" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+    expect(envios[0]?.corpo).toMatchObject({
+      experiencias: [
+        { conquistas: [{ texto: "Cortei o deploy de 40 para 10 minutos.", origem: "MANUAL" }] },
+      ],
+    });
+  });
+
+  it("não adiciona conquista em branco", async () => {
+    servirPerfil(PERFIL);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+
+    expect(
+      within(conquistasDaExperiencia()).getByRole("button", { name: "Adicionar conquista" }),
+    ).toBeDisabled();
+  });
+
+  it("se a verificação de parecidas falhar, mostra o erro e não adiciona a conquista", async () => {
+    servirPerfil(PERFIL);
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/perfil-estruturado/conquistas/parecidas`, () =>
+        HttpResponse.json(
+          { type: "t", title: "Erro", status: 500, detail: "Falha interna", instance: "i" },
+          { status: 500 },
+        ),
+      ),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = conquistasDaExperiencia();
+    await userEvent.type(within(grupo).getByLabelText("Nova conquista"), "Entreguei um MVP.");
+    await userEvent.click(within(grupo).getByRole("button", { name: "Adicionar conquista" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Falha interna");
+    expect(within(grupo).queryByLabelText("Conquista 1")).not.toBeInTheDocument();
   });
 });

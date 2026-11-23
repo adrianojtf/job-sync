@@ -25,6 +25,7 @@ import type {
   DescobrirVagasEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
+  ConquistasParecidas,
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
@@ -170,6 +171,15 @@ export class HttpApiClient implements ApiClient {
       corpo: { pdf_base64: pdfBase64 },
       ia: true,
     });
+  }
+
+  async verificarConquistasParecidas(texto: string, conquistas: string[]): Promise<string[]> {
+    const resposta = await this.requisitar<ConquistasParecidas>(
+      "POST",
+      "/v1/perfil-estruturado/conquistas/parecidas",
+      { corpo: { texto, conquistas } },
+    );
+    return resposta.parecidas;
   }
 
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia> {

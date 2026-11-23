@@ -12,10 +12,12 @@ from psycopg_pool import ConnectionPool
 
 from jobsync.perfil_estruturado.domain.perfil_estruturado import (
     Certificacao,
+    Conquista,
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
     NivelIdioma,
+    OrigemConquista,
     PerfilEstruturado,
 )
 from jobsync.perfil_estruturado.domain.perfil_estruturado_repository import PerfilEstruturadoRepository
@@ -53,7 +55,7 @@ class PerfilEstruturadoRepositoryImpl(PerfilEstruturadoRepository):
                     perfil.email,
                     perfil.linkedin,
                     perfil.resumo_profissional,
-                    Jsonb([e.__dict__ for e in perfil.experiencias]),
+                    Jsonb([self._experiencia_para_json(e) for e in perfil.experiencias]),
                     Jsonb([f.__dict__ for f in perfil.formacoes]),
                     Jsonb([c.__dict__ for c in perfil.certificacoes]),
                     Jsonb([{"idioma": i.idioma, "nivel": i.nivel.name} for i in perfil.idiomas]),
@@ -61,6 +63,33 @@ class PerfilEstruturadoRepositoryImpl(PerfilEstruturadoRepository):
                 ),
             )
         return perfil
+
+    @staticmethod
+    def _experiencia_para_json(experiencia: ExperienciaProfissional) -> dict:
+        return {
+            "empresa": experiencia.empresa,
+            "cargo": experiencia.cargo,
+            "periodo": experiencia.periodo,
+            "descricao": experiencia.descricao,
+            "conquistas": [
+                {"texto": conquista.texto, "origem": conquista.origem.name}
+                for conquista in experiencia.conquistas
+            ],
+        }
+
+    @staticmethod
+    def _json_para_experiencia(dados: dict) -> ExperienciaProfissional:
+        """Perfis salvos antes do banco de conquistas não têm a chave `conquistas`."""
+        return ExperienciaProfissional(
+            empresa=dados["empresa"],
+            cargo=dados["cargo"],
+            periodo=dados["periodo"],
+            descricao=dados["descricao"],
+            conquistas=tuple(
+                Conquista(texto=c["texto"], origem=OrigemConquista[c["origem"]])
+                for c in dados.get("conquistas", [])
+            ),
+        )
 
     def buscar_por_perfil(self, perfil_identificador: str) -> PerfilEstruturado | None:
         with self._pool.connection() as conexao:
@@ -97,7 +126,7 @@ class PerfilEstruturadoRepositoryImpl(PerfilEstruturadoRepository):
             email=email,
             linkedin=linkedin,
             resumo_profissional=resumo_profissional,
-            experiencias=tuple(ExperienciaProfissional(**e) for e in experiencias),
+            experiencias=tuple(PerfilEstruturadoRepositoryImpl._json_para_experiencia(e) for e in experiencias),
             formacoes=tuple(FormacaoAcademica(**f) for f in formacoes),
             certificacoes=tuple(Certificacao(**c) for c in certificacoes),
             idiomas=tuple(Idioma(idioma=i["idioma"], nivel=NivelIdioma[i["nivel"]]) for i in idiomas),

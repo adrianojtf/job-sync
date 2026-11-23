@@ -225,12 +225,24 @@ class AdaptarCurriculoParaVaga:
         if ajustador is None:
             return ()
 
+        self._registrar_banco_de_conquistas(experiencias)
         return tuple(
             ajustador.ajustar(
                 experiencia=original, contexto=contexto, diretrizes=plano.diretrizes(indice)
             )
             for indice, original in enumerate(experiencias)
         )
+
+    @staticmethod
+    def _registrar_banco_de_conquistas(experiencias: tuple[ExperienciaParaAvaliacao, ...]) -> None:
+        """Log sem o texto das conquistas (dado pessoal): só quantas experiências têm banco."""
+        com_banco = [experiencia for experiencia in experiencias if experiencia.conquistas]
+        if com_banco:
+            logger.info(
+                "Banco de conquistas enviado à adaptação (experiencias_com_banco=%d, conquistas=%d).",
+                len(com_banco),
+                sum(len(experiencia.conquistas) for experiencia in com_banco),
+            )
 
     def _avaliar_experiencias(
         self,

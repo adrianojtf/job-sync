@@ -1,6 +1,7 @@
 """Testes do agregado CurriculoAdaptado."""
 import pytest
 
+from jobsync.curriculo import RascunhoCurriculoAdaptado, SecaoCurriculo, TipoSecao
 from jobsync.curriculo_adaptado.domain.curriculo_adaptado import CurriculoAdaptado
 from jobsync.tests.curriculo_adaptado.exemplos import (
     AGORA,
@@ -88,3 +89,45 @@ class TestCurriculoAdaptado:
         assert vinculado.curriculo_salvo_id == "salvo-9"
         assert vinculado.rascunho == original.rascunho
         assert original.curriculo_salvo_id is None
+
+
+class TestCurriculoAdaptadoComoBase:
+    def test_como_curriculo_base_devolve_o_conteudo_salvo_no_idioma_do_currículo(self):
+        base = curriculo_adaptado().como_curriculo_base()
+
+        assert base == rascunho().para_curriculo("pt")
+
+    def test_o_curriculo_base_traz_as_competencias_em_texto_e_as_experiencias(self):
+        base = curriculo_adaptado().como_curriculo_base()
+
+        tecnologias = base.obter_secao(TipoSecao.TECNOLOGIAS)
+        assert tecnologias.conteudo == "Linguagens: Java, Python\nBancos de Dados: SQL"
+        assert base.obter_secao(TipoSecao.EXPERIENCIAS) is not None
+
+    def test_experiencias_para_adaptacao_devolve_as_estruturadas_como_texto_de_conquistas_e_contexto(self):
+        experiencias = curriculo_adaptado().experiencias_para_adaptacao()
+
+        assert [(e.cargo, e.empresa, e.periodo) for e in experiencias] == [
+            ("Dev", "TechCorp", "2024 - Atual")
+        ]
+        assert experiencias[0].descricao == (
+            "- Criei APIs.\n- Reduzi custos em 30%.\nPlataforma de pagamentos."
+        )
+
+    def test_experiencias_para_adaptacao_e_none_quando_as_experiencias_vem_em_texto(self):
+        de_pdf = RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(SecaoCurriculo(TipoSecao.EXPERIENCIAS, "Experiências", "Dev — TechCorp"),),
+        )
+
+        assert curriculo_adaptado(rascunho=de_pdf).experiencias_para_adaptacao() is None
+
+    def test_o_curriculo_de_origem_nao_muda_ao_ser_usado_como_base(self):
+        original = curriculo_adaptado()
+
+        original.como_curriculo_base()
+        original.experiencias_para_adaptacao()
+
+        assert original == curriculo_adaptado()

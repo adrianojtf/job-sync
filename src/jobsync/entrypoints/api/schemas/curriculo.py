@@ -154,7 +154,17 @@ class AdaptarCurriculoRequest(BaseModel):
     )
     perfil_identificador: str | None = Field(
         default=None,
-        description="Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).",
+        description=(
+            "Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). "
+            "Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado."
+        ),
+    )
+    curriculo_adaptado_id: str | None = Field(
+        default=None,
+        description=(
+            "Currículo adaptado salvo (JOB-0041) a usar como base; exige `perfil_identificador` "
+            "e não vale junto com `pdf_base64`. O currículo de origem não é alterado."
+        ),
     )
     data_referencia: date | None = Field(
         default=None,
@@ -638,7 +648,14 @@ class AnalisarAtsRequest(BaseModel):
     )
     perfil_identificador: str | None = Field(
         default=None,
-        description="Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).",
+        description=(
+            "Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). "
+            "Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado."
+        ),
+    )
+    curriculo_adaptado_id: str | None = Field(
+        default=None,
+        description="Currículo adaptado salvo (JOB-0041) a analisar; exige `perfil_identificador`.",
     )
 
     def to_dto(self, curriculo_pre_montado=None) -> AnalisarAtsVagaInputDto:

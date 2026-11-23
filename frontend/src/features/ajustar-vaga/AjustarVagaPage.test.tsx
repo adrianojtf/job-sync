@@ -4,6 +4,7 @@ import { delay, http, HttpResponse } from "msw";
 import {
   AVALIACAO_VAGA,
   CANDIDATURA,
+  CURRICULO_ADAPTADO_RESUMO,
   CURRICULO_SALVO,
   dimensao,
   servirDadosBase,
@@ -859,6 +860,62 @@ describe("Ajustar para uma vaga — editar o currículo adaptado", () => {
     expect(corpos[0]).toMatchObject({
       pdf_base64: PDF_EDITADO.pdf_base64,
       curriculo_adaptado_id: "adaptado-1",
+    });
+  });
+});
+
+describe("Ajustar para uma vaga — currículo adaptado como base", () => {
+  const ROTULO_BASE = `Adaptado: ${CURRICULO_ADAPTADO_RESUMO.nome_referencia}`;
+
+  it("lista o currículo adaptado como base e adapta a partir dele, sem PDF nem perfil estruturado", async () => {
+    servirDadosBase({ adaptados: [CURRICULO_ADAPTADO_RESUMO] });
+    const chamadas = servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+
+    await userEvent.selectOptions(await screen.findByLabelText("Currículo base"), ROTULO_BASE);
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+
+    await screen.findByRole("heading", { name: "Revise o currículo adaptado" });
+    const adaptacao = chamadas.find((c) => c.rota.startsWith("rascunhos"))!;
+    expect(adaptacao.rota).toBe("rascunhos:adaptado-base");
+    expect(adaptacao.corpo).toMatchObject({
+      perfil_identificador: "adriano",
+      curriculo_adaptado_id: "ad1",
+    });
+    expect(adaptacao.corpo).not.toHaveProperty("pdf_base64");
+  });
+
+  it("confirmar a revisão salva um currículo adaptado novo, sem atualizar o de origem", async () => {
+    servirDadosBase({ adaptados: [CURRICULO_ADAPTADO_RESUMO] });
+    const chamadas = servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.selectOptions(await screen.findByLabelText("Currículo base"), ROTULO_BASE);
+    await userEvent.click(screen.getByRole("button", { name: "Gerar currículo adaptado" }));
+
+    await confirmarRevisao();
+
+    await screen.findByText(PDF_REVISADO.nome_arquivo);
+    expect(chamadas.map((c) => c.rota)).toContain("salvar");
+    expect(chamadas.map((c) => c.rota.split(":")[0])).not.toContain("atualizar");
+  });
+
+  it("a análise ATS também usa o currículo adaptado escolhido", async () => {
+    servirDadosBase({ adaptados: [CURRICULO_ADAPTADO_RESUMO] });
+    const chamadas = servirIa();
+    renderizarApp({ caminho: "/ajustar-vaga", perfil: "adriano" });
+    await preencherVaga();
+    await userEvent.selectOptions(await screen.findByLabelText("Currículo base"), ROTULO_BASE);
+
+    await userEvent.click(screen.getByRole("button", { name: "Analisar aderência ATS" }));
+
+    const ats = await screen.findByRole("region", { name: "Aderência ATS" });
+    await within(ats).findByText("67");
+    expect(chamadas.find((c) => c.rota === "ats")?.corpo).toEqual({
+      descricao_vaga: "Java, Kafka e AWS.",
+      perfil_identificador: "adriano",
+      curriculo_adaptado_id: "ad1",
     });
   });
 });

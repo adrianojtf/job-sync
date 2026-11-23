@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass, replace
 from datetime import datetime
 
-from jobsync.curriculo import RascunhoCurriculoAdaptado
+from jobsync.curriculo import Curriculo, ExperienciaParaAvaliacao, RascunhoCurriculoAdaptado
 from jobsync.vaga import AnaliseVaga
 
 
@@ -83,3 +83,13 @@ class CurriculoAdaptado:
 
     def com_curriculo_salvo(self, curriculo_salvo_id: str) -> CurriculoAdaptado:
         return replace(self, curriculo_salvo_id=curriculo_salvo_id)
+
+    def como_curriculo_base(self) -> Curriculo:
+        """O conteúdo salvo como currículo de partida de outra adaptação; este não é alterado."""
+        return self.rascunho.para_curriculo(self.idioma_alvo)
+
+    def experiencias_para_adaptacao(self) -> tuple[ExperienciaParaAvaliacao, ...] | None:
+        """Experiências estruturadas para a IA reescrever na nova adaptação; None se vierem em texto."""
+        if not self.rascunho.experiencias:
+            return None
+        return tuple(experiencia.para_avaliacao() for experiencia in self.rascunho.experiencias)

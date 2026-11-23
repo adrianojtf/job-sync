@@ -869,9 +869,14 @@ export interface components {
             pdf_base64?: string | null;
             /**
              * Perfil Identificador
-             * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).
+             * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado.
              */
             perfil_identificador?: string | null;
+            /**
+             * Curriculo Adaptado Id
+             * @description Currículo adaptado salvo (JOB-0041) a usar como base; exige `perfil_identificador` e não vale junto com `pdf_base64`. O currículo de origem não é alterado.
+             */
+            curriculo_adaptado_id?: string | null;
             /**
              * Data Referencia
              * @description Data de referência para composição do nome do arquivo.
@@ -963,9 +968,14 @@ export interface components {
             pdf_base64?: string | null;
             /**
              * Perfil Identificador
-             * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).
+             * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado.
              */
             perfil_identificador?: string | null;
+            /**
+             * Curriculo Adaptado Id
+             * @description Currículo adaptado salvo (JOB-0041) a analisar; exige `perfil_identificador`.
+             */
+            curriculo_adaptado_id?: string | null;
         };
         /**
          * AnalisarAtsResponse
@@ -2109,9 +2119,14 @@ export interface components {
             pdf_base64?: string | null;
             /**
              * Perfil Identificador
-             * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).
+             * @description Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado.
              */
             perfil_identificador?: string | null;
+            /**
+             * Curriculo Adaptado Id
+             * @description Currículo adaptado salvo (JOB-0041) a usar como base; exige `perfil_identificador` e não vale junto com `pdf_base64`. O currículo de origem não é alterado.
+             */
+            curriculo_adaptado_id?: string | null;
             /**
              * Data Referencia
              * @description Data de referência para composição do nome do arquivo.
@@ -3033,10 +3048,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
     };
     responses: never;

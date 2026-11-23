@@ -11,7 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from jobsync.perfil_estruturado.domain.conquistas_parecidas import normalizar_texto, sao_parecidas
+from jobsync.perfil_estruturado.domain.conquistas_parecidas import sao_parecidas
+from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
 
 class NivelIdioma(Enum):

@@ -26,6 +26,7 @@ from jobsync.curriculo.adapters.avaliador_experiencia_jev_client import (
     AvaliadorExperienciaJevClient,
 )
 from jobsync.curriculo.adapters.gerador_pdf_client import GeradorPdfClient
+from jobsync.curriculo.adapters.identificador_lacunas_openai_client import IdentificadorLacunasOpenAIClient
 from jobsync.curriculo.adapters.identificador_equivalencias_openai_client import (
     IdentificadorEquivalenciasOpenAIClient,
 )
@@ -38,6 +39,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
 )
 from jobsync.curriculo.service_layer.analisar_ats_vaga import AnalisarAtsVaga
 from jobsync.curriculo.service_layer.avaliar_experiencia import AvaliarExperiencia
+from jobsync.curriculo.service_layer.identificar_lacunas_da_vaga import IdentificarLacunasDaVaga
 from jobsync.curriculo.service_layer.gerar_pdf_curriculo_revisado import (
     GerarPdfCurriculoRevisado,
 )
@@ -244,6 +246,16 @@ def obter_service_adaptar_curriculo() -> AdaptarCurriculoParaVaga:
 
 ServiceAdaptarCurriculoDep = Annotated[
     AdaptarCurriculoParaVaga, Depends(obter_service_adaptar_curriculo)
+]
+
+
+def obter_service_identificar_lacunas_da_vaga() -> IdentificarLacunasDaVaga:
+    """Monta o caso de uso que aponta os temas da vaga sem sustentação no perfil (JOB-0043)."""
+    return IdentificarLacunasDaVaga(identificador=IdentificadorLacunasOpenAIClient())
+
+
+ServiceIdentificarLacunasDaVagaDep = Annotated[
+    IdentificarLacunasDaVaga, Depends(obter_service_identificar_lacunas_da_vaga)
 ]
 
 

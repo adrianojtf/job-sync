@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from fastapi import HTTPException, status
 
 from jobsync.curriculo import Curriculo, ExperienciaParaAvaliacao
+from jobsync.curriculo.domain.lacuna_da_vaga import HistoricoDoCandidato
 from jobsync.curriculo_adaptado.domain.exceptions import CurriculoAdaptadoNaoEncontrado
 from jobsync.curriculo_adaptado.service_layer.buscar_curriculo_adaptado import (
     BuscarCurriculoAdaptado,
@@ -63,6 +64,15 @@ def experiencias_do_perfil(
             conquistas=tuple(conquista.texto for conquista in experiencia.conquistas),
         )
         for experiencia in perfil.experiencias
+    )
+
+
+def historico_do_candidato(perfil: PerfilEstruturado) -> HistoricoDoCandidato:
+    """O histórico que o domínio de currículo compara com a vaga, sem importar o modelo do perfil."""
+    return HistoricoDoCandidato(
+        resumo=perfil.resumo_profissional,
+        experiencias=experiencias_do_perfil(perfil) or (),
+        tecnologias=tuple(perfil.tecnologias),
     )
 
 

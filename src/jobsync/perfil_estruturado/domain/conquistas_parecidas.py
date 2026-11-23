@@ -6,19 +6,10 @@ passar paráfrases distantes, e o aviso de duplicidade é só informativo.
 """
 from __future__ import annotations
 
-import re
-import unicodedata
+from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
 LIMITE_DE_SIMILARIDADE = 0.6
 TAMANHO_MINIMO_DA_PALAVRA = 3
-
-_NAO_ALFANUMERICO = re.compile(r"[^a-z0-9]+")
-
-
-def normalizar_texto(texto: str) -> str:
-    """Minúsculas, sem acento e sem pontuação, com espaços simples."""
-    sem_acento = unicodedata.normalize("NFKD", texto.lower()).encode("ascii", "ignore").decode("ascii")
-    return _NAO_ALFANUMERICO.sub(" ", sem_acento).strip()
 
 
 def _palavras_relevantes(texto_normalizado: str) -> frozenset[str]:

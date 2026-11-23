@@ -17,10 +17,10 @@ Complexidade: low.
 
 ## Subtarefas
 
-- [ ] 1.1 Testes de `selecionar`: perfil puro, lacuna, evidência em experiência, equivalência, requisito de habilidade ignorado, caixa, duplicatas, ordem (red).
-- [ ] 1.2 Testes de `limitar_ao_teto` (red).
-- [ ] 1.3 Implementar `curriculo/domain/selecao_de_competencias.py` e exportar pelo pacote `curriculo` (green).
-- [ ] 1.4 Refatorar.
+- [x] 1.1 Testes de `selecionar`: perfil puro, lacuna, evidência em experiência, equivalência, requisito de habilidade ignorado, caixa, duplicatas, ordem (red).
+- [x] 1.2 Testes de `limitar_ao_teto` (red).
+- [x] 1.3 Implementar `curriculo/domain/selecao_de_competencias.py` e exportar pelo pacote `curriculo` (green).
+- [x] 1.4 Refatorar.
 
 ## Detalhes de Implementação
 
@@ -33,8 +33,8 @@ Techspec: "Design de Implementação" e "Abordagem de Testes". PRD: requisitos f
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do domínio.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade do domínio.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

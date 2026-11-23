@@ -2,7 +2,7 @@
 
 ## Tarefas
 
-- [ ] 1.0 `SelecaoDeCompetencias` e `limitar_ao_teto` (domínio puro)
+- [x] 1.0 `SelecaoDeCompetencias` e `limitar_ao_teto` (domínio puro)
 - [ ] 2.0 Prompt: tirar a frase "todas as tecnologias" e pôr a lista permitida na instrução de tecnologias
 - [ ] 3.0 Serviço de adaptação: seleção antes da IA, filtro e teto depois, e `lacunas_tecnologia`
 - [ ] 4.0 API e tipos: `lacunas_tecnologia` no schema, `schema.d.ts` e Postman

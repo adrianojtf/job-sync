@@ -2,6 +2,9 @@
 
 from jobsync.curriculo.domain import (
     AjustadorTextoPort,
+    ResultadoDaSelecao,
+    SelecaoDeCompetencias,
+    limitar_ao_teto,
     AjusteTecnologia,
     CategoriaCompetencia,
     categorias_de_texto,
@@ -32,6 +35,9 @@ from jobsync.curriculo.domain import (
 )
 
 __all__ = [
+    "ResultadoDaSelecao",
+    "SelecaoDeCompetencias",
+    "limitar_ao_teto",
     "CategoriaCompetencia",
     "categorias_de_texto",
     "categorias_para_texto",

@@ -96,6 +96,11 @@ class AdaptarCurriculoParaVaga:
             idioma_alvo=input_dto.idioma_alvo,
             analise_vaga=self._analisador_vaga.analisar(input_dto.descricao_vaga),
             cargo_alvo=input_dto.cargo_alvo,
+            conquistas_do_historico=tuple(
+                conquista
+                for experiencia in input_dto.experiencias_profissionais or ()
+                for conquista in experiencia.conquistas
+            ),
         )
         rascunho = self._montar_rascunho(curriculo_original, input_dto, contexto)
         avaliacoes_experiencias = self._avaliar_experiencias(
@@ -214,7 +219,7 @@ class AdaptarCurriculoParaVaga:
         )
         if input_dto.experiencias_profissionais:
             textos = tuple(
-                f"{experiencia.cargo}\n{experiencia.descricao}"
+                "\n".join((experiencia.cargo, experiencia.descricao, *experiencia.conquistas))
                 for experiencia in input_dto.experiencias_profissionais
             )
         else:

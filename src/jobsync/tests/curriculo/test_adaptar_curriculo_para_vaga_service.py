@@ -996,3 +996,76 @@ class TestCompetenciasPorEvidencia:
         resultado = _adaptar_vaga(_curriculo_com_tecnologias("Java"), ajustador)
 
         assert resultado.curriculo_adaptado.obter_secao(TipoSecao.TECNOLOGIAS).conteudo == "Linguagens: Java"
+
+
+class TestConquistasDoHistorico:
+    def _experiencias(self) -> tuple[ExperienciaParaAvaliacao, ...]:
+        return (
+            ExperienciaParaAvaliacao(
+                cargo="Dev", empresa="Acme", periodo="2024", descricao="Backend.",
+                conquistas=("Atuei junto ao cliente na entrega de um MVP.", "Reduzi o tempo de deploy."),
+            ),
+            ExperienciaParaAvaliacao(
+                cargo="Dev", empresa="Beta", periodo="2020", descricao="Serviços.",
+                conquistas=("Mentorei duas pessoas juniores.",),
+            ),
+        )
+
+    def test_o_contexto_das_secoes_leva_as_conquistas_das_experiencias_em_ordem(self):
+        ajustador = AjustadorTextoFake()
+
+        _adaptar_vaga(
+            _curriculo_com_tecnologias("Java"),
+            ajustador,
+            experiencias=self._experiencias(),
+            ajustador_experiencia=AjustadorExperienciaFake(),
+        )
+
+        contexto = ajustador.chamadas[0][1]
+        assert contexto.conquistas_do_historico == (
+            "Atuei junto ao cliente na entrega de um MVP.",
+            "Reduzi o tempo de deploy.",
+            "Mentorei duas pessoas juniores.",
+        )
+
+    def test_sem_conquistas_o_contexto_vai_sem_elas(self):
+        ajustador = AjustadorTextoFake()
+
+        _adaptar_vaga(_curriculo_com_tecnologias("Java"), ajustador)
+
+        assert ajustador.chamadas[0][1].conquistas_do_historico == ()
+
+    def test_tecnologia_citada_numa_conquista_aprovada_tem_evidencia_e_pode_entrar(self):
+        ajustador = AjustadorTextoFake()
+        experiencias = (
+            ExperienciaParaAvaliacao(
+                cargo="Dev", empresa="Acme", periodo="2024", descricao="Backend.",
+                conquistas=("Construí um MVP de pagamentos em Python junto ao cliente.",),
+            ),
+        )
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Java"),
+            ajustador,
+            requisitos=(_requisito("Python"),),
+            experiencias=experiencias,
+            ajustador_experiencia=AjustadorExperienciaFake(),
+        ).rascunho
+
+        assert ajustador.permitidos[TipoSecao.TECNOLOGIAS] == ("Java", "Python")
+        assert rascunho.lacunas_tecnologia == ()
+
+    def test_sem_a_conquista_a_mesma_tecnologia_continua_lacuna(self):
+        experiencias = (
+            ExperienciaParaAvaliacao(cargo="Dev", empresa="Acme", periodo="2024", descricao="Backend."),
+        )
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Java"),
+            AjustadorTextoFake(),
+            requisitos=(_requisito("Python"),),
+            experiencias=experiencias,
+            ajustador_experiencia=AjustadorExperienciaFake(),
+        ).rascunho
+
+        assert rascunho.lacunas_tecnologia == ("Python",)

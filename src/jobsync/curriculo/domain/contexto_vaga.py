@@ -14,12 +14,17 @@ IDIOMAS_ALVO_SUPORTADOS = ("pt", "en")
 
 @dataclass(frozen=True)
 class ContextoVaga:
-    """Descrição, idioma alvo, análise estruturada e cargo-alvo (título) da vaga."""
+    """Descrição, idioma alvo, análise estruturada e cargo-alvo (título) da vaga.
+
+    `conquistas_do_historico` são as conquistas aprovadas do candidato (JOB-0042 e JOB-0043): fatos
+    que o histórico sustenta e que o resumo pode usar como base.
+    """
 
     descricao_vaga: str
     idioma_alvo: str
     analise_vaga: AnaliseVaga
     cargo_alvo: str = ""
+    conquistas_do_historico: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "cargo_alvo", (self.cargo_alvo or "").strip())

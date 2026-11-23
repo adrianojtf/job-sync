@@ -44,3 +44,20 @@ REGRA_SELECAO_DE_CONQUISTAS = (
     "forçar uma relação inexistente."
 )
 """Regra da seleção (JOB-0042): escolhe de 3 a 5 conquistas do banco sem acrescentar fato."""
+
+
+LIMITE_DE_CONQUISTAS_NO_RESUMO = 15
+"""Teto das conquistas enviadas ao resumo (as primeiras, das experiências mais recentes)."""
+
+
+def bloco_conquistas_do_historico(contexto: ContextoVaga) -> str:
+    """Conquistas aprovadas do candidato como base de fatos do resumo (JOB-0043); vazio sem elas."""
+    conquistas = contexto.conquistas_do_historico[:LIMITE_DE_CONQUISTAS_NO_RESUMO]
+    if not conquistas:
+        return ""
+    lista = "\n".join(f"- {conquista}" for conquista in conquistas)
+    return (
+        "Conquistas do histórico do candidato (o histórico sustenta estes fatos; use-os como base dos "
+        "temas do resumo, não copie as conquistas e não acrescente fato além delas):\n"
+        f"{lista}\n\n"
+    )

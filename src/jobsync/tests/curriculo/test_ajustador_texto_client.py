@@ -12,6 +12,7 @@ from jobsync.vaga import (
 )
 from jobsync.curriculo import ContextoVaga, EquivalenciaTecnologia, PedidoRefino, SecaoCurriculo, TipoSecao
 
+from jobsync.curriculo.adapters.prompt_contexto_vaga import LIMITE_DE_CONQUISTAS_NO_RESUMO
 from jobsync.curriculo.adapters.ajustador_texto_client import AjustadorTextoClient
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
 
@@ -89,6 +90,7 @@ def _prompt_da_secao(
     cargo_alvo: str = "",
     ajustes: tuple[EquivalenciaTecnologia, ...] = (),
     itens_permitidos: tuple[str, ...] | None = None,
+    conquistas_do_historico: tuple[str, ...] = (),
 ) -> str:
     cliente_fake = ClienteOpenAIFake({"conteudo_ajustado": "Conteúdo ajustado"})
     ajustador = AjustadorTextoClient(cliente_openai=cliente_fake)
@@ -102,6 +104,7 @@ def _prompt_da_secao(
             idioma_alvo=idioma,
             analise_vaga=analise_vaga,
             cargo_alvo=cargo_alvo,
+            conquistas_do_historico=conquistas_do_historico,
         ),
         ajustes,
         itens_permitidos,
@@ -493,3 +496,56 @@ def test_o_refino_de_tecnologias_nao_acrescenta_tecnologias_da_vaga() -> None:
     )
 
     assert "não acrescente tecnologias da vaga" in cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+
+
+CONQUISTAS_DO_HISTORICO = (
+    "Atuei junto ao cliente na entrega de um MVP.",
+    "Reduzi o tempo de deploy.",
+)
+
+
+def test_perfil_traz_as_conquistas_do_historico_como_base_de_fatos() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", conquistas_do_historico=CONQUISTAS_DO_HISTORICO)
+
+    assert "Conquistas do histórico do candidato" in prompt
+    assert all(f"- {conquista}" in prompt for conquista in CONQUISTAS_DO_HISTORICO)
+    assert "o histórico sustenta" in prompt
+    assert "não copie as conquistas" in prompt
+
+
+def test_perfil_sem_conquistas_do_historico_nao_traz_o_bloco() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "Conquistas do histórico do candidato" not in prompt
+
+
+@pytest.mark.parametrize("tipo", [tipo for tipo in TipoSecao if tipo != TipoSecao.PERFIL])
+def test_outras_secoes_nao_trazem_as_conquistas_do_historico(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt", conquistas_do_historico=CONQUISTAS_DO_HISTORICO)
+
+    assert "Conquistas do histórico do candidato" not in prompt
+
+
+def test_perfil_limita_as_conquistas_do_historico_as_primeiras() -> None:
+    conquistas = tuple(f"Conquista numero {numero:02d}." for numero in range(LIMITE_DE_CONQUISTAS_NO_RESUMO + 5))
+
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", conquistas_do_historico=conquistas)
+
+    assert f"- {conquistas[LIMITE_DE_CONQUISTAS_NO_RESUMO - 1]}" in prompt
+    assert f"- {conquistas[LIMITE_DE_CONQUISTAS_NO_RESUMO]}" not in prompt
+
+
+def test_refino_do_perfil_tambem_traz_as_conquistas_do_historico() -> None:
+    cliente = Mock(spec=ClienteOpenAI)
+    cliente.solicitar_json.return_value = {"conteudo_ajustado": "Resumo refinado."}
+    secao = SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Resumo atual editado.")
+    contexto = ContextoVaga(
+        descricao_vaga="Vaga",
+        idioma_alvo="pt",
+        analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga"),
+        conquistas_do_historico=CONQUISTAS_DO_HISTORICO,
+    )
+
+    AjustadorTextoClient(cliente_openai=cliente).refinar_secao(secao, contexto, PedidoRefino())
+
+    assert "- Reduzi o tempo de deploy." in cliente.solicitar_json.call_args.kwargs["prompt_usuario"]

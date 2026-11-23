@@ -4,10 +4,12 @@ import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { formatarData } from "../../shared/formatacao";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
+import { LinkButton } from "../../shared/ui/LinkButton";
 import { ConfirmacaoModal } from "../../shared/ui/ConfirmacaoModal";
 import { EmptyState } from "../../shared/ui/EmptyState";
 import { Panel } from "../../shared/ui/Panel";
 import { useToast } from "../../shared/ui/use-toast";
+import { useCurriculosAdaptados } from "../curriculos-adaptados/use-curriculos-adaptados";
 import estilos from "./CurriculosPage.module.css";
 import { EnviarCurriculoModal } from "./EnviarCurriculoModal";
 import {
@@ -22,6 +24,7 @@ export function CurriculosPage() {
   const curriculos = useCurriculos();
   const remocao = useRemoverCurriculo();
   const download = useBaixarCurriculo();
+  const adaptados = useCurriculosAdaptados();
   const { notificar } = useToast();
   const [enviando, setEnviando] = useState(false);
   const [paraRemover, setParaRemover] = useState<CurriculoSalvo | null>(null);
@@ -111,6 +114,55 @@ export function CurriculosPage() {
                   >
                     Remover
                   </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      <Panel
+        titulo="Currículos adaptados"
+        subtitulo="Gerados em “Ajustar para uma vaga”. Edite quando quiser e gere o PDF de novo."
+      >
+        {adaptados.isPending && <p role="status">Carregando currículos adaptados…</p>}
+        {adaptados.isError && (
+          <Aviso
+            tom="erro"
+            acao={<Button onClick={() => adaptados.refetch()}>Tentar novamente</Button>}
+          >
+            Não foi possível carregar os currículos adaptados: {adaptados.error.message}
+          </Aviso>
+        )}
+        {adaptados.isSuccess && adaptados.data.length === 0 && (
+          <EmptyState
+            titulo="Nenhum currículo adaptado ainda"
+            descricao="Gere um em “Ajustar para uma vaga” e ele aparece aqui para você editar depois."
+          />
+        )}
+        {adaptados.isSuccess && adaptados.data.length > 0 && (
+          <ul className={estilos.lista}>
+            {adaptados.data.map((adaptado) => (
+              <li key={adaptado.id} className={estilos.item}>
+                <span className={estilos.icone} aria-hidden="true">
+                  ✎
+                </span>
+                <div className={estilos.info}>
+                  <strong className={estilos.nome}>{adaptado.nome_referencia}</strong>
+                  <span className={estilos.data}>
+                    {`${adaptado.cargo_alvo} · ${adaptado.empresa_alvo}`}
+                  </span>
+                  <span className={estilos.data}>
+                    Atualizado em {formatarData(adaptado.atualizado_em)}
+                  </span>
+                </div>
+                <div className={estilos.acoes}>
+                  <LinkButton
+                    to={`/curriculos-adaptados/${encodeURIComponent(adaptado.id)}`}
+                    aria-label={`Editar ${adaptado.nome_referencia}`}
+                  >
+                    Editar
+                  </LinkButton>
                 </div>
               </li>
             ))}

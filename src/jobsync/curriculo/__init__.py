@@ -3,6 +3,9 @@
 from jobsync.curriculo.domain import (
     AjustadorTextoPort,
     AjusteTecnologia,
+    CategoriaCompetencia,
+    categorias_de_texto,
+    categorias_para_texto,
     AjustadorExperienciaPort,
     AvaliacaoExperiencia,
     AvaliadorExperienciaPort,
@@ -29,6 +32,9 @@ from jobsync.curriculo.domain import (
 )
 
 __all__ = [
+    "CategoriaCompetencia",
+    "categorias_de_texto",
+    "categorias_para_texto",
     "AjustadorTextoPort",
     "AjusteTecnologia",
     "AjustadorExperienciaPort",

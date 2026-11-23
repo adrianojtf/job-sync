@@ -16,10 +16,10 @@ Hoje `_negritar_categorias_tecnologia` e `_quebrar_categorias` só reconhecem r�
 
 ## Subtarefas
 
-- [ ] 3.1 Testes do gerador de PDF: rótulo customizado em negrito, uma categoria por linha, rótulo do catálogo traduzido, linha sem ":" (red).
-- [ ] 3.2 Alterar `_negritar_categorias_tecnologia` e `_linhas_de_tecnologias` (green).
-- [ ] 3.3 Conferir se `_quebrar_categorias` ainda é necessário para textos antigos em uma linha só; manter só se houver caso real (KISS).
-- [ ] 3.4 Refatorar.
+- [x] 3.1 Testes do gerador de PDF: rótulo customizado em negrito, uma categoria por linha, rótulo do catálogo traduzido, linha sem ":" (red).
+- [x] 3.2 Alterar `_negritar_categorias_tecnologia` e `_linhas_de_tecnologias` (green).
+- [x] 3.3 `_quebrar_categorias` foi mantido: um teste existente cobre textos antigos com várias categorias em uma linha só.
+- [x] 3.4 Refatorar.
 
 ## Detalhes de Implementação
 
@@ -32,8 +32,8 @@ Techspec: "Decisões Principais" (rótulo genérico no PDF) e "Riscos Conhecidos
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do gerador de PDF.
-- [ ] Regressão: `src/jobsync/tests/curriculo/test_gerador_pdf_client.py`.
+- [x] Testes de unidade do gerador de PDF.
+- [x] Regressão: `src/jobsync/tests/curriculo/test_gerador_pdf_client.py`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

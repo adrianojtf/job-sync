@@ -15,6 +15,7 @@ from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
 )
 from jobsync.curriculo import (
     AjusteTecnologia,
+    CategoriaCompetencia,
     AvaliacaoExperiencia,
     ContextoVaga,
     DiretrizesExperiencia,
@@ -223,7 +224,8 @@ class TestAdaptarCurriculoParaVaga:
         assert all(chamada[1].cargo_alvo == "Engenheiro de Software Sênior" for chamada in ajustador.chamadas)
         assert resultado.rascunho.nome_completo == "Adriano João Teixeira Filho"
         assert resultado.rascunho.email == "adriano@example.com"
-        assert len(resultado.rascunho.secoes) == 4
+        assert len(resultado.rascunho.secoes) == 3
+        assert resultado.rascunho.competencias is not None
         assert resultado.rascunho.experiencias is None
         assert resultado.curriculo_adaptado == resultado.rascunho.para_curriculo("pt")
 
@@ -746,3 +748,86 @@ class TestAdaptarCurriculoParaVagaComBancoDeConquistas:
             caso_de_uso.executar(_input_estruturado())
 
         assert "experiencias_com_banco" not in " ".join(r.getMessage() for r in caplog.records)
+
+
+class AjustadorTextoDeTecnologiasFake(AjustadorTextoFake):
+    def __init__(self, conteudo_tecnologias: str):
+        super().__init__()
+        self._conteudo_tecnologias = conteudo_tecnologias
+
+    def ajustar_secao(
+        self, secao: SecaoCurriculo, contexto: ContextoVaga, ajustes=()
+    ) -> SecaoCurriculo:
+        if secao.tipo == TipoSecao.TECNOLOGIAS:
+            return secao.com_novo_conteudo(self._conteudo_tecnologias)
+        return super().ajustar_secao(secao, contexto, ajustes)
+
+
+def _adaptar(curriculo: Curriculo, ajustador: AjustadorTextoPort):
+    caso_de_uso = AdaptarCurriculoParaVaga(
+        ExtratorFake(curriculo),
+        JobDescriptionAnalyzerFake(AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="Vaga")),
+        ajustador,
+    )
+    return caso_de_uso.executar(
+        AdaptarCurriculoParaVagaInputDto(
+            pdf_curriculo=b"pdf",
+            descricao_vaga="Vaga",
+            idioma_alvo="pt",
+            cargo_alvo="Engenheiro",
+            empresa_alvo="TechCorp",
+        )
+    )
+
+
+class TestAdaptarCurriculoComCompetencias:
+    def test_secao_de_tecnologias_da_ia_vira_competencias_por_categoria(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java, Python\nBancos de Dados: SQL")
+
+        rascunho = _adaptar(_curriculo_exemplo(), ajustador).rascunho
+
+        assert rascunho.competencias == (
+            CategoriaCompetencia("Linguagens", ("Java", "Python")),
+            CategoriaCompetencia("Bancos de Dados", ("SQL",)),
+        )
+
+    def test_a_secao_de_tecnologias_em_texto_sai_das_secoes(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java")
+
+        rascunho = _adaptar(_curriculo_exemplo(), ajustador).rascunho
+
+        assert all(secao.tipo != TipoSecao.TECNOLOGIAS for secao in rascunho.secoes)
+
+    def test_o_titulo_da_secao_de_tecnologias_vira_o_titulo_das_competencias(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java")
+
+        rascunho = _adaptar(_curriculo_exemplo(), ajustador).rascunho
+
+        assert rascunho.titulo_competencias == "Tecnologias"
+
+    def test_texto_sem_rotulo_vira_a_categoria_padrao(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Java, Go, Python")
+
+        rascunho = _adaptar(_curriculo_exemplo(), ajustador).rascunho
+
+        assert rascunho.competencias == (CategoriaCompetencia("Tecnologias", ("Java", "Go", "Python")),)
+
+    def test_o_curriculo_adaptado_mantem_a_secao_de_tecnologias_em_texto(self):
+        ajustador = AjustadorTextoDeTecnologiasFake("Linguagens: Java, Python")
+
+        resultado = _adaptar(_curriculo_exemplo(), ajustador)
+
+        secao = resultado.curriculo_adaptado.obter_secao(TipoSecao.TECNOLOGIAS)
+        assert secao.conteudo == "Linguagens: Java, Python"
+
+    def test_sem_secao_de_tecnologias_nao_ha_competencias(self):
+        curriculo = Curriculo(
+            nome_completo="Ana Souza",
+            email="ana@ex.com",
+            linkedin="",
+            secoes=(SecaoCurriculo(TipoSecao.PERFIL, "Perfil", "Engenheira."),),
+        )
+
+        rascunho = _adaptar(curriculo, AjustadorTextoFake()).rascunho
+
+        assert rascunho.competencias is None

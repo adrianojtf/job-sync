@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from jobsync.curriculo import (
     AvaliacaoExperiencia,
+    CategoriaCompetencia,
     ContextoVaga,
     Curriculo,
     ExperienciaAdaptada,
@@ -21,6 +22,7 @@ from jobsync.curriculo import (
 )
 from jobsync.curriculo.domain.refino import MAXIMO_SUGESTOES_ANTERIORES
 from jobsync.curriculo.domain.rascunho_curriculo_adaptado import (
+    TITULO_COMPETENCIAS_PADRAO,
     TITULO_EXPERIENCIAS_PADRAO,
     ExperienciaEditada,
 )
@@ -152,7 +154,17 @@ class AdaptarCurriculoRequest(BaseModel):
     )
     perfil_identificador: str | None = Field(
         default=None,
-        description="Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).",
+        description=(
+            "Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). "
+            "Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado."
+        ),
+    )
+    curriculo_adaptado_id: str | None = Field(
+        default=None,
+        description=(
+            "Currículo adaptado salvo (JOB-0041) a usar como base; exige `perfil_identificador` "
+            "e não vale junto com `pdf_base64`. O currículo de origem não é alterado."
+        ),
     )
     data_referencia: date | None = Field(
         default=None,
@@ -400,6 +412,17 @@ class ExperienciaAdaptadaSchema(BaseModel):
         return experiencia
 
 
+class CategoriaCompetenciaSchema(BaseModel):
+    """Categoria de competências com as suas tags (ex.: Linguagens: Java, Python)."""
+
+    nome: str = Field(description="Nome da categoria, editável pelo usuário.")
+    tags: list[str] = Field(description="Tags da categoria; tags vazias e repetidas são descartadas.")
+
+    @classmethod
+    def from_domain(cls, categoria: CategoriaCompetencia) -> CategoriaCompetenciaSchema:
+        return cls(nome=categoria.nome, tags=list(categoria.tags))
+
+
 class AjusteTecnologiaSchema(BaseModel):
     """Troca de tecnologia feita pela IA em uma experiência, para o usuário conferir."""
 
@@ -458,6 +481,17 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
         default=TITULO_EXPERIENCIAS_PADRAO,
         description="Título da seção de experiências estruturadas.",
     )
+    competencias: list[CategoriaCompetenciaSchema] | None = Field(
+        default=None,
+        description=(
+            "Competências por categoria e tag; nulo quando as tecnologias vêm como "
+            "seção de texto TECNOLOGIAS (as duas formas não podem vir juntas)."
+        ),
+    )
+    titulo_competencias: str = Field(
+        default=TITULO_COMPETENCIAS_PADRAO,
+        description="Título da seção de competências.",
+    )
     ajustes_tecnologia: list[AjusteTecnologiaSchema] = Field(
         default_factory=list,
         description=(
@@ -488,6 +522,15 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 ]
             ),
             titulo_experiencias=rascunho.titulo_experiencias,
+            competencias=(
+                None
+                if rascunho.competencias is None
+                else [
+                    CategoriaCompetenciaSchema.from_domain(categoria)
+                    for categoria in rascunho.competencias
+                ]
+            ),
+            titulo_competencias=rascunho.titulo_competencias,
             ajustes_tecnologia=[
                 AjusteTecnologiaSchema(
                     indice_experiencia=ajuste.indice_experiencia,
@@ -516,6 +559,12 @@ class RascunhoCurriculoAdaptadoSchema(BaseModel):
                 else [experiencia.como_editada() for experiencia in self.experiencias]
             ),
             titulo_experiencias=self.titulo_experiencias,
+            competencias=(
+                None
+                if self.competencias is None
+                else [(categoria.nome, categoria.tags) for categoria in self.competencias]
+            ),
+            titulo_competencias=self.titulo_competencias,
         )
 
 
@@ -599,7 +648,14 @@ class AnalisarAtsRequest(BaseModel):
     )
     perfil_identificador: str | None = Field(
         default=None,
-        description="Identificador do perfil estruturado a usar como currículo (alternativa ao PDF).",
+        description=(
+            "Identificador do perfil estruturado a usar como currículo (alternativa ao PDF). "
+            "Com `curriculo_adaptado_id`, só identifica o dono do currículo adaptado."
+        ),
+    )
+    curriculo_adaptado_id: str | None = Field(
+        default=None,
+        description="Currículo adaptado salvo (JOB-0041) a analisar; exige `perfil_identificador`.",
     )
 
     def to_dto(self, curriculo_pre_montado=None) -> AnalisarAtsVagaInputDto:

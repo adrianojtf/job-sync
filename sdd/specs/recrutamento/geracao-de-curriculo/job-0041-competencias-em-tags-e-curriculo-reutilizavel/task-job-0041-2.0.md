@@ -16,12 +16,12 @@ Faz a adaptação devolver `competencias` estruturadas no rascunho e a API aceit
 
 ## Subtarefas
 
-- [ ] 2.1 Testes do serviço de adaptação: seção da IA vira `competencias` (red).
-- [ ] 2.2 Testes de schemas e routers: ida e volta de `competencias`, categorias vazias descartadas, contrato antigo aceito (red).
-- [ ] 2.3 Alterar `adaptar_curriculo_para_vaga/service.py` (green).
-- [ ] 2.4 Alterar `RascunhoCurriculoAdaptado.revisado` e os schemas em `entrypoints/api/schemas/curriculo.py` (green).
-- [ ] 2.5 Atualizar `api/tipos` do frontend com o novo campo, sem alterar telas.
-- [ ] 2.6 Atualizar a collection Postman se ela cobrir esses endpoints.
+- [x] 2.1 Testes do serviço de adaptação: seção da IA vira `competencias` (red).
+- [x] 2.2 Testes de schemas e routers: ida e volta de `competencias`, categorias vazias descartadas, contrato antigo aceito (red).
+- [x] 2.3 Alterar `adaptar_curriculo_para_vaga/service.py` (green).
+- [x] 2.4 Alterar `RascunhoCurriculoAdaptado.revisado` e os schemas em `entrypoints/api/schemas/curriculo.py` (green).
+- [x] 2.5 Atualizar `api/tipos` do frontend com o novo campo, sem alterar telas.
+- [x] 2.6 Atualizar a collection Postman se ela cobrir esses endpoints.
 
 ## Detalhes de Implementação
 
@@ -35,8 +35,8 @@ Techspec: "Componentes" (modificados), "Fluxo" e "Endpoints de API". PRD: RF 5.
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do serviço, schemas e routers.
-- [ ] Regressão: `src/jobsync/tests/curriculo/` e `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes de unidade do serviço, schemas e routers.
+- [x] Regressão: `src/jobsync/tests/curriculo/` e `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

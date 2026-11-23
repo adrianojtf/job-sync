@@ -1,10 +1,12 @@
 import type { Candidatura, StatusCandidatura } from "../../api/tipos";
 import { formatarData, formatarDataHora } from "../../shared/formatacao";
 import { Button } from "../../shared/ui/Button";
+import { LinkButton } from "../../shared/ui/LinkButton";
 import { Modal } from "../../shared/ui/Modal";
 import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { useToast } from "../../shared/ui/use-toast";
 import { useBaixarCurriculo, useCurriculos } from "../curriculos/use-curriculos";
+import { useCurriculosAdaptados } from "../curriculos-adaptados/use-curriculos-adaptados";
 import estilos from "./CandidaturasPage.module.css";
 import { ORDEM_STATUS, ROTULO_STATUS, rotuloStatus, TOM_STATUS } from "./status";
 import { useMoverComAviso } from "./use-mover-com-aviso";
@@ -19,12 +21,16 @@ interface Props {
 /** RF10.3 — dados da candidatura, currículo usado e histórico de status. RF18a — move sem arrastar. */
 export function DetalheCandidaturaModal({ candidatura, aoFechar }: Props) {
   const curriculos = useCurriculos();
+  const adaptados = useCurriculosAdaptados();
   const download = useBaixarCurriculo();
   const mover = useMoverComAviso();
   const { notificar } = useToast();
   if (!candidatura) return null;
 
   const curriculo = curriculos.data?.find((item) => item.id === candidatura.curriculo_salvo_id);
+  const adaptado = adaptados.data?.find(
+    (item) => item.curriculo_salvo_id === candidatura.curriculo_salvo_id,
+  );
   const nomeCurriculo = curriculos.isPending
     ? "Carregando…"
     : (curriculo?.nome_referencia ?? "Removido da biblioteca");
@@ -77,6 +83,11 @@ export function DetalheCandidaturaModal({ candidatura, aoFechar }: Props) {
             >
               Baixar PDF
             </Button>
+          )}
+          {adaptado && (
+            <LinkButton to={`/curriculos-adaptados/${encodeURIComponent(adaptado.id)}`}>
+              Editar currículo
+            </LinkButton>
           )}
         </dd>
       </dl>

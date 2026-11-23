@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { CurriculoSalvo } from "../../api/tipos";
+import { CURRICULO_ADAPTADO_RESUMO } from "../../test/fixtures";
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 
@@ -191,5 +192,80 @@ describe("CurriculosPage", () => {
 
     await waitFor(() => expect(nomes).toEqual(["Currículo 1.pdf"]));
     vi.restoreAllMocks();
+  });
+});
+
+describe("CurriculosPage — currículos adaptados", () => {
+  it("lista os currículos adaptados com a vaga e um link para editar", async () => {
+    servidorApi.use(
+      http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+        HttpResponse.json({ items: [CURRICULO_ADAPTADO_RESUMO], total: 1 }),
+      ),
+    );
+    renderizarApp({ caminho: "/curriculos", perfil: "adriano" });
+
+    const painel = await screen.findByRole("region", { name: "Currículos adaptados" });
+
+    expect(await within(painel).findByText("Senior Java · Olist")).toBeInTheDocument();
+    expect(
+      within(painel).getByRole("link", {
+        name: `Editar ${CURRICULO_ADAPTADO_RESUMO.nome_referencia}`,
+      }),
+    ).toHaveAttribute("href", "/curriculos-adaptados/ad1");
+  });
+
+  it("o link de editar abre a edição do currículo", async () => {
+    servidorApi.use(
+      http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+        HttpResponse.json({ items: [CURRICULO_ADAPTADO_RESUMO], total: 1 }),
+      ),
+      http.get(`${API_TESTE}/v1/curriculos-adaptados/:id`, () =>
+        HttpResponse.json({
+          ...CURRICULO_ADAPTADO_RESUMO,
+          descricao_vaga: "Vaga.",
+          analise_vaga: { requisitos: [], ambiguidade: [], texto_original: "Vaga." },
+          rascunho: {
+            nome_completo: "Adriano Teixeira",
+            secoes: [{ tipo: "PERFIL", titulo: "Perfil", conteudo: "Resumo." }],
+            experiencias: null,
+            competencias: [],
+          },
+        }),
+      ),
+    );
+    renderizarApp({ caminho: "/curriculos", perfil: "adriano" });
+
+    await userEvent.click(
+      await screen.findByRole("link", {
+        name: `Editar ${CURRICULO_ADAPTADO_RESUMO.nome_referencia}`,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Edite o currículo adaptado" }),
+    ).toBeInTheDocument();
+  });
+
+  it("sem currículos adaptados explica como criar o primeiro", async () => {
+    renderizarApp({ caminho: "/curriculos", perfil: "adriano" });
+
+    const painel = await screen.findByRole("region", { name: "Currículos adaptados" });
+
+    expect(await within(painel).findByText("Nenhum currículo adaptado ainda")).toBeInTheDocument();
+  });
+
+  it("falha ao carregar a lista mostra o erro sem esconder a biblioteca de PDFs", async () => {
+    servidorApi.use(
+      http.get(`${API_TESTE}/v1/curriculos-adaptados`, () =>
+        HttpResponse.json(
+          { type: "t", title: "Erro", status: 500, detail: "Falha no servidor.", instance: "i" },
+          { status: 500 },
+        ),
+      ),
+    );
+    renderizarApp({ caminho: "/curriculos", perfil: "adriano" });
+
+    expect(await screen.findByText(/Falha no servidor\./)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Biblioteca" })).toBeInTheDocument();
   });
 });

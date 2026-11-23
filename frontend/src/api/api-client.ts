@@ -2,6 +2,7 @@ import type {
   AdaptarCurriculoEntrada,
   AnalisarAtsEntrada,
   AnaliseAts,
+  AtualizarCurriculoAdaptadoEntrada,
   AvaliacaoDescricaoVaga,
   AvaliacaoExperiencia,
   AvaliarExperienciaEntrada,
@@ -13,6 +14,9 @@ import type {
   CartaApresentacao,
   ConfirmarCandidaturaEntrada,
   CriarCandidaturaEntrada,
+  CurriculoAdaptado,
+  CurriculoAdaptadoPdf,
+  CurriculoAdaptadoResumo,
   CurriculoConteudo,
   CurriculoRevisado,
   CurriculoSalvo,
@@ -22,6 +26,7 @@ import type {
   PerfilEstruturado,
   PerfilEstruturadoEntrada,
   RascunhoAdaptado,
+  SalvarCurriculoAdaptadoEntrada,
   SalvarCurriculoEntrada,
   StatusCandidatura,
   SugerirAjusteExperienciaAdaptadaEntrada,
@@ -85,6 +90,16 @@ export interface ApiClient {
   ): Promise<RascunhoAdaptado>;
   /** Gera o PDF a partir do rascunho revisado e confirmado pelo usuário. */
   gerarPdfCurriculoRevisado(dados: GerarPdfCurriculoRevisadoEntrada): Promise<CurriculoRevisado>;
+  /** Guarda o currículo adaptado confirmado na revisão e devolve o PDF gerado dele (JOB-0041). */
+  salvarCurriculoAdaptado(dados: SalvarCurriculoAdaptadoEntrada): Promise<CurriculoAdaptadoPdf>;
+  /** Salva a edição de um currículo adaptado e devolve o PDF regenerado. */
+  atualizarCurriculoAdaptado(
+    id: string,
+    dados: AtualizarCurriculoAdaptadoEntrada,
+  ): Promise<CurriculoAdaptadoPdf>;
+  /** Conteúdo salvo e vaga usada, para reabrir a revisão. */
+  obterCurriculoAdaptado(id: string, perfil: string): Promise<CurriculoAdaptado>;
+  listarCurriculosAdaptados(perfil: string): Promise<CurriculoAdaptadoResumo[]>;
   analisarAts(curriculoId: string, dados: AnalisarAtsEntrada): Promise<AnaliseAts>;
   gerarCarta(dados: GerarCartaEntrada): Promise<CartaApresentacao>;
 

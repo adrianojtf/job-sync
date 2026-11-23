@@ -2,16 +2,16 @@
 
 ## Tarefas
 
-- [ ] 1.0 Domínio de competências e campo `competencias` no rascunho
-- [ ] 2.0 Adaptação, schemas e API do rascunho com competências
-- [ ] 3.0 Gerador de PDF com rótulo de categoria genérico
-- [ ] 4.0 Componente `EditorCompetencias` integrado à revisão
-- [ ] 5.0 Migração, domínio e repositório de `curriculo_adaptado`
-- [ ] 6.0 Casos de uso e endpoints de `/curriculos-adaptados`
-- [ ] 7.0 Vínculo com a candidatura e atualização do PDF salvo
-- [ ] 8.0 Frontend: salvar ao confirmar, "Editar currículo" e modo edição
-- [ ] 9.0 Reabrir o currículo depois de fechar a tela
-- [ ] 10.0 Currículo adaptado como fonte de outra vaga e E2E do fluxo
+- [x] 1.0 Domínio de competências e campo `competencias` no rascunho
+- [x] 2.0 Adaptação, schemas e API do rascunho com competências
+- [x] 3.0 Gerador de PDF com rótulo de categoria genérico
+- [x] 4.0 Componente `EditorCompetencias` integrado à revisão
+- [x] 5.0 Migração, domínio e repositório de `curriculo_adaptado`
+- [x] 6.0 Casos de uso e endpoints de `/curriculos-adaptados`
+- [x] 7.0 Vínculo com a candidatura e atualização do PDF salvo
+- [x] 8.0 Frontend: salvar ao confirmar, "Editar currículo" e modo edição
+- [x] 9.0 Reabrir o currículo depois de fechar a tela
+- [x] 10.0 Currículo adaptado como fonte de outra vaga e E2E do fluxo
 
 ## Dependências
 

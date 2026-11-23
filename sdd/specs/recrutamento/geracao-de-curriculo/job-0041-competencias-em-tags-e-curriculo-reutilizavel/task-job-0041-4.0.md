@@ -18,12 +18,12 @@ Cria o editor de competências por categorias e tags e o usa na revisão do curr
 
 ## Subtarefas
 
-- [ ] 4.1 Testes do `EditorCompetencias` (red): remover, criar com Enter e vírgula, duplicada, renomear, criar e excluir categoria, rótulos acessíveis.
-- [ ] 4.2 Testes de `formulario-revisao.ts`: ida e volta entre rascunho e formulário com competências (red).
-- [ ] 4.3 Implementar `EditorCompetencias.tsx` e o css (green).
-- [ ] 4.4 Integrar em `RevisaoCurriculoAdaptado.tsx` e `formulario-revisao.ts`, retirando o textarea de tecnologias quando houver `competencias` (green).
-- [ ] 4.5 Adaptar a "Sugestão de IA" de tecnologias para ler e aplicar o texto das categorias.
-- [ ] 4.6 Atualizar os testes de `RevisaoCurriculoAdaptado.test.tsx`.
+- [x] 4.1 Testes do `EditorCompetencias` (red): remover, criar com Enter e vírgula, duplicada, renomear, criar e excluir categoria, rótulos acessíveis.
+- [x] 4.2 Testes de `formulario-revisao.ts`: ida e volta entre rascunho e formulário com competências (red).
+- [x] 4.3 Implementar `EditorCompetencias.tsx` e o css (green).
+- [x] 4.4 Integrar em `RevisaoCurriculoAdaptado.tsx` e `formulario-revisao.ts`, retirando o textarea de tecnologias quando houver `competencias` (green).
+- [x] 4.5 Adaptar a "Sugestão de IA" de tecnologias para ler e aplicar o texto das categorias.
+- [x] 4.6 Atualizar os testes de `RevisaoCurriculoAdaptado.test.tsx`.
 
 ## Detalhes de Implementação
 
@@ -37,8 +37,8 @@ Techspec: "Componentes" (frontend) e "Abordagem de Testes". PRD: RF 1 a 4 e 7, E
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade (Vitest e Testing Library).
-- [ ] Regressão: `frontend/src/features/ajustar-vaga/` e `frontend/src/shared/formulario-curriculo/`.
+- [x] Testes de unidade (Vitest e Testing Library).
+- [x] Regressão: `frontend/src/features/ajustar-vaga/` e `frontend/src/shared/formulario-curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

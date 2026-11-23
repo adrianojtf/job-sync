@@ -17,11 +17,11 @@ Cria o contexto `curriculo_adaptado`: agregado, porta de repositório, implement
 
 ## Subtarefas
 
-- [ ] 5.1 Testes do agregado (red).
-- [ ] 5.2 Testes do repositório Postgres real, seguindo `test_*_repository_impl.py` (red): salvar, buscar, listar ordenado por atualização, isolamento por perfil, vincular, ida e volta do JSONB.
-- [ ] 5.3 Criar o domínio e a porta (green).
-- [ ] 5.4 Criar a migração, o repositório e o fake (green).
-- [ ] 5.5 Registrar a migração no executor, se necessário.
+- [x] 5.1 Testes do agregado (red).
+- [x] 5.2 Testes do repositório Postgres real, seguindo `test_*_repository_impl.py` (red): salvar, buscar, listar ordenado por atualização, isolamento por perfil, vincular, ida e volta do JSONB.
+- [x] 5.3 Criar o domínio e a porta (green).
+- [x] 5.4 Criar a migração, o repositório e o fake (green).
+- [x] 5.5 Registrar a migração no executor, se necessário.
 
 ## Detalhes de Implementação
 
@@ -35,9 +35,9 @@ Techspec: "Interfaces Principais", "Modelos de Dados" e "Pontos de Integração"
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do agregado e do fake.
-- [ ] Testes do repositório sobre Postgres real.
-- [ ] Regressão: `src/jobsync/tests/shared_kernel/` (executor de migrações).
+- [x] Testes de unidade do agregado e do fake.
+- [x] Testes do repositório sobre Postgres real (contrato único para o fake e o Postgres).
+- [x] Regressão: `src/jobsync/tests/shared_kernel/` (executor de migrações).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -18,12 +18,12 @@ Na tela "Ajustar para uma vaga", a confirmação da revisão passa a salvar o cu
 
 ## Subtarefas
 
-- [ ] 8.1 Testes de `AjustarVagaPage` (red): confirmar salva e mostra "Editar currículo"; editar atualiza o PDF; a candidatura envia o id.
-- [ ] 8.2 Testes de `RevisaoCurriculoAdaptado` em modo edição (red).
-- [ ] 8.3 Implementar o cliente da API e os hooks (green).
-- [ ] 8.4 Alterar `AjustarVagaPage.tsx` e `use-ajustar-vaga.ts` (green).
-- [ ] 8.5 Adicionar o modo edição a `RevisaoCurriculoAdaptado.tsx` (green).
-- [ ] 8.6 Rodar lint e tipos do frontend.
+- [x] 8.1 Testes de `AjustarVagaPage` (red): confirmar salva e mostra "Editar currículo"; editar atualiza o PDF; a candidatura envia o id.
+- [x] 8.2 Testes de `RevisaoCurriculoAdaptado` em modo edição (red).
+- [x] 8.3 Implementar o cliente da API e os hooks (green).
+- [x] 8.4 Alterar `AjustarVagaPage.tsx` e `use-ajustar-vaga.ts` (green).
+- [x] 8.5 Adicionar o modo edição a `RevisaoCurriculoAdaptado.tsx` (green).
+- [x] 8.6 Rodar lint e tipos do frontend.
 
 ## Detalhes de Implementação
 
@@ -36,8 +36,8 @@ Techspec: "Componentes" (frontend) e "Fluxo". PRD: RF 8, 9, 10 e 12.
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade (Vitest e Testing Library).
-- [ ] Regressão: `frontend/src/features/ajustar-vaga/`.
+- [x] Testes de unidade (Vitest e Testing Library).
+- [x] Regressão: `frontend/src/features/ajustar-vaga/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -12,6 +12,7 @@ _TABELAS = (
     "perfil_estruturado",
     "token_captura",
     "vaga",
+    "curriculo_adaptado",
     "curriculo_salvo",
     "perfil",
 )

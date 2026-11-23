@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import type { ContextoVaga, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import {
   CAMPOS_EXPERIENCIA_ADAPTADA,
@@ -7,9 +7,15 @@ import {
   type ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
+import {
+  categoriasDeTexto,
+  categoriasParaTexto,
+} from "../../shared/formulario-curriculo/competencias";
+import { EditorCompetencias } from "../../shared/formulario-curriculo/EditorCompetencias";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
 import { SugestaoCampo } from "../../shared/formulario-curriculo/SugestaoCampo";
+import { SugestaoIA } from "../../shared/formulario-curriculo/SugestaoIA";
 import { useSugestoes } from "../../shared/formulario-curriculo/use-sugestoes";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
@@ -23,6 +29,7 @@ import {
   experienciaAdaptadaParaAvaliacao,
   formularioParaRascunho,
   rascunhoParaFormulario,
+  tituloCompetencias,
   tituloSecaoPerfil,
   type FormularioRevisao,
   type TipoSecao,
@@ -36,6 +43,8 @@ interface Props {
   erro?: string;
   aoConfirmar: (rascunho: RascunhoCurriculoAdaptado) => void;
   aoVoltar: () => void;
+  /** "edicao": currículo já salvo (JOB-0041); salvar gera o PDF de novo, e voltar não perde a vaga. */
+  modo?: "revisao" | "edicao";
 }
 
 /** Bloco de cada seção de texto, com os mesmos títulos da tela de cadastro (Meu perfil). */
@@ -46,12 +55,6 @@ const SECOES_TEXTO: Partial<
     titulo: "Experiências profissionais",
     rotulo: "Experiências",
     ajuda: "Separe cada experiência por uma linha em branco.",
-    sugerir: true,
-  },
-  TECNOLOGIAS: {
-    titulo: "Tecnologias e ferramentas",
-    rotulo: "Tecnologias",
-    ajuda: "Use uma linha por categoria. Ex.: Linguagens: Java, Python",
     sugerir: true,
   },
   FORMACAO: { titulo: "Formação acadêmica", rotulo: "Formação" },
@@ -70,7 +73,9 @@ export function RevisaoCurriculoAdaptado({
   erro,
   aoConfirmar,
   aoVoltar,
+  modo = "revisao",
 }: Props) {
+  const emEdicao = modo === "edicao";
   const valoresIniciais = useMemo(() => rascunhoParaFormulario(rascunho), [rascunho]);
   const form = useForm<FormularioRevisao>({ defaultValues: valoresIniciais });
   const { isDirty } = form.formState;
@@ -93,9 +98,13 @@ export function RevisaoCurriculoAdaptado({
   return (
     <section aria-labelledby={idTitulo}>
       <h2 id={idTitulo} ref={titulo} tabIndex={-1}>
-        Revise o currículo adaptado
+        {emEdicao ? "Edite o currículo adaptado" : "Revise o currículo adaptado"}
       </h2>
-      <Aviso>Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar.</Aviso>
+      <Aviso>
+        {emEdicao
+          ? "Ao salvar, o PDF é gerado de novo com o conteúdo editado."
+          : "Revise o conteúdo sugerido pela IA. O PDF só será gerado quando você confirmar."}
+      </Aviso>
       {experienciasEstruturadas && (
         <Aviso tom="alerta">
           A IA pode ter estimado métricas e volumes nas experiências, trocado tecnologias por
@@ -144,6 +153,26 @@ export function RevisaoCurriculoAdaptado({
           />
         )}
 
+        <Controller
+          control={form.control}
+          name="competencias"
+          render={({ field }) => (
+            <EditorCompetencias
+              valor={field.value}
+              aoMudar={field.onChange}
+              titulo="Tecnologias e ferramentas"
+              complemento={
+                <SugestaoIA
+                  rotuloBloco="tecnologias"
+                  textoAtual={categoriasParaTexto(field.value)}
+                  sugerir={sugestoes.secao("TECNOLOGIAS", tituloCompetencias(rascunho))}
+                  aplicar={(texto) => field.onChange(categoriasDeTexto(texto))}
+                />
+              }
+            />
+          )}
+        />
+
         {valoresIniciais.secoes.map((secao, indice) => {
           const bloco = SECOES_TEXTO[secao.tipo];
           if (!bloco) return null;
@@ -171,16 +200,16 @@ export function RevisaoCurriculoAdaptado({
 
         <div className={estilos.rodape}>
           {isDirty && <span className={estilos.pendente}>Alterações não confirmadas</span>}
-          <Button onClick={voltar}>Voltar para a vaga</Button>
+          <Button onClick={voltar}>{emEdicao ? "Voltar" : "Voltar para a vaga"}</Button>
           <Button type="submit" variante="primary" carregando={gerando}>
-            {gerando ? "Gerando PDF…" : "Confirmar e gerar PDF"}
+            {gerando ? "Gerando PDF…" : emEdicao ? "Salvar alterações" : "Confirmar e gerar PDF"}
           </Button>
         </div>
       </form>
 
       <ConfirmacaoModal
         aberto={confirmandoSaida}
-        titulo="Descartar a revisão?"
+        titulo={emEdicao ? "Descartar a edição?" : "Descartar a revisão?"}
         descricao="As alterações feitas no currículo adaptado serão perdidas."
         rotuloConfirmar="Descartar alterações"
         aoConfirmar={aoVoltar}

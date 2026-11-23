@@ -7,6 +7,7 @@ import { CadastrarPage } from "../features/cadastrar/CadastrarPage";
 import { ConfiguracoesPage } from "../features/configuracoes/ConfiguracoesPage";
 import { ConfirmarEmailPage } from "../features/confirmar-email/ConfirmarEmailPage";
 import { CurriculosPage } from "../features/curriculos/CurriculosPage";
+import { EditarCurriculoAdaptadoPage } from "../features/curriculos-adaptados/EditarCurriculoAdaptadoPage";
 import { DescobrirVagasPage } from "../features/descobrir-vagas/DescobrirVagasPage";
 import { EntrarPage } from "../features/entrar/EntrarPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
@@ -83,6 +84,11 @@ export const rotas: RouteObject[] = [
           <EmConstrucao titulo={pagina.titulo} tarefa={pagina.tarefa} />
         ),
       })),
+      {
+        path: "curriculos-adaptados/:id",
+        handle: { titulo: "Editar currículo adaptado" } satisfies HandleRota,
+        element: <EditarCurriculoAdaptadoPage />,
+      },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },

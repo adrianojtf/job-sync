@@ -55,7 +55,9 @@ class CurriculoAdaptadoRepository(ABC):
     def salvar(self, curriculo: CurriculoAdaptado) -> CurriculoAdaptado: ...
     def buscar(self, curriculo_id: str, perfil_identificador: str) -> CurriculoAdaptado | None: ...
     def listar_por_perfil(self, perfil_identificador: str) -> tuple[CurriculoAdaptado, ...]: ...
-    def vincular_curriculo_salvo(self, curriculo_id: str, curriculo_salvo_id: str) -> None: ...
+    def vincular_curriculo_salvo(
+        self, curriculo_id: str, perfil_identificador: str, curriculo_salvo_id: str
+    ) -> None: ...
 ```
 
 ```python
@@ -187,3 +189,12 @@ Logs `info` ao salvar e atualizar (ids, contagem de categorias e experiências, 
 - `src/jobsync/entrypoints/api/routers/curriculo_router.py`, `schemas/curriculo.py`
 - `src/jobsync/shared_kernel/adapters/persistence/migracoes/`
 - `frontend/src/features/ajustar-vaga/`, `features/curriculos/`, `features/candidaturas/`, `shared/formulario-curriculo/`
+
+## Decisões tomadas na implementação
+
+- **Fonte `curriculo_adaptado_id` em três endpoints.** O seletor de base é compartilhado, então o rascunho (`/curriculos/{id}/rascunhos-adaptados`), a análise ATS e a carta aceitam a nova fonte. O endpoint legado `/curriculos/{id}/adaptacoes` não muda. `perfil_identificador` segue obrigatório com a nova fonte (identifica o dono e passa pela checagem de sessão); o perfil estruturado não é consultado.
+- **Base com troca de tecnologia (JOB-0037).** A nova adaptação trata o texto do currículo salvo como original, inclusive tecnologias que uma adaptação anterior trocou. Decisão do PRD (Questões em Aberto 4): aceitar e documentar.
+- **Pontos de reabertura.** Os dois foram entregues: "Meus currículos" (painel "Currículos adaptados") e o detalhe da candidatura. O vínculo do detalhe vem do cruzamento de `curriculo_salvo_id` no frontend, sem mudança de backend.
+- **`vincular_curriculo_salvo` recebe o perfil**, para nunca alterar o currículo de outro perfil.
+- **Categorias vazias** (sem nome ou sem tags) são descartadas na tela e no servidor, para a edição reaberta mostrar o que foi salvo.
+- **Não entregues:** layout de coluna de rótulos no PDF, limite de currículos adaptados por perfil e migração de currículos criados antes desta entrega (PRD, Questões em Aberto 1, 3 e sem migração de dados).

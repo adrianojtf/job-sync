@@ -23,6 +23,9 @@ from jobsync.candidatura.service_layer.confirmar_candidatura_ajustada.dtos impor
 from jobsync.candidatura.service_layer.confirmar_candidatura_ajustada.validator import (
     ConfirmarCandidaturaAjustadaInputValidator,
 )
+from jobsync.curriculo_adaptado.domain.curriculo_adaptado_repository import (
+    CurriculoAdaptadoRepository,
+)
 from jobsync.curriculo_salvo.domain.curriculo_salvo import CurriculoSalvo
 from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import CurriculoSalvoRepository
 from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import garantir_espaco
@@ -39,6 +42,7 @@ class ConfirmarCandidaturaAjustada:
     repositorio_candidatura: CandidaturaRepository
     repositorio_vaga: VagaRepository
     repositorio_curriculo_salvo: CurriculoSalvoRepository
+    repositorio_curriculo_adaptado: CurriculoAdaptadoRepository | None = None
 
     def executar(self, input_dto: ConfirmarCandidaturaAjustadaInputDto) -> Candidatura:
         ConfirmarCandidaturaAjustadaInputValidator.validar(input_dto)
@@ -78,6 +82,7 @@ class ConfirmarCandidaturaAjustada:
             self._desfazer_curriculo_salvo(curriculo, erro)
             raise
 
+        self._vincular_curriculo_adaptado(input_dto, curriculo)
         logger.info(
             "Candidatura confirmada: candidatura_id=%s vaga_id=%s curriculo_salvo_id=%s pdf_bytes=%d",
             candidatura.id,
@@ -86,6 +91,24 @@ class ConfirmarCandidaturaAjustada:
             len(input_dto.pdf_bytes),
         )
         return candidatura
+
+    def _vincular_curriculo_adaptado(
+        self, input_dto: ConfirmarCandidaturaAjustadaInputDto, curriculo: CurriculoSalvo
+    ) -> None:
+        """Aponta o currículo adaptado para o PDF salvo; é o último passo e não desfaz a candidatura."""
+        if input_dto.curriculo_adaptado_id is None or self.repositorio_curriculo_adaptado is None:
+            return
+        try:
+            self.repositorio_curriculo_adaptado.vincular_curriculo_salvo(
+                input_dto.curriculo_adaptado_id, input_dto.perfil_identificador, curriculo.id
+            )
+        except Exception as erro:
+            logger.warning(
+                "Não foi possível vincular o currículo adaptado %s ao currículo salvo %s (%s)",
+                input_dto.curriculo_adaptado_id,
+                curriculo.id,
+                type(erro).__name__,
+            )
 
     def _desfazer_curriculo_salvo(self, curriculo: CurriculoSalvo, erro: Exception) -> None:
         try:

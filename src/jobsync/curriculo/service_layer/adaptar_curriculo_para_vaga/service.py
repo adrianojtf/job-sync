@@ -26,7 +26,11 @@ from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
 from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
-from jobsync.curriculo.domain.rascunho_curriculo_adaptado import TITULO_EXPERIENCIAS_PADRAO
+from jobsync.curriculo.domain.competencias import categorias_de_texto
+from jobsync.curriculo.domain.rascunho_curriculo_adaptado import (
+    TITULO_COMPETENCIAS_PADRAO,
+    TITULO_EXPERIENCIAS_PADRAO,
+)
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga.dtos import (
     AdaptarCurriculoParaVagaInputDto,
     AdaptarCurriculoParaVagaOutputDto,
@@ -154,11 +158,28 @@ class AdaptarCurriculoParaVaga:
             else None
         )
 
+        secao_tecnologias = next(
+            (secao for secao in secoes_ajustadas if secao.tipo == TipoSecao.TECNOLOGIAS), None
+        )
+        competencias = (
+            categorias_de_texto(secao_tecnologias.conteudo) if secao_tecnologias is not None else ()
+        )
+        if competencias:
+            secoes_ajustadas = tuple(
+                secao for secao in secoes_ajustadas if secao.tipo != TipoSecao.TECNOLOGIAS
+            )
+
         return RascunhoCurriculoAdaptado(
             nome_completo=curriculo.nome_completo,
             email=curriculo.email,
             linkedin=curriculo.linkedin,
             secoes=secoes_ajustadas,
+            competencias=competencias or None,
+            titulo_competencias=(
+                secao_tecnologias.titulo
+                if competencias and secao_tecnologias is not None
+                else TITULO_COMPETENCIAS_PADRAO
+            ),
             experiencias=experiencias,
             titulo_experiencias=(
                 secao_experiencias.titulo

@@ -3,6 +3,7 @@ import pytest
 
 from jobsync.curriculo import (
     AjusteTecnologia,
+    CategoriaCompetencia,
     EquivalenciaTecnologia,
     ExperienciaAdaptada,
     RascunhoCurriculoAdaptado,
@@ -195,3 +196,65 @@ class TestRascunhoCurriculoAdaptadoAjustesTecnologia:
 
         with pytest.raises(ValueError, match="ajuste de tecnologia"):
             _rascunho(ajustes_tecnologia=(ajuste,))
+
+
+def _competencias() -> tuple[CategoriaCompetencia, ...]:
+    return (
+        CategoriaCompetencia("Linguagens", ("Java", "Python")),
+        CategoriaCompetencia("Bancos de Dados", ("SQL",)),
+    )
+
+
+class TestRascunhoComCompetencias:
+    def test_competencias_com_secao_de_tecnologias_em_texto_gera_erro(self):
+        with pytest.raises(ValueError, match="competências"):
+            _rascunho(
+                secoes=(SecaoCurriculo(TipoSecao.TECNOLOGIAS, "Tecnologias", "Java"),),
+                competencias=_competencias(),
+            )
+
+    def test_rascunho_apenas_com_competencias_e_valido(self):
+        rascunho = _rascunho(secoes=(), competencias=_competencias())
+
+        assert rascunho.competencias == _competencias()
+
+    def test_para_curriculo_monta_a_secao_de_tecnologias_com_uma_categoria_por_linha(self):
+        rascunho = _rascunho(competencias=_competencias(), titulo_competencias="Competências")
+
+        secao = rascunho.para_curriculo("pt").obter_secao(TipoSecao.TECNOLOGIAS)
+
+        assert secao == SecaoCurriculo(
+            TipoSecao.TECNOLOGIAS, "Competências", "Linguagens: Java, Python\nBancos de Dados: SQL"
+        )
+
+    def test_para_curriculo_sem_competencias_nao_cria_secao_de_tecnologias(self):
+        rascunho = _rascunho(competencias=())
+
+        assert rascunho.para_curriculo("pt").obter_secao(TipoSecao.TECNOLOGIAS) is None
+
+    def test_revisado_monta_competencias_descartando_categorias_e_tags_vazias(self):
+        rascunho = RascunhoCurriculoAdaptado.revisado(
+            nome_completo="Ana Souza",
+            email="ana@ex.com",
+            linkedin="",
+            secoes=((TipoSecao.PERFIL, "Perfil", "Engenheiro backend."),),
+            experiencias=None,
+            competencias=(
+                (" Linguagens ", ("Java", "java", " ")),
+                ("Vazia", ("", " ")),
+                (" ", ("Git",)),
+            ),
+        )
+
+        assert rascunho.competencias == (CategoriaCompetencia("Linguagens", ("Java",)),)
+
+    def test_revisado_sem_competencias_mantem_none(self):
+        rascunho = RascunhoCurriculoAdaptado.revisado(
+            nome_completo="Ana Souza",
+            email="ana@ex.com",
+            linkedin="",
+            secoes=((TipoSecao.PERFIL, "Perfil", "Engenheiro backend."),),
+            experiencias=None,
+        )
+
+        assert rascunho.competencias is None

@@ -9,12 +9,17 @@ from jobsync.curriculo_salvo.adapters.curriculo_salvo_repository_fake import Cur
 from jobsync.curriculo_salvo.adapters.curriculo_salvo_repository_impl import CurriculoSalvoRepositoryImpl
 from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import LIMITE_CURRICULOS_POR_PERFIL
 from jobsync.entrypoints.api.main import app
+from jobsync.curriculo_adaptado.adapters import CurriculoAdaptadoRepositoryFake
 from jobsync.entrypoints.dependencies import (
     obter_repositorio_candidatura,
+    obter_repositorio_curriculo_adaptado,
     obter_repositorio_curriculo_salvo,
     obter_repositorio_vaga,
 )
 from jobsync.perfil.adapters.perfil_repository_impl import PerfilRepositoryImpl
+from jobsync.entrypoints.api.schemas.curriculo import RascunhoCurriculoAdaptadoSchema
+from jobsync.entrypoints.api.schemas.vaga import AnaliseVagaSchema
+from jobsync.tests.curriculo_adaptado.exemplos import analise_vaga, rascunho
 from jobsync.vaga.adapters.vaga_repository_fake import VagaRepositoryFake
 from jobsync.vaga.adapters.vaga_repository_impl import VagaRepositoryImpl
 
@@ -34,14 +39,21 @@ def _corpo(**alteracoes) -> dict:
     }
 
 
-def _usar(candidaturas, vagas, curriculos) -> None:
+def _usar(candidaturas, vagas, curriculos, adaptados=None) -> None:
+    adaptados = adaptados or CurriculoAdaptadoRepositoryFake()
+    app.dependency_overrides[obter_repositorio_curriculo_adaptado] = lambda: adaptados
     app.dependency_overrides[obter_repositorio_candidatura] = lambda: candidaturas
     app.dependency_overrides[obter_repositorio_vaga] = lambda: vagas
     app.dependency_overrides[obter_repositorio_curriculo_salvo] = lambda: curriculos
 
 
 def _soltar() -> None:
-    for dependencia in (obter_repositorio_candidatura, obter_repositorio_vaga, obter_repositorio_curriculo_salvo):
+    for dependencia in (
+        obter_repositorio_candidatura,
+        obter_repositorio_vaga,
+        obter_repositorio_curriculo_salvo,
+        obter_repositorio_curriculo_adaptado,
+    ):
         app.dependency_overrides.pop(dependencia, None)
 
 
@@ -203,3 +215,61 @@ class TestCandidaturasAjustadasComPostgres:
         assert ligadas == 1
         assert total_de_vagas == 1
         assert vagas_pendentes == 0
+
+
+class TestCandidaturaComCurriculoAdaptado:
+    @pytest.fixture
+    def adaptados(self) -> CurriculoAdaptadoRepositoryFake:
+        return CurriculoAdaptadoRepositoryFake()
+
+    @pytest.fixture
+    def client_com_adaptados(self, candidaturas, vagas, curriculos, adaptados) -> Generator[TestClient, None, None]:
+        _usar(candidaturas, vagas, curriculos, adaptados)
+        yield TestClient(app)
+        _soltar()
+
+    def _salvar_adaptado(self, client: TestClient) -> str:
+        corpo = {
+            "perfil_identificador": "ana",
+            "rascunho": RascunhoCurriculoAdaptadoSchema.from_domain(rascunho()).model_dump(),
+            "idioma_alvo": "pt",
+            "cargo_alvo": "Engenheira de Software",
+            "empresa_alvo": "TechCorp",
+            "descricao_vaga": "Vaga Java com code review.",
+            "analise_vaga": AnaliseVagaSchema.from_domain(analise_vaga()).model_dump(),
+        }
+        resposta = client.post("/v1/curriculos-adaptados", json=corpo)
+        assert resposta.status_code == 201
+        return resposta.json()["id"]
+
+    def test_confirmar_com_o_id_vincula_o_curriculo_adaptado_ao_pdf_salvo(
+        self, client_com_adaptados: TestClient, adaptados
+    ):
+        adaptado_id = self._salvar_adaptado(client_com_adaptados)
+
+        criada = client_com_adaptados.post(URL, json=_corpo(curriculo_adaptado_id=adaptado_id)).json()
+
+        assert adaptados.buscar(adaptado_id, "ana").curriculo_salvo_id == criada["curriculo_salvo_id"]
+
+    def test_editar_depois_da_confirmacao_atualiza_o_pdf_da_candidatura(
+        self, client_com_adaptados: TestClient, curriculos
+    ):
+        adaptado_id = self._salvar_adaptado(client_com_adaptados)
+        client_com_adaptados.post(URL, json=_corpo(curriculo_adaptado_id=adaptado_id))
+        editado = RascunhoCurriculoAdaptadoSchema.from_domain(rascunho()).model_dump()
+        editado["competencias"] = [{"nome": "Linguagens", "tags": ["Go"]}]
+
+        resposta = client_com_adaptados.put(
+            f"/v1/curriculos-adaptados/{adaptado_id}",
+            json={"perfil_identificador": "ana", "rascunho": editado},
+        )
+
+        pdf_novo = base64.b64decode(resposta.json()["pdf_base64"])
+        assert resposta.status_code == 200
+        assert curriculos.listar_por_perfil("ana")[0].pdf_bytes == pdf_novo
+        assert pdf_novo != PDF
+
+    def test_confirmar_sem_o_id_continua_funcionando(self, client_com_adaptados: TestClient):
+        resposta = client_com_adaptados.post(URL, json=_corpo())
+
+        assert resposta.status_code == 201

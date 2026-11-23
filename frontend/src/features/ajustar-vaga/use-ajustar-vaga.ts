@@ -4,11 +4,13 @@ import type {
   AdaptarCurriculoEntrada,
   AnalisarAtsEntrada,
   ConfirmarCandidaturaEntrada,
-  GerarPdfCurriculoRevisadoEntrada,
+  RascunhoCurriculoAdaptado,
+  SalvarCurriculoAdaptadoEntrada,
 } from "../../api/tipos";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
 import { chaveCandidaturas } from "../candidaturas/use-candidaturas";
 import { chaveCurriculos } from "../curriculos/use-curriculos";
+import { chaveCurriculosAdaptados } from "../curriculos-adaptados/use-curriculos-adaptados";
 import { chaveVagas } from "../vagas-salvas/use-vagas-salvas";
 
 interface ComCurriculo<T> {
@@ -18,8 +20,8 @@ interface ComCurriculo<T> {
 
 /**
  * Casos de uso da tela Ajustar para uma vaga: avaliar a vaga, gerar o rascunho adaptado,
- * gerar o PDF do rascunho revisado (JOB-0033), ATS e carta (RF6.2–RF6.4) e confirmar a
- * candidatura com o PDF gerado (JOB-0037).
+ * salvar o currículo adaptado revisado e gerar o PDF dele (JOB-0033, JOB-0041), editá-lo depois,
+ * ATS e carta (RF6.2–RF6.4) e confirmar a candidatura com o PDF gerado (JOB-0037).
  */
 export function useAjustarVaga() {
   const api = useApiClient();
@@ -31,8 +33,21 @@ export function useAjustarVaga() {
       mutationFn: ({ curriculoId, dados }: ComCurriculo<AdaptarCurriculoEntrada>) =>
         api.gerarRascunhoAdaptado(curriculoId, dados),
     }),
-    gerarPdf: useMutation({
-      mutationFn: (dados: GerarPdfCurriculoRevisadoEntrada) => api.gerarPdfCurriculoRevisado(dados),
+    salvarAdaptado: useMutation({
+      mutationFn: (dados: Omit<SalvarCurriculoAdaptadoEntrada, "perfil_identificador">) =>
+        api.salvarCurriculoAdaptado({ ...dados, perfil_identificador: perfil }),
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: chaveCurriculosAdaptados(perfil) }),
+    }),
+    // A edição também troca o PDF da candidatura já confirmada: a biblioteca de PDFs muda.
+    atualizarAdaptado: useMutation({
+      mutationFn: ({ id, rascunho }: { id: string; rascunho: RascunhoCurriculoAdaptado }) =>
+        api.atualizarCurriculoAdaptado(id, { perfil_identificador: perfil, rascunho }),
+      onSuccess: () =>
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: chaveCurriculosAdaptados(perfil) }),
+          queryClient.invalidateQueries({ queryKey: chaveCurriculos(perfil) }),
+        ]),
     }),
     ats: useMutation({
       mutationFn: ({ curriculoId, dados }: ComCurriculo<AnalisarAtsEntrada>) =>

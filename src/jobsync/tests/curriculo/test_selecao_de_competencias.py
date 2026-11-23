@@ -4,6 +4,7 @@ from jobsync.curriculo import (
     EquivalenciaTecnologia,
     SelecaoDeCompetencias,
     limitar_ao_teto,
+    restringir_aos_permitidos,
 )
 from jobsync.vaga import (
     CategoriaRequisitoTecnico,
@@ -154,3 +155,43 @@ class TestLimitarAoTeto:
 
         assert len(resultado[0].tags) == 45
         assert resultado[0].tags[0] == "T0"
+
+
+class TestRelevantes:
+    def test_relevantes_sao_os_permitidos_que_a_vaga_pede(self):
+        resultado = _selecionar(
+            itens=("Java", "Python", "Spring Boot"),
+            requisitos=(_requisito("Java"), _requisito("Spring")),
+        )
+
+        assert resultado.relevantes == ("Java", "Spring Boot")
+
+    def test_a_relevancia_vale_nos_dois_sentidos_do_nome(self):
+        resultado = _selecionar(itens=("Spring",), requisitos=(_requisito("Spring Boot"),))
+
+        assert resultado.relevantes == ("Spring",)
+
+    def test_sem_requisitos_nada_e_relevante(self):
+        assert _selecionar(itens=("Java",)).relevantes == ()
+
+
+class TestRestringirAosPermitidos:
+    def test_descarta_o_que_nao_esta_nos_permitidos_sem_diferenciar_caixa(self):
+        categorias = (
+            CategoriaCompetencia("Linguagens", ("Java", "Rust", "python")),
+            CategoriaCompetencia("Ferramentas", ("Kafka",)),
+        )
+
+        resultado = restringir_aos_permitidos(categorias, ("Java", "Python"))
+
+        assert resultado == (CategoriaCompetencia("Linguagens", ("Java", "python")),)
+
+    def test_nao_muda_o_que_ja_esta_dentro_dos_permitidos(self):
+        categorias = (CategoriaCompetencia("Linguagens", ("Java", "Python")),)
+
+        assert restringir_aos_permitidos(categorias, ("Python", "Java")) == categorias
+
+    def test_sem_permitidos_nao_sobra_categoria(self):
+        categorias = (CategoriaCompetencia("Linguagens", ("Java",)),)
+
+        assert restringir_aos_permitidos(categorias, ()) == ()

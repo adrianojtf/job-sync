@@ -10,6 +10,7 @@ from jobsync.curriculo.domain.selecao_de_competencias import (
     ResultadoDaSelecao,
     SelecaoDeCompetencias,
     limitar_ao_teto,
+    restringir_aos_permitidos,
 )
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
@@ -42,6 +43,7 @@ __all__ = [
     "ResultadoDaSelecao",
     "SelecaoDeCompetencias",
     "limitar_ao_teto",
+    "restringir_aos_permitidos",
     "CategoriaCompetencia",
     "categorias_de_texto",
     "categorias_para_texto",

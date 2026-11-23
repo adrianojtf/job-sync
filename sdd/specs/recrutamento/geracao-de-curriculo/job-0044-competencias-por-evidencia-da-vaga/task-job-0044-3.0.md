@@ -18,10 +18,10 @@ Complexidade: high.
 
 ## Subtarefas
 
-- [ ] 3.1 Testes do serviço com fakes (red): item acrescentado pela IA é descartado; teto; lacunas; fonte PDF; sem seção de tecnologias.
-- [ ] 3.2 Testes do rascunho com `lacunas_tecnologia` (red).
-- [ ] 3.3 Implementar no serviço e no rascunho (green).
-- [ ] 3.4 Refatorar.
+- [x] 3.1 Testes do serviço com fakes (red): item acrescentado pela IA é descartado; teto; lacunas; fonte PDF; sem seção de tecnologias.
+- [x] 3.2 Testes do rascunho com `lacunas_tecnologia` (red).
+- [x] 3.3 Implementar no serviço e no rascunho (green).
+- [x] 3.4 Refatorar.
 
 ## Detalhes de Implementação
 
@@ -34,8 +34,8 @@ Techspec: "Design de Implementação" e "Abordagem de Testes". PRD: requisitos f
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do serviço e do rascunho.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade do serviço e do rascunho.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

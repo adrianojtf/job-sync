@@ -25,6 +25,8 @@ class ResultadoDaSelecao:
     """Itens que podem aparecer em Competências, na ordem do candidato."""
     lacunas: tuple[str, ...]
     """Tecnologias e ferramentas da vaga sem evidência, na ordem em que a vaga as cita."""
+    relevantes: tuple[str, ...] = ()
+    """Os permitidos que a vaga pede; sobrevivem ao corte pelo teto."""
 
 
 def _chave(texto: str) -> str:
@@ -58,7 +60,13 @@ class SelecaoDeCompetencias:
             if _chave(nome) not in permitidos
             and not any(menciona_tecnologia(item, nome) for item in itens)
         )
-        return ResultadoDaSelecao(permitidos=tuple(permitidos.values()), lacunas=lacunas)
+        lista = tuple(permitidos.values())
+        relevantes = tuple(
+            item
+            for item in lista
+            if any(menciona_tecnologia(item, nome) or menciona_tecnologia(nome, item) for nome in nomes_da_vaga)
+        )
+        return ResultadoDaSelecao(permitidos=lista, lacunas=lacunas, relevantes=relevantes)
 
     @staticmethod
     def _nomes_considerados(requisitos: Sequence[RequisitoTecnico]) -> tuple[str, ...]:
@@ -67,6 +75,19 @@ class SelecaoDeCompetencias:
             if requisito.categoria in _CATEGORIAS_CONSIDERADAS:
                 nomes.setdefault(_chave(requisito.nome), requisito.nome.strip())
         return tuple(nomes.values())
+
+
+def restringir_aos_permitidos(
+    categorias: Sequence[CategoriaCompetencia], permitidos: Collection[str]
+) -> tuple[CategoriaCompetencia, ...]:
+    """Descarta o que a IA acrescentou fora do conjunto permitido; categoria sem item some."""
+    chaves = {_chave(item) for item in permitidos}
+    resultado = []
+    for categoria in categorias:
+        restantes = tuple(tag for tag in categoria.tags if _chave(tag) in chaves)
+        if restantes:
+            resultado.append(CategoriaCompetencia(categoria.nome, restantes))
+    return tuple(resultado)
 
 
 def limitar_ao_teto(

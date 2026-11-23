@@ -26,7 +26,16 @@ from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.avaliacao_experiencia import ExperienciaParaAvaliacao
 from jobsync.curriculo.domain.avaliador_experiencia_port import AvaliadorExperienciaPort
 from jobsync.curriculo.domain.extrator_curriculo_port import ExtratorCurriculoPort
-from jobsync.curriculo.domain.competencias import categorias_de_texto
+from jobsync.curriculo.domain.competencias import (
+    CategoriaCompetencia,
+    categorias_de_texto,
+)
+from jobsync.curriculo.domain.selecao_de_competencias import (
+    ResultadoDaSelecao,
+    SelecaoDeCompetencias,
+    limitar_ao_teto,
+    restringir_aos_permitidos,
+)
 from jobsync.curriculo.domain.rascunho_curriculo_adaptado import (
     TITULO_COMPETENCIAS_PADRAO,
     TITULO_EXPERIENCIAS_PADRAO,
@@ -146,40 +155,40 @@ class AdaptarCurriculoParaVaga:
             if ajustar_experiencias
             else PlanoAdaptacao.vazio()
         )
-        secoes_ajustadas = tuple(
-            self._ajustador_texto.ajustar_secao(
-                secao=secao, contexto=contexto, ajustes=plano.equivalencias_aplicadas
-            )
-            for secao in secoes_de_texto
-        )
+        selecao = self._selecionar_competencias(curriculo, input_dto, contexto, plano)
+        secoes_ajustadas: list[SecaoCurriculo] = []
+        competencias: tuple[CategoriaCompetencia, ...] = ()
+        titulo_competencias = TITULO_COMPETENCIAS_PADRAO
+        for secao in secoes_de_texto:
+            if secao.tipo == TipoSecao.TECNOLOGIAS:
+                ajustada = self._ajustador_texto.ajustar_secao(
+                    secao=secao,
+                    contexto=contexto,
+                    ajustes=plano.equivalencias_aplicadas,
+                    itens_permitidos=selecao.permitidos,
+                )
+                competencias = self._filtrar_competencias(ajustada, selecao)
+                titulo_competencias = ajustada.titulo
+            else:
+                secoes_ajustadas.append(
+                    self._ajustador_texto.ajustar_secao(
+                        secao=secao, contexto=contexto, ajustes=plano.equivalencias_aplicadas
+                    )
+                )
         experiencias = (
             self._ajustar_experiencias(input_dto.experiencias_profissionais, contexto, plano)
             if ajustar_experiencias
             else None
         )
 
-        secao_tecnologias = next(
-            (secao for secao in secoes_ajustadas if secao.tipo == TipoSecao.TECNOLOGIAS), None
-        )
-        competencias = (
-            categorias_de_texto(secao_tecnologias.conteudo) if secao_tecnologias is not None else ()
-        )
-        if competencias:
-            secoes_ajustadas = tuple(
-                secao for secao in secoes_ajustadas if secao.tipo != TipoSecao.TECNOLOGIAS
-            )
-
         return RascunhoCurriculoAdaptado(
             nome_completo=curriculo.nome_completo,
             email=curriculo.email,
             linkedin=curriculo.linkedin,
-            secoes=secoes_ajustadas,
+            secoes=tuple(secoes_ajustadas),
             competencias=competencias or None,
-            titulo_competencias=(
-                secao_tecnologias.titulo
-                if competencias and secao_tecnologias is not None
-                else TITULO_COMPETENCIAS_PADRAO
-            ),
+            titulo_competencias=titulo_competencias,
+            lacunas_tecnologia=selecao.lacunas,
             experiencias=experiencias,
             titulo_experiencias=(
                 secao_experiencias.titulo
@@ -188,6 +197,52 @@ class AdaptarCurriculoParaVaga:
             ),
             ajustes_tecnologia=plano.ajustes,
         )
+
+    def _selecionar_competencias(
+        self,
+        curriculo: Curriculo,
+        input_dto: AdaptarCurriculoParaVagaInputDto,
+        contexto: ContextoVaga,
+        plano: PlanoAdaptacao,
+    ) -> ResultadoDaSelecao:
+        """O domínio decide o que pode entrar em Competências; a IA só agrupa e ordena (JOB-0044)."""
+        secao_tecnologias = curriculo.obter_secao(TipoSecao.TECNOLOGIAS)
+        itens = (
+            tuple(tag for categoria in categorias_de_texto(secao_tecnologias.conteudo) for tag in categoria.tags)
+            if secao_tecnologias is not None
+            else ()
+        )
+        if input_dto.experiencias_profissionais:
+            textos = tuple(
+                f"{experiencia.cargo}\n{experiencia.descricao}"
+                for experiencia in input_dto.experiencias_profissionais
+            )
+        else:
+            secao_experiencias = curriculo.obter_secao(TipoSecao.EXPERIENCIAS)
+            textos = (secao_experiencias.conteudo,) if secao_experiencias is not None else ()
+        selecao = SelecaoDeCompetencias().selecionar(
+            itens, textos, contexto.analise_vaga.requisitos, plano.equivalencias_aplicadas
+        )
+        logger.info(
+            "Competências selecionadas (itens=%d, permitidos=%d, lacunas=%d).",
+            len(itens),
+            len(selecao.permitidos),
+            len(selecao.lacunas),
+        )
+        return selecao
+
+    @staticmethod
+    def _filtrar_competencias(
+        secao: SecaoCurriculo, selecao: ResultadoDaSelecao
+    ) -> tuple[CategoriaCompetencia, ...]:
+        """Descarta o que a IA acrescentou fora dos permitidos e aplica o teto."""
+        da_ia = categorias_de_texto(secao.conteudo)
+        permitidas = restringir_aos_permitidos(da_ia, selecao.permitidos)
+        limitadas = limitar_ao_teto(permitidas, selecao.relevantes)
+        descartados = sum(len(c.tags) for c in da_ia) - sum(len(c.tags) for c in permitidas)
+        cortados = sum(len(c.tags) for c in permitidas) - sum(len(c.tags) for c in limitadas)
+        logger.info("Competências filtradas (fora dos permitidos=%d, cortados pelo teto=%d).", descartados, cortados)
+        return limitadas
 
     def _planejar(
         self,

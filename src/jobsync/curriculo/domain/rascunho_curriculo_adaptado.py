@@ -47,6 +47,8 @@ class RascunhoCurriculoAdaptado:
     competencias: tuple[CategoriaCompetencia, ...] | None = None
     """Competências por categoria e tag; exclusivas com a seção de texto de tecnologias."""
     titulo_competencias: str = TITULO_COMPETENCIAS_PADRAO
+    lacunas_tecnologia: tuple[str, ...] = ()
+    """Tecnologias da vaga sem evidência no perfil, que não entraram em Competências (JOB-0044)."""
     ajustes_tecnologia: tuple[AjusteTecnologia, ...] = ()
     """Trocas de tecnologia que a IA fez nas experiências, para o usuário conferir na revisão."""
 

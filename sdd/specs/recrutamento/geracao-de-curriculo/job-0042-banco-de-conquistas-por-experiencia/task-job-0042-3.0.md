@@ -19,12 +19,12 @@ Leva as conquistas do perfil até o ajustador de experiência e faz a mesma cham
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever os testes de `_experiencias_do_perfil` (red) e do campo novo; implementar (green).
-- [ ] 3.2 Escrever os testes de prompt do ajustador (red): bloco de conquistas, regra de 3 a 5, proibição de número, fallback com menos de 3, regressão sem conquistas.
-- [ ] 3.3 Criar a constante e usar no ajustador (green).
-- [ ] 3.4 Escrever o teste da experiência com conquistas e sem descrição; ajustar o ramo `_sem_conteudo` (green).
-- [ ] 3.5 Adicionar o log em `AdaptarCurriculoParaVaga` com teste.
-- [ ] 3.6 Refatorar e rodar os testes de `curriculo`.
+- [x] 3.1 Escrever os testes de `_experiencias_do_perfil` (red) e do campo novo; implementar (green).
+- [x] 3.2 Escrever os testes de prompt do ajustador (red): bloco de conquistas, regra de 3 a 5, proibição de número, fallback com menos de 3, regressão sem conquistas.
+- [x] 3.3 Criar a constante e usar no ajustador (green).
+- [x] 3.4 Escrever o teste da experiência com conquistas e sem descrição; ajustar o ramo `_sem_conteudo` (green).
+- [x] 3.5 Adicionar o log em `AdaptarCurriculoParaVaga` com teste.
+- [x] 3.6 Refatorar e rodar os testes de `curriculo`.
 
 ## Detalhes de Implementação
 
@@ -38,9 +38,9 @@ Techspec: "Pontos de Integração" (regras de prompt e conflito com a métrica e
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade em `src/jobsync/tests/curriculo/test_ajustador_experiencia_openai_client.py`.
-- [ ] Teste do router/helper `_experiencias_do_perfil`.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de unidade em `src/jobsync/tests/curriculo/test_ajustador_experiencia_openai_client.py`.
+- [x] Teste do router/helper `_experiencias_do_perfil`.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -52,3 +52,8 @@ Techspec: "Pontos de Integração" (regras de prompt e conflito com a métrica e
 - `src/jobsync/curriculo/service_layer/adaptar_curriculo_para_vaga/service.py`
 - `src/jobsync/entrypoints/api/routers/curriculo_router.py`
 - `src/jobsync/tests/curriculo/`
+
+## Resultado da execução
+
+- `ExperienciaParaAvaliacao.conquistas`, `REGRA_SELECAO_DE_CONQUISTAS`, bloco de conquistas no prompt do ajustador, experiência só com conquistas chama a IA, e log sem texto das conquistas.
+- Testes: `src/jobsync/tests/curriculo/` e `test_routers.py` passando.

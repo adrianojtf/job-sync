@@ -4,6 +4,7 @@ Usa dublês de teste (fakes) para as portas, mantendo o teste isolado de
 qualquer infraestrutura real (PDF, LLM, etc.), conforme Hexagonal Architecture.
 """
 import pytest
+from dataclasses import replace
 
 from jobsync.curriculo.service_layer.adaptar_curriculo_para_vaga import (
     AdaptarCurriculoParaVaga,
@@ -699,3 +700,49 @@ class TestAdaptarCurriculoParaVagaPlanoDeTecnologias:
 
         assert identificador.chamadas == []
         assert all(ajustes == () for ajustes in ajustador_texto.ajustes)
+
+
+class TestAdaptarCurriculoParaVagaComBancoDeConquistas:
+    def test_entrega_as_conquistas_de_cada_experiencia_ao_ajustador(self):
+        caso_de_uso, _, ajustador_experiencia = _caso_com_identificador(None)
+        experiencias = (
+            ExperienciaParaAvaliacao(
+                cargo="Engenheira de Software", empresa="Starian", periodo="2021-2024",
+                descricao="Desenvolvi APIs em Python.", conquistas=("Reduzi o tempo de deploy.",),
+            ),
+            ExperienciaParaAvaliacao(
+                cargo="Desenvolvedora Backend", empresa="TechCorp", periodo="2019-2021",
+                descricao="Mantive serviços em Go.",
+            ),
+        )
+        entrada = replace(_input_estruturado(), experiencias_profissionais=experiencias)
+
+        caso_de_uso.executar(entrada)
+
+        assert [e.conquistas for e in ajustador_experiencia.recebidas] == [("Reduzi o tempo de deploy.",), ()]
+
+    def test_registra_no_log_quantas_experiencias_tem_banco_sem_o_texto_das_conquistas(self, caplog):
+        caso_de_uso, _, _ = _caso_com_identificador(None)
+        experiencias = (
+            ExperienciaParaAvaliacao(
+                cargo="Engenheira", empresa="Starian", periodo="2021-2024", descricao="APIs.",
+                conquistas=("Segredo de negócio A.", "Segredo de negócio B."),
+            ),
+        )
+        entrada = replace(_input_estruturado(), experiencias_profissionais=experiencias)
+
+        with caplog.at_level("INFO"):
+            caso_de_uso.executar(entrada)
+
+        mensagens = " ".join(registro.getMessage() for registro in caplog.records)
+        assert "experiencias_com_banco=1" in mensagens
+        assert "conquistas=2" in mensagens
+        assert "Segredo de negócio" not in mensagens
+
+    def test_sem_banco_de_conquistas_nao_registra_o_log_do_banco(self, caplog):
+        caso_de_uso, _, _ = _caso_com_identificador(None)
+
+        with caplog.at_level("INFO"):
+            caso_de_uso.executar(_input_estruturado())
+
+        assert "experiencias_com_banco" not in " ".join(r.getMessage() for r in caplog.records)

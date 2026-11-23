@@ -18,12 +18,12 @@ Cria o Value Object `Conquista` e o guarda dentro de `ExperienciaProfissional`, 
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de `Conquista` e de `ExperienciaProfissional` (red): texto vazio, duplicata, parecidas com paráfrase, caixa e acento.
-- [ ] 1.2 Escrever os testes de `sao_parecidas` (red) e implementar a função (green).
-- [ ] 1.3 Implementar `Conquista`, `OrigemConquista` e o campo `conquistas` (green).
-- [ ] 1.4 Escrever os testes de integração do repositório (red): salvar e ler com conquistas; ler linha sem a chave `conquistas`.
-- [ ] 1.5 Implementar a serialização e a leitura no repositório (green).
-- [ ] 1.6 Refatorar e rodar os testes de `perfil_estruturado`.
+- [x] 1.1 Escrever os testes de `Conquista` e de `ExperienciaProfissional` (red): texto vazio, duplicata, parecidas com paráfrase, caixa e acento.
+- [x] 1.2 Escrever os testes de `sao_parecidas` (red) e implementar a função (green).
+- [x] 1.3 Implementar `Conquista`, `OrigemConquista` e o campo `conquistas` (green).
+- [x] 1.4 Escrever os testes de integração do repositório (red): salvar e ler com conquistas; ler linha sem a chave `conquistas`.
+- [x] 1.5 Implementar a serialização e a leitura no repositório (green).
+- [x] 1.6 Refatorar e rodar os testes de `perfil_estruturado`.
 
 ## Detalhes de Implementação
 
@@ -37,9 +37,9 @@ Techspec: "Interfaces Principais", "Modelos de Dados" e "Decisões Principais" (
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do domínio e da similaridade.
-- [ ] Testes de integração do repositório (fixture `pool_postgres`).
-- [ ] Regressão: `src/jobsync/tests/perfil_estruturado/`.
+- [x] Testes de unidade do domínio e da similaridade.
+- [x] Testes de integração do repositório (fixture `pool_postgres`).
+- [x] Regressão: `src/jobsync/tests/perfil_estruturado/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -51,3 +51,8 @@ Techspec: "Interfaces Principais", "Modelos de Dados" e "Decisões Principais" (
 - `src/jobsync/perfil_estruturado/__init__.py`
 - `src/jobsync/tests/perfil_estruturado/test_perfil_estruturado.py`
 - `src/jobsync/tests/perfil_estruturado/test_perfil_estruturado_repository_impl.py`
+
+## Resultado da execução
+
+- `Conquista`, `OrigemConquista`, `conquistas_parecidas.py` (limite 0,6) e o campo `conquistas` em `ExperienciaProfissional`; serialização explícita no JSONB, com leitura retrocompatível.
+- Testes: `src/jobsync/tests/perfil_estruturado/` passando (inclui integração com PostgreSQL).

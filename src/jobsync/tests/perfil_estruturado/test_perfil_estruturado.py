@@ -4,11 +4,13 @@ import pytest
 
 from jobsync.perfil_estruturado import (
     Certificacao,
+    Conquista,
     DadosPerfilExtraidos,
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
     NivelIdioma,
+    OrigemConquista,
     PerfilEstruturado,
 )
 
@@ -129,3 +131,46 @@ class TestDadosPerfilExtraidos:
 
         assert dados.nome_completo == ""
         assert not hasattr(dados, "perfil_identificador")
+
+
+def _experiencia(*conquistas: Conquista) -> ExperienciaProfissional:
+    return ExperienciaProfissional(
+        empresa="TechCorp", cargo="Eng. de Software", periodo="2020 - Atual", descricao="Backend.",
+        conquistas=conquistas,
+    )
+
+
+class TestConquista:
+    def test_origem_padrao_e_manual(self):
+        assert Conquista("Reduzi o tempo de deploy.").origem == OrigemConquista.MANUAL
+
+    def test_texto_vazio_levanta_erro(self):
+        with pytest.raises(ValueError, match="conquista"):
+            Conquista("   ")
+
+    def test_texto_e_normalizado_sem_espacos_nas_pontas(self):
+        assert Conquista("  Reduzi o tempo de deploy.  ").texto == "Reduzi o tempo de deploy."
+
+
+class TestConquistasDaExperiencia:
+    def test_experiencia_sem_conquistas_por_padrao(self):
+        exp = ExperienciaProfissional("TechCorp", "Eng.", "2020", "Backend.")
+
+        assert exp.conquistas == ()
+
+    def test_conquistas_iguais_apos_normalizacao_levantam_erro(self):
+        with pytest.raises(ValueError, match="duplicad"):
+            _experiencia(Conquista("Reduzi o tempo de deploy."), Conquista("reduzi o tempo de DEPLOY"))
+
+    def test_conquistas_parecidas_com_encontra_parafrase_com_caixa_e_acento(self):
+        existente = Conquista("Reduzi o tempo de deploy em 40% com pipeline automatizado.")
+        exp = _experiencia(existente, Conquista("Liderei a migração do banco de dados."))
+
+        parecidas = exp.conquistas_parecidas_com("REDUZI o tempo de deploy com o pipeline automatizado")
+
+        assert parecidas == (existente,)
+
+    def test_conquistas_parecidas_com_nao_encontra_conquista_distinta(self):
+        exp = _experiencia(Conquista("Liderei a migração do banco de dados."))
+
+        assert exp.conquistas_parecidas_com("Construí uma API de pagamentos.") == ()

@@ -58,6 +58,7 @@ from jobsync.perfil_estruturado.adapters.perfil_estruturado_repository_fake impo
     PerfilEstruturadoRepositoryFake,
 )
 from jobsync.perfil_estruturado.domain.perfil_estruturado import (
+    Conquista,
     ExperienciaProfissional,
     PerfilEstruturado,
 )
@@ -407,6 +408,70 @@ class TestCurriculoRouter:
         ]
         assert data["rascunho"]["experiencias"] is None
         assert gerar_pdf_fake.input_dto is None
+
+    def test_post_rascunho_adaptado_repassa_as_conquistas_do_perfil_a_adaptacao(
+        self, client: TestClient
+    ):
+        repositorio = PerfilEstruturadoRepositoryFake()
+        repositorio.salvar(
+            PerfilEstruturado(
+                perfil_identificador="matheus",
+                nome_completo="Matheus Silva",
+                email="matheus@email.com",
+                linkedin="",
+                resumo_profissional="Engenheiro backend.",
+                experiencias=(
+                    ExperienciaProfissional(
+                        empresa="Starian",
+                        cargo="Engenheiro de Software",
+                        periodo="2021-2024",
+                        descricao="Desenvolvi APIs em Python.",
+                        conquistas=(Conquista("Reduzi o tempo de deploy."), Conquista("Entreguei um MVP.")),
+                    ),
+                    ExperienciaProfissional(
+                        empresa="TechCorp", cargo="Dev", periodo="2019-2021", descricao="Serviços em Go."
+                    ),
+                ),
+                formacoes=(),
+                certificacoes=(),
+                idiomas=(),
+                tecnologias=("Python",),
+            )
+        )
+
+        class FakeAdaptar:
+            def __init__(self):
+                self.input_dto = None
+
+            def executar(self, input_dto):
+                self.input_dto = input_dto
+                return AdaptarCurriculoParaVagaOutputDto(
+                    rascunho=_criar_rascunho(),
+                    curriculo_adaptado=_criar_curriculo(),
+                    analise_vaga=AnaliseVaga(requisitos=(), ambiguidade=(), texto_original="vaga"),
+                )
+
+        fake_adaptar = FakeAdaptar()
+        app.dependency_overrides[obter_service_adaptar_curriculo] = lambda: fake_adaptar
+        app.dependency_overrides[obter_repositorio_perfil_estruturado] = lambda: repositorio
+
+        response = client.post(
+            "/v1/curriculos/curriculo-123/rascunhos-adaptados",
+            json={
+                "descricao_vaga": "Desenvolvedor Python",
+                "idioma_alvo": "pt",
+                "cargo_alvo": "Engenheiro",
+                "empresa_alvo": "TechCorp",
+                "perfil_identificador": "matheus",
+            },
+        )
+
+        app.dependency_overrides.pop(obter_service_adaptar_curriculo, None)
+        app.dependency_overrides.pop(obter_repositorio_perfil_estruturado, None)
+
+        assert response.status_code == 200
+        experiencias = fake_adaptar.input_dto.experiencias_profissionais
+        assert [e.conquistas for e in experiencias] == [("Reduzi o tempo de deploy.", "Entreguei um MVP."), ()]
 
     def test_post_rascunho_adaptado_com_entrada_invalida_devolve_422(
         self, client: TestClient

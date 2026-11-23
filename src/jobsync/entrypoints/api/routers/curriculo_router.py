@@ -136,6 +136,7 @@ def _experiencias_do_perfil(
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
             descricao=experiencia.descricao,
+            conquistas=tuple(conquista.texto for conquista in experiencia.conquistas),
         )
         for experiencia in perfil.experiencias
     )

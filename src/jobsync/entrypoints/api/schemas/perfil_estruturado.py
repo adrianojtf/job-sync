@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import base64
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from jobsync.perfil_estruturado.domain.perfil_estruturado import (
     Certificacao,
+    Conquista,
     DadosPerfilExtraidos,
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
     NivelIdioma,
+    OrigemConquista,
     PerfilEstruturado,
 )
 from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.dtos import (
@@ -21,6 +25,45 @@ from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.dtos import
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.dtos import (
     SalvarPerfilEstruturadoInputDto,
 )
+from jobsync.perfil_estruturado.service_layer.verificar_conquistas_parecidas.dtos import (
+    VerificarConquistasParecidasInputDto,
+)
+
+
+OrigemConquistaSchema = Literal["MANUAL", "RESPOSTA_PERGUNTA"]
+
+
+class ConquistaRequest(BaseModel):
+    """Uma conquista guardada no banco de conquistas da experiência."""
+
+    texto: str = Field(description="Texto da conquista, escrito ou aprovado pelo usuário.")
+    origem: OrigemConquistaSchema = Field(
+        default="MANUAL",
+        description="Origem da conquista: cadastro manual ou resposta às perguntas sobre a vaga.",
+    )
+
+
+class ConquistaResponse(BaseModel):
+    """Uma conquista do banco de conquistas na resposta da API."""
+
+    texto: str = Field(description="Texto da conquista.")
+    origem: OrigemConquistaSchema = Field(description="Origem da conquista.")
+
+
+class ConquistasParecidasRequest(BaseModel):
+    """Texto de uma conquista nova e as conquistas que a tela já tem na experiência."""
+
+    texto: str = Field(description="Texto da conquista nova.")
+    conquistas: list[str] = Field(default_factory=list, description="Conquistas já presentes na experiência.")
+
+    def to_dto(self) -> VerificarConquistasParecidasInputDto:
+        return VerificarConquistasParecidasInputDto(texto=self.texto, conquistas=tuple(self.conquistas))
+
+
+class ConquistasParecidasResponse(BaseModel):
+    """Conquistas existentes que se parecem com a conquista nova."""
+
+    parecidas: list[str] = Field(description="Textos das conquistas parecidas, vazio quando não há.")
 
 
 class ExperienciaProfissionalRequest(BaseModel):
@@ -30,6 +73,10 @@ class ExperienciaProfissionalRequest(BaseModel):
     cargo: str = Field(description="Cargo ou função exercida na empresa.")
     periodo: str = Field(description="Período de atuação (texto livre, ex: 'Jan 2020 - Dez 2022').")
     descricao: str = Field(description="Descrição das atividades e responsabilidades do cargo.")
+    conquistas: list[ConquistaRequest] = Field(
+        default_factory=list,
+        description="Banco de conquistas da experiência (opcional).",
+    )
 
 
 class FormacaoAcademicaRequest(BaseModel):
@@ -138,6 +185,9 @@ class PerfilEstruturadoRequest(BaseModel):
                     cargo=exp.cargo,
                     periodo=exp.periodo,
                     descricao=exp.descricao,
+                    conquistas=tuple(
+                        Conquista(texto=c.texto, origem=OrigemConquista[c.origem]) for c in exp.conquistas
+                    ),
                 )
                 for exp in self.experiencias
             ),
@@ -194,6 +244,10 @@ class ExperienciaProfissionalResponse(BaseModel):
     cargo: str = Field(description="Cargo ou função exercida na empresa.")
     periodo: str = Field(description="Período de atuação (texto livre).")
     descricao: str = Field(description="Descrição das atividades e responsabilidades do cargo.")
+    conquistas: list[ConquistaResponse] = Field(
+        default_factory=list,
+        description="Banco de conquistas da experiência.",
+    )
 
 
 class FormacaoAcademicaResponse(BaseModel):
@@ -262,6 +316,9 @@ class PerfilEstruturadoResponse(BaseModel):
                     cargo=exp.cargo,
                     periodo=exp.periodo,
                     descricao=exp.descricao,
+                    conquistas=[
+                        ConquistaResponse(texto=c.texto, origem=c.origem.name) for c in exp.conquistas
+                    ],
                 )
                 for exp in dto.experiencias
             ],

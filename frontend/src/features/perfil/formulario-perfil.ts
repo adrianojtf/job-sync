@@ -1,7 +1,8 @@
 import type { PerfilEstruturado, PerfilEstruturadoEntrada } from "../../api/tipos";
-import type {
-  DadosPessoaisFormulario,
-  ExperienciaFormulario,
+import {
+  EXPERIENCIA_VAZIA,
+  type DadosPessoaisFormulario,
+  type ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 
 export type NivelIdioma = "BASICO" | "INTERMEDIARIO" | "AVANCADO" | "FLUENTE" | "NATIVO";
@@ -14,9 +15,39 @@ export const NIVEIS_IDIOMA: { valor: NivelIdioma; rotulo: string }[] = [
   { valor: "NATIVO", rotulo: "Nativo" },
 ];
 
+export type OrigemConquista = "MANUAL" | "RESPOSTA_PERGUNTA";
+
+/** Conquista do banco da experiência (JOB-0042); a origem é preservada ao editar o texto. */
+export interface ConquistaFormulario {
+  texto: string;
+  origem: OrigemConquista;
+}
+
+/** Experiência do perfil: os campos de sempre mais o banco de conquistas. */
+export interface ExperienciaPerfilFormulario extends ExperienciaFormulario {
+  conquistas: ConquistaFormulario[];
+}
+
+/** Dados da experiência sem o banco de conquistas: o que as sugestões e a avaliação de IA recebem. */
+export function experienciaSemConquistas(
+  experiencia: ExperienciaPerfilFormulario,
+): ExperienciaFormulario {
+  return {
+    empresa: experiencia.empresa,
+    cargo: experiencia.cargo,
+    periodo: experiencia.periodo,
+    descricao: experiencia.descricao,
+  };
+}
+
+export const EXPERIENCIA_PERFIL_VAZIA: ExperienciaPerfilFormulario = {
+  ...EXPERIENCIA_VAZIA,
+  conquistas: [],
+};
+
 /** Estado do formulário de Meu perfil: tecnologias ficam como texto separado por vírgula. */
 export interface FormularioPerfil extends DadosPessoaisFormulario {
-  experiencias: ExperienciaFormulario[];
+  experiencias: ExperienciaPerfilFormulario[];
   formacoes: { instituicao: string; curso: string; periodo: string }[];
   certificacoes: { nome: string; instituicao: string; ano: string }[];
   idiomas: { idioma: string; nivel: string }[];
@@ -33,7 +64,13 @@ export function perfilParaFormulario(perfil: PerfilEstruturado | null): Formular
     email: perfil?.email ?? "",
     linkedin: perfil?.linkedin ?? "",
     resumo_profissional: perfil?.resumo_profissional ?? "",
-    experiencias: (perfil?.experiencias ?? []).map((item) => ({ ...item })),
+    experiencias: (perfil?.experiencias ?? []).map((item) => ({
+      ...item,
+      conquistas: (item.conquistas ?? []).map((conquista) => ({
+        texto: conquista.texto,
+        origem: conquista.origem ?? "MANUAL",
+      })),
+    })),
     formacoes: (perfil?.formacoes ?? []).map((item) => ({ ...item })),
     certificacoes: (perfil?.certificacoes ?? []).map((item) => ({ ...item })),
     idiomas: (perfil?.idiomas ?? []).map((item) => ({ ...item })),
@@ -60,7 +97,12 @@ export function formularioParaEntrada(
     email: formulario.email.trim(),
     linkedin: formulario.linkedin.trim(),
     resumo_profissional: formulario.resumo_profissional.trim(),
-    experiencias: formulario.experiencias.map(aparar),
+    experiencias: formulario.experiencias.map((experiencia) => ({
+      ...aparar(experiencia),
+      conquistas: experiencia.conquistas
+        .map((conquista) => ({ texto: conquista.texto.trim(), origem: conquista.origem }))
+        .filter((conquista) => conquista.texto !== ""),
+    })),
     formacoes: formulario.formacoes.map(aparar),
     certificacoes: formulario.certificacoes.map(aparar),
     idiomas: formulario.idiomas.map(aparar),

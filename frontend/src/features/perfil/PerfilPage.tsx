@@ -5,7 +5,6 @@ import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
 import {
   CAMPOS_EXPERIENCIA,
-  EXPERIENCIA_VAZIA,
   type ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
@@ -19,8 +18,11 @@ import { Field } from "../../shared/ui/Field";
 import { Panel } from "../../shared/ui/Panel";
 import { useToast } from "../../shared/ui/use-toast";
 import { AvaliarExperienciaModal } from "./AvaliarExperienciaModal";
+import { ConquistasDaExperiencia } from "./ConquistasDaExperiencia";
 import {
   CERTIFICACAO_VAZIA,
+  EXPERIENCIA_PERFIL_VAZIA,
+  experienciaSemConquistas,
   FORMACAO_VAZIA,
   formularioParaEntrada,
   IDIOMA_VAZIO,
@@ -114,20 +116,29 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           titulo="Experiências profissionais"
           subtitulo="Da mais recente para a mais antiga"
           rotuloItem="Experiência"
-          itemVazio={EXPERIENCIA_VAZIA}
+          itemVazio={EXPERIENCIA_PERFIL_VAZIA}
           campos={CAMPOS_EXPERIENCIA}
           complementoItem={(indice) => (
-            <SugestaoCampo
-              form={form}
-              campo={`experiencias.${indice}.descricao`}
-              rotuloBloco={`experiência ${indice + 1}`}
-              sugerir={sugestoes.experiencia(() => form.getValues(`experiencias.${indice}`))}
-            />
+            <>
+              <SugestaoCampo
+                form={form}
+                campo={`experiencias.${indice}.descricao`}
+                rotuloBloco={`experiência ${indice + 1}`}
+                sugerir={sugestoes.experiencia(() =>
+                  experienciaSemConquistas(form.getValues(`experiencias.${indice}`)),
+                )}
+              />
+              <ConquistasDaExperiencia form={form} indice={indice} />
+            </>
           )}
           acoesItem={(indice) => (
             <Button
               aria-label={`Avaliar experiência ${indice + 1}`}
-              onClick={() => setExperienciaAvaliada(form.getValues(`experiencias.${indice}`))}
+              onClick={() =>
+                setExperienciaAvaliada(
+                  experienciaSemConquistas(form.getValues(`experiencias.${indice}`)),
+                )
+              }
             >
               Avaliar
             </Button>

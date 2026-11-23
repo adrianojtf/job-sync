@@ -15,6 +15,7 @@ class ExperienciaParaAvaliacao:
     cargo: str = ""
     empresa: str = ""
     periodo: str = ""
+    conquistas: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

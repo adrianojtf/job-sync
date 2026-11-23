@@ -11,8 +11,11 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceBuscarPerfilEstruturadoDep,
     ServiceImportarPerfilDePdfDep,
     ServiceSalvarPerfilEstruturadoDep,
+    ServiceVerificarConquistasParecidasDep,
 )
 from jobsync.entrypoints.api.schemas.perfil_estruturado import (
+    ConquistasParecidasRequest,
+    ConquistasParecidasResponse,
     PerfilEstruturadoRequest,
     PerfilEstruturadoResponse,
     PerfilImportarPdfRequest,
@@ -108,3 +111,28 @@ def importar_perfil_estruturado_de_pdf(
             detail=str(erro),
         )
     return PerfilEstruturadoResponse.from_dto(dados)
+
+
+@router.post(
+    "/perfil-estruturado/conquistas/parecidas",
+    response_model=ConquistasParecidasResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verificar conquistas parecidas",
+    description=(
+        "Compara o texto de uma conquista nova com as conquistas informadas e devolve as parecidas. "
+        "Não consulta nem altera o perfil salvo."
+    ),
+)
+def verificar_conquistas_parecidas(
+    body: ConquistasParecidasRequest,
+    service: ServiceVerificarConquistasParecidasDep,
+) -> ConquistasParecidasResponse:
+    """Avisa sobre conquistas parecidas antes de o usuário salvar a nova."""
+    try:
+        parecidas = service.executar(body.to_dto())
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(erro),
+        )
+    return ConquistasParecidasResponse(parecidas=list(parecidas))

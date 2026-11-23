@@ -17,11 +17,11 @@ Permite ao usuário cadastrar, editar e excluir conquistas em cada experiência 
 
 ## Subtarefas
 
-- [ ] 4.1 Escrever os testes de `formulario-perfil` (red) e mapear `conquistas`.
-- [ ] 4.2 Escrever os testes de `PerfilPage` (red): lista, cadastro, edição, exclusão.
-- [ ] 4.3 Implementar o componente da lista de conquistas e o uso na página (green).
-- [ ] 4.4 Escrever os testes do aviso de duplicidade (red) e implementar o hook e o aviso (green).
-- [ ] 4.5 Revisar acessibilidade e rodar o lint e os testes do frontend.
+- [x] 4.1 Escrever os testes de `formulario-perfil` (red) e mapear `conquistas`.
+- [x] 4.2 Escrever os testes de `PerfilPage` (red): lista, cadastro, edição, exclusão.
+- [x] 4.3 Implementar o componente da lista de conquistas e o uso na página (green).
+- [x] 4.4 Escrever os testes do aviso de duplicidade (red) e implementar o hook e o aviso (green).
+- [x] 4.5 Revisar acessibilidade e rodar o lint e os testes do frontend.
 
 ## Detalhes de Implementação
 
@@ -35,8 +35,8 @@ Techspec: "Visão Geral dos Componentes" (frontend) e "Endpoints de API". PRD: R
 
 ## Testes da Tarefa
 
-- [ ] Testes vitest de `formulario-perfil` e `PerfilPage`.
-- [ ] `npm run lint` no `frontend/`.
+- [x] Testes vitest de `formulario-perfil` e `PerfilPage`.
+- [x] `npm run lint` no `frontend/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 
@@ -47,3 +47,10 @@ Techspec: "Visão Geral dos Componentes" (frontend) e "Endpoints de API". PRD: R
 - `frontend/src/features/perfil/use-perfil-estruturado.ts`
 - `frontend/src/features/perfil/PerfilPage.test.tsx`
 - `frontend/src/features/perfil/formulario-perfil.test.ts`
+
+## Resultado da execução
+
+- `ConquistasDaExperiencia` em `features/perfil`, método `verificarConquistasParecidas` no cliente da API e tipos regenerados (`npm run gerar-tipos`, só adições).
+- Sugestões e avaliação de IA continuam recebendo a experiência sem as conquistas (`experienciaSemConquistas`).
+- Falha na verificação de parecidas mostra o erro e não adiciona a conquista.
+- Testes: `tsc -b`, `npm run lint` e `vitest run` (367 testes) passando.

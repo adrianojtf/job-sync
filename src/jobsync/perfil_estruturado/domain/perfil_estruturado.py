@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from jobsync.perfil_estruturado.domain.conquistas_parecidas import normalizar_texto, sao_parecidas
+
 
 class NivelIdioma(Enum):
     """Nível de proficiência em um idioma."""
@@ -22,6 +24,26 @@ class NivelIdioma(Enum):
     NATIVO = auto()
 
 
+class OrigemConquista(Enum):
+    """De onde veio uma conquista guardada no banco de conquistas."""
+
+    MANUAL = auto()
+    RESPOSTA_PERGUNTA = auto()
+
+
+@dataclass(frozen=True)
+class Conquista:
+    """Uma conquista da experiência, escrita ou aprovada pelo usuário."""
+
+    texto: str
+    origem: OrigemConquista = OrigemConquista.MANUAL
+
+    def __post_init__(self) -> None:
+        if not self.texto or not self.texto.strip():
+            raise ValueError("O texto da conquista não pode ser vazio.")
+        object.__setattr__(self, "texto", self.texto.strip())
+
+
 @dataclass(frozen=True)
 class ExperienciaProfissional:
     """Uma experiência profissional do perfil.
@@ -29,18 +51,29 @@ class ExperienciaProfissional:
     `periodo` é texto livre (ex: "Jan 2020 - Dez 2022", "2023 - Atual") em vez
     de datas estritas — simplifica a UX, já que o usuário raramente sabe o
     dia exato de início/fim de uma experiência.
+
+    `conquistas` é o banco de conquistas da experiência (JOB-0042); a lista vazia
+    mantém o comportamento anterior, a partir da `descricao`.
     """
 
     empresa: str
     cargo: str
     periodo: str
     descricao: str
+    conquistas: tuple[Conquista, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.empresa or not self.empresa.strip():
             raise ValueError("A empresa da experiência profissional não pode ser vazia.")
         if not self.cargo or not self.cargo.strip():
             raise ValueError("O cargo da experiência profissional não pode ser vazio.")
+        textos = [normalizar_texto(conquista.texto) for conquista in self.conquistas]
+        if len(set(textos)) != len(textos):
+            raise ValueError("A experiência não pode ter conquistas duplicadas.")
+
+    def conquistas_parecidas_com(self, texto: str) -> tuple[Conquista, ...]:
+        """Conquistas já guardadas que dizem praticamente o mesmo que o texto informado."""
+        return tuple(conquista for conquista in self.conquistas if sao_parecidas(conquista.texto, texto))
 
 
 @dataclass(frozen=True)

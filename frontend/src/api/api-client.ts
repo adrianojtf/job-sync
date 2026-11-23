@@ -60,6 +60,8 @@ export interface ApiClient {
   salvarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   atualizarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   importarPerfilDePdf(pdfBase64: string): Promise<PerfilEstruturado>;
+  /** Conquistas da experiência que se parecem com o texto novo (JOB-0042); não altera o perfil salvo. */
+  verificarConquistasParecidas(texto: string, conquistas: string[]): Promise<string[]>;
   avaliarExperiencia(dados: AvaliarExperienciaEntrada): Promise<AvaliacaoExperiencia>;
   /** Sugere, via IA, um novo texto para uma seção (JOB-0034). Nada é alterado no servidor. */
   sugerirAjusteSecao(dados: SugerirAjusteSecaoEntrada): Promise<SugestaoSecao>;

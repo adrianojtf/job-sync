@@ -1,5 +1,6 @@
 """Testes dos casos de uso do currículo adaptado, com repositório fake e gerador de PDF falso."""
-from datetime import date, datetime, timezone
+import logging
+from datetime import date
 from unittest.mock import Mock
 
 import pytest
@@ -19,6 +20,8 @@ from jobsync.curriculo_adaptado.service_layer.salvar_curriculo_adaptado import (
     SalvarCurriculoAdaptado,
     SalvarCurriculoAdaptadoInputDto,
 )
+from jobsync.curriculo_salvo import CurriculoSalvo
+from jobsync.curriculo_salvo.adapters import CurriculoSalvoRepositoryFake
 from jobsync.tests.curriculo_adaptado.exemplos import (
     AGORA,
     DEPOIS,
@@ -228,3 +231,77 @@ class TestListarCurriculosAdaptados:
         repositorio.salvar(curriculo_adaptado(id="a-3", perfil_identificador="outra-pessoa"))
 
         assert ListarCurriculosAdaptados(repositorio).executar("ana") == (recente, antigo)
+
+
+class CurriculoSalvoRepositoryQueFalha(CurriculoSalvoRepositoryFake):
+    def atualizar_pdf(self, curriculo_id, perfil_identificador, pdf_bytes) -> bool:
+        raise RuntimeError("falha ao atualizar o PDF")
+
+
+def _curriculo_salvo() -> CurriculoSalvo:
+    return CurriculoSalvo(
+        id="salvo-9",
+        perfil_identificador="ana",
+        nome_referencia="Ana.pdf",
+        pdf_bytes=b"%PDF-antigo",
+        data_upload=AGORA,
+    )
+
+
+class TestAtualizarCurriculoAdaptadoComCurriculoSalvo:
+    def _servico(self, repositorio, gerador_pdf, salvos):
+        return AtualizarCurriculoAdaptado(
+            repositorio, gerador_pdf, repositorio_curriculo_salvo=salvos, relogio=lambda: DEPOIS
+        )
+
+    def _dto(self) -> AtualizarCurriculoAdaptadoInputDto:
+        return AtualizarCurriculoAdaptadoInputDto("adaptado-1", "ana", _revisado(("A", ("b",))), DATA)
+
+    def test_atualiza_o_pdf_do_curriculo_salvo_vinculado(self, repositorio, gerador_pdf):
+        salvos = CurriculoSalvoRepositoryFake()
+        salvos.salvar(_curriculo_salvo())
+        repositorio.salvar(curriculo_adaptado().com_curriculo_salvo("salvo-9"))
+
+        self._servico(repositorio, gerador_pdf, salvos).executar(self._dto())
+
+        assert salvos.listar_por_perfil("ana")[0].pdf_bytes == b"%PDF-gerado"
+
+    def test_sem_vinculo_o_curriculo_salvo_nao_e_tocado(self, repositorio, gerador_pdf):
+        salvos = CurriculoSalvoRepositoryFake()
+        salvos.salvar(_curriculo_salvo())
+        repositorio.salvar(curriculo_adaptado())
+
+        self._servico(repositorio, gerador_pdf, salvos).executar(self._dto())
+
+        assert salvos.listar_por_perfil("ana")[0].pdf_bytes == b"%PDF-antigo"
+
+    def test_curriculo_salvo_removido_nao_gera_erro(self, repositorio, gerador_pdf):
+        repositorio.salvar(curriculo_adaptado().com_curriculo_salvo("salvo-removido"))
+
+        resultado = self._servico(repositorio, gerador_pdf, CurriculoSalvoRepositoryFake()).executar(
+            self._dto()
+        )
+
+        assert resultado.pdf_bytes == b"%PDF-gerado"
+
+    def test_falha_ao_atualizar_o_pdf_salvo_devolve_o_pdf_novo_e_registra_em_log(
+        self, repositorio, gerador_pdf, caplog
+    ):
+        repositorio.salvar(curriculo_adaptado().com_curriculo_salvo("salvo-9"))
+        salvos = CurriculoSalvoRepositoryQueFalha()
+
+        with caplog.at_level(logging.WARNING):
+            resultado = self._servico(repositorio, gerador_pdf, salvos).executar(self._dto())
+
+        assert resultado.pdf_bytes == b"%PDF-gerado"
+        assert repositorio.buscar("adaptado-1", "ana").rascunho == _revisado(("A", ("b",)))
+        assert "salvo-9" in caplog.text
+
+    def test_sem_repositorio_de_curriculo_salvo_so_atualiza_o_adaptado(self, repositorio, gerador_pdf):
+        repositorio.salvar(curriculo_adaptado().com_curriculo_salvo("salvo-9"))
+
+        resultado = AtualizarCurriculoAdaptado(
+            repositorio, gerador_pdf, relogio=lambda: DEPOIS
+        ).executar(self._dto())
+
+        assert resultado.pdf_bytes == b"%PDF-gerado"

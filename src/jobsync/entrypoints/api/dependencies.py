@@ -181,8 +181,11 @@ ServiceSalvarCurriculoAdaptadoDep = Annotated[
 
 def obter_service_atualizar_curriculo_adaptado(
     repositorio: RepositorioCurriculoAdaptadoDep,
+    repositorio_curriculo_salvo: RepositorioCurriculoSalvoDep,
 ) -> AtualizarCurriculoAdaptado:
-    return AtualizarCurriculoAdaptado(repositorio, GeradorPdfClient())
+    return AtualizarCurriculoAdaptado(
+        repositorio, GeradorPdfClient(), repositorio_curriculo_salvo=repositorio_curriculo_salvo
+    )
 
 
 ServiceAtualizarCurriculoAdaptadoDep = Annotated[
@@ -425,11 +428,13 @@ def obter_service_confirmar_candidatura_ajustada(
     repositorio_candidatura: RepositorioCandidaturaDep,
     repositorio_vaga: RepositorioVagaDep,
     repositorio_curriculo_salvo: RepositorioCurriculoSalvoDep,
+    repositorio_curriculo_adaptado: RepositorioCurriculoAdaptadoDep,
 ) -> ConfirmarCandidaturaAjustada:
     return ConfirmarCandidaturaAjustada(
         repositorio_candidatura=repositorio_candidatura,
         repositorio_vaga=repositorio_vaga,
         repositorio_curriculo_salvo=repositorio_curriculo_salvo,
+        repositorio_curriculo_adaptado=repositorio_curriculo_adaptado,
     )
 
 

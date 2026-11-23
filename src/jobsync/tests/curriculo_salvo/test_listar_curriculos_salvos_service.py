@@ -21,6 +21,10 @@ class CurriculoSalvoRepositoryFake(CurriculoSalvoRepository):
     def contar_por_perfil(self, perfil_identificador: str) -> int:
         raise NotImplementedError
 
+    def atualizar_pdf(self, curriculo_id: str, perfil_identificador: str, pdf_bytes: bytes) -> bool:
+        return False
+
+
 
 def _criar_curriculo_salvo(**overrides) -> CurriculoSalvo:
     dados = dict(

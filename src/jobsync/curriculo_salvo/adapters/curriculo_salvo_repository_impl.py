@@ -50,6 +50,14 @@ class CurriculoSalvoRepositoryImpl(CurriculoSalvoRepository):
                 (curriculo_id, perfil_identificador),
             )
 
+    def atualizar_pdf(self, curriculo_id: str, perfil_identificador: str, pdf_bytes: bytes) -> bool:
+        with self._pool.connection() as conexao:
+            cursor = conexao.execute(
+                "UPDATE curriculo_salvo SET pdf_bytes = %s WHERE id = %s AND perfil_identificador = %s",
+                (pdf_bytes, curriculo_id, perfil_identificador),
+            )
+            return cursor.rowcount > 0
+
     def contar_por_perfil(self, perfil_identificador: str) -> int:
         with self._pool.connection() as conexao:
             return conexao.execute(

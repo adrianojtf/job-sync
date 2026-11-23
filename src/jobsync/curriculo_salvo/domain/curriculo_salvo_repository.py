@@ -29,3 +29,8 @@ class CurriculoSalvoRepository(ABC):
     def contar_por_perfil(self, perfil_identificador: str) -> int:
         """Retorna a quantidade de currículos salvos ativos do perfil."""
         raise NotImplementedError
+
+    @abstractmethod
+    def atualizar_pdf(self, curriculo_id: str, perfil_identificador: str, pdf_bytes: bytes) -> bool:
+        """Substitui o PDF de um currículo salvo do perfil; devolve False se ele não existir."""
+        raise NotImplementedError

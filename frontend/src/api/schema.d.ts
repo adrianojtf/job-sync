@@ -1294,6 +1294,11 @@ export interface components {
              * @description Conteúdo do PDF gerado, codificado em base64.
              */
             pdf_base64: string;
+            /**
+             * Curriculo Adaptado Id
+             * @description Currículo adaptado (JOB-0041) de onde o PDF saiu; passa a apontar para o PDF salvo, para a edição posterior atualizar o PDF da candidatura.
+             */
+            curriculo_adaptado_id?: string | null;
         };
         /**
          * CandidaturaCriarRequest

@@ -14,3 +14,5 @@ class ConfirmarCandidaturaAjustadaInputDto:
     descricao_vaga: str
     nome_arquivo: str
     pdf_bytes: bytes
+    curriculo_adaptado_id: str | None = None
+    """Currículo adaptado (JOB-0041) de onde o PDF saiu; passa a apontar para o PDF salvo."""

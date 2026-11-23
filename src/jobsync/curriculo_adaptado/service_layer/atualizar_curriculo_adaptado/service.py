@@ -18,6 +18,7 @@ from jobsync.curriculo_adaptado.service_layer.atualizar_curriculo_adaptado.dtos 
     AtualizarCurriculoAdaptadoInputDto,
 )
 from jobsync.curriculo_adaptado.service_layer.resultado_com_pdf import CurriculoAdaptadoComPdf
+from jobsync.curriculo_salvo.domain.curriculo_salvo_repository import CurriculoSalvoRepository
 from jobsync.shared_kernel.domain import NomeArquivo
 from jobsync.shared_kernel.domain.relogio import agora_utc
 
@@ -29,10 +30,12 @@ class AtualizarCurriculoAdaptado:
         self,
         repositorio: CurriculoAdaptadoRepository,
         gerador_pdf: GeradorPdfPort,
+        repositorio_curriculo_salvo: CurriculoSalvoRepository | None = None,
         relogio: Callable[[], datetime] = agora_utc,
     ) -> None:
         self._repositorio = repositorio
         self._gerador_pdf = gerador_pdf
+        self._repositorio_curriculo_salvo = repositorio_curriculo_salvo
         self._relogio = relogio
 
     def executar(self, input_dto: AtualizarCurriculoAdaptadoInputDto) -> CurriculoAdaptadoComPdf:
@@ -52,6 +55,7 @@ class AtualizarCurriculoAdaptado:
         )
 
         curriculo = self._repositorio.salvar(atual.com_rascunho_revisado(rascunho, self._relogio()))
+        self._atualizar_pdf_salvo(curriculo.curriculo_salvo_id, curriculo.perfil_identificador, pdf_bytes)
         logger.info(
             "Currículo adaptado atualizado (id=%s, categorias=%d, pdf_bytes=%d).",
             curriculo.id,
@@ -59,3 +63,20 @@ class AtualizarCurriculoAdaptado:
             len(pdf_bytes),
         )
         return CurriculoAdaptadoComPdf(curriculo, pdf_bytes, nome_arquivo)
+
+    def _atualizar_pdf_salvo(
+        self, curriculo_salvo_id: str | None, perfil_identificador: str, pdf_bytes: bytes
+    ) -> None:
+        """Leva a edição ao PDF da candidatura. É o último passo: falha vira log, o PDF novo segue."""
+        if curriculo_salvo_id is None or self._repositorio_curriculo_salvo is None:
+            return
+        try:
+            self._repositorio_curriculo_salvo.atualizar_pdf(
+                curriculo_salvo_id, perfil_identificador, pdf_bytes
+            )
+        except Exception as erro:
+            logger.warning(
+                "Não foi possível atualizar o PDF do currículo salvo %s (%s)",
+                curriculo_salvo_id,
+                type(erro).__name__,
+            )

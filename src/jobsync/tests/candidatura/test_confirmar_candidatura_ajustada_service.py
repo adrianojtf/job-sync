@@ -7,11 +7,13 @@ from jobsync.candidatura.service_layer.confirmar_candidatura_ajustada import (
     ConfirmarCandidaturaAjustada,
     ConfirmarCandidaturaAjustadaInputDto,
 )
+from jobsync.curriculo_adaptado.adapters import CurriculoAdaptadoRepositoryFake
 from jobsync.curriculo_salvo import CurriculoSalvo, CurriculoSalvoRepository
 from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import (
     LIMITE_CURRICULOS_POR_PERFIL,
     LimiteCurriculosSalvosExcedido,
 )
+from jobsync.tests.curriculo_adaptado.exemplos import curriculo_adaptado
 from jobsync.vaga import Vaga
 from jobsync.vaga.domain.vaga_repository import VagaRepository
 
@@ -95,6 +97,10 @@ class CurriculoSalvoRepositoryFake(CurriculoSalvoRepository):
 
     def contar_por_perfil(self, perfil_identificador: str) -> int:
         return self._quantidade_inicial + len(self.listar_por_perfil(perfil_identificador))
+
+    def atualizar_pdf(self, curriculo_id: str, perfil_identificador: str, pdf_bytes: bytes) -> bool:
+        return False
+
 
 
 def _dto(**overrides) -> ConfirmarCandidaturaAjustadaInputDto:
@@ -239,3 +245,81 @@ class TestConfirmarCandidaturaAjustada:
         assert f"pdf_bytes={len(PDF)}" in caplog.text
         for sigiloso in (DESCRICAO_DA_VAGA, "TechCorp", "Engenheiro de Software", "AnaSouza", "%PDF"):
             assert sigiloso not in caplog.text
+
+
+class CurriculoAdaptadoRepositoryQueFalha(CurriculoAdaptadoRepositoryFake):
+    def vincular_curriculo_salvo(self, curriculo_id, perfil_identificador, curriculo_salvo_id) -> None:
+        raise FalhaDeBanco("falha ao vincular")
+
+
+def _caso_de_uso_com_adaptados(adaptados, candidaturas=None, curriculos=None) -> ConfirmarCandidaturaAjustada:
+    return ConfirmarCandidaturaAjustada(
+        repositorio_candidatura=candidaturas or CandidaturaRepositoryFake(),
+        repositorio_vaga=VagaRepositoryFake(),
+        repositorio_curriculo_salvo=curriculos or CurriculoSalvoRepositoryFake(),
+        repositorio_curriculo_adaptado=adaptados,
+    )
+
+
+class TestConfirmarCandidaturaAjustadaComCurriculoAdaptado:
+    def test_vincula_o_curriculo_adaptado_ao_pdf_salvo_da_candidatura(self):
+        adaptados = CurriculoAdaptadoRepositoryFake()
+        adaptados.salvar(curriculo_adaptado())
+        curriculos = CurriculoSalvoRepositoryFake()
+
+        candidatura = _caso_de_uso_com_adaptados(adaptados, curriculos=curriculos).executar(
+            _dto(curriculo_adaptado_id="adaptado-1")
+        )
+
+        assert adaptados.buscar("adaptado-1", "ana").curriculo_salvo_id == candidatura.curriculo_salvo_id
+        assert candidatura.curriculo_salvo_id == curriculos.curriculos[0].id
+
+    def test_sem_curriculo_adaptado_nada_e_vinculado(self):
+        adaptados = CurriculoAdaptadoRepositoryFake()
+        adaptados.salvar(curriculo_adaptado())
+
+        _caso_de_uso_com_adaptados(adaptados).executar(_dto())
+
+        assert adaptados.buscar("adaptado-1", "ana").curriculo_salvo_id is None
+
+    def test_curriculo_adaptado_de_outro_perfil_nao_e_vinculado_e_a_candidatura_e_criada(self):
+        adaptados = CurriculoAdaptadoRepositoryFake()
+        adaptados.salvar(curriculo_adaptado(perfil_identificador="bia"))
+        candidaturas = CandidaturaRepositoryFake()
+
+        _caso_de_uso_com_adaptados(adaptados, candidaturas).executar(
+            _dto(curriculo_adaptado_id="adaptado-1")
+        )
+
+        assert adaptados.buscar("adaptado-1", "bia").curriculo_salvo_id is None
+        assert len(candidaturas.candidaturas) == 1
+
+    def test_falha_ao_vincular_nao_desfaz_a_candidatura_e_e_registrada_em_log(self, caplog):
+        adaptados = CurriculoAdaptadoRepositoryQueFalha()
+        adaptados.salvar(curriculo_adaptado())
+        candidaturas, curriculos = CandidaturaRepositoryFake(), CurriculoSalvoRepositoryFake()
+
+        with caplog.at_level(logging.WARNING):
+            candidatura = _caso_de_uso_com_adaptados(adaptados, candidaturas, curriculos).executar(
+                _dto(curriculo_adaptado_id="adaptado-1")
+            )
+
+        assert candidaturas.candidaturas == [candidatura]
+        assert curriculos.removidos == []
+        assert "vincular" in caplog.text
+
+    def test_falha_ao_criar_a_candidatura_nao_vincula_o_curriculo_adaptado(self):
+        adaptados = CurriculoAdaptadoRepositoryFake()
+        adaptados.salvar(curriculo_adaptado())
+
+        with pytest.raises(FalhaDeBanco):
+            _caso_de_uso_com_adaptados(
+                adaptados, candidaturas=CandidaturaRepositoryFake(falhar_ao_salvar=True)
+            ).executar(_dto(curriculo_adaptado_id="adaptado-1"))
+
+        assert adaptados.buscar("adaptado-1", "ana").curriculo_salvo_id is None
+
+    def test_o_caso_de_uso_sem_repositorio_de_adaptados_ignora_o_id(self):
+        candidatura = _caso_de_uso().executar(_dto(curriculo_adaptado_id="adaptado-1"))
+
+        assert candidatura.status == StatusCandidatura.APLICADO

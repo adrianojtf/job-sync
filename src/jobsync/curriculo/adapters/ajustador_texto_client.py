@@ -80,6 +80,25 @@ def _instrucao_da_secao(
     return " ".join([instrucao, *complementos])
 
 
+_INCLUIR_TECNOLOGIAS_DA_VAGA = (
+    "Inclua explicitamente na seção reescrita todas as tecnologias listadas acima "
+    "em requisitos explícitos e implícitos, mesmo que não estejam no conteúdo original. "
+    "Cada tecnologia da análise de vaga deve aparecer no texto final."
+)
+
+_NAO_INCLUIR_TECNOLOGIAS_AUSENTES_NO_RESUMO = (
+    "Não inclua tecnologias da vaga que o histórico do candidato não sustenta; "
+    "o resumo cita só as que o histórico mostra."
+)
+
+
+def _instrucao_de_tecnologias_da_vaga(tipo: TipoSecao) -> str:
+    """O resumo não recebe a ordem de listar as tecnologias da vaga: ela induz a copiar a vaga."""
+    if tipo == TipoSecao.PERFIL:
+        return _NAO_INCLUIR_TECNOLOGIAS_AUSENTES_NO_RESUMO
+    return _INCLUIR_TECNOLOGIAS_DA_VAGA
+
+
 _PROMPT_SISTEMA = """\
 Você é um especialista em redação de currículos (resume writer) que ajuda \
 candidatos a adaptar seu currículo para vagas específicas, SEM jamais \
@@ -153,9 +172,7 @@ class AjustadorTextoClient(AjustadorTextoPort):
             f"- Trechos ambíguos: {', '.join(ambiguidade) or 'nenhum'}\n\n"
             f"Idioma de saída obrigatório: {nome_idioma}\n\n"
             f"Instrução específica para esta seção: {instrucao_especifica}\n\n"
-            "Inclua explicitamente na seção reescrita todas as tecnologias listadas acima "
-            "em requisitos explícitos e implícitos, mesmo que não estejam no conteúdo original. "
-            "Cada tecnologia da análise de vaga deve aparecer no texto final.\n\n"
+            f"{_instrucao_de_tecnologias_da_vaga(secao.tipo)}\n\n"
             "Não inclua idiomas (ex.: inglês, espanhol, português) como se fossem tecnologias, "
             "mesmo que apareçam nos requisitos explícitos ou implícitos — idiomas pertencem a "
             "outra seção do currículo e devem ser ignorados aqui, independentemente da seção "

@@ -119,3 +119,5 @@ A avaliação com a vaga Forward Deployed Engineer Sênior reprovou a primeira r
 Risco novo: o foco "palavras-chave" do refino (`_FOCOS` em `prompt_refino.py`) pede "os termos exatos da vaga" e pode conflitar com "não copie trechos da vaga" no resumo. A task 3.0 fixa isso com teste e, se preciso, restringe o foco no Perfil.
 
 Se a nova avaliação ainda mostrar cópia ou excesso de tamanho, reabrir a decisão "só prompt" e avaliar um verificador de tamanho e sobreposição (alternativa já registrada em "Decisões Principais").
+
+Causa adicional (task 3.0): `_solicitar` incluía em todas as seções a ordem "inclua todas as tecnologias da análise de vaga, mesmo que não estejam no conteúdo original". No Perfil isso induzia a lista de termos. O Perfil agora recebe uma instrução oposta (`_instrucao_de_tecnologias_da_vaga`); as outras seções não mudam.

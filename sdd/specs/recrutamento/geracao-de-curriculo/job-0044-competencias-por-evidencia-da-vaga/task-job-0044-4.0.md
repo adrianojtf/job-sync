@@ -15,9 +15,9 @@ Complexidade: low.
 
 ## Subtarefas
 
-- [ ] 4.1 Testes de schema e router (red).
-- [ ] 4.2 Implementar o schema (green).
-- [ ] 4.3 Regenerar `schema.d.ts` e atualizar o Postman.
+- [x] 4.1 Testes de schema e router (red).
+- [x] 4.2 Implementar o schema (green).
+- [x] 4.3 Regenerar `schema.d.ts` e atualizar o Postman.
 
 ## Detalhes de Implementação
 
@@ -30,8 +30,8 @@ Techspec: "Design de Implementação" e "Abordagem de Testes". PRD: requisitos f
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade de schema e router.
-- [ ] Regressão: `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes de unidade de schema e router.
+- [x] Regressão: `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

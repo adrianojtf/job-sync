@@ -194,11 +194,11 @@ def test_sem_ajustes_o_prompt_nao_cita_equivalencias() -> None:
     assert "Liste também" not in prompt
 
 
-def test_perfil_nao_proibe_as_tecnologias_que_a_instrucao_geral_pede() -> None:
+def test_perfil_proibe_tecnologia_inventada_com_a_excecao_das_equivalentes() -> None:
     prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
 
     assert "cargos ou tecnologias que não constam" not in prompt
-    assert "não invente anos de experiência ou cargos" in prompt
+    assert "empresas, tecnologias, práticas nem métricas, exceto as tecnologias equivalentes" in prompt
 
 
 def test_experiencias_da_fonte_pdf_trazem_a_regra_de_responsabilidades_implicitas() -> None:
@@ -269,7 +269,7 @@ def test_refinar_secao_usa_o_foco_da_tentativa_e_as_sugestoes_anteriores() -> No
 def test_refinar_secao_mantem_as_regras_da_secao() -> None:
     sistema, usuario, _ = _prompt_do_refino(PedidoRefino())
 
-    assert "não invente anos de experiência ou cargos" in usuario
+    assert "não invente anos de experiência, cargos, empresas, tecnologias, práticas nem métricas" in usuario
     assert "conteudo_ajustado" in sistema
 @pytest.mark.parametrize("tipo", list(TipoSecao))
 def test_prompt_de_qualquer_secao_pede_para_preservar_linhas_e_topicos(tipo: TipoSecao) -> None:
@@ -295,25 +295,61 @@ def test_prompt_de_outras_secoes_nao_traz_a_regra_de_categorias_de_tecnologia(ti
     assert "uma categoria por linha" not in prompt
 
 
-def test_perfil_pede_resumo_curto_com_os_temas_da_vaga_e_do_cargo() -> None:
+def test_perfil_pede_resumo_de_ate_60_palavras_em_um_paragrafo_de_ate_3_frases() -> None:
     prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
 
-    assert "em até 3 frases" in prompt
-    assert "temas centrais da vaga" in prompt
-    assert "comum ao cargo-alvo" in prompt
-    assert "apenas se o histórico do candidato os sustentar" in prompt
+    assert "um único parágrafo de até 60 palavras e até 3 frases" in prompt
+    assert "mesma voz do resumo original" in prompt
 
 
-def test_perfil_pede_frases_proprias_sem_copiar_a_vaga() -> None:
+def test_perfil_usa_o_cargo_alvo_como_eixo_sem_declarar_cargo_nao_exercido() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "na linha do cargo-alvo" in prompt
+    assert "sem declarar como título um cargo que ele não exerceu" in prompt
+
+
+def test_perfil_limita_a_3_temas_escritos_como_acoes_do_candidato() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "no máximo 3 temas centrais da vaga" in prompt
+    assert "como ações do candidato" in prompt
+
+
+def test_perfil_proibe_copiar_a_vaga_listas_ponto_e_virgula_e_falar_da_vaga() -> None:
     prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
 
     assert "não copie trechos da vaga" in prompt
+    assert "não faça listas de termos" in prompt
+    assert "não use ponto e vírgula" in prompt
+    assert "não fale da vaga nem da oportunidade" in prompt
+
+
+def test_perfil_omite_tema_sem_sustentacao_e_nao_inventa_fatos() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "Omita o tema que o histórico não sustenta" in prompt
+    assert "não invente anos de experiência, cargos, empresas, tecnologias, práticas nem métricas" in prompt
+
+
+def test_perfil_nao_recebe_a_ordem_de_incluir_as_tecnologias_da_vaga() -> None:
+    prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt")
+
+    assert "Cada tecnologia da análise de vaga deve aparecer no texto final" not in prompt
+    assert "Não inclua tecnologias da vaga que o histórico do candidato não sustenta" in prompt
+
+
+@pytest.mark.parametrize("tipo", [tipo for tipo in TipoSecao if tipo != TipoSecao.PERFIL])
+def test_outras_secoes_continuam_recebendo_a_ordem_de_incluir_as_tecnologias_da_vaga(tipo: TipoSecao) -> None:
+    prompt = _prompt_da_secao(tipo, "pt")
+
+    assert "Cada tecnologia da análise de vaga deve aparecer no texto final" in prompt
 
 
 def test_perfil_mantem_o_complemento_de_tecnologia_equivalente_com_a_nova_regra() -> None:
     prompt = _prompt_da_secao(TipoSecao.PERFIL, "pt", ajustes=(REACT_ANGULAR,), cargo_alvo="Code Reviewer")
 
-    assert "temas centrais da vaga" in prompt
+    assert "no máximo 3 temas centrais da vaga" in prompt
     assert "Pode citar Angular, equivalente a React" in prompt
     assert "Cargo-alvo (título da vaga): Code Reviewer" in prompt
 
@@ -322,7 +358,7 @@ def test_perfil_mantem_o_complemento_de_tecnologia_equivalente_com_a_nova_regra(
 def test_prompt_de_outras_secoes_nao_traz_a_regra_do_resumo(tipo: TipoSecao) -> None:
     prompt = _prompt_da_secao(tipo, "pt")
 
-    assert "temas centrais da vaga" not in prompt
+    assert "no máximo 3 temas centrais da vaga" not in prompt
     assert "não copie trechos da vaga" not in prompt
 
 
@@ -339,4 +375,13 @@ def test_refinar_o_perfil_com_foco_de_aderencia_parte_do_texto_atual_com_a_regra
 
     assert "Foco desta versão: aderência à vaga" in usuario
     assert "Texto atual:\nResumo atual editado." in usuario
-    assert "em até 3 frases" in usuario
+    assert "até 60 palavras e até 3 frases" in usuario
+
+
+def test_refino_do_perfil_com_foco_palavras_chave_mantem_a_proibicao_de_copiar_a_vaga() -> None:
+    _, usuario, _ = _prompt_do_refino(PedidoRefino(tentativa=3))
+
+    assert "Foco desta versão: palavras-chave da vaga" in usuario
+    assert "não copie trechos da vaga" in usuario
+    assert "não faça listas de termos" in usuario
+    assert "Cada tecnologia da análise de vaga deve aparecer no texto final" not in usuario

@@ -5,7 +5,7 @@ Uso, a partir da raiz do repositório:
     PYTHONPATH=src python sdd/specs/recrutamento/geracao-de-curriculo/job-0042-banco-de-conquistas-por-experiencia/avaliar-banco-conquistas.py
     PYTHONPATH=src python .../avaliar-banco-conquistas.py --dry-run   # só mostra o prompt, sem chamar a IA
 
-Exige OPENAI_API_KEY (e OPENAI_MODEL, se não for o padrão). Usa o `AjustadorExperienciaOpenAIClient` real,
+Exige OPENAI_API_KEY (e OPENAI_MODEL, se não for o padrão), lidas do ambiente ou do arquivo .env da raiz. Usa o `AjustadorExperienciaOpenAIClient` real,
 um banco de 8 conquistas e duas vagas de áreas diferentes. Imprime, por vaga: as conquistas escolhidas,
 a quantidade, a latência e os números que aparecem na saída e não existem no banco.
 """
@@ -15,6 +15,8 @@ import re
 import sys
 import time
 from unittest.mock import Mock
+
+from dotenv import load_dotenv
 
 from jobsync.curriculo import ContextoVaga, DiretrizesExperiencia, ExperienciaParaAvaliacao
 from jobsync.curriculo.adapters.ajustador_experiencia_openai_client import AjustadorExperienciaOpenAIClient
@@ -69,6 +71,7 @@ def _contexto(cargo: str, descricao: str) -> ContextoVaga:
 
 
 def main() -> None:
+    load_dotenv()
     dry_run = "--dry-run" in sys.argv
     if dry_run:
         cliente = Mock(spec=ClienteOpenAI)

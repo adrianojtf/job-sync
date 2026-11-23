@@ -112,6 +112,6 @@ Requisitos de UX:
 ## Questões em Aberto
 
 1. O cadastro manual entra na primeira versão (decisão tomada: sim), para que o banco funcione sem esperar a JOB-0043. Confirmar o fluxo de tela na techspec.
-2. Quando o banco de uma experiência ficar grande, a IA recebe todas as conquistas? Definir o limite de tamanho aceitável na techspec e medir o impacto na latência.
-3. Como detectar "conquista parecida" no aviso de duplicidade: comparação textual simples ou apoio da IA? Decidir na techspec, com preferência pela opção mais simples.
+2. Quando o banco de uma experiência ficar grande, a IA recebe todas as conquistas? Resolvida por ora: sem teto, com 8 conquistas a latência foi de cerca de 4,8 s por experiência. Reavaliar acima de cerca de 20 conquistas.
+3. Resolvida: comparação textual no domínio (limite de similaridade 0,6). Paráfrases com palavras reordenadas podem passar; o aviso é só informativo.
 4. Faz sentido oferecer, depois, a criação de conquistas a partir da descrição atual da experiência? Fica para uma entrega futura, se houver demanda.

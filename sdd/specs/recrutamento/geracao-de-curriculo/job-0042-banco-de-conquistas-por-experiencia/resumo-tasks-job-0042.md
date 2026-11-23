@@ -6,7 +6,7 @@
 - [x] 2.0 API do perfil: conquistas nos schemas e endpoint de conquistas parecidas
 - [x] 3.0 Seleção de 3 a 5 conquistas por experiência na adaptação
 - [x] 4.0 Frontend: banco de conquistas em Meu perfil com aviso de duplicidade
-- [ ] 5.0 Avaliação manual do banco de conquistas
+- [x] 5.0 Avaliação manual do banco de conquistas
 
 ## Dependências
 

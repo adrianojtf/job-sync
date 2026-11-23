@@ -101,6 +101,20 @@ def _instrucao_da_secao(
     return " ".join([instrucao, *complementos])
 
 
+_NAO_INCLUIR_TECNOLOGIAS_AUSENTES_NO_RESUMO = (
+    "Não inclua tecnologias da vaga que o histórico do candidato não sustenta; "
+    "o resumo cita só as que o histórico mostra."
+)
+
+
+def _instrucao_de_tecnologias_da_vaga(tipo: TipoSecao) -> str:
+    """Nenhuma seção recebe a ordem de listar todas as tecnologias da vaga (JOB-0044).
+
+    O que entra em Competências é decidido pelo domínio; o resumo só cita o que o histórico mostra.
+    """
+    return _NAO_INCLUIR_TECNOLOGIAS_AUSENTES_NO_RESUMO if tipo == TipoSecao.PERFIL else ""
+
+
 _PROMPT_SISTEMA = """\
 Você é um especialista em redação de currículos (resume writer) que ajuda \
 candidatos a adaptar seu currículo para vagas específicas, SEM jamais \
@@ -155,6 +169,8 @@ class AjustadorTextoClient(AjustadorTextoPort):
         analise_vaga = contexto.analise_vaga
         instrucao_especifica = _instrucao_da_secao(secao.tipo, idioma_alvo, ajustes, itens_permitidos)
         nome_idioma = _NOME_IDIOMA.get(idioma_alvo, idioma_alvo)
+        instrucao_tecnologias_da_vaga = _instrucao_de_tecnologias_da_vaga(secao.tipo)
+        bloco_tecnologias_da_vaga = f"{instrucao_tecnologias_da_vaga}\n\n" if instrucao_tecnologias_da_vaga else ""
 
         requisitos_explicitos = [
             requisito.nome for requisito in analise_vaga.requisitos
@@ -178,6 +194,7 @@ class AjustadorTextoClient(AjustadorTextoPort):
             f"- Trechos ambíguos: {', '.join(ambiguidade) or 'nenhum'}\n\n"
             f"Idioma de saída obrigatório: {nome_idioma}\n\n"
             f"Instrução específica para esta seção: {instrucao_especifica}\n\n"
+            f"{bloco_tecnologias_da_vaga}"
             "Não inclua idiomas (ex.: inglês, espanhol, português) como se fossem tecnologias, "
             "mesmo que apareçam nos requisitos explícitos ou implícitos — idiomas pertencem a "
             "outra seção do currículo e devem ser ignorados aqui, independentemente da seção "

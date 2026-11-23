@@ -105,3 +105,19 @@ Sem novos logs. O log de adaptação existente do serviço basta.
 - `src/jobsync/curriculo/domain/contexto_vaga.py`
 - `src/jobsync/tests/curriculo/test_ajustador_texto_client.py`
 - `sdd/specs/recrutamento/geracao-de-curriculo/job-0037-aderencia-de-experiencias-e-resumo-a-vaga/`
+
+## Atualização após a avaliação manual
+
+A avaliação com a vaga Forward Deployed Engineer Sênior reprovou a primeira redação da regra (PRD, "Resultado da primeira avaliação manual"). A task 3.0 ajusta a constante `REGRA_RESUMO_ADERENTE_A_VAGA` para:
+
+- limite de 60 palavras, em um parágrafo de até 3 frases (o limite de frases sozinho foi contornado com frases longas);
+- proibição de listas de termos, ponto e vírgula e referências à vaga ou à oportunidade;
+- no máximo 3 temas da vaga, escritos como ações do candidato;
+- o cargo-alvo como eixo, sem declarar como título um cargo que o candidato não exerceu;
+- omissão de tema sem sustentação no histórico.
+
+Risco novo: o foco "palavras-chave" do refino (`_FOCOS` em `prompt_refino.py`) pede "os termos exatos da vaga" e pode conflitar com "não copie trechos da vaga" no resumo. A task 3.0 fixa isso com teste e, se preciso, restringe o foco no Perfil.
+
+Se a nova avaliação ainda mostrar cópia ou excesso de tamanho, reabrir a decisão "só prompt" e avaliar um verificador de tamanho e sobreposição (alternativa já registrada em "Decisões Principais").
+
+Causa adicional (task 3.0): `_solicitar` incluía em todas as seções a ordem "inclua todas as tecnologias da análise de vaga, mesmo que não estejam no conteúdo original". No Perfil isso induzia a lista de termos. O Perfil agora recebe uma instrução oposta (`_instrucao_de_tecnologias_da_vaga`); as outras seções não mudam.

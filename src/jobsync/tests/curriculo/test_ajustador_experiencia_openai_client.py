@@ -56,9 +56,11 @@ def _analise() -> AnaliseVaga:
     )
 
 
-def _original(descricao: str = "Fiz APIs em Java.") -> ExperienciaParaAvaliacao:
+def _original(
+    descricao: str = "Fiz APIs em Java.", conquistas: tuple[str, ...] = ()
+) -> ExperienciaParaAvaliacao:
     return ExperienciaParaAvaliacao(
-        cargo="Dev", empresa="TechCorp", periodo="2022 - Atual", descricao=descricao
+        cargo="Dev", empresa="TechCorp", periodo="2022 - Atual", descricao=descricao, conquistas=conquistas
     )
 
 
@@ -87,9 +89,10 @@ def _ajustar(
     idioma: str = "pt",
     cargo_alvo: str = "",
     diretrizes: DiretrizesExperiencia | None = None,
+    conquistas: tuple[str, ...] = (),
 ):
     return AjustadorExperienciaOpenAIClient(cliente).ajustar(
-        experiencia=_original(descricao),
+        experiencia=_original(descricao, conquistas),
         contexto=_contexto(idioma, cargo_alvo),
         diretrizes=diretrizes or DiretrizesExperiencia(),
     )
@@ -300,3 +303,78 @@ class TestAjustadorExperienciaOpenAIClientRefino:
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
         assert "Foco desta versão: aderência à vaga" in usuario
         assert "Não repita" not in usuario
+
+
+CONQUISTAS_DO_BANCO = (
+    "Reduzi o tempo de deploy com pipeline automatizado.",
+    "Atuei com o cliente na entrega de um MVP.",
+    "Liderei a migração do banco de dados.",
+)
+
+
+class TestAjustadorExperienciaOpenAIClientConquistasDoBanco:
+    def test_prompt_do_usuario_traz_as_conquistas_cadastradas(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, conquistas=CONQUISTAS_DO_BANCO)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Conquistas cadastradas pelo usuário" in usuario
+        assert all(f"- {conquista}" in usuario for conquista in CONQUISTAS_DO_BANCO)
+        assert "Fiz APIs em Java." in usuario
+
+    def test_prompt_do_usuario_pede_de_3_a_5_conquistas_as_mais_aderentes_a_vaga(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, conquistas=CONQUISTAS_DO_BANCO)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Escolha de 3 a 5 delas" in usuario
+        assert "as mais aderentes à vaga e ao cargo-alvo" in usuario
+        assert "com a mais relevante primeiro" in usuario
+        assert "substitui a de 2 a 6 conquistas" in usuario
+
+    def test_prompt_do_usuario_proibe_acrescentar_fato_e_prevalece_sobre_metricas_estimadas(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, conquistas=CONQUISTAS_DO_BANCO)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "sem acrescentar fato, número, resultado, tecnologia ou prática que a conquista não tenha" in usuario
+        assert "prevalece sobre a permissão de propor métricas" in usuario
+
+    def test_prompt_do_usuario_trata_menos_de_3_conquistas_e_conquistas_sem_relacao_com_a_vaga(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente, conquistas=CONQUISTAS_DO_BANCO[:1])
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Se houver menos de 3 conquistas cadastradas, use todas" in usuario
+        assert "complete as demais a partir da descrição original" in usuario
+        assert "escolha as 3 mais próximas, sem forçar uma relação inexistente" in usuario
+
+    def test_sem_conquistas_cadastradas_o_prompt_nao_traz_o_bloco_nem_a_regra(self):
+        cliente = _cliente(RESPOSTA)
+
+        _ajustar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Conquistas cadastradas pelo usuário" not in usuario
+        assert "Escolha de 3 a 5 delas" not in usuario
+
+    def test_conquistas_sem_descricao_chamam_a_ia(self):
+        cliente = _cliente(RESPOSTA)
+
+        resultado = _ajustar(cliente, descricao="  ", conquistas=CONQUISTAS_DO_BANCO)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Descrição original: (não informada)" in usuario
+        assert resultado.conquistas == tuple(RESPOSTA["conquistas"])
+
+    def test_refinar_nao_traz_o_bloco_de_conquistas_cadastradas(self):
+        cliente = _cliente(RESPOSTA)
+
+        _refinar(cliente)
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Conquistas cadastradas pelo usuário" not in usuario

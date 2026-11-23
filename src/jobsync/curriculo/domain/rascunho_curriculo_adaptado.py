@@ -14,15 +14,20 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from jobsync.curriculo.domain.competencias import CategoriaCompetencia, categorias_para_texto
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.domain.equivalencia_tecnologia import AjusteTecnologia
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
 from jobsync.curriculo.domain.rotulos_experiencia import rotulo_contexto
 
 TITULO_EXPERIENCIAS_PADRAO = "Experiências"
+TITULO_COMPETENCIAS_PADRAO = "Tecnologias"
 
 ExperienciaEditada = tuple[str, str, str, Iterable[str], str]
 """Experiência como o usuário a editou: cargo, empresa, período, conquistas e contexto."""
+
+CategoriaEditada = tuple[str, Iterable[str]]
+"""Categoria de competências como o usuário a editou: nome e tags."""
 
 
 def _preenchido(valor: str) -> bool:
@@ -39,19 +44,28 @@ class RascunhoCurriculoAdaptado:
     secoes: tuple[SecaoCurriculo, ...]
     experiencias: tuple[ExperienciaAdaptada, ...] | None = None
     titulo_experiencias: str = TITULO_EXPERIENCIAS_PADRAO
+    competencias: tuple[CategoriaCompetencia, ...] | None = None
+    """Competências por categoria e tag; exclusivas com a seção de texto de tecnologias."""
+    titulo_competencias: str = TITULO_COMPETENCIAS_PADRAO
     ajustes_tecnologia: tuple[AjusteTecnologia, ...] = ()
     """Trocas de tecnologia que a IA fez nas experiências, para o usuário conferir na revisão."""
 
     def __post_init__(self) -> None:
         if not _preenchido(self.nome_completo):
             raise ValueError("O nome completo do candidato é obrigatório.")
-        if not self.secoes and not self.experiencias:
+        if not self.secoes and not self.experiencias and not self.competencias:
             raise ValueError("O currículo precisa de ao menos uma seção com conteúdo.")
         if self.experiencias is not None and any(
             secao.tipo == TipoSecao.EXPERIENCIAS for secao in self.secoes
         ):
             raise ValueError(
                 "As experiências devem vir estruturadas ou como seção de texto, não ambos."
+            )
+        if self.competencias is not None and any(
+            secao.tipo == TipoSecao.TECNOLOGIAS for secao in self.secoes
+        ):
+            raise ValueError(
+                "As competências devem vir por categoria ou como seção de texto, não ambas."
             )
         quantidade_experiencias = len(self.experiencias or ())
         if any(
@@ -69,6 +83,8 @@ class RascunhoCurriculoAdaptado:
         secoes: Iterable[tuple[TipoSecao, str, str]],
         experiencias: Iterable[ExperienciaEditada] | None,
         titulo_experiencias: str = TITULO_EXPERIENCIAS_PADRAO,
+        competencias: Iterable[CategoriaEditada] | None = None,
+        titulo_competencias: str = TITULO_COMPETENCIAS_PADRAO,
     ) -> RascunhoCurriculoAdaptado:
         """Monta o rascunho editado pelo usuário, descartando trechos deixados em branco."""
         return cls(
@@ -90,6 +106,16 @@ class RascunhoCurriculoAdaptado:
                 )
             ),
             titulo_experiencias=titulo_experiencias,
+            competencias=(
+                None
+                if competencias is None
+                else tuple(
+                    categoria
+                    for nome, tags in competencias
+                    if (categoria := CategoriaCompetencia.revisada(nome, tags)) is not None
+                )
+            ),
+            titulo_competencias=titulo_competencias,
         )
 
     def para_curriculo(self, idioma_alvo: str) -> Curriculo:
@@ -107,6 +133,14 @@ class RascunhoCurriculoAdaptado:
                     conteudo="\n\n".join(
                         experiencia.para_texto(rotulo) for experiencia in self.experiencias
                     ),
+                ),
+            )
+        if self.competencias:
+            secoes = secoes + (
+                SecaoCurriculo(
+                    tipo=TipoSecao.TECNOLOGIAS,
+                    titulo=self.titulo_competencias,
+                    conteudo=categorias_para_texto(self.competencias),
                 ),
             )
         return Curriculo(

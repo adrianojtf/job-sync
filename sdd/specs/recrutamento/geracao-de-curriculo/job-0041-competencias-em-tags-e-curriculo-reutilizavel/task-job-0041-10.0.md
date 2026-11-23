@@ -17,12 +17,12 @@ Lista os currículos adaptados como fonte em "Ajustar para uma vaga". A adaptaç
 
 ## Subtarefas
 
-- [ ] 10.1 Testes do backend (red): fonte `curriculo_adaptado_id`, exatamente uma fonte, original intacto, 404 de outro perfil.
-- [ ] 10.2 Testes de `fonte-curriculo` e `AjustarVagaPage` com a fonte `adaptado` (red).
-- [ ] 10.3 Alterar schema, DTO e router de adaptação (green).
-- [ ] 10.4 Alterar `fonte-curriculo.ts` e `SeletorFonteCurriculo` (green).
-- [ ] 10.5 Escrever o E2E Playwright do fluxo completo.
-- [ ] 10.6 Rodar a suíte completa de backend, frontend e E2E; atualizar README e Postman se citarem as fontes.
+- [x] 10.1 Testes do backend (red): fonte `curriculo_adaptado_id`, exatamente uma fonte, original intacto, 404 de outro perfil.
+- [x] 10.2 Testes de `fonte-curriculo` e `AjustarVagaPage` com a fonte `adaptado` (red).
+- [x] 10.3 Alterar schema, DTO e router de adaptação (green).
+- [x] 10.4 Alterar `fonte-curriculo.ts` e `SeletorFonteCurriculo` (green).
+- [x] 10.5 Escrever o E2E Playwright do fluxo completo.
+- [x] 10.6 Rodar a suíte completa de backend, frontend e E2E; atualizar README e Postman se citarem as fontes.
 
 ## Detalhes de Implementação
 
@@ -36,9 +36,9 @@ Techspec: "Endpoints de API", "Riscos Conhecidos" e "Abordagem de Testes" (servi
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade do backend e do frontend.
-- [ ] E2E Playwright do fluxo completo.
-- [ ] Regressão completa: `pytest` e `npm test` no frontend.
+- [x] Testes de unidade do backend e do frontend.
+- [x] E2E Playwright do fluxo completo.
+- [x] Regressão completa: `pytest`, `npm test` e a suíte E2E.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

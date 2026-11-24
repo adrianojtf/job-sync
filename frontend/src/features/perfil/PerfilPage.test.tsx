@@ -88,7 +88,7 @@ describe("PerfilPage", () => {
     expect(await screen.findByLabelText("Nome completo")).toHaveValue("Adriano Teixeira");
     const experiencia = screen.getByRole("group", { name: "Experiência 1" });
     expect(within(experiencia).getByLabelText("Empresa")).toHaveValue("Neoway");
-    expect(screen.getByLabelText("Tecnologias")).toHaveValue("Java");
+    expect(screen.getByRole("list", { name: "Tags de tecnologias" })).toHaveTextContent("Java");
   });
 
   it("adiciona e remove itens e salva um perfil novo com POST", async () => {
@@ -107,10 +107,10 @@ describe("PerfilPage", () => {
     const idioma = screen.getByRole("group", { name: "Idioma 1" });
     await userEvent.type(within(idioma).getByLabelText("Idioma"), "Inglês");
     await userEvent.selectOptions(within(idioma).getByLabelText("Nível"), "FLUENTE");
-    await userEvent.type(screen.getByLabelText("Tecnologias"), "Python, FastAPI");
+    await userEvent.type(screen.getByLabelText("Nova tecnologia"), "Python, FastAPI{Enter}");
     await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("Perfil salvo.");
+    expect(await screen.findByText("Perfil salvo.")).toBeInTheDocument();
     expect(envios).toEqual([
       {
         metodo: "POST",
@@ -702,10 +702,12 @@ describe("PerfilPage — quatro blocos por experiência", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Perfil salvo. Tecnologias incluídas pelas skills: SQL.",
-    );
-    expect(screen.getByLabelText("Tecnologias")).toHaveValue("Java, SQL");
+    expect(
+      await screen.findByText("Perfil salvo. Tecnologias incluídas pelas skills: SQL."),
+    ).toBeInTheDocument();
+    const tecnologias = screen.getByRole("list", { name: "Tags de tecnologias" });
+    expect(tecnologias).toHaveTextContent("Java");
+    expect(tecnologias).toHaveTextContent("SQL");
   });
 
   it("aplica a sugestão de IA nos quatro blocos de uma vez", async () => {

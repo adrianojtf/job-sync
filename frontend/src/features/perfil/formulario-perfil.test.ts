@@ -39,10 +39,10 @@ describe("perfilParaFormulario", () => {
 
     expect(formulario.nome_completo).toBe("");
     expect(formulario.experiencias).toEqual([]);
-    expect(formulario.tecnologias).toBe("");
+    expect(formulario.tecnologias).toEqual([]);
   });
 
-  it("copia os dados do perfil e junta as tecnologias com vírgula", () => {
+  it("copia os dados do perfil e as tecnologias, na mesma ordem", () => {
     const formulario = perfilParaFormulario(perfil);
 
     expect(formulario.nome_completo).toBe("Adriano Teixeira");
@@ -59,12 +59,12 @@ describe("perfilParaFormulario", () => {
       },
     ]);
     expect(formulario.idiomas).toEqual([{ idioma: "Inglês", nivel: "AVANCADO" }]);
-    expect(formulario.tecnologias).toBe("Java, AWS");
+    expect(formulario.tecnologias).toEqual(["Java", "AWS"]);
   });
 });
 
 describe("formularioParaEntrada", () => {
-  it("monta a entrada da API com o identificador, textos aparados e tecnologias em lista", () => {
+  it("monta a entrada da API com o identificador, textos aparados e tecnologias sem itens vazios", () => {
     const formulario: FormularioPerfil = {
       ...perfilParaFormulario(perfil),
       nome_completo: "  Adriano Teixeira ",
@@ -80,7 +80,7 @@ describe("formularioParaEntrada", () => {
           skills: [],
         },
       ],
-      tecnologias: " Java,  AWS ,, Kafka ,",
+      tecnologias: [" Java", "AWS ", "", "Kafka"],
     };
 
     const entrada = formularioParaEntrada(formulario, "adriano");

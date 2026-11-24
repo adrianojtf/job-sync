@@ -16,9 +16,9 @@ As tecnologias gerais deixam de ser um texto separado por vírgula e passam a se
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever os testes do componente e das conversões (red).
-- [ ] 6.2 Implementar `ListaDeTecnologias` e ajustar `formulario-perfil.ts` (green).
-- [ ] 6.3 Refatorar e rodar `npm test`.
+- [x] 6.1 Escrever os testes do componente e das conversões (red).
+- [x] 6.2 Implementar `ListaDeTecnologias` e ajustar `formulario-perfil.ts` (green).
+- [x] 6.3 Refatorar e rodar `npm test`.
 
 ## Detalhes de Implementação
 
@@ -33,8 +33,8 @@ Complexidade: medium. Dependências: 3.0.
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `ListaDeTecnologias` e de `formulario-perfil`.
-- [ ] Regressão: `npm test`.
+- [x] Vitest de `ListaDeTecnologias` e de `formulario-perfil`.
+- [x] Regressão: `npm test`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

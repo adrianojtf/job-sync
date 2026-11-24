@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import type { ExperienciaParaIA, PerfilEstruturado } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
 import { CAMPOS_IDENTIFICACAO_EXPERIENCIA } from "../../shared/formulario-curriculo/campos-curriculo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
+import { ListaDeTecnologias } from "../../shared/formulario-curriculo/ListaDeTecnologias";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
+import { useHistoricoDoFormulario } from "../../shared/formulario-curriculo/use-historico-do-formulario";
 import { useSugestoes } from "../../shared/formulario-curriculo/use-sugestoes";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
-import { Field } from "../../shared/ui/Field";
-import { Panel } from "../../shared/ui/Panel";
 import { useToast } from "../../shared/ui/use-toast";
 import { AvaliarExperienciaModal } from "./AvaliarExperienciaModal";
 import { BlocosDaExperiencia } from "./BlocosDaExperiencia";
@@ -73,6 +73,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
   const [importando, setImportando] = useState(false);
   const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaParaIA | null>(null);
   const [revisarEstimativas, setRevisarEstimativas] = useState(false);
+  const historico = useHistoricoDoFormulario(form);
   const migrar = useMigrarExperiencias();
   const experiencias = useWatch({ control: form.control, name: "experiencias" });
   const { isDirty } = form.formState;
@@ -218,13 +219,17 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           ]}
         />
 
-        <Panel titulo="Tecnologias e ferramentas">
-          <Field
-            rotulo="Tecnologias"
-            ajuda="Separe por vírgula. Ex.: Java, Spring Boot, AWS"
-            {...form.register("tecnologias")}
-          />
-        </Panel>
+        <Controller
+          control={form.control}
+          name="tecnologias"
+          render={({ field }) => (
+            <ListaDeTecnologias
+              valor={field.value}
+              aoMudar={field.onChange}
+              historico={historico}
+            />
+          )}
+        />
 
         <div className={estilos.rodape}>
           {isDirty && <span className={estilos.pendente}>Alterações não salvas</span>}

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from jobsync.entrypoints.api.schemas.avaliacao import (
     ResultadoDimensaoAvaliacaoResponse,
@@ -14,6 +14,7 @@ from jobsync.vaga import (
     AnaliseVaga,
     AvaliacaoDescricaoVaga,
     CategoriaRequisitoTecnico,
+    DadosVaga,
     OrigemRequisitoTecnico,
     RequisitoTecnico,
     TipoRequisitoTecnico,
@@ -23,6 +24,7 @@ from jobsync.vaga.service_layer.avaliar_descricao_vaga.dtos import (
     AvaliarDescricaoVagaInputDto,
 )
 from jobsync.vaga.service_layer.capturar_vaga.dtos import CapturarVagaInputDto
+from jobsync.vaga.service_layer.extrair_dados_vaga.dtos import ExtrairDadosVagaInputDto
 
 
 class VagaCapturarRequest(BaseModel):
@@ -44,12 +46,18 @@ class VagaCapturarRequest(BaseModel):
         default=None,
         description="URL de origem da vaga, quando disponível.",
     )
+    cargo: str | None = Field(default=None, max_length=200, description="Título da vaga, quando identificado.")
+    empresa: str | None = Field(default=None, max_length=200, description="Empresa que contrata, quando identificada.")
+    local: str | None = Field(default=None, max_length=200, description="Local ou modalidade, quando identificado.")
 
     def to_dto(self) -> CapturarVagaInputDto:
         return CapturarVagaInputDto(
             perfil_identificador=self.perfil_identificador,
             texto_descricao=self.texto_descricao,
             url_origem=self.url_origem,
+            cargo=self.cargo,
+            empresa=self.empresa,
+            local=self.local,
         )
 
 
@@ -64,6 +72,9 @@ class VagaResponse(BaseModel):
         default=None,
         description="URL de origem da vaga, quando disponível.",
     )
+    cargo: str | None = Field(default=None, description="Título da vaga, quando foi identificado.")
+    empresa: str | None = Field(default=None, description="Empresa que contrata, quando foi identificada.")
+    local: str | None = Field(default=None, description="Local ou modalidade, quando foi identificado.")
 
     @classmethod
     def from_dto(cls, dto: Vaga) -> VagaResponse:
@@ -73,6 +84,9 @@ class VagaResponse(BaseModel):
             texto_descricao=dto.texto_descricao,
             data_captura=dto.data_captura,
             url_origem=dto.url_origem,
+            cargo=dto.cargo,
+            empresa=dto.empresa,
+            local=dto.local,
         )
 
 
@@ -239,4 +253,60 @@ class AnaliseVagaSchema(BaseModel):
             ),
             ambiguidade=tuple(self.ambiguidade),
             texto_original=self.texto_original,
+        )
+
+
+class ExtracaoVagaRequest(BaseModel):
+    """Payload para ler os dados de uma vaga a partir do link ou do texto, sem persistir nada."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"url": "https://www.linkedin.com/jobs/view/4484559483/"},
+        }
+    )
+
+    url: str | None = Field(
+        default=None,
+        max_length=2048,
+        description="Link da vaga. O LinkedIn é lido pela versão pública da vaga.",
+    )
+    texto: str | None = Field(
+        default=None,
+        max_length=50_000,
+        description="Texto da vaga. Quando informado junto com o link, o texto tem prioridade.",
+    )
+
+    @model_validator(mode="after")
+    def exigir_link_ou_texto(self) -> "ExtracaoVagaRequest":
+        if not (self.url and self.url.strip()) and not (self.texto and self.texto.strip()):
+            raise ValueError("Informe o link da vaga ou o texto da vaga.")
+        return self
+
+    def to_dto(self, usuario_id: str) -> ExtrairDadosVagaInputDto:
+        return ExtrairDadosVagaInputDto(usuario_id=usuario_id, url=self.url, texto=self.texto)
+
+
+class DadosVagaResponse(BaseModel):
+    """Rascunho dos dados da vaga lidos do link ou do texto, para a pessoa revisar."""
+
+    cargo: str | None = Field(default=None, description="Título da vaga, quando identificado.")
+    empresa: str | None = Field(default=None, description="Empresa que contrata, quando identificada.")
+    local: str | None = Field(default=None, description="Local ou modalidade da vaga, quando identificado.")
+    descricao: str = Field(description="Descrição original da vaga, sem resumo.")
+    url: str | None = Field(default=None, description="Link da vaga, normalizado e sem rastreamento.")
+    tipo_contratacao: str | None = Field(default=None, description="Tipo de contratação, quando informado.")
+    senioridade: str | None = Field(default=None, description="Senioridade, quando informada.")
+    setor: str | None = Field(default=None, description="Setor da empresa, quando informado.")
+
+    @classmethod
+    def from_domain(cls, dados: DadosVaga) -> "DadosVagaResponse":
+        return cls(
+            cargo=dados.cargo,
+            empresa=dados.empresa,
+            local=dados.local,
+            descricao=dados.descricao,
+            url=dados.url,
+            tipo_contratacao=dados.tipo_contratacao,
+            senioridade=dados.senioridade,
+            setor=dados.setor,
         )

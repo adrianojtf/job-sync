@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export const SAUDACAO = /^(Bom dia|Boa tarde|Boa noite), /;
@@ -195,4 +196,18 @@ export async function abrirExperiencia(page: Page, numero: number) {
   if (!jaAberto) await cartao.getByRole("button", { name: /^Editar / }).click();
   await expect(cartao.getByLabel("Empresa")).toBeVisible();
   return cartao;
+}
+
+/** Falha só com violações "serious" ou "critical" (WCAG 2.1 A/AA), como define a tarefa 10.0. */
+export async function violacoesGraves(page: Page) {
+  const resultado = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  return resultado.violations
+    .filter((violacao) => violacao.impact === "serious" || violacao.impact === "critical")
+    .map((violacao) => ({
+      regra: violacao.id,
+      impacto: violacao.impact,
+      elementos: violacao.nodes.map((no) => no.target.join(" ")),
+    }));
 }

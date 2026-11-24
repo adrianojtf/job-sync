@@ -343,6 +343,53 @@ describe("HttpApiClient", () => {
     expect(avaliacao.score).toBe(80);
   });
 
+  it("extrai os dados da vaga pela rota de extrações, com o timeout longo", async () => {
+    let corpo: unknown = null;
+    servidorApi.use(
+      http.post(`${BASE}/v1/vagas/extracoes`, async ({ request }) => {
+        corpo = await request.json();
+        await delay(100);
+        return HttpResponse.json({ cargo: "Dev", descricao: "Vaga." });
+      }),
+    );
+
+    const dados = await criarCliente({ timeoutPadraoMs: 20, timeoutIaMs: 2000 }).extrairDadosVaga({
+      url: "https://www.linkedin.com/jobs/view/4484559483/",
+    });
+
+    expect(dados).toEqual({ cargo: "Dev", descricao: "Vaga." });
+    expect(corpo).toEqual({ url: "https://www.linkedin.com/jobs/view/4484559483/" });
+  });
+
+  it("converte a falha de leitura da vaga em ApiError com o detalhe orientando a colar o texto", async () => {
+    servidorApi.use(
+      http.post(`${BASE}/v1/vagas/extracoes`, () =>
+        HttpResponse.json(
+          {
+            type: "https://jobsync.com/erros/leitura-vaga-indisponivel",
+            title: "Leitura da vaga indisponível",
+            status: 502,
+            detail:
+              "O site não permitiu a leitura desta vaga. Cole o texto da vaga para continuar.",
+            instance: `${BASE}/v1/vagas/extracoes`,
+          },
+          { status: 502 },
+        ),
+      ),
+    );
+
+    const erro = await criarCliente()
+      .extrairDadosVaga({ texto: "Vaga" })
+      .catch((falha: unknown) => falha);
+
+    expect(erro).toBeInstanceOf(ApiError);
+    expect(erro).toMatchObject({
+      status: 502,
+      title: "Leitura da vaga indisponível",
+      message: "O site não permitiu a leitura desta vaga. Cole o texto da vaga para continuar.",
+    });
+  });
+
   it("gera o rascunho adaptado pela rota de IA, sem PDF", async () => {
     let caminho = "";
     servidorApi.use(

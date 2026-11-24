@@ -638,6 +638,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/vagas/extracoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Extrair dados de vaga
+         * @description Lê cargo, empresa, local e descrição de uma vaga a partir do link ou do texto e devolve um rascunho para revisão. Nada é salvo. Quando link e texto são informados juntos, o texto tem prioridade. Se o link não puder ser lido, a resposta orienta a colar o texto da vaga.
+         */
+        post: operations["extrair_dados_vaga_v1_vagas_extracoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vagas/descobrir": {
         parameters: {
             query?: never;
@@ -2076,6 +2096,52 @@ export interface components {
             total: number;
         };
         /**
+         * DadosVagaResponse
+         * @description Rascunho dos dados da vaga lidos do link ou do texto, para a pessoa revisar.
+         */
+        DadosVagaResponse: {
+            /**
+             * Cargo
+             * @description Título da vaga, quando identificado.
+             */
+            cargo?: string | null;
+            /**
+             * Empresa
+             * @description Empresa que contrata, quando identificada.
+             */
+            empresa?: string | null;
+            /**
+             * Local
+             * @description Local ou modalidade da vaga, quando identificado.
+             */
+            local?: string | null;
+            /**
+             * Descricao
+             * @description Descrição original da vaga, sem resumo.
+             */
+            descricao: string;
+            /**
+             * Url
+             * @description Link da vaga, normalizado e sem rastreamento.
+             */
+            url?: string | null;
+            /**
+             * Tipo Contratacao
+             * @description Tipo de contratação, quando informado.
+             */
+            tipo_contratacao?: string | null;
+            /**
+             * Senioridade
+             * @description Senioridade, quando informada.
+             */
+            senioridade?: string | null;
+            /**
+             * Setor
+             * @description Setor da empresa, quando informado.
+             */
+            setor?: string | null;
+        };
+        /**
          * DescobrirVagasRequest
          * @description Payload para descobrir vagas externas com cálculo de match.
          * @example {
@@ -2336,6 +2402,25 @@ export interface components {
              * @description Skills e tecnologias da experiência.
              */
             skills?: string[];
+        };
+        /**
+         * ExtracaoVagaRequest
+         * @description Payload para ler os dados de uma vaga a partir do link ou do texto, sem persistir nada.
+         * @example {
+         *       "url": "https://www.linkedin.com/jobs/view/4484559483/"
+         *     }
+         */
+        ExtracaoVagaRequest: {
+            /**
+             * Url
+             * @description Link da vaga. O LinkedIn é lido pela versão pública da vaga.
+             */
+            url?: string | null;
+            /**
+             * Texto
+             * @description Texto da vaga. Quando informado junto com o link, o texto tem prioridade.
+             */
+            texto?: string | null;
         };
         /**
          * FocoRefino
@@ -3297,6 +3382,21 @@ export interface components {
              * @description URL de origem da vaga, quando disponível.
              */
             url_origem?: string | null;
+            /**
+             * Cargo
+             * @description Título da vaga, quando identificado.
+             */
+            cargo?: string | null;
+            /**
+             * Empresa
+             * @description Empresa que contrata, quando identificada.
+             */
+            empresa?: string | null;
+            /**
+             * Local
+             * @description Local ou modalidade, quando identificado.
+             */
+            local?: string | null;
         };
         /**
          * VagaDescobertaRequest
@@ -3419,6 +3519,21 @@ export interface components {
              * @description URL de origem da vaga, quando disponível.
              */
             url_origem?: string | null;
+            /**
+             * Cargo
+             * @description Título da vaga, quando foi identificado.
+             */
+            cargo?: string | null;
+            /**
+             * Empresa
+             * @description Empresa que contrata, quando foi identificada.
+             */
+            empresa?: string | null;
+            /**
+             * Local
+             * @description Local ou modalidade, quando foi identificado.
+             */
+            local?: string | null;
         };
         /**
          * VagasListagemResponse
@@ -4758,6 +4873,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extrair_dados_vaga_v1_vagas_extracoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtracaoVagaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DadosVagaResponse"];
+                };
+            };
+            /** @description Link inválido, fonte não suportada ou nenhum dado informado. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description Limite de leituras atingido; veja o cabeçalho `Retry-After`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
+                };
+            };
+            /** @description O site da vaga bloqueou a leitura, a vaga não existe ou não foi possível acessá-la. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaResponse"];
                 };
             };
         };

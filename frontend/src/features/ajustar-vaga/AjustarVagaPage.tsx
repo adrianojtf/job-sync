@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type {
   AdaptarCurriculoEntrada,
   CurriculoAdaptadoPdf,
+  DadosVaga,
   Lacuna,
   RascunhoAdaptado,
   RascunhoCurriculoAdaptado,
@@ -11,6 +12,9 @@ import type {
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { AvisoAlteracoesNaoSalvas } from "../../shared/formulario-curriculo/AvisoAlteracoesNaoSalvas";
 import { base64ParaBlob, baixarArquivo } from "../../shared/arquivos/arquivos";
+import { CampoLinkVaga } from "../../shared/leitura-de-vaga/CampoLinkVaga";
+import { PreencherPeloTexto } from "../../shared/leitura-de-vaga/PreencherPeloTexto";
+import type { CampoIdentificacao } from "../../shared/leitura-de-vaga/resumo-da-leitura";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
@@ -53,6 +57,8 @@ const IDIOMAS = [
   { valor: "en", rotulo: "Inglês" },
 ];
 const AVISO_DEMORA = "pode levar até 1 minuto";
+/** Campos de identificação desta tela: a leitura da vaga avisa o que preencheu entre eles. */
+const CAMPOS_LIDOS: CampoIdentificacao[] = ["cargo", "empresa"];
 const obrigatorio = (mensagem: string) => ({
   validate: (valor: string) => valor.trim() !== "" || mensagem,
 });
@@ -102,6 +108,16 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
     },
   });
   const { errors, isDirty } = form.formState;
+  const [linkDaVaga, setLinkDaVaga] = useState("");
+  const descricaoDigitada = useWatch({ control: form.control, name: "descricao" });
+  // A leitura da vaga (link ou texto) é um rascunho: preenche o que encontrou e mantém o que a
+  // pessoa já digitou quando não encontra título ou empresa. Os campos seguem editáveis.
+  const preencherComDadosLidos = (dados: DadosVaga) => {
+    const opcoes = { shouldDirty: true, shouldValidate: true };
+    if (dados.cargo) form.setValue("cargo", dados.cargo, opcoes);
+    if (dados.empresa) form.setValue("empresa", dados.empresa, opcoes);
+    form.setValue("descricao", dados.descricao, opcoes);
+  };
   // O texto digitado conta como enviado depois que a IA o usou: só avisa por texto ainda não enviado.
   const marcarComoEnviado = () => form.reset(form.getValues());
 
@@ -355,6 +371,12 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
       <div className={estilos.layout}>
         <Panel titulo="Dados da vaga">
           <form noValidate onSubmit={(evento) => evento.preventDefault()}>
+            <CampoLinkVaga
+              valor={linkDaVaga}
+              aoAlterar={setLinkDaVaga}
+              aoLer={preencherComDadosLidos}
+              campos={CAMPOS_LIDOS}
+            />
             <div className={estilos.grade}>
               <Field
                 rotulo="Título da vaga"
@@ -378,6 +400,11 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
                   placeholder="Cole aqui a descrição completa da oportunidade…"
                   erro={errors.descricao?.message}
                   {...form.register("descricao", obrigatorio("Cole a descrição da vaga."))}
+                />
+                <PreencherPeloTexto
+                  texto={descricaoDigitada}
+                  aoLer={preencherComDadosLidos}
+                  campos={CAMPOS_LIDOS}
                 />
               </div>
               <Field

@@ -22,7 +22,9 @@ import type {
   CurriculoConteudo,
   CurriculoRevisado,
   CurriculoSalvo,
+  DadosVaga,
   DescobrirVagasEntrada,
+  ExtracaoVagaEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
   ConquistaRascunho,
@@ -334,6 +336,10 @@ export class HttpApiClient implements ApiClient {
 
   capturarVaga(dados: CapturarVagaEntrada): Promise<Vaga> {
     return this.requisitar("POST", "/v1/vagas", { corpo: dados });
+  }
+
+  extrairDadosVaga(dados: ExtracaoVagaEntrada): Promise<DadosVaga> {
+    return this.requisitar("POST", "/v1/vagas/extracoes", { corpo: dados, ia: true });
   }
 
   async descobrirVagas(dados: DescobrirVagasEntrada): Promise<VagaDescoberta[]> {

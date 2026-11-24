@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -110,11 +111,22 @@ from jobsync.vaga.adapters.job_description_analyzer_client import (
 from jobsync.vaga.adapters.avaliador_descricao_vaga_jev_client import (
     AvaliadorDescricaoVagaJevClient,
 )
+from jobsync.vaga.adapters.extrator_dados_vaga_ia_client import ExtratorDadosVagaIaClient
+from jobsync.vaga.adapters.leitor_vaga_generico_client import LeitorVagaGenericoClient
+from jobsync.vaga.adapters.leitor_vaga_linkedin_client import LeitorVagaLinkedInClient
+from jobsync.vaga.adapters.limitador_leitura_vaga_em_memoria import LimitadorLeituraVagaEmMemoria
+from jobsync.vaga.domain.link_vaga import FonteVaga
 from jobsync.vaga.domain.vaga_repository import VagaRepository
+from jobsync.entrypoints.leitura_vaga_config import (
+    ConfiguracaoLeituraVaga,
+    configuracao_leitura_vaga_do_ambiente,
+)
+from jobsync.shared_kernel.adapters.cliente_http_seguro import ClienteHttpSeguro
 from jobsync.shared_kernel.adapters.cliente_jev_client import ClienteJev
 from jobsync.token_captura.domain.token_captura_repository import TokenCapturaRepository
 from jobsync.token_captura.service_layer.criar_token_captura import CriarTokenCaptura
 from jobsync.vaga.service_layer.capturar_vaga import CapturarVaga
+from jobsync.vaga.service_layer.extrair_dados_vaga import ExtrairDadosVaga
 from jobsync.vaga.service_layer.avaliar_descricao_vaga import AvaliarDescricaoVaga
 from jobsync.vaga.service_layer.listar_vagas_capturadas import ListarVagasCapturadas
 from jobsync.vaga_externa.adapters.buscador_adzuna_client import BuscadorAdzunaClient
@@ -368,6 +380,41 @@ def obter_service_capturar_vaga(
 
 
 ServiceCapturarVagaDep = Annotated[CapturarVaga, Depends(obter_service_capturar_vaga)]
+
+
+@lru_cache(maxsize=1)
+def obter_configuracao_leitura_vaga() -> ConfiguracaoLeituraVaga:
+    """Configuração da leitura de vagas por link, lida do ambiente na primeira necessidade."""
+    return configuracao_leitura_vaga_do_ambiente(os.environ)
+
+
+@lru_cache(maxsize=1)
+def obter_limitador_leitura_vaga() -> LimitadorLeituraVagaEmMemoria:
+    """Limitador único por processo: ele precisa lembrar das leituras entre as requisições."""
+    configuracao = obter_configuracao_leitura_vaga()
+    return LimitadorLeituraVagaEmMemoria(
+        limite_por_minuto=configuracao.limite_por_minuto,
+        limite_por_dia=configuracao.limite_por_dia,
+    )
+
+
+def obter_service_extrair_dados_vaga() -> ExtrairDadosVaga:
+    """Monta o caso de uso que lê os dados de uma vaga a partir do link ou do texto."""
+    configuracao = obter_configuracao_leitura_vaga()
+    cliente_http = ClienteHttpSeguro(timeout_segundos=configuracao.timeout_segundos)
+    extrator_texto = ExtratorDadosVagaIaClient()
+    return ExtrairDadosVaga(
+        leitores={
+            FonteVaga.LINKEDIN: LeitorVagaLinkedInClient(cliente_http=cliente_http),
+            FonteVaga.OUTRA: LeitorVagaGenericoClient(cliente_http=cliente_http, extrator_texto=extrator_texto),
+        },
+        extrator_texto=extrator_texto,
+        limitador=obter_limitador_leitura_vaga(),
+        linkedin_habilitado=configuracao.linkedin_habilitado,
+    )
+
+
+ServiceExtrairDadosVagaDep = Annotated[ExtrairDadosVaga, Depends(obter_service_extrair_dados_vaga)]
 
 
 def obter_service_listar_vagas_capturadas(

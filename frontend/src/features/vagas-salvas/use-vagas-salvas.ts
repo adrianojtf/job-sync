@@ -13,14 +13,19 @@ export function useVagasSalvas() {
   return useQuery({ queryKey: chaveVagas(perfil), queryFn: () => api.listarVagas(perfil) });
 }
 
-/** RF8.2 — registra uma vaga colada manualmente. */
+/** RF8.2 — registra uma vaga colada manualmente, ou lida de um link (JOB-0047). */
 export function useColarVaga() {
   const api = useApiClient();
   const perfil = usePerfilAtivo();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dados: { texto_descricao: string; url_origem: string | null }) =>
-      api.capturarVaga({ perfil_identificador: perfil, ...dados }),
+    mutationFn: (dados: {
+      texto_descricao: string;
+      url_origem: string | null;
+      cargo?: string;
+      empresa?: string;
+      local?: string;
+    }) => api.capturarVaga({ perfil_identificador: perfil, ...dados }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chaveVagas(perfil) }),
   });
 }

@@ -251,6 +251,44 @@ indisponível, o fluxo prossegue e sinaliza as avaliações como `indisponivel`.
 Limitações: a dimensão `consistencia_textual` mede apenas coerência e
 sustentação interna do texto — não é verificação factual externa.
 
+## Leitura de vaga por link (JOB-0047)
+
+As telas "Ajustar para uma vaga" e "Colar vaga" (vagas salvas) têm o campo **Link da vaga**. A pessoa
+cola o link, clica em "Ler vaga" e o sistema preenche título, empresa, local (na captura) e descrição.
+O resultado é um **rascunho**: nada é salvo até a pessoa confirmar, e os campos seguem editáveis.
+
+| Fonte | Como é lida |
+|---|---|
+| LinkedIn | Versão pública da vaga (a que um visitante sem login vê). Aceita links diretos (`/jobs/view/...`) e de busca com `currentJobId`. |
+| Gupy, Greenhouse, Lever e páginas de carreira | Dados estruturados `JobPosting` (JSON-LD). Sem eles, o texto da página vai para a IA identificar os campos. |
+| Texto colado | A IA identifica cargo, empresa e demais campos; a descrição é o texto original, sem resumo. |
+
+O link é normalizado antes de ser usado ou salvo: parâmetros de rastreamento (por exemplo, `trk` e
+`utm_*` de um e-mail do LinkedIn) saem e o link do LinkedIn vira `https://www.linkedin.com/jobs/view/<id>/`.
+
+Se o site bloquear a leitura, a vaga não existir ou a página não tiver dados, a mensagem orienta a
+**colar o texto da vaga**, e o botão "Preencher os campos pelo texto" faz o mesmo preenchimento. A leitura
+nunca impede a pessoa de concluir o fluxo.
+
+- Endpoint: `POST /v1/vagas/extracoes` com `{ "url": "...", "texto": "..." }` (pelo menos um; o texto tem
+  prioridade). Responde 200 com o rascunho, 422 (link inválido ou fonte desativada), 429 (limite de uso, com
+  `Retry-After`) ou 502 (leitura indisponível). Não persiste nada.
+- Variáveis (veja `.env.example`):
+  - `VAGA_LEITURA_LINKEDIN_HABILITADA` (padrão `true`): com `false`, links do LinkedIn pedem para colar o texto.
+  - `VAGA_LEITURA_LIMITE_POR_MINUTO` (10) e `VAGA_LEITURA_LIMITE_POR_DIA` (100): limites por pessoa, por processo da API.
+  - `VAGA_LEITURA_TIMEOUT_SEGUNDOS` (15): tempo máximo de cada leitura.
+- A captura passou a guardar `cargo`, `empresa` e `local` da vaga (colunas opcionais da migração `0005`).
+- Segurança: o servidor só acessa endereços públicos `http`/`https`. Endereços internos (`localhost`, redes
+  privadas, metadados de nuvem) são recusados em cada redirecionamento, e há limite de redirecionamentos,
+  tamanho e tempo (`shared_kernel/adapters/cliente_http_seguro.py`).
+
+**Limitações e riscos do LinkedIn.** O acesso à versão pública da vaga não é documentado pelo LinkedIn, pode
+mudar ou ser bloqueado sem aviso (resposta 429 ou desafio anti-bot, mais provável a partir de IPs de servidor),
+e os termos de uso do LinkedIn proíbem acesso automatizado. O sistema faz uma única requisição por link, não usa
+login nem cookies, não repete a requisição após um bloqueio e não tenta contorná-lo. Avalie o risco antes de manter
+a fonte ligada e acompanhe a taxa de sucesso pelos logs do logger `jobsync.vaga` (campos `fonte`, `dominio` e
+`motivo`; o conteúdo da vaga não é registrado).
+
 ## Frontend (nova interface web)
 
 A nova UI fica em `frontend/` (JOB-0015). É uma SPA em React 18 + Vite + TypeScript que consome

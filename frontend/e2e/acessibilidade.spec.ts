@@ -1,5 +1,4 @@
-import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import {
   abrirDadosPessoais,
   entrar,
@@ -7,6 +6,7 @@ import {
   novoPerfil,
   semearCandidaturas,
   semearPerfilCompleto,
+  violacoesGraves,
 } from "./apoio";
 
 const TELAS = [
@@ -20,20 +20,6 @@ const TELAS = [
   "/ajustar-vaga",
   "/analisar-ats",
 ];
-
-/** Falha só com violações "serious" ou "critical" (WCAG 2.1 A/AA), como define a tarefa 10.0. */
-async function violacoesGraves(page: Page) {
-  const resultado = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .analyze();
-  return resultado.violations
-    .filter((violacao) => violacao.impact === "serious" || violacao.impact === "critical")
-    .map((violacao) => ({
-      regra: violacao.id,
-      impacto: violacao.impact,
-      elementos: violacao.nodes.map((no) => no.target.join(" ")),
-    }));
-}
 
 test("Entrar sem violações graves", async ({ page }) => {
   await page.goto("/entrar");

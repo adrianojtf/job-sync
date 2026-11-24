@@ -22,6 +22,12 @@ from jobsync.autenticacao.domain.exceptions import (
     TokenInvalido,
 )
 from jobsync.curriculo_salvo.domain.limite_curriculos_salvos import LimiteCurriculosSalvosExcedido
+from jobsync.vaga import (
+    FonteVagaNaoSuportada,
+    LeituraVagaIndisponivel,
+    LimiteLeituraVagaExcedido,
+    LinkVagaInvalido,
+)
 from jobsync.vaga.service_layer.avaliar_descricao_vaga.exceptions import (
     AvaliacaoDescricaoVagaIndisponivel,
 )
@@ -79,6 +85,47 @@ def adicionar_handlers_excecao(app: FastAPI) -> None:
             title="Avaliação de experiência indisponível",
             detail=str(exc),
             type_slug="avaliacao-experiencia-indisponivel",
+        )
+
+    @app.exception_handler(LinkVagaInvalido)
+    async def _link_vaga_invalido_handler(request: Request, exc: LinkVagaInvalido) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            title="Link da vaga inválido",
+            detail=str(exc),
+            type_slug="link-vaga-invalido",
+        )
+
+    @app.exception_handler(FonteVagaNaoSuportada)
+    async def _fonte_vaga_nao_suportada_handler(request: Request, exc: FonteVagaNaoSuportada) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            title="Fonte de vaga não suportada",
+            detail=str(exc),
+            type_slug="fonte-vaga-nao-suportada",
+        )
+
+    @app.exception_handler(LeituraVagaIndisponivel)
+    async def _leitura_vaga_indisponivel_handler(request: Request, exc: LeituraVagaIndisponivel) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            title="Leitura da vaga indisponível",
+            detail=str(exc),
+            type_slug="leitura-vaga-indisponivel",
+        )
+
+    @app.exception_handler(LimiteLeituraVagaExcedido)
+    async def _limite_leitura_vaga_handler(request: Request, exc: LimiteLeituraVagaExcedido) -> JSONResponse:
+        return _problem_response(
+            request=request,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            title="Limite de leituras de vaga atingido",
+            detail=str(exc),
+            type_slug="limite-leitura-vaga",
+            headers={"Retry-After": str(exc.segundos_para_nova_tentativa)},
         )
 
     @app.exception_handler(SugestaoIAIndisponivel)

@@ -63,13 +63,22 @@ from jobsync.vaga import (
     AnaliseVaga,
     AvaliacaoDescricaoVaga,
     CategoriaRequisitoTecnico,
+    DadosVaga,
+    ExtratorDadosVagaDeTextoPort,
+    FonteVaga,
+    LeituraVagaIndisponivel,
+    LeitorVagaPorLinkPort,
+    LinkVaga,
+    MotivoLeituraIndisponivel,
     OrigemRequisitoTecnico,
     RequisitoTecnico,
     TipoRequisitoTecnico,
 )
+from jobsync.vaga.adapters import LimitadorLeituraVagaEmMemoria
 from jobsync.vaga.domain.avaliador_descricao_vaga_port import AvaliadorDescricaoVagaPort
 from jobsync.vaga.domain.job_description_analyzer_port import JobDescriptionAnalyzerPort
 from jobsync.vaga.service_layer.avaliar_descricao_vaga import AvaliarDescricaoVaga
+from jobsync.vaga.service_layer.extrair_dados_vaga import ExtrairDadosVaga
 from jobsync.vaga_externa import FonteVagaExterna, VagaExterna
 from jobsync.vaga_externa.domain.buscador_vagas_externo_port import BuscadorVagasExternoPort
 from jobsync.vaga_externa.service_layer.candidatar_na_vaga_externa import CandidatarNaVagaExterna
@@ -205,6 +214,50 @@ class AvaliadorDescricaoVagaE2E(AvaliadorDescricaoVagaPort):
         )
 
 
+URL_VAGA_LIDA_E2E = "https://www.linkedin.com/jobs/view/1234567890/"
+
+
+class LeitorVagaE2E(LeitorVagaPorLinkPort):
+    """Lê a vaga de um link conhecido; qualquer outro é bloqueado, como faria um site real."""
+
+    def ler(self, link: LinkVaga) -> DadosVaga:
+        if link.url != URL_VAGA_LIDA_E2E:
+            raise LeituraVagaIndisponivel(MotivoLeituraIndisponivel.BLOQUEADA)
+        return DadosVaga(
+            descricao=(
+                "Sobre a Empresa E2E\n\nConstruímos plataformas financeiras.\n\n"
+                "O que buscamos\n\n- Python\n- FastAPI"
+            ),
+            cargo="Engenheiro de Software Sênior",
+            empresa="Empresa E2E",
+            local="Brasil",
+            url=link.url,
+            tipo_contratacao="Tempo integral",
+            setor="Serviços financeiros",
+        )
+
+
+class ExtratorDadosVagaDeTextoE2E(ExtratorDadosVagaDeTextoPort):
+    """Usa a primeira linha do texto como título e uma empresa fixa."""
+
+    def extrair(self, texto: str) -> DadosVaga:
+        primeira_linha = next((linha.strip() for linha in texto.splitlines() if linha.strip()), None)
+        return DadosVaga(descricao=texto, cargo=primeira_linha, empresa="Empresa do texto E2E")
+
+
+_LIMITADOR_LEITURA_VAGA_E2E = LimitadorLeituraVagaEmMemoria(limite_por_minuto=1000, limite_por_dia=10_000)
+
+
+def _extrair_dados_vaga() -> ExtrairDadosVaga:
+    leitor = LeitorVagaE2E()
+    return ExtrairDadosVaga(
+        leitores={FonteVaga.LINKEDIN: leitor, FonteVaga.OUTRA: leitor},
+        extrator_texto=ExtratorDadosVagaDeTextoE2E(),
+        limitador=_LIMITADOR_LEITURA_VAGA_E2E,
+        linkedin_habilitado=True,
+    )
+
+
 class AvaliadorExperienciaE2E(AvaliadorExperienciaPort):
     def avaliar(self, experiencia: ExperienciaParaAvaliacao, descricao_vaga: str) -> AvaliacaoExperiencia:
         return AvaliacaoExperiencia(
@@ -265,6 +318,7 @@ def _adaptar() -> AdaptarCurriculoParaVaga:
 app.dependency_overrides.update(
     {
         dependencies.obter_service_avaliar_descricao_vaga: lambda: AvaliarDescricaoVaga(avaliador=AvaliadorDescricaoVagaE2E()),
+        dependencies.obter_service_extrair_dados_vaga: _extrair_dados_vaga,
         dependencies.obter_service_avaliar_experiencia: lambda: AvaliarExperiencia(avaliador=AvaliadorExperienciaE2E()),
         dependencies.obter_service_adaptar_curriculo: _adaptar,
         dependencies.obter_estruturador_de_experiencia: lambda: EstruturarExperienciaService(

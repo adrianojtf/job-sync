@@ -253,7 +253,8 @@ sustentação interna do texto — não é verificação factual externa.
 
 ## Leitura de vaga por link (JOB-0047)
 
-As telas "Ajustar para uma vaga" e "Colar vaga" (vagas salvas) têm o campo **Link da vaga**. A pessoa
+As telas "Ajustar para uma vaga" (a página e o modal aberto pelo botão do menu) e "Colar vaga" (vagas salvas)
+têm o campo **Link da vaga**. A pessoa
 cola o link, clica em "Ler vaga" e o sistema preenche título, empresa, local (na captura) e descrição.
 O resultado é um **rascunho**: nada é salvo até a pessoa confirmar, e os campos seguem editáveis.
 

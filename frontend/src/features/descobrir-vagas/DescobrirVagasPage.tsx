@@ -1,4 +1,5 @@
 import { useForm, useWatch } from "react-hook-form";
+import { AvisoAlteracoesNaoSalvas } from "../../shared/formulario-curriculo/AvisoAlteracoesNaoSalvas";
 import { Link } from "react-router-dom";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
@@ -73,16 +74,19 @@ function BuscaDeVagas({
       dias: "",
     },
   });
-  const { errors } = form.formState;
+  const { errors, isDirty } = form.formState;
   const semCurriculo = opcoesCurriculo.length === 0;
   const idioma = useWatch({ control: form.control, name: "idioma" });
 
   const buscar = (filtros: Filtros) =>
-    busca.mutate({
-      termo: filtros.termo.trim(),
-      curriculoId: filtros.curriculoId,
-      diasMaximo: filtros.dias ? Number(filtros.dias) : null,
-    });
+    busca.mutate(
+      {
+        termo: filtros.termo.trim(),
+        curriculoId: filtros.curriculoId,
+        diasMaximo: filtros.dias ? Number(filtros.dias) : null,
+      },
+      { onSuccess: () => form.reset(form.getValues()) },
+    );
 
   const fonteCandidatura = (pdfReferencia: string): FonteCandidatura =>
     perfilEstruturado.data ? { perfil_identificador: perfil } : { pdf_base64: pdfReferencia };
@@ -91,6 +95,7 @@ function BuscaDeVagas({
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
+      <AvisoAlteracoesNaoSalvas alterado={isDirty} />
       <Panel titulo="Busca">
         {semCurriculo && (
           <Aviso tom="alerta">

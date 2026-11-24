@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation } from "react-router-dom";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
+import { AvisoAlteracoesNaoSalvas } from "../../shared/formulario-curriculo/AvisoAlteracoesNaoSalvas";
 import { primeiraLinha } from "../../shared/formatacao";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
@@ -30,7 +31,7 @@ export function AnalisarAtsPage() {
   const form = useForm<Formulario>({
     defaultValues: { descricao: estado.descricao ?? "", vagaId: "", fonte: "" },
   });
-  const { errors } = form.formState;
+  const { errors, isDirty } = form.formState;
   const listaVagas = vagas.data ?? [];
 
   const { padrao } = fontes;
@@ -44,7 +45,10 @@ export function AnalisarAtsPage() {
         ? valores.descricao.trim()
         : (listaVagas.find((vaga) => vaga.id === valores.vagaId)?.texto_descricao ?? "");
     const { curriculoId, ...fonte } = await fontes.resolver(valores.fonte);
-    ats.mutate({ curriculoId, dados: { descricao_vaga: descricao, ...fonte } });
+    ats.mutate(
+      { curriculoId, dados: { descricao_vaga: descricao, ...fonte } },
+      { onSuccess: () => form.reset(form.getValues()) },
+    );
   });
 
   const semFonte = !fontes.carregando && fontes.opcoes.length === 0;
@@ -55,6 +59,7 @@ export function AnalisarAtsPage() {
         titulo="Analisar ATS"
         descricao="Diagnóstico rápido da aderência do seu currículo a uma vaga, sem gerar PDF."
       />
+      <AvisoAlteracoesNaoSalvas alterado={isDirty} />
       <div style={{ display: "grid", gap: 18 }}>
         <Panel titulo="Vaga e currículo">
           <form onSubmit={analisar} noValidate>

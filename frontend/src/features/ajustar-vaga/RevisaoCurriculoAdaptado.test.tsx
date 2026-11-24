@@ -1,6 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { HttpApiClient } from "../../api/http-api-client";
 import type { ContextoVaga, RascunhoCurriculoAdaptado } from "../../api/tipos";
 import { AppProviders } from "../../app/AppProviders";
@@ -786,5 +787,70 @@ describe("RevisaoCurriculoAdaptado — quatro blocos", () => {
 
     expect(screen.getByLabelText("Principais responsabilidades")).toHaveValue("");
     expect(skills().queryByRole("list")).not.toBeInTheDocument();
+  });
+});
+
+describe("RevisaoCurriculoAdaptado — aviso ao sair", () => {
+  function renderizarComRoteador() {
+    const aoVoltar = vi.fn();
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/",
+          element: (
+            <AppProviders apiClient={new HttpApiClient({ baseUrl: API_TESTE })}>
+              <RevisaoCurriculoAdaptado
+                rascunho={rascunhoDoPerfil}
+                contextoVaga={contextoVaga}
+                gerando={false}
+                aoConfirmar={vi.fn()}
+                aoVoltar={aoVoltar}
+              />
+            </AppProviders>
+          ),
+        },
+        { path: "/outra", element: <p>Outra tela</p> },
+      ],
+      { initialEntries: ["/"] },
+    );
+    render(<RouterProvider router={router} />);
+    return { router, aoVoltar };
+  }
+  const sair = (router: ReturnType<typeof createMemoryRouter>) =>
+    act(async () => {
+      void router.navigate("/outra");
+    });
+
+  it("sem edições navega direto", async () => {
+    const { router } = renderizarComRoteador();
+
+    await sair(router);
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/outra"));
+  });
+
+  it("com edições pergunta antes de sair da tela", async () => {
+    const usuario = userEvent.setup();
+    const { router } = renderizarComRoteador();
+    await usuario.type(screen.getByLabelText("Resumo profissional"), " Editado.");
+
+    await sair(router);
+
+    expect(await screen.findByRole("dialog", { name: "Sair sem salvar?" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/");
+  });
+
+  it("o Voltar já confirmado não abre um segundo diálogo ao navegar", async () => {
+    const usuario = userEvent.setup();
+    const { router, aoVoltar } = renderizarComRoteador();
+    await usuario.type(screen.getByLabelText("Resumo profissional"), " Editado.");
+    await usuario.click(screen.getByRole("button", { name: "Voltar para a vaga" }));
+
+    await usuario.click(screen.getByRole("button", { name: "Descartar alterações" }));
+    await sair(router);
+
+    expect(aoVoltar).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog", { name: "Sair sem salvar?" })).not.toBeInTheDocument();
+    await waitFor(() => expect(router.state.location.pathname).toBe("/outra"));
   });
 });

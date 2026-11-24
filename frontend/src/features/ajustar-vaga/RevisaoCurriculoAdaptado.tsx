@@ -12,6 +12,7 @@ import {
   categoriasParaTexto,
 } from "../../shared/formulario-curriculo/competencias";
 import { EditorCompetencias } from "../../shared/formulario-curriculo/EditorCompetencias";
+import { AvisoAlteracoesNaoSalvas } from "../../shared/formulario-curriculo/AvisoAlteracoesNaoSalvas";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
 import { SugestaoCampo } from "../../shared/formulario-curriculo/SugestaoCampo";
@@ -83,6 +84,8 @@ export function RevisaoCurriculoAdaptado({
   const { isDirty } = form.formState;
   const competenciasAtuais = useWatch({ control: form.control, name: "competencias" });
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
+  // O "Voltar" já confirmado libera a saída, para o aviso de navegação não perguntar de novo.
+  const saidaConfirmada = useRef(false);
   const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaFormulario | null>(
     null,
   );
@@ -123,6 +126,7 @@ export function RevisaoCurriculoAdaptado({
         />
       )}
 
+      <AvisoAlteracoesNaoSalvas alterado={isDirty} saidaConfirmada={saidaConfirmada} />
       <form onSubmit={confirmar} noValidate className={estilos.secoes}>
         <PainelDadosPessoais
           form={form}
@@ -223,7 +227,10 @@ export function RevisaoCurriculoAdaptado({
         titulo={emEdicao ? "Descartar a edição?" : "Descartar a revisão?"}
         descricao="As alterações feitas no currículo adaptado serão perdidas."
         rotuloConfirmar="Descartar alterações"
-        aoConfirmar={aoVoltar}
+        aoConfirmar={() => {
+          saidaConfirmada.current = true;
+          aoVoltar();
+        }}
         aoCancelar={() => setConfirmandoSaida(false)}
       />
       <AvaliarExperienciaModal

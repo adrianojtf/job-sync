@@ -17,10 +17,10 @@ Pede confirmação ao sair de um formulário com alterações não salvas, por n
 
 ## Subtarefas
 
-- [ ] 7.1 Escrever os testes do hook e de cada tela (red).
-- [ ] 7.2 Implementar o hook e o componente (green).
-- [ ] 7.3 Aplicar nas quatro telas e ajustar `renderizar-app` (green).
-- [ ] 7.4 Refatorar e rodar `npm test`.
+- [x] 7.1 Escrever os testes do hook e de cada tela (red).
+- [x] 7.2 Implementar o hook e o componente (green).
+- [x] 7.3 Aplicar nas quatro telas e ajustar `renderizar-app` (green).
+- [x] 7.4 Refatorar e rodar `npm test`.
 
 ## Detalhes de Implementação
 
@@ -35,8 +35,8 @@ Complexidade: medium. Dependências: nenhuma.
 
 ## Testes da Tarefa
 
-- [ ] Vitest do hook e das telas.
-- [ ] Regressão: `npm test`.
+- [x] Vitest do hook e das telas.
+- [x] Regressão: `npm test`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

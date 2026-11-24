@@ -18,10 +18,10 @@ O currículo adaptado passa a carregar responsabilidades e skills por experiênc
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever os testes do domínio e do serializador (red).
-- [ ] 6.2 Implementar os campos e as conversões (green).
-- [ ] 6.3 Implementar a versão 2 e a leitura da versão 1 (green).
-- [ ] 6.4 Refatorar e rodar `tests/curriculo` e `tests/curriculo_adaptado`.
+- [x] 6.1 Escrever os testes do domínio e do serializador (red).
+- [x] 6.2 Implementar os campos e as conversões (green).
+- [x] 6.3 Implementar a versão 2 e a leitura da versão 1 (green).
+- [x] 6.4 Refatorar e rodar `tests/curriculo` e `tests/curriculo_adaptado`.
 
 ## Detalhes de Implementação
 
@@ -36,9 +36,9 @@ Complexidade: medium. Dependências: 1.0.
 
 ## Testes da Tarefa
 
-- [ ] Testes de `TestExperienciaAdaptada` e `TestRascunhoCurriculoAdaptado`.
-- [ ] Testes do `serializador_conteudo` (ida e volta v2, leitura v1, versão desconhecida).
-- [ ] Regressão: `src/jobsync/tests/curriculo/` e `src/jobsync/tests/curriculo_adaptado/`.
+- [x] Testes de `TestExperienciaAdaptada` e `TestRascunhoCurriculoAdaptado`.
+- [x] Testes do `serializador_conteudo` (ida e volta v2, leitura v1, versão desconhecida).
+- [x] Regressão: `src/jobsync/tests/curriculo/` e `src/jobsync/tests/curriculo_adaptado/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

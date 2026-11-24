@@ -24,7 +24,8 @@ from jobsync.vaga import (
     TipoRequisitoTecnico,
 )
 
-VERSAO_DO_FORMATO = 1
+VERSAO_DO_FORMATO = 2
+VERSOES_LEGIVEIS = (1, VERSAO_DO_FORMATO)
 
 
 def rascunho_para_json(rascunho: RascunhoCurriculoAdaptado) -> dict[str, Any]:
@@ -47,6 +48,8 @@ def rascunho_para_json(rascunho: RascunhoCurriculoAdaptado) -> dict[str, Any]:
                     "periodo": experiencia.periodo,
                     "conquistas": list(experiencia.conquistas),
                     "contexto": experiencia.contexto,
+                    "responsabilidades": list(experiencia.responsabilidades),
+                    "skills": list(experiencia.skills),
                 }
                 for experiencia in rascunho.experiencias
             ]
@@ -74,7 +77,7 @@ def rascunho_para_json(rascunho: RascunhoCurriculoAdaptado) -> dict[str, Any]:
 
 def rascunho_de_json(conteudo: dict[str, Any]) -> RascunhoCurriculoAdaptado:
     versao = conteudo.get("versao")
-    if versao != VERSAO_DO_FORMATO:
+    if versao not in VERSOES_LEGIVEIS:
         raise ValueError(f"A versão {versao!r} do conteúdo do currículo adaptado não é suportada.")
     experiencias = conteudo["experiencias"]
     competencias = conteudo["competencias"]
@@ -96,6 +99,8 @@ def rascunho_de_json(conteudo: dict[str, Any]) -> RascunhoCurriculoAdaptado:
                     periodo=experiencia["periodo"],
                     conquistas=tuple(experiencia["conquistas"]),
                     contexto=experiencia["contexto"],
+                    responsabilidades=tuple(experiencia.get("responsabilidades", ())),
+                    skills=tuple(experiencia.get("skills", ())),
                 )
                 for experiencia in experiencias
             )

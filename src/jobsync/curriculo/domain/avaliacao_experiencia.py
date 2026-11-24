@@ -16,6 +16,9 @@ class ExperienciaParaAvaliacao:
     empresa: str = ""
     periodo: str = ""
     conquistas: tuple[str, ...] = ()
+    contexto: str = ""
+    responsabilidades: tuple[str, ...] = ()
+    skills: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

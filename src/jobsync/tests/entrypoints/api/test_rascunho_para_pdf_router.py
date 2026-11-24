@@ -140,6 +140,8 @@ def test_o_rascunho_traz_conquistas_e_contexto_gerados_pela_ia(client):
             "periodo": "2022 - Atual",
             "conquistas": list(CONQUISTAS_DA_IA),
             "contexto": CONTEXTO_DA_IA,
+            "responsabilidades": [],
+            "skills": [],
         }
     ]
 

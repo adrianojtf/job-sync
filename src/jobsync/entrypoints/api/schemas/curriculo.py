@@ -389,6 +389,12 @@ class ExperienciaAdaptadaSchema(BaseModel):
     contexto: str = Field(
         default="", description="Parágrafo de contexto sobre a empresa, a área e o papel."
     )
+    responsabilidades: list[str] = Field(
+        default_factory=list, description="Principais responsabilidades da experiência, uma por item."
+    )
+    skills: list[str] = Field(
+        default_factory=list, description="Skills e tecnologias da experiência, uma por item."
+    )
 
     @classmethod
     def from_domain(cls, experiencia: ExperienciaAdaptada) -> ExperienciaAdaptadaSchema:
@@ -398,11 +404,21 @@ class ExperienciaAdaptadaSchema(BaseModel):
             periodo=experiencia.periodo,
             conquistas=list(experiencia.conquistas),
             contexto=experiencia.contexto,
+            responsabilidades=list(experiencia.responsabilidades),
+            skills=list(experiencia.skills),
         )
 
     def como_editada(self) -> ExperienciaEditada:
         """Experiência como o usuário a editou, para o rascunho descartar o que ficou em branco."""
-        return (self.cargo, self.empresa, self.periodo, self.conquistas, self.contexto)
+        return (
+            self.cargo,
+            self.empresa,
+            self.periodo,
+            self.conquistas,
+            self.contexto,
+            self.responsabilidades,
+            self.skills,
+        )
 
     def to_domain(self) -> ExperienciaAdaptada:
         """Converte para o domínio; levanta ValueError se faltar cargo, empresa ou conteúdo."""

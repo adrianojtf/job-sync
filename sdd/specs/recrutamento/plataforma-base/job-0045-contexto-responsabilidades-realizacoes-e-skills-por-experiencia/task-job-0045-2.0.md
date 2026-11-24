@@ -17,10 +17,10 @@
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes de `ExperienciaProfissional` e `PerfilEstruturado` (red).
-- [ ] 2.2 Implementar os campos, as invariantes e `eh_legada` (green).
-- [ ] 2.3 Implementar a sincronia de skills (green).
-- [ ] 2.4 Refatorar e rodar `tests/perfil_estruturado`.
+- [x] 2.1 Escrever os testes de `ExperienciaProfissional` e `PerfilEstruturado` (red).
+- [x] 2.2 Implementar os campos, as invariantes e `eh_legada` (green).
+- [x] 2.3 Implementar a sincronia de skills (green).
+- [x] 2.4 Refatorar e rodar `tests/perfil_estruturado`.
 
 ## Detalhes de Implementação
 
@@ -35,9 +35,9 @@ Complexidade: medium. Dependências: nenhuma.
 
 ## Testes da Tarefa
 
-- [ ] Testes de `TestExperienciaProfissional` (invariantes, `eh_legada`).
-- [ ] Testes de `TestPerfilEstruturado` (sincronia: maiúsculas, espaços, já existente, vazio).
-- [ ] Regressão: `src/jobsync/tests/perfil_estruturado/`.
+- [x] Testes de `TestExperienciaProfissional` (invariantes, `eh_legada`).
+- [x] Testes de `TestPerfilEstruturado` (sincronia: maiúsculas, espaços, já existente, vazio).
+- [x] Regressão: `src/jobsync/tests/perfil_estruturado/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

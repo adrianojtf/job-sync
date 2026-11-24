@@ -17,10 +17,10 @@ Complexidade: low. Dependências: 9.0.
 
 ## Subtarefas
 
-- [ ] 10.1 Atualizar `README.md` e `.env.example`.
-- [ ] 10.2 Rodar todas as validações e registrar os resultados.
-- [ ] 10.3 Conferir cada critério de aceitação do PRD.
-- [ ] 10.4 Atualizar `resumo-tasks-job-0047.md`.
+- [x] 10.1 Atualizar `README.md` e `.env.example`.
+- [x] 10.2 Rodar todas as validações e registrar os resultados.
+- [x] 10.3 Conferir cada critério de aceitação do PRD.
+- [x] 10.4 Atualizar `resumo-tasks-job-0047.md`.
 
 ## Detalhes de Implementação
 
@@ -33,7 +33,7 @@ Ver "Conformidade com Padrões" da techspec.
 
 ## Testes da Tarefa
 
-- [ ] Suítes completas de back-end e front-end.
+- [x] Suítes completas de back-end e front-end.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

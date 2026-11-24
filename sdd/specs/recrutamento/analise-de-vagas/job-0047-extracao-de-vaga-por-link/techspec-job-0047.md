@@ -27,6 +27,7 @@ O caso de uso depende de duas portas novas no domínio: `LeitorVagaPorLinkPort` 
 - `leitor_vaga_generico_client.py`: busca a página, lê o JSON-LD `JobPosting` e, na falta dele, delega o texto da página ao extrator por IA.
 - `extrator_dados_vaga_ia_client.py`: usa `ClienteOpenAI.solicitar_json`.
 - `limitador_leitura_vaga_em_memoria.py`: janela deslizante por usuário.
+- `html_para_texto.py`, `json_ld_job_posting.py`, `interpretador_html_vaga_linkedin.py` e `motivos_leitura.py`: conversão de HTML em texto, leitura do JSON-LD, interpretação do HTML do LinkedIn (todas as classes concentradas nele) e tradução de status e falhas HTTP em motivos de leitura.
 
 **Novo, `shared_kernel/adapters/cliente_http_seguro.py`:** cliente HTTP com proteção contra SSRF.
 
@@ -38,6 +39,8 @@ O caso de uso depende de duas portas novas no domínio: `LeitorVagaPorLinkPort` 
 - `entrypoints/api/routers/vaga_router.py`, `schemas/vaga.py`, `dependencies.py` (injeção do serviço) e `exceptions.py` (handlers).
 - `frontend`: campo "Link da vaga" em `AjustarVagaPage.tsx` e `vagas-salvas/ColarVagaModal.tsx`, novo componente `CampoLinkVaga`, hook `use-extrair-dados-vaga.ts`, `api-client.ts`, `http-api-client.ts` e `schema.d.ts` regenerado.
 - `.env.example`: variáveis novas.
+- `entrypoints/leitura_vaga_config.py`: lê as variáveis `VAGA_LEITURA_*`; valores inválidos voltam ao padrão.
+- `frontend/src/shared/leitura-de-vaga/`: `CampoLinkVaga`, `PreencherPeloTexto`, `ResultadoDaLeitura` e o hook `useLeituraDeVaga`, usados pelas duas telas.
 
 **Fluxo de dados:**
 1. O front envia `url` e/ou `texto` para `POST /v1/vagas/extracoes`.
@@ -97,7 +100,7 @@ Contratos alterados, apenas de forma aditiva: `VagaCapturarRequest` e `VagaRespo
 - **LinkedIn (versão pública, sem login):** endpoint de visitante, não documentado e sem contrato. Uma única requisição por link, sem repetição após 429 ou desafio. O leitor interpreta o HTML pelas classes da seção da vaga (título, empresa, local, descrição, critérios). Se faltar título ou descrição, levanta `LeituraVagaIndisponivel`.
 - **Outros sites:** HTTP simples pelo cliente seguro. JSON-LD `JobPosting` primeiro. Na falta dele, texto da página para a LLM.
 - **OpenAI (`ClienteOpenAI`):** extração a partir de texto. O prompt trata o texto como dado, nunca como instrução, devolve só os campos pedidos em JSON e não inventa valores. O texto é truncado em 20.000 caracteres. A saída é validada em tipo e tamanho antes de virar `DadosVaga`.
-- **Cliente HTTP seguro:** para cada requisição e cada redirecionamento, resolve o DNS e recusa IPs de loopback, redes privadas, link-local e metadados de nuvem. Conecta no IP validado, com o nome original para SNI (extensão `sni_hostname` do `httpx`) e cabeçalho `Host`. Limita redirecionamentos (5), tamanho (2 MB) e tempo (15 s). Aceita só `http` e `https`.
+- **Cliente HTTP seguro:** para cada requisição e cada redirecionamento, resolve o DNS e recusa IPs de loopback, redes privadas, link-local e metadados de nuvem. Conecta no IP validado, com o nome original para SNI (extensão `sni_hostname` do `httpx`) e cabeçalho `Host`. Limita redirecionamentos (5), tamanho (2 MB) e tempo (15 s). Aceita só `http` e `https`. Identifica-se como `Mozilla/5.0 (compatible; job-sync/1.0)`, sem se passar por um navegador.
 
 Configuração por variáveis de ambiente (leitura na composição, em `dependencies.py`): `VAGA_LEITURA_LINKEDIN_HABILITADA` (padrão `true`), `VAGA_LEITURA_LIMITE_POR_MINUTO` (10), `VAGA_LEITURA_LIMITE_POR_DIA` (100), `VAGA_LEITURA_TIMEOUT_SEGUNDOS` (15).
 
@@ -159,7 +162,7 @@ A taxa de sucesso por fonte (PRD, questão 2) sai desses logs agrupados por `fon
 
 - **Domínio `vaga`, adapters novos.** `vaga_externa` já importa `vaga`, e o contrato `acyclic_siblings` proíbe o caminho inverso. O `ExtratorTextoPaginaClient` atual permanece como está. A duplicação é uma busca HTTP, agora centralizada no cliente seguro, e o cliente antigo pode migrar depois.
 - **Interpretação determinística no LinkedIn.** Evita custo de IA e alucinação. Se faltar título ou descrição, falha explicitamente em vez de pedir à IA que adivinhe.
-- **Texto original, sem resumo.** A adaptação e o ATS dependem das palavras-chave.
+- **Texto original, sem resumo.** A adaptação e o ATS dependem das palavras-chave. Por isso a IA só preenche os campos de identificação (cargo, empresa, local, tipo, senioridade e setor); a descrição é sempre o texto original. Se a IA falhar, o rascunho sai só com a descrição e a pessoa preenche o resto.
 - **Rascunho sem persistência**, como `/vagas/avaliacoes`.
 - **Chave de desligamento** do LinkedIn, para retirar a fonte sem novo deploy de código.
 - **Limitador em memória.** Simples e suficiente para o início. É reiniciado com o processo e multiplica o limite por número de workers.

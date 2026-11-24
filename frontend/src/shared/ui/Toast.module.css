@@ -10,6 +10,11 @@
   box-shadow: var(--shadow);
   z-index: 30;
 }
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 .toast:empty {
   display: none;
 }
@@ -21,4 +26,18 @@
     right: 16px;
     bottom: 16px;
   }
+}
+.acao {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.acao:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }

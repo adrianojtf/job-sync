@@ -15,10 +15,10 @@ O toast passa a aceitar um botão de ação e duração própria, e um hook guar
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever os testes do toast e do hook (red).
-- [ ] 3.2 Implementar a ação e a duração no `ToastProvider` e no contexto (green).
-- [ ] 3.3 Implementar o hook (green).
-- [ ] 3.4 Refatorar e rodar `npm test`.
+- [x] 3.1 Escrever os testes do toast e do hook (red).
+- [x] 3.2 Implementar a ação e a duração no `ToastProvider` e no contexto (green).
+- [x] 3.3 Implementar o hook (green).
+- [x] 3.4 Refatorar e rodar `npm test`.
 
 ## Detalhes de Implementação
 
@@ -33,9 +33,9 @@ Complexidade: low. Dependências: nenhuma.
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `Toast`/`ToastProvider`.
-- [ ] Vitest do `use-historico-do-formulario`.
-- [ ] Regressão: `npm test`.
+- [x] Vitest de `Toast`/`ToastProvider`.
+- [x] Vitest do `use-historico-do-formulario`.
+- [x] Regressão: `npm test`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

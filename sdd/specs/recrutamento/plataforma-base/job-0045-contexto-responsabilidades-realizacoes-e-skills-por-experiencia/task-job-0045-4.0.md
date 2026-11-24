@@ -18,10 +18,10 @@ Reconhece os quatro blocos no texto da experiência com um parser determinístic
 
 ## Subtarefas
 
-- [ ] 4.1 Escrever os testes do reconhecedor, do service (porta fake) e do cliente (red).
-- [ ] 4.2 Implementar o reconhecedor e os VOs (green).
-- [ ] 4.3 Implementar a porta, o service e o cliente OpenAI (green).
-- [ ] 4.4 Refatorar e rodar `tests/perfil_estruturado`.
+- [x] 4.1 Escrever os testes do reconhecedor, do service (porta fake) e do cliente (red).
+- [x] 4.2 Implementar o reconhecedor e os VOs (green).
+- [x] 4.3 Implementar a porta, o service e o cliente OpenAI (green).
+- [x] 4.4 Refatorar e rodar `tests/perfil_estruturado`.
 
 ## Detalhes de Implementação
 
@@ -37,10 +37,10 @@ Complexidade: high. Dependências: 1.0, 2.0.
 
 ## Testes da Tarefa
 
-- [ ] Testes de `TestReconhecedorBlocosExperiencia` (pt, en, apelidos, sem rótulo, parciais).
-- [ ] Testes de `TestEstruturarExperienciaService` com porta fake.
-- [ ] Testes do cliente com `ClienteOpenAI` mockado (formato inválido e limites).
-- [ ] Regressão: `src/jobsync/tests/perfil_estruturado/`.
+- [x] Testes de `TestReconhecedorBlocosExperiencia` (pt, en, apelidos, sem rótulo, parciais).
+- [x] Testes de `TestEstruturarExperienciaService` com porta fake.
+- [x] Testes do cliente com `ClienteOpenAI` mockado (formato inválido e limites).
+- [x] Regressão: `src/jobsync/tests/perfil_estruturado/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

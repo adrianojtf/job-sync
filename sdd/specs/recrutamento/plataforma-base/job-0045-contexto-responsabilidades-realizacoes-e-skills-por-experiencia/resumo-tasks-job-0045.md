@@ -5,7 +5,7 @@
 - [x] 1.0 Rótulos dos quatro blocos no shared_kernel e convenção de texto do PDF
 - [x] 2.0 Domínio do perfil: quatro blocos por experiência e sincronia de skills
 - [x] 3.0 Persistência tolerante, SalvarPerfilEstruturado e contratos da API do perfil
-- [ ] 4.0 Reconhecedor de blocos, porta de IA, cliente OpenAI e EstruturarExperienciaService
+- [x] 4.0 Reconhecedor de blocos, porta de IA, cliente OpenAI e EstruturarExperienciaService
 - [ ] 5.0 Importação de PDF com os quatro blocos e MigrarExperienciasDoPerfil com endpoint
 - [ ] 6.0 ExperienciaAdaptada com os quatro blocos, rascunho e serializador na versão 2
 - [ ] 7.0 Ajustador de IA com os quatro blocos, serviços e API de adaptação, e currículo do perfil

@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 
+from jobsync.perfil_estruturado.domain.blocos_experiencia import chave_de_tecnologia
 from jobsync.perfil_estruturado.domain.conquistas_parecidas import sao_parecidas
 from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada
 from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
@@ -52,11 +53,6 @@ def _itens_preenchidos(itens: tuple[str, ...], nome: str) -> tuple[str, ...]:
     return tuple(item.strip() for item in itens)
 
 
-def _chave_de_tecnologia(texto: str) -> str:
-    """Chave de comparação de uma tecnologia: sem caixa e com espaços simples, mantendo `C#` e `C++`."""
-    return " ".join(texto.split()).casefold()
-
-
 @dataclass(frozen=True)
 class ExperienciaProfissional:
     """Uma experiência profissional do perfil.
@@ -96,7 +92,7 @@ class ExperienciaProfissional:
             self, "responsabilidades", _itens_preenchidos(self.responsabilidades, "responsabilidade")
         )
         skills = _itens_preenchidos(self.skills, "skill")
-        if len({_chave_de_tecnologia(skill) for skill in skills}) != len(skills):
+        if len({chave_de_tecnologia(skill) for skill in skills}) != len(skills):
             raise ValueError("A experiência não pode ter skills duplicadas.")
         object.__setattr__(self, "skills", skills)
 
@@ -205,11 +201,11 @@ class PerfilEstruturado:
 
     def tecnologias_ausentes(self) -> tuple[str, ...]:
         """Skills das experiências que ainda não constam nas tecnologias gerais, sem repetição."""
-        conhecidas = {_chave_de_tecnologia(tecnologia) for tecnologia in self.tecnologias}
+        conhecidas = {chave_de_tecnologia(tecnologia) for tecnologia in self.tecnologias}
         ausentes: list[str] = []
         for experiencia in self.experiencias:
             for skill in experiencia.skills:
-                chave = _chave_de_tecnologia(skill)
+                chave = chave_de_tecnologia(skill)
                 if chave not in conhecidas:
                     conhecidas.add(chave)
                     ausentes.append(skill)

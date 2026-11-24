@@ -45,13 +45,13 @@ def salvar_perfil_estruturado(
 ) -> PerfilEstruturadoResponse:
     """Persiste os dados estruturados do perfil (upsert)."""
     try:
-        perfil = service.executar(body.to_dto())
+        resultado = service.executar(body.to_dto())
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return PerfilEstruturadoResponse.from_dto(perfil)
+    return PerfilEstruturadoResponse.from_dto(resultado.perfil, resultado.tecnologias_incluidas)
 
 
 @router.put(
@@ -69,13 +69,13 @@ def atualizar_perfil_estruturado(
     """Atualiza o perfil estruturado de forma idempotente (PUT)."""
     try:
         input_dto = replace(body.to_dto(), perfil_identificador=perfil_identificador)
-        perfil = service.executar(input_dto)
+        resultado = service.executar(input_dto)
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(erro),
         )
-    return PerfilEstruturadoResponse.from_dto(perfil)
+    return PerfilEstruturadoResponse.from_dto(resultado.perfil, resultado.tecnologias_incluidas)
 
 
 @router.get(

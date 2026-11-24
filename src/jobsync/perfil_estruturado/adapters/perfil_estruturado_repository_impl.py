@@ -71,6 +71,9 @@ class PerfilEstruturadoRepositoryImpl(PerfilEstruturadoRepository):
             "cargo": experiencia.cargo,
             "periodo": experiencia.periodo,
             "descricao": experiencia.descricao,
+            "contexto": experiencia.contexto,
+            "responsabilidades": list(experiencia.responsabilidades),
+            "skills": list(experiencia.skills),
             "conquistas": [
                 {"texto": conquista.texto, "origem": conquista.origem.name}
                 for conquista in experiencia.conquistas
@@ -79,7 +82,7 @@ class PerfilEstruturadoRepositoryImpl(PerfilEstruturadoRepository):
 
     @staticmethod
     def _json_para_experiencia(dados: dict) -> ExperienciaProfissional:
-        """Perfis salvos antes do banco de conquistas não têm a chave `conquistas`."""
+        """Perfis salvos antes do banco de conquistas e dos quatro blocos não têm essas chaves."""
         return ExperienciaProfissional(
             empresa=dados["empresa"],
             cargo=dados["cargo"],
@@ -89,6 +92,9 @@ class PerfilEstruturadoRepositoryImpl(PerfilEstruturadoRepository):
                 Conquista(texto=c["texto"], origem=OrigemConquista[c["origem"]])
                 for c in dados.get("conquistas", [])
             ),
+            contexto=dados.get("contexto", ""),
+            responsabilidades=tuple(dados.get("responsabilidades", [])),
+            skills=tuple(dados.get("skills", [])),
         )
 
     def buscar_por_perfil(self, perfil_identificador: str) -> PerfilEstruturado | None:

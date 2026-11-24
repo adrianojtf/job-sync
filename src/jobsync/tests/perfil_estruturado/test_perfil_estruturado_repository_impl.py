@@ -109,3 +109,35 @@ class TestPerfilEstruturadoRepositoryImpl:
         perfil = repositorio.buscar_por_perfil("matheus")
 
         assert perfil.experiencias[0].conquistas == ()
+
+
+    def test_salvar_e_buscar_perfil_com_os_quatro_blocos(self, repositorio):
+        perfil = _perfil_completo(
+            experiencias=(
+                ExperienciaProfissional(
+                    "Starian", "Dev", "2024 - Atual", "",
+                    conquistas=(Conquista("Atendi 1.000 usuários."),),
+                    contexto="ERP para construção civil.",
+                    responsabilidades=("Projetar telas", "Testar entregas"),
+                    skills=("Java", "PostgreSQL"),
+                ),
+            )
+        )
+
+        repositorio.salvar(perfil)
+
+        assert repositorio.buscar_por_perfil("matheus") == perfil
+
+    def test_buscar_perfil_salvo_antes_dos_blocos_devolve_blocos_vazios(self, repositorio, pool_postgres):
+        with pool_postgres.connection() as conexao:
+            conexao.execute(
+                """
+                INSERT INTO perfil_estruturado (perfil_identificador, nome_completo, email, experiencias_json)
+                VALUES ('matheus', 'Matheus', 'm@example.com',
+                        '[{"empresa": "TechCorp", "cargo": "Eng.", "periodo": "2020", "descricao": "Backend."}]')
+                """
+            )
+
+        experiencia = repositorio.buscar_por_perfil("matheus").experiencias[0]
+
+        assert (experiencia.contexto, experiencia.responsabilidades, experiencia.skills) == ("", (), ())

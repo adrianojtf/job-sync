@@ -8,6 +8,7 @@ from jobsync.perfil_estruturado.domain.perfil_estruturado import (
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
+    PerfilEstruturado,
 )
 
 
@@ -25,3 +26,11 @@ class SalvarPerfilEstruturadoInputDto:
     certificacoes: tuple[Certificacao, ...]
     idiomas: tuple[Idioma, ...]
     tecnologias: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SalvarPerfilEstruturadoOutputDto:
+    """Perfil salvo e as tecnologias que as skills das experiências acrescentaram às gerais."""
+
+    perfil: PerfilEstruturado
+    tecnologias_incluidas: tuple[str, ...]

@@ -2,7 +2,7 @@
 
 import pytest
 
-from jobsync.perfil_estruturado import PerfilEstruturado
+from jobsync.perfil_estruturado import ExperienciaProfissional, PerfilEstruturado
 from jobsync.perfil_estruturado.domain.perfil_estruturado_repository import PerfilEstruturadoRepository
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado import (
     SalvarPerfilEstruturado,
@@ -46,8 +46,8 @@ class TestSalvarPerfilEstruturado:
 
         resultado = use_case.executar(_input_dto())
 
-        assert repositorio.perfil_salvo == resultado
-        assert resultado.perfil_identificador == "matheus"
+        assert repositorio.perfil_salvo == resultado.perfil
+        assert resultado.perfil.perfil_identificador == "matheus"
 
     def test_identificador_vazio_gera_erro(self):
         use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
@@ -66,3 +66,26 @@ class TestSalvarPerfilEstruturado:
 
         with pytest.raises(ValueError, match="email"):
             use_case.executar(_input_dto(email=""))
+
+
+class TestSalvarPerfilEstruturadoComSkills:
+    def test_inclui_nas_tecnologias_as_skills_das_experiencias_e_informa_quais(self):
+        repositorio = RepositorioFake()
+        use_case = SalvarPerfilEstruturado(repositorio=repositorio)
+        experiencia = ExperienciaProfissional(
+            empresa="Starian", cargo="Dev", periodo="2024", descricao="", skills=("Java", "Flyway")
+        )
+
+        resultado = use_case.executar(_input_dto(experiencias=(experiencia,), tecnologias=("java", "SQL")))
+
+        assert resultado.tecnologias_incluidas == ("Flyway",)
+        assert resultado.perfil.tecnologias == ("java", "SQL", "Flyway")
+        assert repositorio.perfil_salvo.tecnologias == ("java", "SQL", "Flyway")
+
+    def test_sem_skills_novas_nao_informa_tecnologias_incluidas(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+
+        resultado = use_case.executar(_input_dto(tecnologias=("Python",)))
+
+        assert resultado.tecnologias_incluidas == ()
+        assert resultado.perfil.tecnologias == ("Python",)

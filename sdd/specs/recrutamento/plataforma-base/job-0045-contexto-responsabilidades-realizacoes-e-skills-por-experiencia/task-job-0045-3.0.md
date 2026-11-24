@@ -17,10 +17,10 @@ Grava e lê os campos novos no JSONB existente, sem migration SQL, e expõe os b
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever os testes do repositório, do service e do router (red).
-- [ ] 3.2 Implementar a serialização tolerante e o service (green).
-- [ ] 3.3 Implementar schemas e router (green).
-- [ ] 3.4 Refatorar e rodar `tests/perfil_estruturado` e `tests/entrypoints/api`.
+- [x] 3.1 Escrever os testes do repositório, do service e do router (red).
+- [x] 3.2 Implementar a serialização tolerante e o service (green).
+- [x] 3.3 Implementar schemas e router (green).
+- [x] 3.4 Refatorar e rodar `tests/perfil_estruturado` e `tests/entrypoints/api`.
 
 ## Detalhes de Implementação
 
@@ -36,10 +36,10 @@ Complexidade: medium. Dependências: 2.0.
 
 ## Testes da Tarefa
 
-- [ ] Testes do `PerfilEstruturadoRepositoryImpl` (ida e volta e JSON antigo).
-- [ ] Testes do `SalvarPerfilEstruturado` com repositório fake.
-- [ ] Testes dos routers do perfil com `TestClient`.
-- [ ] Regressão: `src/jobsync/tests/perfil_estruturado/` e `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes do `PerfilEstruturadoRepositoryImpl` (ida e volta e JSON antigo).
+- [x] Testes do `SalvarPerfilEstruturado` com repositório fake.
+- [x] Testes dos routers do perfil com `TestClient`.
+- [x] Regressão: `src/jobsync/tests/perfil_estruturado/` e `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

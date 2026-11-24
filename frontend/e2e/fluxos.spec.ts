@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import {
+  abrirDadosPessoais,
+  avisoDeStatus,
   entrar,
   EXPERIENCIAS_COM_REACT,
   novoPerfil,
@@ -27,15 +29,20 @@ test("primeiro acesso: entrar, ver a Visão geral vazia e salvar o currículo me
   const experiencia = page.getByRole("group", { name: "Experiência 1" });
   await experiencia.getByLabel("Empresa").fill("Neoway");
   await experiencia.getByLabel("Cargo").fill("Desenvolvedora Python");
-  await page.getByLabel("Tecnologias", { exact: true }).fill("Python, FastAPI");
+  await page.getByLabel("Nova tecnologia").fill("Python");
+  await page.getByLabel("Nova tecnologia").press("Enter");
+  await page.getByLabel("Nova tecnologia").fill("FastAPI");
+  await page.getByLabel("Nova tecnologia").press("Enter");
   await page.getByRole("button", { name: "Salvar perfil" }).click();
-  await expect(page.getByRole("status")).toHaveText("Perfil salvo.");
+  await expect(avisoDeStatus(page)).toHaveText("Perfil salvo.");
 
   await page.reload();
   await expect(page.getByLabel("Nome completo")).toHaveValue("Ana Lima");
-  await expect(
-    page.getByRole("group", { name: "Experiência 1" }).getByLabel("Empresa"),
-  ).toHaveValue("Neoway");
+  await expect(page.getByText("Python", { exact: true })).toBeVisible();
+  await expect(page.getByText("FastAPI", { exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Experiência 1", exact: true })).toContainText(
+    "Neoway",
+  );
 
   await page.getByRole("link", { name: /Visão geral/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/, Ana$/);
@@ -60,7 +67,7 @@ test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover 
   await experiencia.getByLabel("Cargo").fill("Backend");
   await experiencia.getByLabel("Principais responsabilidades").fill("APIs em Python e FastAPI.");
   await page.getByRole("button", { name: "Salvar perfil" }).click();
-  await expect(page.getByRole("status")).toHaveText("Perfil salvo.");
+  await expect(avisoDeStatus(page)).toHaveText("Perfil salvo.");
 
   await page.getByRole("link", { name: /Meus currículos/ }).click();
   await page.getByRole("button", { name: "Enviar currículo" }).click();
@@ -249,6 +256,7 @@ test("Meu perfil: sugestão de IA sem vaga altera o campo, mas não salva o perf
   await semearPerfilCompleto(request, perfil);
   await entrar(page, perfil);
   await page.goto("/perfil");
+  await abrirDadosPessoais(page);
 
   await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
   await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toContainText(

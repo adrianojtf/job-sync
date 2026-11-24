@@ -1,12 +1,21 @@
 .conquistas {
   display: grid;
   gap: 10px;
-  margin: 8px 0 12px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
 }
 .titulo {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
+}
+.descricao {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 .vazio {
   color: var(--muted);

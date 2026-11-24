@@ -17,6 +17,9 @@ from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrad
 from jobsync.shared_kernel.domain.rotulos_blocos_experiencia import BlocoExperiencia, rotulo_do_bloco
 from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
+LIMITE_DE_ITENS_POR_LISTA = 15
+"""Máximo de experiências, formações, certificações e idiomas no perfil (as tecnologias não têm limite)."""
+
 
 class NivelIdioma(Enum):
     """Nível de proficiência em um idioma."""

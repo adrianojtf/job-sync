@@ -102,13 +102,13 @@ export function textoDosBlocos(experiencia: ExperienciaPerfilFormulario): string
     .join("\n");
 }
 
-/** Estado do formulário de Meu perfil: tecnologias ficam como texto separado por vírgula. */
+/** Estado do formulário de Meu perfil: as tecnologias gerais ficam como lista de tags, na ordem do currículo. */
 export interface FormularioPerfil extends DadosPessoaisFormulario {
   experiencias: ExperienciaPerfilFormulario[];
   formacoes: { instituicao: string; curso: string; periodo: string }[];
   certificacoes: { nome: string; instituicao: string; ano: string }[];
   idiomas: { idioma: string; nivel: string }[];
-  tecnologias: string;
+  tecnologias: string[];
 }
 
 export const FORMACAO_VAZIA = { instituicao: "", curso: "", periodo: "" };
@@ -137,7 +137,7 @@ export function perfilParaFormulario(perfil: PerfilEstruturado | null): Formular
     formacoes: (perfil?.formacoes ?? []).map((item) => ({ ...item })),
     certificacoes: (perfil?.certificacoes ?? []).map((item) => ({ ...item })),
     idiomas: (perfil?.idiomas ?? []).map((item) => ({ ...item })),
-    tecnologias: (perfil?.tecnologias ?? []).join(", "),
+    tecnologias: [...(perfil?.tecnologias ?? [])],
   };
 }
 
@@ -175,9 +175,6 @@ export function formularioParaEntrada(
     formacoes: formulario.formacoes.map(aparar),
     certificacoes: formulario.certificacoes.map(aparar),
     idiomas: formulario.idiomas.map(aparar),
-    tecnologias: formulario.tecnologias
-      .split(",")
-      .map((tecnologia) => tecnologia.trim())
-      .filter(Boolean),
+    tecnologias: formulario.tecnologias.map((tecnologia) => tecnologia.trim()).filter(Boolean),
   };
 }

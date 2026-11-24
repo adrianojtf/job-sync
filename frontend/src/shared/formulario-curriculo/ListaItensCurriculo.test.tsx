@@ -2,11 +2,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useForm } from "react-hook-form";
 import {
+  CAMPO_PERIODO_VALIDADO,
   CAMPOS_EXPERIENCIA_ADAPTADA,
   EXPERIENCIA_ADAPTADA_VAZIA,
   type ExperienciaAdaptadaFormulario,
 } from "./campos-curriculo";
 import { ListaItensCurriculo } from "./ListaItensCurriculo";
+import { validarPeriodo } from "./periodo";
 
 function Formulario({ valores }: { valores: ExperienciaAdaptadaFormulario[] }) {
   const form = useForm<{ experiencias: ExperienciaAdaptadaFormulario[] }>({
@@ -73,5 +75,69 @@ describe("ListaItensCurriculo com conquistas e contexto", () => {
     await userEvent.click(screen.getByRole("button", { name: "Adicionar experiência" }));
 
     expect(screen.getByLabelText("Principais realizações")).toHaveValue("");
+  });
+});
+
+describe("ListaItensCurriculo com validação de formato", () => {
+  function FormularioComPeriodo({ periodo }: { periodo: string }) {
+    const form = useForm<{ itens: { empresa: string; periodo: string }[] }>({
+      defaultValues: { itens: [{ empresa: "TechCorp", periodo }] },
+    });
+    return (
+      <form onSubmit={form.handleSubmit(() => undefined)} noValidate>
+        <ListaItensCurriculo
+          form={form}
+          nome="itens"
+          titulo="Itens"
+          rotuloItem="Item"
+          itemVazio={{ empresa: "", periodo: "" }}
+          campos={[
+            { chave: "empresa", rotulo: "Empresa", obrigatorio: "Informe a empresa." },
+            { chave: "periodo", rotulo: "Período", validar: validarPeriodo },
+          ]}
+        />
+        <button type="submit">Enviar</button>
+      </form>
+    );
+  }
+
+  it("mostra a mensagem do formato quando o campo preenchido é inválido", async () => {
+    render(<FormularioComPeriodo periodo="ontem" />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+
+    expect(
+      await screen.findByText("Use o formato Mar 2024 - Atual ou 2020 - 2022."),
+    ).toBeInTheDocument();
+  });
+
+  it("aceita o campo vazio e o formato correto", async () => {
+    render(<FormularioComPeriodo periodo="2020 - 2022" />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+
+    expect(screen.queryByText(/Use o formato/)).not.toBeInTheDocument();
+  });
+
+  it("a validação do formato não substitui a obrigatoriedade", async () => {
+    render(<FormularioComPeriodo periodo="2020" />);
+    await userEvent.clear(screen.getByLabelText("Empresa"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+
+    expect(await screen.findByText("Informe a empresa.")).toBeInTheDocument();
+  });
+});
+
+describe("campo de período do perfil", () => {
+  it("o período da revisão do adaptado segue sem validação de formato", () => {
+    expect(
+      CAMPOS_EXPERIENCIA_ADAPTADA.find((campo) => campo.chave === "periodo")?.validar,
+    ).toBeUndefined();
+  });
+
+  it("o período do perfil valida o formato e orienta com um exemplo", () => {
+    expect(CAMPO_PERIODO_VALIDADO.validar?.("ontem")).toContain("Mar 2024 - Atual");
+    expect(CAMPO_PERIODO_VALIDADO.ajuda).toContain("2020 - 2022");
   });
 });

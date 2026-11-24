@@ -1,10 +1,13 @@
-import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
+import { useEffect } from "react";
+import { useWatch, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
+import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
 import { Panel } from "../ui/Panel";
 import type { DadosPessoaisFormulario } from "./campos-curriculo";
 import estilos from "./FormularioCurriculo.module.css";
 import { SugestaoCampo } from "./SugestaoCampo";
 import type { SugerirComRefino } from "./SugestaoIA";
+import { useCartoesAbertos } from "./use-cartoes-abertos";
 
 interface Props<T extends FieldValues & DadosPessoaisFormulario> {
   form: UseFormReturn<T>;
@@ -12,7 +15,14 @@ interface Props<T extends FieldValues & DadosPessoaisFormulario> {
   emailObrigatorio?: boolean;
   /** Quando informada, mostra "Sugestões de IA" no resumo profissional (JOB-0034). */
   sugerirResumo?: SugerirComRefino<string>;
+  /**
+   * Mostra os dados como um cartão recolhível, com nome e e-mail no resumo (JOB-0046). O estado
+   * aberto é lembrado na chave informada; abre sozinho se o envio acusar erro nos campos.
+   */
+  recolhivel?: { chaveDeArmazenamento?: string; abertoPorPadrao?: boolean };
 }
+
+const ID_DO_CARTAO = "dados";
 
 const campo = <T extends FieldValues>(nome: keyof DadosPessoaisFormulario) => nome as Path<T>;
 
@@ -21,11 +31,50 @@ export function PainelDadosPessoais<T extends FieldValues & DadosPessoaisFormula
   form,
   emailObrigatorio = true,
   sugerirResumo,
+  recolhivel,
 }: Props<T>) {
   const { errors } = form.formState;
+  const { abertos, alternar, abrirVarios } = useCartoesAbertos({
+    chaveDeArmazenamento: recolhivel?.chaveDeArmazenamento,
+    ids: [ID_DO_CARTAO],
+    chavesDosItens: [ID_DO_CARTAO],
+    abertosPorPadrao: recolhivel?.abertoPorPadrao,
+  });
+  const nome = useWatch({
+    control: form.control,
+    name: campo<T>("nome_completo"),
+    disabled: !recolhivel,
+  });
+  const email = useWatch({ control: form.control, name: campo<T>("email"), disabled: !recolhivel });
+  const aberto = !recolhivel || abertos.has(ID_DO_CARTAO);
+
+  useEffect(() => {
+    if (!recolhivel) return;
+    return form.subscribe({
+      formState: { errors: true },
+      callback: ({ errors: erros }) => {
+        if (erros?.nome_completo || erros?.email) abrirVarios([ID_DO_CARTAO]);
+      },
+    });
+  }, [form, recolhivel, abrirVarios]);
+
+  const resumo = [String(nome ?? "").trim(), String(email ?? "").trim()]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <Panel titulo="Dados pessoais">
-      <div className={estilos.grade}>
+    <Panel
+      titulo={recolhivel ? "Dados pessoais e resumo" : "Dados pessoais"}
+      subtitulo={recolhivel ? resumo || "Preencha seu nome e e-mail." : undefined}
+      acoes={
+        recolhivel ? (
+          <Button aria-expanded={aberto} onClick={() => alternar(ID_DO_CARTAO)}>
+            {aberto ? "Concluir" : "Editar"}
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className={estilos.grade} hidden={!aberto}>
         <Field
           rotulo="Nome completo"
           autoComplete="name"

@@ -1,0 +1,24 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--ink-soft);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ok {
+  background: var(--green-soft, #eaf7f0);
+  color: var(--green, #16865b);
+}
+.vazio {
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+  color: var(--muted);
+}
+.alerta {
+  background: var(--amber-soft, #fff5e4);
+  color: var(--amber);
+  font-weight: 650;
+}

@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ToastContext, type TomToast } from "./toast-context";
+import { ToastContext, type AcaoDoToast, type OpcoesDoToast, type TomToast } from "./toast-context";
 import estilos from "./Toast.module.css";
 
 interface Aviso {
   mensagem: string;
   tom: TomToast;
   id: number;
+  acao?: AcaoDoToast;
+  duracaoMs?: number;
 }
+
+/** Com uma ação, o aviso fica mais tempo na tela para o usuário conseguir usá-la. */
+const DURACAO_COM_ACAO_MS = 6000;
 
 interface Props {
   children: ReactNode;
@@ -17,15 +22,24 @@ interface Props {
 export function ToastProvider({ children, duracaoMs = 2600 }: Props) {
   const [aviso, setAviso] = useState<Aviso | null>(null);
 
-  const notificar = useCallback((mensagem: string, tom: TomToast = "info") => {
-    setAviso({ mensagem, tom, id: Date.now() });
-  }, []);
+  const notificar = useCallback(
+    (mensagem: string, tom: TomToast = "info", opcoes: OpcoesDoToast = {}) => {
+      setAviso({ mensagem, tom, id: Date.now(), ...opcoes });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!aviso) return;
-    const temporizador = setTimeout(() => setAviso(null), duracaoMs);
+    const duracao = aviso.duracaoMs ?? (aviso.acao ? DURACAO_COM_ACAO_MS : duracaoMs);
+    const temporizador = setTimeout(() => setAviso(null), duracao);
     return () => clearTimeout(temporizador);
   }, [aviso, duracaoMs]);
+
+  const usarAcao = (acao: AcaoDoToast) => {
+    acao.aoClicar();
+    setAviso(null);
+  };
 
   const contexto = useMemo(() => ({ notificar }), [notificar]);
   const erro = aviso?.tom === "erro";
@@ -34,7 +48,16 @@ export function ToastProvider({ children, duracaoMs = 2600 }: Props) {
     <ToastContext.Provider value={contexto}>
       {children}
       <div className={estilos.toast} role="status" aria-live="polite">
-        {!erro && aviso?.mensagem}
+        {aviso && !erro && (
+          <>
+            <span>{aviso.mensagem}</span>
+            {aviso.acao && (
+              <button type="button" className={estilos.acao} onClick={() => usarAcao(aviso.acao!)}>
+                {aviso.acao.rotulo}
+              </button>
+            )}
+          </>
+        )}
       </div>
       <div className={`${estilos.toast} ${estilos.erro}`} role="alert">
         {erro && aviso?.mensagem}

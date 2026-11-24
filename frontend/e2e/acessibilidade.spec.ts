@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import {
+  abrirDadosPessoais,
   entrar,
   EXPERIENCIAS_COM_REACT,
   novoPerfil,
@@ -106,6 +107,7 @@ test.describe("telas autenticadas", () => {
   test("Meu perfil com botões de sugestão sem violações graves", async ({ page }) => {
     await entrar(page, perfil);
     await page.goto("/perfil");
+    await abrirDadosPessoais(page);
     await page.getByRole("button", { name: "Sugestões de IA para resumo" }).click();
     await expect(page.getByRole("region", { name: "Sugestão da IA para resumo" })).toBeVisible();
 

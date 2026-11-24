@@ -169,3 +169,30 @@ export async function definirIdentidadeDoGoogle(
   const resposta = await request.put(`${API_E2E}/e2e/idp/identidade`, { data: identidade });
   expect(resposta.ok()).toBeTruthy();
 }
+
+/** Aviso de sucesso/erro da tela; exclui as regiões vivas do dnd-kit, que também têm role="status". */
+export const avisoDeStatus = (page: Page) =>
+  page.locator('[role="status"]:not([id^="DndLiveRegion"])');
+
+/** Abre o cartão recolhido "Dados pessoais e resumo" do perfil (perfis já salvos abrem fechados). */
+export async function abrirDadosPessoais(page: Page) {
+  const dados = page.getByRole("region", { name: "Dados pessoais e resumo" });
+  await dados.getByRole("button", { name: "Editar" }).click();
+  await expect(dados.getByLabel("Nome completo")).toBeVisible();
+}
+
+/** Abre o cartão de uma experiência do perfil pelo botão Editar. */
+export async function abrirExperiencia(page: Page, numero: number) {
+  const cartao = page.getByRole("group", { name: `Experiência ${numero}`, exact: true });
+  await cartao.waitFor();
+  // O cartão pode abrir sozinho (estado lembrado): só clica se continuar recolhido.
+  const jaAberto = await expect(cartao.getByLabel("Empresa"))
+    .toBeVisible({ timeout: 1500 })
+    .then(
+      () => true,
+      () => false,
+    );
+  if (!jaAberto) await cartao.getByRole("button", { name: /^Editar / }).click();
+  await expect(cartao.getByLabel("Empresa")).toBeVisible();
+  return cartao;
+}

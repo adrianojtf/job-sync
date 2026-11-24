@@ -140,3 +140,41 @@ class TestMigracaoDeExperienciasRouter:
         resposta = client.post("/v1/perfil-estruturado/outro/migracoes-de-experiencias")
 
         assert resposta.status_code == 404
+
+
+class TestValidacaoDoPerfilRouter:
+    def test_periodo_invalido_devolve_422_com_a_posicao_e_o_exemplo(self, client: TestClient, repositorio):
+        corpo = _corpo()
+        corpo["experiencias"][0]["periodo"] = "ontem"
+
+        resposta = client.put("/v1/perfil-estruturado/adriano", json=corpo)
+
+        assert resposta.status_code == 422
+        assert "Experiência 1: período inválido" in resposta.json()["detail"]
+        assert "Mar 2024 - Atual" in resposta.json()["detail"]
+        assert repositorio.buscar_por_perfil("adriano") is None
+
+    def test_post_tambem_recusa_ano_de_certificacao_invalido(self, client: TestClient):
+        corpo = _corpo(certificacoes=[{"nome": "AWS", "instituicao": "Amazon", "ano": "23"}])
+
+        resposta = client.post("/v1/perfil-estruturado", json=corpo)
+
+        assert resposta.status_code == 422
+        assert "Certificação 1: ano inválido" in resposta.json()["detail"]
+
+    def test_mais_de_quinze_experiencias_devolvem_422(self, client: TestClient):
+        experiencia = _corpo()["experiencias"][0]
+        corpo = _corpo(experiencias=[{**experiencia, "empresa": f"Empresa {n}"} for n in range(16)])
+
+        resposta = client.put("/v1/perfil-estruturado/adriano", json=corpo)
+
+        assert resposta.status_code == 422
+        assert "no máximo 15 itens" in resposta.json()["detail"]
+
+    def test_dados_validos_continuam_aceitos(self, client: TestClient):
+        corpo = _corpo()
+        corpo["experiencias"][0]["periodo"] = "Mar 2024 - Atual"
+
+        resposta = client.put("/v1/perfil-estruturado/adriano", json=corpo)
+
+        assert resposta.status_code == 200

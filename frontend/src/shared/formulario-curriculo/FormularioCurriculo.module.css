@@ -7,6 +7,9 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 16px;
 }
+.grade[hidden] {
+  display: none;
+}
 .larguraTotal {
   grid-column: 1 / -1;
 }
@@ -47,6 +50,203 @@
   color: var(--amber);
   font-weight: 650;
   font-size: 13px;
+}
+.linha {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  min-width: 0;
+}
+.camposDaLinha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  align-items: center;
+}
+.campoDaLinha > * {
+  margin: 0;
+}
+.campoDaLinha input,
+.campoDaLinha select {
+  padding: 6px 10px;
+}
+.acoesDaLista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Lista em modo cartão (JOB-0046) */
+.cartoes {
+  display: grid;
+  gap: 8px;
+}
+.cartao {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  min-width: 0;
+}
+.cartao:hover {
+  border-color: var(--line-strong, var(--line));
+}
+.cartaoArrastando {
+  z-index: 5;
+  border-color: var(--accent);
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
+}
+.linhaDoCartao {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 6px;
+  min-height: 56px;
+}
+.alca {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+  font-size: 16px;
+}
+.alca:hover {
+  background: var(--surface-subtle);
+  color: var(--ink);
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent-soft, var(--surface-subtle));
+  color: var(--accent);
+  font-weight: 700;
+}
+.tituloDoCartao {
+  display: block;
+  min-width: 0;
+}
+.botaoDoTitulo {
+  display: block;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.botaoDoTitulo strong,
+.tituloDoCartao small {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tituloDoCartao small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.metaDoCartao {
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.acoesDoCartao {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.mover {
+  display: flex;
+}
+.botaoIcone {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+.botaoIcone:hover:not(:disabled) {
+  background: var(--surface-subtle);
+  color: var(--ink);
+}
+.botaoIcone:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.chevron {
+  transition: transform 0.15s;
+}
+.cartaoAberto .chevron {
+  transform: rotate(180deg);
+}
+.chipsDoCartao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 10px 52px;
+  margin-top: -4px;
+}
+.corpoDoCartao {
+  border-top: 1px solid var(--line);
+  padding: 14px 16px 12px;
+}
+.corpoDoCartao[hidden] {
+  display: none;
+}
+.cartoesArrastando .corpoDoCartao {
+  display: none;
+}
+.concluir {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.limite {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+@media (hover: hover) {
+  .mover {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .cartao:hover .mover,
+  .cartao:focus-within .mover {
+    opacity: 1;
+  }
+}
+@media (max-width: 700px) {
+  .linhaDoCartao {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .linhaDoCartao .avatar,
+  .linhaDoCartao .metaDoCartao {
+    display: none;
+  }
+  .chipsDoCartao {
+    padding-left: 12px;
+  }
 }
 @media (max-width: 700px) {
   .grade {

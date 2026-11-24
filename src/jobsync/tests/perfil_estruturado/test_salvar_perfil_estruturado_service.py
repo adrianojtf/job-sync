@@ -2,7 +2,14 @@
 
 import pytest
 
-from jobsync.perfil_estruturado import ExperienciaProfissional, PerfilEstruturado
+from jobsync.perfil_estruturado import (
+    Certificacao,
+    ExperienciaProfissional,
+    FormacaoAcademica,
+    Idioma,
+    NivelIdioma,
+    PerfilEstruturado,
+)
 from jobsync.perfil_estruturado.domain.perfil_estruturado_repository import PerfilEstruturadoRepository
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado import (
     SalvarPerfilEstruturado,
@@ -89,3 +96,88 @@ class TestSalvarPerfilEstruturadoComSkills:
 
         assert resultado.tecnologias_incluidas == ()
         assert resultado.perfil.tecnologias == ("Python",)
+
+
+def _experiencia(periodo: str = "2024 - Atual", empresa: str = "Starian") -> ExperienciaProfissional:
+    return ExperienciaProfissional(empresa=empresa, cargo="Dev", periodo=periodo, descricao="")
+
+
+class TestSalvarPerfilEstruturadoValidaPeriodo:
+    def test_periodo_de_experiencia_fora_do_formato_gera_erro_com_posicao_e_exemplo(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+        experiencias = (_experiencia("2020 - 2022"), _experiencia("ontem"))
+
+        with pytest.raises(ValueError, match=r"Experiência 2: período inválido.*Mar 2024 - Atual"):
+            use_case.executar(_input_dto(experiencias=experiencias))
+
+    def test_periodo_de_formacao_fora_do_formato_gera_erro(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+        formacoes = (FormacaoAcademica(instituicao="USP", curso="BCC", periodo="2020 a 2024"),)
+
+        with pytest.raises(ValueError, match="Formação 1: período inválido"):
+            use_case.executar(_input_dto(formacoes=formacoes))
+
+    def test_ano_de_certificacao_invalido_gera_erro(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+        certificacoes = (Certificacao(nome="AWS", instituicao="Amazon", ano="23"),)
+
+        with pytest.raises(ValueError, match="Certificação 1: ano inválido"):
+            use_case.executar(_input_dto(certificacoes=certificacoes))
+
+    def test_inicio_depois_do_fim_gera_erro(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+
+        with pytest.raises(ValueError, match="início não pode ser depois do fim"):
+            use_case.executar(_input_dto(experiencias=(_experiencia("2024 - 2020"),)))
+
+    @pytest.mark.parametrize("periodo", ["", "  ", "2024", "2020-2022", "Mar 2026 - Atual", "01/2020 - 12/2022"])
+    def test_periodos_vazios_ou_validos_sao_aceitos(self, periodo):
+        repositorio = RepositorioFake()
+        use_case = SalvarPerfilEstruturado(repositorio=repositorio)
+
+        use_case.executar(_input_dto(experiencias=(_experiencia(periodo),)))
+
+        assert repositorio.perfil_salvo is not None
+
+    def test_perfil_recusado_nao_e_salvo(self):
+        repositorio = RepositorioFake()
+        use_case = SalvarPerfilEstruturado(repositorio=repositorio)
+
+        with pytest.raises(ValueError):
+            use_case.executar(_input_dto(experiencias=(_experiencia("ontem"),)))
+
+        assert repositorio.perfil_salvo is None
+
+
+class TestSalvarPerfilEstruturadoLimiteDeItens:
+    def test_ate_quinze_itens_em_cada_lista_sao_aceitos(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+        dto = _input_dto(
+            experiencias=tuple(_experiencia(empresa=f"Empresa {n}") for n in range(15)),
+            idiomas=tuple(Idioma(idioma=f"Idioma {n}", nivel=NivelIdioma.BASICO) for n in range(15)),
+        )
+
+        use_case.executar(dto)
+
+    @pytest.mark.parametrize(
+        ("campo", "lista", "nome"),
+        [
+            ("experiencias", lambda n: _experiencia(empresa=f"E{n}"), "experiências"),
+            ("formacoes", lambda n: FormacaoAcademica(instituicao=f"I{n}", curso="C", periodo=""), "formações"),
+            ("certificacoes", lambda n: Certificacao(nome=f"N{n}", instituicao="", ano=""), "certificações"),
+            ("idiomas", lambda n: Idioma(idioma=f"L{n}", nivel=NivelIdioma.BASICO), "idiomas"),
+        ],
+    )
+    def test_mais_de_quinze_itens_geram_erro(self, campo, lista, nome):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+        dto = _input_dto(**{campo: tuple(lista(n) for n in range(16))})
+
+        with pytest.raises(ValueError, match=f"lista de {nome} aceita no máximo 15"):
+            use_case.executar(dto)
+
+    def test_tecnologias_nao_tem_limite(self):
+        use_case = SalvarPerfilEstruturado(repositorio=RepositorioFake())
+
+        resultado = use_case.executar(_input_dto(tecnologias=tuple(f"Tec {n}" for n in range(40))))
+
+        assert len(resultado.perfil.tecnologias) == 40

@@ -9,6 +9,7 @@ import type {
   RascunhoCurriculoAdaptado,
 } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
+import { AvisoAlteracoesNaoSalvas } from "../../shared/formulario-curriculo/AvisoAlteracoesNaoSalvas";
 import { base64ParaBlob, baixarArquivo } from "../../shared/arquivos/arquivos";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
@@ -100,7 +101,9 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
       fonte: "",
     },
   });
-  const { errors } = form.formState;
+  const { errors, isDirty } = form.formState;
+  // O texto digitado conta como enviado depois que a IA o usou: só avisa por texto ainda não enviado.
+  const marcarComoEnviado = () => form.reset(form.getValues());
 
   const { padrao } = fontes;
   useEffect(() => {
@@ -109,7 +112,7 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
 
   const analisarVaga = async () => {
     if (!(await form.trigger("descricao"))) return;
-    avaliar.mutate(form.getValues("descricao").trim());
+    avaliar.mutate(form.getValues("descricao").trim(), { onSuccess: marcarComoEnviado });
   };
 
   // Análise automática pedida pelo modal, feita uma única vez:
@@ -182,7 +185,10 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   function iniciarGeracao(entrada: EntradaDaAdaptacao) {
     setPerguntas(null);
     gerarRascunho.mutate(entrada, {
-      onSuccess: (_rascunho, enviada) => setVagaEmRevisao(enviada.dados),
+      onSuccess: (_rascunho, enviada) => {
+        marcarComoEnviado();
+        setVagaEmRevisao(enviada.dados);
+      },
     });
   }
 
@@ -257,10 +263,10 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   const analisarAts = async () => {
     if (!(await form.trigger("descricao"))) return;
     const { curriculoId, ...fonte } = await fontes.resolver(form.getValues("fonte"));
-    ats.mutate({
-      curriculoId,
-      dados: { descricao_vaga: form.getValues("descricao").trim(), ...fonte },
-    });
+    ats.mutate(
+      { curriculoId, dados: { descricao_vaga: form.getValues("descricao").trim(), ...fonte } },
+      { onSuccess: marcarComoEnviado },
+    );
   };
 
   const gerarCarta = async () => {
@@ -344,6 +350,7 @@ function FluxoAjustarVaga({ estado }: { estado: EstadoAjustarVaga }) {
   return (
     <>
       {cabecalho}
+      <AvisoAlteracoesNaoSalvas alterado={isDirty} />
 
       <div className={estilos.layout}>
         <Panel titulo="Dados da vaga">

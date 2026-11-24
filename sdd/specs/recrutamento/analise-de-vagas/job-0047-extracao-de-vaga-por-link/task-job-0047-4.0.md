@@ -20,11 +20,11 @@ Complexidade: medium. Dependências: 1.0, 2.0.
 
 ## Subtarefas
 
-- [ ] 4.1 Criar a fixture de HTML reduzida e anonimizada, baseada na estrutura real da resposta de visitante.
-- [ ] 4.2 Escrever os testes (campos completos, sem campos secundários, HTML sem título, 429, 404).
-- [ ] 4.3 Implementar o interpretador de HTML (BeautifulSoup) e a conversão de `<br>` e `<li>` para linhas.
-- [ ] 4.4 Implementar `LeitorVagaLinkedInClient`.
-- [ ] 4.5 Exportar o adapter em `vaga/adapters/__init__.py`.
+- [x] 4.1 Criar a fixture de HTML reduzida e anonimizada, baseada na estrutura real da resposta de visitante.
+- [x] 4.2 Escrever os testes (campos completos, sem campos secundários, HTML sem título, 429, 404).
+- [x] 4.3 Implementar o interpretador de HTML (BeautifulSoup) e a conversão de `<br>` e `<li>` para linhas.
+- [x] 4.4 Implementar `LeitorVagaLinkedInClient`.
+- [x] 4.5 Exportar o adapter em `vaga/adapters/__init__.py`.
 
 ## Detalhes de Implementação
 
@@ -37,7 +37,7 @@ Ver "Pontos de Integração" e "Riscos Conhecidos" da techspec. Usa o `ClienteHt
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `TestLeitorVagaLinkedInClient`.
+- [x] Testes de unidade: `TestLeitorVagaLinkedInClient`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

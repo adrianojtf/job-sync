@@ -24,7 +24,7 @@ def converter_html_em_texto(html: str, ignorar_tags: Sequence[str] = ()) -> str:
     for item in sopa.find_all("li"):
         item.insert_before("\n- ")
     for lista in sopa.find_all(["ul", "ol"]):
-        lista.insert_after("\n")
+        lista.insert_after("\n\n")
     for bloco in sopa.find_all(_TAGS_DE_BLOCO):
         bloco.insert_before("\n\n")
         bloco.insert_after("\n\n")

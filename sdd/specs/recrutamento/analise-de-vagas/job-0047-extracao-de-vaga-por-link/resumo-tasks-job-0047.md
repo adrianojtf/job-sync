@@ -10,7 +10,7 @@
 - [x] 1.0 Domínio: `LinkVaga`, `DadosVaga`, exceções e portas (complexidade: medium; dependências: nenhuma)
 - [x] 2.0 Cliente HTTP seguro com proteção contra SSRF (complexidade: high; dependências: nenhuma)
 - [x] 3.0 Extrator por IA e leitor genérico de páginas de vaga (complexidade: medium; dependências: 1.0, 2.0)
-- [ ] 4.0 Leitor do LinkedIn pela versão pública da vaga (complexidade: medium; dependências: 1.0, 2.0)
+- [x] 4.0 Leitor do LinkedIn pela versão pública da vaga (complexidade: medium; dependências: 1.0, 2.0)
 - [ ] 5.0 Limitador em memória e caso de uso `ExtrairDadosVaga` (complexidade: medium; dependências: 1.0, 3.0, 4.0)
 - [ ] 6.0 Endpoint `POST /v1/vagas/extracoes`, handlers de erro, injeção e configuração (complexidade: medium; dependências: 5.0)
 - [ ] 7.0 Persistência de cargo, empresa e local na captura de vagas (complexidade: medium; dependências: 1.0)

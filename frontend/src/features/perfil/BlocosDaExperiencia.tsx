@@ -76,6 +76,10 @@ export function BlocosDaExperiencia({ form, indice }: Props) {
         className={estilos.conquistas}
       >
         <h4 className={estilos.titulo}>Skills</h4>
+        <p className={estilos.descricao}>
+          Tecnologias e competências usadas nesta experiência. As que faltarem nas tecnologias
+          gerais entram nelas ao salvar.
+        </p>
         <Controller
           control={form.control}
           name={`${base}.skills`}
@@ -86,7 +90,6 @@ export function BlocosDaExperiencia({ form, indice }: Props) {
               nome={`skills da experiência ${numero}`}
               aoAnunciar={setAnuncio}
               rotuloNovaTag="Nova skill"
-              ajuda="Tecnologias e competências usadas. Digite e tecle Enter ou vírgula."
             />
           )}
         />

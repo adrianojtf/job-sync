@@ -58,6 +58,11 @@ export function ConquistasDaExperiencia({ form, indice }: Props) {
       className={estilos.conquistas}
     >
       <h4 className={estilos.titulo}>Principais realizações</h4>
+      <p className={estilos.descricao}>
+        Seu banco de conquistas: cadastre aqui tudo o que você entregou nesta experiência, com o
+        resultado quando houver. Ao adaptar o currículo, a IA escolhe de 3 a 5 mais aderentes à
+        vaga.
+      </p>
       {fields.length === 0 && <p className={estilos.vazio}>Nenhuma conquista cadastrada.</p>}
       {fields.map((campo, posicao) => (
         <div key={campo.id} className={estilos.item}>

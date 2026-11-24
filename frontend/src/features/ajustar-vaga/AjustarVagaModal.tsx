@@ -1,5 +1,10 @@
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import type { DadosVaga as DadosVagaLidos } from "../../api/tipos";
+import { CampoLinkVaga } from "../../shared/leitura-de-vaga/CampoLinkVaga";
+import { PreencherPeloTexto } from "../../shared/leitura-de-vaga/PreencherPeloTexto";
+import type { CampoIdentificacao } from "../../shared/leitura-de-vaga/resumo-da-leitura";
 import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
 import { Modal } from "../../shared/ui/Modal";
@@ -18,6 +23,8 @@ interface DadosVaga {
 
 const VAZIO: DadosVaga = { cargo: "", empresa: "", descricao: "" };
 const ID_FORMULARIO = "form-ajustar-vaga-modal";
+/** Campos de identificação deste formulário: a leitura avisa o que preencheu entre eles. */
+const CAMPOS_LIDOS: CampoIdentificacao[] = ["cargo", "empresa"];
 const obrigatorio = (mensagem: string) => ({
   validate: (valor: string) => valor.trim() !== "" || mensagem,
 });
@@ -27,10 +34,22 @@ export function AjustarVagaModal({ aberto, aoFechar }: Props) {
   const navegar = useNavigate();
   const form = useForm<DadosVaga>({ defaultValues: VAZIO });
   const { errors } = form.formState;
+  const [linkDaVaga, setLinkDaVaga] = useState("");
+  const descricaoDigitada = useWatch({ control: form.control, name: "descricao" });
 
   const fechar = () => {
     form.reset(VAZIO);
+    setLinkDaVaga("");
     aoFechar();
+  };
+
+  // A leitura da vaga (link ou texto) é um rascunho: preenche o que encontrou e mantém o que a
+  // pessoa já digitou quando não encontra título ou empresa.
+  const preencherComDadosLidos = (dados: DadosVagaLidos) => {
+    const opcoes = { shouldDirty: true, shouldValidate: true };
+    if (dados.cargo) form.setValue("cargo", dados.cargo, opcoes);
+    if (dados.empresa) form.setValue("empresa", dados.empresa, opcoes);
+    form.setValue("descricao", dados.descricao, opcoes);
   };
 
   const irParaAjuste = (dados: DadosVaga) => {
@@ -65,6 +84,12 @@ export function AjustarVagaModal({ aberto, aoFechar }: Props) {
         onSubmit={(evento) => void form.handleSubmit(irParaAjuste)(evento)}
         noValidate
       >
+        <CampoLinkVaga
+          valor={linkDaVaga}
+          aoAlterar={setLinkDaVaga}
+          aoLer={preencherComDadosLidos}
+          campos={CAMPOS_LIDOS}
+        />
         <Field
           rotulo="Título da vaga"
           placeholder="Ex.: Senior Java Backend Developer"
@@ -82,6 +107,11 @@ export function AjustarVagaModal({ aberto, aoFechar }: Props) {
           placeholder="Cole aqui a descrição completa da oportunidade…"
           erro={errors.descricao?.message}
           {...form.register("descricao", obrigatorio("Cole a descrição da vaga."))}
+        />
+        <PreencherPeloTexto
+          texto={descricaoDigitada}
+          aoLer={preencherComDadosLidos}
+          campos={CAMPOS_LIDOS}
         />
       </form>
     </Modal>

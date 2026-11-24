@@ -1,7 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { servirDadosBase } from "../../test/fixtures";
+import { AVALIACAO_VAGA, servirDadosBase } from "../../test/fixtures";
 import { API_TESTE, renderizarApp } from "../../test/renderizar-app";
 import { servidorApi } from "../../test/servidor-api";
 
@@ -147,5 +147,102 @@ describe("Ajustar para uma vaga — link da vaga", () => {
     await screen.findByText(/Dados lidos do link/);
     expect(corpos).toEqual([{ url: URL_VAGA }]);
     expect(screen.queryByText("Informe o título da vaga.")).not.toBeInTheDocument();
+  });
+});
+
+describe("Ajustar currículo para uma vaga — modal do menu com link da vaga", () => {
+  async function abrirModal() {
+    renderizarApp({ caminho: "/", perfil: "adriano" });
+    await userEvent.click(await screen.findByRole("button", { name: "Ajustar para uma vaga" }));
+    return screen.getByRole("dialog", { name: "Ajustar currículo para uma vaga" });
+  }
+
+  function servirModal(resposta: () => Response) {
+    const corpos: Record<string, unknown>[] = [];
+    servirDadosBase();
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/vagas/extracoes`, async ({ request }) => {
+        corpos.push((await request.json()) as Record<string, unknown>);
+        return resposta();
+      }),
+      http.post(`${API_TESTE}/v1/vagas/avaliacoes`, () => HttpResponse.json(AVALIACAO_VAGA)),
+    );
+    return corpos;
+  }
+
+  it("tem o campo Link da vaga, lê o link e leva os dados para a análise", async () => {
+    const corpos = servirModal(() => HttpResponse.json(DADOS_LIDOS));
+    const modal = await abrirModal();
+
+    await userEvent.type(within(modal).getByLabelText("Link da vaga"), URL_VAGA);
+    await userEvent.click(within(modal).getByRole("button", { name: "Ler vaga" }));
+
+    expect(
+      await within(modal).findByText(
+        "Dados lidos do link: título, empresa e descrição. Confira antes de continuar.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(modal).getByLabelText("Título da vaga")).toHaveValue(
+      "Engenheiro de Software Sênior",
+    );
+    expect(within(modal).getByLabelText("Empresa")).toHaveValue("Barte");
+    expect(within(modal).getByLabelText("Descrição da vaga")).toHaveValue(
+      "Sobre a Barte\n\n- Python\n- FastAPI",
+    );
+    expect(corpos).toEqual([{ url: URL_VAGA }]);
+
+    await userEvent.click(within(modal).getByRole("button", { name: "Analisar vaga" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Ajustar para uma vaga" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Título da vaga")).toHaveValue("Engenheiro de Software Sênior");
+    expect(screen.getByLabelText("Empresa", { exact: true })).toHaveValue("Barte");
+    expect(await screen.findByRole("meter", { name: "Relevância" })).toBeInTheDocument();
+  });
+
+  it("quando o site bloqueia, mostra o motivo e continua pelo texto colado", async () => {
+    let chamada = 0;
+    servirDadosBase();
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/vagas/extracoes`, () => {
+        chamada += 1;
+        return chamada === 1
+          ? HttpResponse.json(PROBLEMA_BLOQUEIO, { status: 502 })
+          : HttpResponse.json({ ...DADOS_LIDOS, descricao: "Python e FastAPI." });
+      }),
+    );
+    const modal = await abrirModal();
+
+    await userEvent.type(within(modal).getByLabelText("Link da vaga"), URL_VAGA);
+    await userEvent.click(within(modal).getByRole("button", { name: "Ler vaga" }));
+    expect(await within(modal).findByText(PROBLEMA_BLOQUEIO.detail)).toBeInTheDocument();
+    expect(
+      within(modal).getByRole("button", { name: "Preencher os campos pelo texto" }),
+    ).toBeDisabled();
+
+    await userEvent.type(within(modal).getByLabelText("Descrição da vaga"), "Python e FastAPI.");
+    await userEvent.click(
+      within(modal).getByRole("button", { name: "Preencher os campos pelo texto" }),
+    );
+
+    expect(await within(modal).findByText(/Dados identificados no texto/)).toBeInTheDocument();
+    expect(within(modal).getByLabelText("Título da vaga")).toHaveValue(
+      "Engenheiro de Software Sênior",
+    );
+    expect(within(modal).getByLabelText("Empresa")).toHaveValue("Barte");
+  });
+
+  it("Enter no campo do link lê a vaga em vez de enviar o formulário", async () => {
+    const corpos = servirModal(() => HttpResponse.json(DADOS_LIDOS));
+    const modal = await abrirModal();
+
+    await userEvent.type(within(modal).getByLabelText("Link da vaga"), `${URL_VAGA}{Enter}`);
+
+    await within(modal).findByText(/Dados lidos do link/);
+    expect(corpos).toHaveLength(1);
+    expect(
+      screen.getByRole("dialog", { name: "Ajustar currículo para uma vaga" }),
+    ).toBeInTheDocument();
   });
 });

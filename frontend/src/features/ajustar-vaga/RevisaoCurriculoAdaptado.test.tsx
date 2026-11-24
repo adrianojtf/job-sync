@@ -100,7 +100,7 @@ describe("RevisaoCurriculoAdaptado", () => {
     expect(screen.getByRole("heading", { name: "Revise o currículo adaptado" })).toHaveFocus();
     expect(screen.getByLabelText("Nome completo")).toHaveValue("Ana Souza");
     expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo da IA.");
-    expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
+    expect(screen.getByLabelText("Principais realizações")).toHaveValue("Conquista da IA.");
     expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto da IA.");
     expect(screen.queryByLabelText("Descrição")).not.toBeInTheDocument();
     expect(
@@ -118,8 +118,8 @@ describe("RevisaoCurriculoAdaptado", () => {
 
     await usuario.clear(screen.getByLabelText("Resumo profissional"));
     await usuario.type(screen.getByLabelText("Resumo profissional"), "Resumo revisado.");
-    await usuario.clear(screen.getByLabelText("Conquistas"));
-    await usuario.type(screen.getByLabelText("Conquistas"), "Primeira.{Enter}Segunda.");
+    await usuario.clear(screen.getByLabelText("Principais realizações"));
+    await usuario.type(screen.getByLabelText("Principais realizações"), "Primeira.{Enter}Segunda.");
     await usuario.clear(screen.getByLabelText("Contexto"));
     await usuario.type(screen.getByLabelText("Contexto"), "Contexto revisado.");
     await usuario.clear(screen.getByLabelText("Formação"));
@@ -142,6 +142,8 @@ describe("RevisaoCurriculoAdaptado", () => {
           periodo: "2024",
           conquistas: ["Primeira.", "Segunda."],
           contexto: "Contexto revisado.",
+          responsabilidades: [],
+          skills: [],
         },
       ],
     });
@@ -307,7 +309,15 @@ describe("RevisaoCurriculoAdaptado", () => {
     await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
 
     expect(aoConfirmar.mock.calls[0]?.[0].experiencias).toEqual([
-      { cargo: "Engenheira", empresa: "Starian", periodo: "", conquistas: [], contexto: "" },
+      {
+        cargo: "Engenheira",
+        empresa: "Starian",
+        periodo: "",
+        conquistas: [],
+        contexto: "",
+        responsabilidades: [],
+        skills: [],
+      },
     ]);
   });
 
@@ -442,7 +452,10 @@ describe("RevisaoCurriculoAdaptado", () => {
       }),
     );
     renderizar();
-    await usuario.type(screen.getByLabelText("Conquistas"), "{Enter}Segunda conquista.");
+    await usuario.type(
+      screen.getByLabelText("Principais realizações"),
+      "{Enter}Segunda conquista.",
+    );
 
     await usuario.click(screen.getByRole("button", { name: "Avaliar experiência 1" }));
     const dialogo = screen.getByRole("dialog", { name: "Avaliar experiência" });
@@ -533,7 +546,7 @@ describe("RevisaoCurriculoAdaptado", () => {
       const usuario = userEvent.setup();
       const pedidos = servirSugestoes();
       renderizar();
-      await usuario.type(screen.getByLabelText("Conquistas"), " Editada.");
+      await usuario.type(screen.getByLabelText("Principais realizações"), " Editada.");
       await usuario.type(screen.getByLabelText("Contexto"), " Editado.");
 
       await usuario.click(botao("experiência 1"));
@@ -550,6 +563,8 @@ describe("RevisaoCurriculoAdaptado", () => {
             periodo: "2024",
             conquistas: ["Conquista da IA. Editada."],
             contexto: "Contexto da IA. Editado.",
+            responsabilidades: [],
+            skills: [],
           },
           contexto_vaga: contextoVaga,
           refino: { tentativa: 1, sugestoes_anteriores: [] },
@@ -559,18 +574,20 @@ describe("RevisaoCurriculoAdaptado", () => {
       expect(painel.querySelector("p:last-of-type")?.textContent).toBe(
         "- Conquista sugerida.\n- Outra conquista sugerida.\nContexto: Contexto sugerido pela IA.",
       );
-      expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA. Editada.");
+      expect(screen.getByLabelText("Principais realizações")).toHaveValue(
+        "Conquista da IA. Editada.",
+      );
 
       await usuario.click(
         screen.getByRole("button", { name: "Aplicar sugestão em experiência 1" }),
       );
 
-      expect(screen.getByLabelText("Conquistas")).toHaveValue(
+      expect(screen.getByLabelText("Principais realizações")).toHaveValue(
         "Conquista sugerida.\nOutra conquista sugerida.",
       );
       expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto sugerido pela IA.");
       expect(screen.getByLabelText("Cargo")).toHaveValue("Dev");
-      expect(screen.getByLabelText("Conquistas")).toHaveFocus();
+      expect(screen.getByLabelText("Principais realizações")).toHaveFocus();
       expect(screen.getByText("Alterações não confirmadas")).toBeInTheDocument();
     });
 
@@ -584,7 +601,7 @@ describe("RevisaoCurriculoAdaptado", () => {
         await screen.findByRole("button", { name: "Descartar sugestão de experiência 1" }),
       );
 
-      expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
+      expect(screen.getByLabelText("Principais realizações")).toHaveValue("Conquista da IA.");
       expect(screen.getByLabelText("Contexto")).toHaveValue("Contexto da IA.");
     });
 
@@ -592,7 +609,7 @@ describe("RevisaoCurriculoAdaptado", () => {
       const usuario = userEvent.setup();
       renderizar();
 
-      await usuario.clear(screen.getByLabelText("Conquistas"));
+      await usuario.clear(screen.getByLabelText("Principais realizações"));
       await usuario.clear(screen.getByLabelText("Contexto"));
 
       expect(botao("experiência 1")).toBeDisabled();
@@ -613,7 +630,7 @@ describe("RevisaoCurriculoAdaptado", () => {
       await usuario.click(botao("experiência 1"));
 
       expect(await screen.findByText(/IA fora do ar\./)).toBeInTheDocument();
-      expect(screen.getByLabelText("Conquistas")).toHaveValue("Conquista da IA.");
+      expect(screen.getByLabelText("Principais realizações")).toHaveValue("Conquista da IA.");
     });
 
     it("mostra o erro no bloco e mantém o texto quando a IA falha", async () => {
@@ -633,5 +650,141 @@ describe("RevisaoCurriculoAdaptado", () => {
       expect(await screen.findByText(/IA fora do ar\./)).toBeInTheDocument();
       expect(screen.getByLabelText("Resumo profissional")).toHaveValue("Resumo da IA.");
     });
+  });
+});
+
+describe("RevisaoCurriculoAdaptado — quatro blocos", () => {
+  const rascunhoComBlocos: RascunhoCurriculoAdaptado = {
+    ...rascunhoDoPerfil,
+    experiencias: [
+      {
+        cargo: "Dev",
+        empresa: "TechCorp",
+        periodo: "2024",
+        conquistas: ["Atendi 1.000 usuários."],
+        contexto: "ERP financeiro.",
+        responsabilidades: ["Projetar telas", "Testar entregas"],
+        skills: ["Java", "SQL"],
+      },
+    ],
+  };
+  const skills = () => within(screen.getByRole("group", { name: "Skills da experiência 1" }));
+
+  it("mostra contexto, responsabilidades, realizações e skills da experiência", () => {
+    renderizar({ rascunho: rascunhoComBlocos });
+
+    expect(screen.getByLabelText("Contexto")).toHaveValue("ERP financeiro.");
+    expect(screen.getByLabelText("Principais responsabilidades")).toHaveValue(
+      "Projetar telas\nTestar entregas",
+    );
+    expect(screen.getByLabelText("Principais realizações")).toHaveValue("Atendi 1.000 usuários.");
+    expect(skills().getByText("Java")).toBeInTheDocument();
+    expect(skills().getByText("SQL")).toBeInTheDocument();
+  });
+
+  it("edita responsabilidades e skills e confirma com os quatro blocos", async () => {
+    const usuario = userEvent.setup();
+    const { aoConfirmar } = renderizar({ rascunho: rascunhoComBlocos });
+
+    await usuario.type(
+      screen.getByLabelText("Principais responsabilidades"),
+      "{Enter}Mentorar o time",
+    );
+    await usuario.type(skills().getByLabelText("Nova skill"), "Flyway{Enter}");
+    await usuario.click(skills().getByRole("button", { name: "Remover SQL" }));
+    await usuario.click(screen.getByRole("button", { name: "Confirmar e gerar PDF" }));
+
+    expect(aoConfirmar.mock.calls[0]?.[0].experiencias).toEqual([
+      {
+        cargo: "Dev",
+        empresa: "TechCorp",
+        periodo: "2024",
+        conquistas: ["Atendi 1.000 usuários."],
+        contexto: "ERP financeiro.",
+        responsabilidades: ["Projetar telas", "Testar entregas", "Mentorar o time"],
+        skills: ["Java", "Flyway"],
+      },
+    ]);
+  });
+
+  it("a avaliação recebe o texto composto dos quatro blocos", async () => {
+    const usuario = userEvent.setup();
+    let corpoRecebido: unknown;
+    const dimensao = (score: number) => ({ score, nivel: "adequado", confianca: 0.9 });
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/experiencias-profissionais/avaliacoes`, async ({ request }) => {
+        corpoRecebido = await request.json();
+        return HttpResponse.json({
+          score: 74,
+          clareza_escrita: dimensao(80),
+          qualidade_detalhe: dimensao(60),
+          aderencia_vaga: dimensao(70),
+          consistencia_textual: dimensao(86),
+        });
+      }),
+    );
+    renderizar({ rascunho: rascunhoComBlocos });
+
+    await usuario.click(screen.getByRole("button", { name: "Avaliar experiência 1" }));
+    const dialogo = screen.getByRole("dialog", { name: "Avaliar experiência" });
+    await usuario.type(within(dialogo).getByLabelText("Descrição da vaga"), "Vaga Java");
+    await usuario.click(within(dialogo).getByRole("button", { name: "Avaliar" }));
+    await within(dialogo).findByText("74");
+
+    expect(corpoRecebido).toMatchObject({
+      experiencia: {
+        descricao:
+          "- Projetar telas\n- Testar entregas\n- Atendi 1.000 usuários.\nERP financeiro.\nJava, SQL",
+      },
+    });
+  });
+
+  it("a sugestão de IA envia e aplica os quatro blocos", async () => {
+    const usuario = userEvent.setup();
+    const pedidos: Record<string, unknown>[] = [];
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/experiencias-adaptadas/sugestoes`, async ({ request }) => {
+        pedidos.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({
+          conquistas: ["Reduzi o fechamento em 30%."],
+          contexto: "Plataforma financeira.",
+          responsabilidades: ["Projetar o contas a receber"],
+          skills: ["Java", "Flyway"],
+          foco: "aderencia_vaga",
+        });
+      }),
+    );
+    renderizar({ rascunho: rascunhoComBlocos });
+
+    await usuario.click(screen.getByRole("button", { name: "Sugestões de IA para experiência 1" }));
+    const painel = await screen.findByRole("region", { name: "Sugestão da IA para experiência 1" });
+
+    expect(pedidos[0]).toMatchObject({
+      experiencia: {
+        responsabilidades: ["Projetar telas", "Testar entregas"],
+        skills: ["Java", "SQL"],
+      },
+    });
+    expect(painel).toHaveTextContent("Responsabilidades: Projetar o contas a receber");
+    expect(painel).toHaveTextContent("Skills: Java, Flyway");
+
+    await usuario.click(screen.getByRole("button", { name: "Aplicar sugestão em experiência 1" }));
+
+    expect(screen.getByLabelText("Principais realizações")).toHaveValue(
+      "Reduzi o fechamento em 30%.",
+    );
+    expect(screen.getByLabelText("Contexto")).toHaveValue("Plataforma financeira.");
+    expect(screen.getByLabelText("Principais responsabilidades")).toHaveValue(
+      "Projetar o contas a receber",
+    );
+    expect(skills().getByText("Flyway")).toBeInTheDocument();
+    expect(skills().queryByText("SQL")).not.toBeInTheDocument();
+  });
+
+  it("rascunho salvo antes dos novos blocos abre com responsabilidades e skills vazias", () => {
+    renderizar();
+
+    expect(screen.getByLabelText("Principais responsabilidades")).toHaveValue("");
+    expect(skills().queryByRole("list")).not.toBeInTheDocument();
   });
 });

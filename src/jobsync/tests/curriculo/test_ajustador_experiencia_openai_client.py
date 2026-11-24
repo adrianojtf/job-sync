@@ -126,7 +126,7 @@ class TestAjustadorExperienciaOpenAIClientAjustar:
         _ajustar(cliente)
 
         sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"].lower()
-        assert "de 2 a 6" in sistema
+        assert "de 3 a 5" in sistema
         assert "verbo de ação" in sistema
         assert "contexto" in sistema
         assert "de 1 a 3 frases" in sistema
@@ -256,6 +256,7 @@ class TestAjustadorExperienciaOpenAIClientDiretrizes:
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
         assert "Use Angular no lugar de React" in usuario
         assert "cite Angular de forma explícita no contexto" in usuario
+        assert "inclua Angular nas skills no lugar de React" in usuario
 
     def test_manutencao_pede_citacao_explicita_da_tecnologia_original(self):
         cliente = _cliente(RESPOSTA)
@@ -280,7 +281,7 @@ class TestAjustadorExperienciaOpenAIClientDiretrizes:
         _refinar(cliente)
 
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
-        assert "Mantenha as tecnologias já citadas nas conquistas e no contexto atuais" in usuario
+        assert "Mantenha as tecnologias já citadas nas conquistas, no contexto, nas responsabilidades e nas skills atuais" in usuario
 
 
 class TestAjustadorExperienciaOpenAIClientRefino:
@@ -332,7 +333,6 @@ class TestAjustadorExperienciaOpenAIClientConquistasDoBanco:
         assert "Escolha de 3 a 5 delas" in usuario
         assert "as mais aderentes à vaga e ao cargo-alvo" in usuario
         assert "com a mais relevante primeiro" in usuario
-        assert "substitui a de 2 a 6 conquistas" in usuario
 
     def test_prompt_do_usuario_proibe_acrescentar_fato_e_prevalece_sobre_metricas_estimadas(self):
         cliente = _cliente(RESPOSTA)
@@ -378,3 +378,93 @@ class TestAjustadorExperienciaOpenAIClientConquistasDoBanco:
 
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
         assert "Conquistas cadastradas pelo usuário" not in usuario
+
+
+RESPOSTA_COMPLETA = {
+    **RESPOSTA,
+    "responsabilidades": ["Projetar APIs.", "Testar entregas.", "Revisar código."],
+    "skills": ["Java", "PostgreSQL"],
+}
+
+
+class TestAjustadorExperienciaOpenAIClientQuatroBlocos:
+    def test_devolve_os_quatro_blocos_em_uma_unica_chamada(self):
+        cliente = _cliente(RESPOSTA_COMPLETA)
+
+        resultado = _ajustar(cliente)
+
+        assert resultado.responsabilidades == ("Projetar APIs.", "Testar entregas.", "Revisar código.")
+        assert resultado.skills == ("Java", "PostgreSQL")
+        assert resultado.conquistas == ("Desenvolvi APIs em Java.", "Reduzi o tempo de resposta em 40%.")
+        assert cliente.solicitar_json.call_count == 1
+
+    def test_prompt_de_sistema_define_o_formato_e_os_limites_dos_quatro_blocos(self):
+        cliente = _cliente(RESPOSTA_COMPLETA)
+
+        _ajustar(cliente)
+
+        sistema = cliente.solicitar_json.call_args.kwargs["prompt_sistema"]
+        assert '"responsabilidades"' in sistema
+        assert '"skills"' in sistema
+        assert "Responsabilidades: de 3 a 5" in sistema
+
+    def test_responsabilidades_e_skills_ausentes_viram_listas_vazias(self):
+        resultado = _ajustar(_cliente(RESPOSTA))
+
+        assert (resultado.responsabilidades, resultado.skills) == ((), ())
+
+    def test_listas_com_mais_de_cinco_itens_sao_cortadas(self):
+        resposta = {**RESPOSTA_COMPLETA, "responsabilidades": [f"Item {n}." for n in range(8)]}
+
+        resultado = _ajustar(_cliente(resposta))
+
+        assert len(resultado.responsabilidades) == 5
+
+    @pytest.mark.parametrize(
+        "resposta",
+        [
+            {**RESPOSTA_COMPLETA, "responsabilidades": "texto solto"},
+            {**RESPOSTA_COMPLETA, "skills": ["Java", ""]},
+        ],
+    )
+    def test_blocos_novos_fora_do_formato_geram_erro(self, resposta):
+        with pytest.raises(ValueError):
+            _ajustar(_cliente(resposta))
+
+    def test_prompt_do_usuario_traz_os_blocos_cadastrados_no_perfil(self):
+        cliente = _cliente(RESPOSTA_COMPLETA)
+        experiencia = ExperienciaParaAvaliacao(
+            cargo="Dev", empresa="TechCorp", periodo="2022", descricao="",
+            contexto="ERP financeiro.", responsabilidades=("Projetar telas",), skills=("Java", "Flyway"),
+        )
+
+        AjustadorExperienciaOpenAIClient(cliente).ajustar(experiencia, _contexto(), DiretrizesExperiencia())
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Contexto cadastrado: ERP financeiro." in usuario
+        assert "Projetar telas" in usuario
+        assert "Skills cadastradas: Java, Flyway" in usuario
+
+    def test_so_com_blocos_cadastrados_chama_a_ia(self):
+        cliente = _cliente(RESPOSTA_COMPLETA)
+        experiencia = ExperienciaParaAvaliacao(
+            cargo="Dev", empresa="TechCorp", periodo="2022", descricao="", skills=("Java",)
+        )
+
+        AjustadorExperienciaOpenAIClient(cliente).ajustar(experiencia, _contexto(), DiretrizesExperiencia())
+
+        cliente.solicitar_json.assert_called_once()
+
+    def test_refinar_traz_responsabilidades_e_skills_atuais_e_devolve_os_quatro_blocos(self):
+        cliente = _cliente(RESPOSTA_COMPLETA)
+        atual = ExperienciaAdaptada(
+            cargo="Dev", empresa="TechCorp", periodo="2022", conquistas=("Criei APIs.",),
+            contexto="Empresa de pagamentos.", responsabilidades=("Projetar telas.",), skills=("Java",),
+        )
+
+        resultado = AjustadorExperienciaOpenAIClient(cliente).refinar(atual, _contexto(), PedidoRefino())
+
+        usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
+        assert "Projetar telas." in usuario
+        assert "Skills atuais: Java" in usuario
+        assert resultado.skills == ("Java", "PostgreSQL")

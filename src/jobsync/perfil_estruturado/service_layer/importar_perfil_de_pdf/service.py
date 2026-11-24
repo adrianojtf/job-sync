@@ -7,8 +7,9 @@ que o usuário revisar/editar os campos.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
+from jobsync.perfil_estruturado.domain.estruturar_experiencia_service import EstruturarExperienciaService
 from jobsync.perfil_estruturado.domain.extrator_perfil_estruturado_port import ExtratorPerfilEstruturadoPort
 from jobsync.perfil_estruturado.domain.perfil_estruturado import DadosPerfilExtraidos
 from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.dtos import ImportarPerfilDePdfInputDto
@@ -17,10 +18,14 @@ from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.validator i
 
 @dataclass
 class ImportarPerfilDePdf:
-    """Extrai um rascunho de perfil estruturado a partir de um PDF, via IA."""
+    """Extrai um rascunho de perfil estruturado a partir de um PDF, via IA, com os quatro blocos por experiência."""
 
     extrator: ExtratorPerfilEstruturadoPort
+    estruturador: EstruturarExperienciaService | None = None
 
     def executar(self, input_dto: ImportarPerfilDePdfInputDto) -> DadosPerfilExtraidos:
         ImportarPerfilDePdfInputValidator.validar(input_dto)
-        return self.extrator.extrair(input_dto.pdf_curriculo)
+        dados = self.extrator.extrair(input_dto.pdf_curriculo)
+        if self.estruturador is None:
+            return dados
+        return replace(dados, experiencias=self.estruturador.executar_varias(dados.experiencias))

@@ -258,3 +258,46 @@ class TestRascunhoComCompetencias:
         )
 
         assert rascunho.competencias is None
+
+
+class TestRascunhoComSkillsNasCompetencias:
+    def _rascunho(self, competencias, skills=("Java", "Flyway")) -> RascunhoCurriculoAdaptado:
+        return RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(),
+            experiencias=(
+                ExperienciaAdaptada(
+                    cargo="Dev", empresa="Starian", periodo="2024", conquistas=("Entrega.",), skills=skills
+                ),
+            ),
+            competencias=competencias,
+        )
+
+    def test_skill_ausente_entra_na_categoria_tecnologias_existente(self):
+        rascunho = self._rascunho((CategoriaCompetencia("Tecnologias", ("SQL",)),))
+
+        resultado = rascunho.com_skills_nas_competencias()
+
+        assert resultado.competencias == (CategoriaCompetencia("Tecnologias", ("SQL", "Java", "Flyway")),)
+
+    def test_skill_ausente_cria_a_categoria_tecnologias_quando_nao_existe(self):
+        rascunho = self._rascunho((CategoriaCompetencia("Linguagens", ("Java",)),))
+
+        resultado = rascunho.com_skills_nas_competencias()
+
+        assert resultado.competencias == (
+            CategoriaCompetencia("Linguagens", ("Java",)),
+            CategoriaCompetencia("Tecnologias", ("Flyway",)),
+        )
+
+    def test_comparacao_ignora_caixa_e_categoria(self):
+        rascunho = self._rascunho((CategoriaCompetencia("Backend", ("java", "FLYWAY")),))
+
+        assert rascunho.com_skills_nas_competencias() == rascunho
+
+    def test_sem_competencias_por_categoria_devolve_o_mesmo_rascunho(self):
+        rascunho = self._rascunho(None)
+
+        assert rascunho.com_skills_nas_competencias() == rascunho

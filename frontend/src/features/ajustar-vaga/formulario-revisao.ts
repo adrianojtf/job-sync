@@ -6,6 +6,7 @@ import type {
   ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 import { categoriasDeTexto } from "../../shared/formulario-curriculo/competencias";
+import { linhasParaTexto, textoParaLinhas } from "../../shared/formulario-curriculo/linhas";
 
 type SecaoRascunho = RascunhoCurriculoAdaptado["secoes"][number];
 export type TipoSecao = SecaoRascunho["tipo"];
@@ -113,16 +114,9 @@ function secaoPerfil(rascunho: RascunhoCurriculoAdaptado): SecaoRascunho | undef
 }
 
 /** Cada linha do texto é uma conquista; linhas em branco e espaços nas pontas são ignorados. */
-export function linhasParaConquistas(texto: string): string[] {
-  return texto
-    .split("\n")
-    .map((linha) => linha.trim())
-    .filter((linha) => linha !== "");
-}
+export const linhasParaConquistas = textoParaLinhas;
 
-export function conquistasParaLinhas(conquistas: string[]): string {
-  return conquistas.join("\n");
-}
+export const conquistasParaLinhas = linhasParaTexto;
 
 /** Leva uma experiência da API para o formulário, com as conquistas em linhas de texto. */
 export function experienciaAdaptadaParaFormulario(
@@ -132,8 +126,10 @@ export function experienciaAdaptadaParaFormulario(
     cargo: experiencia.cargo ?? "",
     empresa: experiencia.empresa ?? "",
     periodo: experiencia.periodo ?? "",
-    conquistas: conquistasParaLinhas(experiencia.conquistas ?? []),
     contexto: experiencia.contexto ?? "",
+    responsabilidades: linhasParaTexto(experiencia.responsabilidades ?? []),
+    conquistas: conquistasParaLinhas(experiencia.conquistas ?? []),
+    skills: [...(experiencia.skills ?? [])],
   };
 }
 
@@ -147,17 +143,24 @@ export function formularioParaExperienciaAdaptada(
     periodo: formulario.periodo.trim(),
     conquistas: linhasParaConquistas(formulario.conquistas),
     contexto: formulario.contexto.trim(),
+    responsabilidades: textoParaLinhas(formulario.responsabilidades),
+    skills: formulario.skills,
   };
 }
 
 /**
- * Texto que o avaliador recebe: conquistas em bullets e o contexto, sem cabeçalho nem rótulo.
+ * Texto que o avaliador recebe: responsabilidades e conquistas em bullets, o contexto e as skills,
+ * sem cabeçalho nem rótulo.
  * Espelha `ExperienciaAdaptada.para_avaliacao` do backend; os testes dos dois lados usam os
  * mesmos exemplos para não divergirem.
  */
 export function descricaoParaAvaliacao(formulario: ExperienciaAdaptadaFormulario): string {
-  const linhas = linhasParaConquistas(formulario.conquistas).map((conquista) => `- ${conquista}`);
+  const linhas = [
+    ...textoParaLinhas(formulario.responsabilidades),
+    ...linhasParaConquistas(formulario.conquistas),
+  ].map((item) => `- ${item}`);
   if (formulario.contexto.trim() !== "") linhas.push(formulario.contexto.trim());
+  if (formulario.skills.length > 0) linhas.push(formulario.skills.join(", "));
   return linhas.join("\n");
 }
 

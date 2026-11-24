@@ -28,6 +28,8 @@ const rascunhoDoPerfil: RascunhoCurriculoAdaptado = {
       periodo: "2024",
       conquistas: ["APIs."],
       contexto: "Empresa de TI.",
+      responsabilidades: [],
+      skills: [],
     },
   ],
   titulo_experiencias: "Experience",
@@ -66,6 +68,8 @@ describe("rascunhoParaFormulario", () => {
         periodo: "2024",
         conquistas: "APIs.",
         contexto: "Empresa de TI.",
+        responsabilidades: "",
+        skills: [],
       },
     ]);
   });
@@ -193,6 +197,8 @@ describe("formularioParaRascunho", () => {
       periodo: "2024",
       conquistas: ["Texto editado.", "Outra conquista."],
       contexto: "Contexto editado.",
+      responsabilidades: [],
+      skills: [],
     });
   });
 
@@ -237,6 +243,8 @@ describe("experiência adaptada no formulário", () => {
     periodo: "2024",
     conquistas: ["Criei APIs.", "Reduzi custos."],
     contexto: "Empresa de pagamentos.",
+    responsabilidades: [],
+    skills: [],
   };
 
   it("leva conquistas e contexto para campos de texto", () => {
@@ -246,6 +254,8 @@ describe("experiência adaptada no formulário", () => {
       periodo: "2024",
       conquistas: "Criei APIs.\nReduzi custos.",
       contexto: "Empresa de pagamentos.",
+      responsabilidades: "",
+      skills: [],
     });
   });
 
@@ -256,6 +266,8 @@ describe("experiência adaptada no formulário", () => {
       periodo: "",
       conquistas: "",
       contexto: "",
+      responsabilidades: "",
+      skills: [],
     });
   });
 
@@ -266,6 +278,8 @@ describe("experiência adaptada no formulário", () => {
       periodo: " 2024",
       conquistas: " Criei APIs. \n\nReduzi custos.",
       contexto: " Empresa de pagamentos. ",
+      responsabilidades: "",
+      skills: [],
     };
 
     expect(formularioParaExperienciaAdaptada(formulario)).toEqual(experiencia);
@@ -285,6 +299,8 @@ describe("texto para avaliação", () => {
     periodo: "2022 - Atual",
     conquistas: "Developed a VoIP billing system.\nAccelerated processing by 95%.",
     contexto: "Worked on the communications platform.",
+    responsabilidades: "",
+    skills: [] as string[],
   };
 
   it("compõe bullets e contexto, sem cabeçalho nem rótulo, como o backend", () => {
@@ -317,5 +333,63 @@ describe("texto para avaliação", () => {
       descricao:
         "- Developed a VoIP billing system.\n- Accelerated processing by 95%.\nWorked on the communications platform.",
     });
+  });
+});
+
+describe("quatro blocos da experiência adaptada", () => {
+  const completa = {
+    cargo: "Dev",
+    empresa: "Starian",
+    periodo: "2024",
+    conquistas: "Atendi 1.000 usuários.",
+    contexto: "ERP financeiro.",
+    responsabilidades: "Projetar telas\n\n Testar entregas ",
+    skills: ["Java", "SQL"],
+  };
+
+  it("leva responsabilidades em linhas e skills em tags para o formulário", () => {
+    const formulario = experienciaAdaptadaParaFormulario({
+      cargo: "Dev",
+      empresa: "Starian",
+      periodo: "2024",
+      conquistas: ["Atendi 1.000 usuários."],
+      contexto: "ERP financeiro.",
+      responsabilidades: ["Projetar telas", "Testar entregas"],
+      skills: ["Java", "SQL"],
+    });
+
+    expect(formulario.responsabilidades).toBe("Projetar telas\nTestar entregas");
+    expect(formulario.skills).toEqual(["Java", "SQL"]);
+  });
+
+  it("rascunho antigo, sem os blocos novos, abre com eles vazios", () => {
+    const formulario = experienciaAdaptadaParaFormulario({
+      cargo: "Dev",
+      empresa: "Starian",
+      periodo: "2024",
+      conquistas: ["A."],
+      contexto: "",
+    });
+
+    expect(formulario.responsabilidades).toBe("");
+    expect(formulario.skills).toEqual([]);
+  });
+
+  it("devolve ao formato da API com responsabilidades em lista", () => {
+    expect(formularioParaExperienciaAdaptada(completa)).toEqual({
+      cargo: "Dev",
+      empresa: "Starian",
+      periodo: "2024",
+      conquistas: ["Atendi 1.000 usuários."],
+      contexto: "ERP financeiro.",
+      responsabilidades: ["Projetar telas", "Testar entregas"],
+      skills: ["Java", "SQL"],
+    });
+  });
+
+  it("o texto de avaliação traz os quatro blocos, como o backend", () => {
+    expect(descricaoParaAvaliacao(completa)).toBe(
+      "- Projetar telas\n- Testar entregas\n- Atendi 1.000 usuários.\nERP financeiro.\nJava, SQL",
+    );
   });
 });

@@ -1,16 +1,12 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import type { PerfilEstruturado } from "../../api/tipos";
+import { useForm, useWatch } from "react-hook-form";
+import type { ExperienciaParaIA, PerfilEstruturado } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
-import {
-  CAMPOS_EXPERIENCIA,
-  type ExperienciaFormulario,
-} from "../../shared/formulario-curriculo/campos-curriculo";
+import { CAMPOS_IDENTIFICACAO_EXPERIENCIA } from "../../shared/formulario-curriculo/campos-curriculo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { PainelDadosPessoais } from "../../shared/formulario-curriculo/PainelDadosPessoais";
-import { SugestaoCampo } from "../../shared/formulario-curriculo/SugestaoCampo";
 import { useSugestoes } from "../../shared/formulario-curriculo/use-sugestoes";
 import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
@@ -18,11 +14,12 @@ import { Field } from "../../shared/ui/Field";
 import { Panel } from "../../shared/ui/Panel";
 import { useToast } from "../../shared/ui/use-toast";
 import { AvaliarExperienciaModal } from "./AvaliarExperienciaModal";
-import { ConquistasDaExperiencia } from "./ConquistasDaExperiencia";
+import { BlocosDaExperiencia } from "./BlocosDaExperiencia";
 import {
   CERTIFICACAO_VAZIA,
   EXPERIENCIA_PERFIL_VAZIA,
-  experienciaSemConquistas,
+  ehLegada,
+  experienciaParaIA,
   FORMACAO_VAZIA,
   formularioParaEntrada,
   IDIOMA_VAZIO,
@@ -31,7 +28,11 @@ import {
   type FormularioPerfil,
 } from "./formulario-perfil";
 import { ImportarPerfilModal } from "./ImportarPerfilModal";
-import { usePerfilEstruturado, useSalvarPerfilEstruturado } from "./use-perfil-estruturado";
+import {
+  useMigrarExperiencias,
+  usePerfilEstruturado,
+  useSalvarPerfilEstruturado,
+} from "./use-perfil-estruturado";
 
 const TITULO = "Meu perfil";
 const DESCRICAO = "Seu currículo mestre: a base usada para adaptar currículos e analisar vagas.";
@@ -70,9 +71,10 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
   const form = useForm<FormularioPerfil>({ defaultValues: perfilParaFormulario(perfilSalvo) });
   const salvar = useSalvarPerfilEstruturado(perfilSalvo !== null);
   const [importando, setImportando] = useState(false);
-  const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaFormulario | null>(
-    null,
-  );
+  const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaParaIA | null>(null);
+  const [revisarEstimativas, setRevisarEstimativas] = useState(false);
+  const migrar = useMigrarExperiencias();
+  const experiencias = useWatch({ control: form.control, name: "experiencias" });
   const { isDirty } = form.formState;
   // Sem vaga-alvo aqui: a IA só melhora a escrita do texto (JOB-0034).
   const sugestoes = useSugestoes();
@@ -81,7 +83,14 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
     salvar.mutate(formularioParaEntrada(valores, perfil), {
       onSuccess: (salvo) => {
         form.reset(perfilParaFormulario(salvo));
-        notificar("Perfil salvo.", "sucesso");
+        setRevisarEstimativas(false);
+        const incluidas = salvo.tecnologias_incluidas ?? [];
+        notificar(
+          incluidas.length > 0
+            ? `Perfil salvo. Tecnologias incluídas pelas skills: ${incluidas.join(", ")}.`
+            : "Perfil salvo.",
+          "sucesso",
+        );
       },
       onError: (erro) => notificar(erro.message, "erro"),
     }),
@@ -89,16 +98,56 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
 
   const aplicarRascunho = (rascunho: PerfilEstruturado) => {
     form.reset(perfilParaFormulario(rascunho), { keepDefaultValues: true });
+    setRevisarEstimativas(true);
     notificar("Dados importados. Revise e clique em Salvar perfil.");
   };
+
+  const estruturarExperiencias = () =>
+    migrar.mutate(undefined, {
+      onSuccess: (rascunho) => {
+        const atual = form.getValues();
+        form.reset(
+          { ...atual, experiencias: perfilParaFormulario(rascunho).experiencias },
+          { keepDefaultValues: true },
+        );
+        form.setValue("tecnologias", atual.tecnologias, { shouldDirty: true });
+        setRevisarEstimativas(true);
+        notificar("Experiências estruturadas. Revise e clique em Salvar perfil.");
+      },
+      onError: (erro) => notificar(erro.message, "erro"),
+    });
+
+  const temExperienciaLegada = (experiencias ?? []).some(ehLegada) && perfilSalvo !== null;
 
   return (
     <>
       <CabecalhoPagina
         titulo={TITULO}
         descricao={DESCRICAO}
-        acoes={<Button onClick={() => setImportando(true)}>Importar de PDF</Button>}
+        acoes={
+          <>
+            {temExperienciaLegada && (
+              <Button
+                onClick={estruturarExperiencias}
+                carregando={migrar.isPending}
+                disabled={isDirty}
+              >
+                {migrar.isPending
+                  ? "Estruturando… pode levar até 1 minuto"
+                  : "Estruturar experiências"}
+              </Button>
+            )}
+            <Button onClick={() => setImportando(true)}>Importar de PDF</Button>
+          </>
+        }
       />
+
+      {revisarEstimativas && (
+        <Aviso tom="alerta">
+          A IA pode ter estimado métricas e contextos nas experiências. Confirme que os números e os
+          fatos são verdadeiros antes de salvar.
+        </Aviso>
+      )}
 
       {perfilSalvo === null && (
         <Aviso>
@@ -117,27 +166,13 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           subtitulo="Da mais recente para a mais antiga"
           rotuloItem="Experiência"
           itemVazio={EXPERIENCIA_PERFIL_VAZIA}
-          campos={CAMPOS_EXPERIENCIA}
-          complementoItem={(indice) => (
-            <>
-              <SugestaoCampo
-                form={form}
-                campo={`experiencias.${indice}.descricao`}
-                rotuloBloco={`experiência ${indice + 1}`}
-                sugerir={sugestoes.experiencia(() =>
-                  experienciaSemConquistas(form.getValues(`experiencias.${indice}`)),
-                )}
-              />
-              <ConquistasDaExperiencia form={form} indice={indice} />
-            </>
-          )}
+          campos={CAMPOS_IDENTIFICACAO_EXPERIENCIA}
+          complementoItem={(indice) => <BlocosDaExperiencia form={form} indice={indice} />}
           acoesItem={(indice) => (
             <Button
               aria-label={`Avaliar experiência ${indice + 1}`}
               onClick={() =>
-                setExperienciaAvaliada(
-                  experienciaSemConquistas(form.getValues(`experiencias.${indice}`)),
-                )
+                setExperienciaAvaliada(experienciaParaIA(form.getValues(`experiencias.${indice}`)))
               }
             >
               Avaliar

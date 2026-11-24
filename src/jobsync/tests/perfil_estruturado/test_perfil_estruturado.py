@@ -222,3 +222,115 @@ class TestComConquistaNaExperiencia:
             self._perfil_com_duas_experiencias().com_conquista_na_experiencia(
                 0, Conquista("reduzi o TEMPO de deploy")
             )
+
+
+def _experiencia_com_blocos(**overrides) -> ExperienciaProfissional:
+    dados = dict(empresa="Starian", cargo="Dev", periodo="2024 - Atual", descricao="")
+    dados.update(overrides)
+    return ExperienciaProfissional(**dados)
+
+
+class TestBlocosDaExperiencia:
+    def test_blocos_novos_sao_vazios_por_padrao(self):
+        experiencia = _experiencia_com_blocos()
+
+        assert experiencia.contexto == ""
+        assert experiencia.responsabilidades == ()
+        assert experiencia.skills == ()
+
+    def test_normaliza_espacos_nas_pontas_dos_blocos(self):
+        experiencia = _experiencia_com_blocos(
+            contexto="  ERP financeiro.  ", responsabilidades=(" Projetar telas ",), skills=(" Java ",)
+        )
+
+        assert experiencia.contexto == "ERP financeiro."
+        assert experiencia.responsabilidades == ("Projetar telas",)
+        assert experiencia.skills == ("Java",)
+
+    def test_responsabilidade_vazia_levanta_erro(self):
+        with pytest.raises(ValueError, match="responsabilidade"):
+            _experiencia_com_blocos(responsabilidades=("Projetar", "  "))
+
+    def test_skill_vazia_levanta_erro(self):
+        with pytest.raises(ValueError, match="skill"):
+            _experiencia_com_blocos(skills=("Java", ""))
+
+    def test_skills_repetidas_ignorando_caixa_levantam_erro(self):
+        with pytest.raises(ValueError, match="duplicadas"):
+            _experiencia_com_blocos(skills=("Java", "java"))
+
+    def test_skills_c_e_c_sustenido_nao_sao_duplicadas(self):
+        experiencia = _experiencia_com_blocos(skills=("C", "C#", "C++"))
+
+        assert experiencia.skills == ("C", "C#", "C++")
+
+    def test_experiencia_legada_tem_descricao_e_nenhum_bloco(self):
+        assert _experiencia_com_blocos(descricao="Backend em Java.").eh_legada is True
+
+    @pytest.mark.parametrize(
+        "bloco",
+        [
+            {"contexto": "ERP."},
+            {"responsabilidades": ("Projetar",)},
+            {"skills": ("Java",)},
+        ],
+    )
+    def test_experiencia_com_algum_bloco_nao_e_legada(self, bloco):
+        assert _experiencia_com_blocos(descricao="Backend.", **bloco).eh_legada is False
+
+    def test_experiencia_com_conquistas_nao_e_legada(self):
+        experiencia = _experiencia_com_blocos(descricao="Backend.", conquistas=(Conquista(texto="Reduzi custos"),))
+
+        assert experiencia.eh_legada is False
+
+    def test_experiencia_sem_descricao_nem_blocos_nao_e_legada(self):
+        assert _experiencia_com_blocos().eh_legada is False
+
+
+class TestSincroniaDeSkills:
+    def test_tecnologias_ausentes_lista_skills_que_nao_constam_nas_gerais(self):
+        perfil = _perfil_estruturado(
+            experiencias=(_experiencia_com_blocos(skills=("Java", "Flyway")),),
+            tecnologias=("java", "SQL"),
+        )
+
+        assert perfil.tecnologias_ausentes() == ("Flyway",)
+
+    def test_comparacao_ignora_caixa_e_espacos_extras(self):
+        perfil = _perfil_estruturado(
+            experiencias=(_experiencia_com_blocos(skills=("Rest  APIs",)),),
+            tecnologias=("REST APIs",),
+        )
+
+        assert perfil.tecnologias_ausentes() == ()
+
+    def test_skill_repetida_em_duas_experiencias_aparece_uma_vez(self):
+        perfil = _perfil_estruturado(
+            experiencias=(
+                _experiencia_com_blocos(skills=("Java", "React")),
+                _experiencia_com_blocos(empresa="Outra", skills=("react", "WildFly")),
+            ),
+        )
+
+        assert perfil.tecnologias_ausentes() == ("Java", "React", "WildFly")
+
+    def test_com_tecnologias_das_experiencias_inclui_no_fim_da_lista(self):
+        perfil = _perfil_estruturado(
+            experiencias=(_experiencia_com_blocos(skills=("Java", "Flyway")),),
+            tecnologias=("SQL", "Java"),
+        )
+
+        sincronizado = perfil.com_tecnologias_das_experiencias()
+
+        assert sincronizado.tecnologias == ("SQL", "Java", "Flyway")
+        assert perfil.tecnologias == ("SQL", "Java")
+
+    def test_sem_skills_ausentes_devolve_o_mesmo_perfil(self):
+        perfil = _perfil_estruturado(experiencias=(_experiencia_com_blocos(skills=("Java",)),), tecnologias=("Java",))
+
+        assert perfil.com_tecnologias_das_experiencias() == perfil
+
+    def test_nunca_remove_tecnologias_gerais(self):
+        perfil = _perfil_estruturado(experiencias=(_experiencia_com_blocos(),), tecnologias=("Python",))
+
+        assert perfil.com_tecnologias_das_experiencias().tecnologias == ("Python",)

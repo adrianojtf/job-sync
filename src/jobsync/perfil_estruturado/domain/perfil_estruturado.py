@@ -11,8 +11,10 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 
+from jobsync.perfil_estruturado.domain.blocos_experiencia import chave_de_tecnologia
 from jobsync.perfil_estruturado.domain.conquistas_parecidas import sao_parecidas
 from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada
+from jobsync.shared_kernel.domain.rotulos_blocos_experiencia import BlocoExperiencia, rotulo_do_bloco
 from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
 
@@ -46,6 +48,12 @@ class Conquista:
         object.__setattr__(self, "texto", self.texto.strip())
 
 
+def _itens_preenchidos(itens: tuple[str, ...], nome: str) -> tuple[str, ...]:
+    if not all(item and item.strip() for item in itens):
+        raise ValueError(f"Cada {nome} da experiência precisa de texto.")
+    return tuple(item.strip() for item in itens)
+
+
 @dataclass(frozen=True)
 class ExperienciaProfissional:
     """Uma experiência profissional do perfil.
@@ -56,6 +64,11 @@ class ExperienciaProfissional:
 
     `conquistas` é o banco de conquistas da experiência (JOB-0042); a lista vazia
     mantém o comportamento anterior, a partir da `descricao`.
+
+    Os quatro blocos da experiência (JOB-0045) são `contexto`, `responsabilidades`,
+    `conquistas` (as "principais realizações") e `skills`. A `descricao` em texto livre é
+    legada: serve de fonte da migração para os blocos. Os limites de itens por bloco valem
+    para a geração pela IA, não são invariante: o usuário edita livremente.
     """
 
     empresa: str
@@ -63,6 +76,9 @@ class ExperienciaProfissional:
     periodo: str
     descricao: str
     conquistas: tuple[Conquista, ...] = ()
+    contexto: str = ""
+    responsabilidades: tuple[str, ...] = ()
+    skills: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.empresa or not self.empresa.strip():
@@ -72,6 +88,40 @@ class ExperienciaProfissional:
         textos = [normalizar_texto(conquista.texto) for conquista in self.conquistas]
         if len(set(textos)) != len(textos):
             raise ValueError("A experiência não pode ter conquistas duplicadas.")
+        object.__setattr__(self, "contexto", self.contexto.strip())
+        object.__setattr__(
+            self, "responsabilidades", _itens_preenchidos(self.responsabilidades, "responsabilidade")
+        )
+        skills = _itens_preenchidos(self.skills, "skill")
+        if len({chave_de_tecnologia(skill) for skill in skills}) != len(skills):
+            raise ValueError("A experiência não pode ter skills duplicadas.")
+        object.__setattr__(self, "skills", skills)
+
+    @property
+    def eh_legada(self) -> bool:
+        """Tem descrição em texto livre e nenhum dos quatro blocos: precisa migrar para os blocos."""
+        return bool(self.descricao.strip()) and not (
+            self.contexto or self.responsabilidades or self.conquistas or self.skills
+        )
+
+    def para_texto(self, idioma: str = "pt") -> str:
+        """Texto da experiência: cabeçalho e, nos blocos, os rótulos do idioma; legada usa a descrição."""
+        cabecalho = f"{self.cargo} — {self.empresa} ({self.periodo})"
+        if self.eh_legada or not (self.contexto or self.responsabilidades or self.conquistas or self.skills):
+            return f"{cabecalho}\n{self.descricao}".strip()
+        linhas = [cabecalho]
+        if self.contexto:
+            linhas.append(f"{rotulo_do_bloco(BlocoExperiencia.CONTEXTO, idioma)}: {self.contexto}")
+        for bloco, itens in (
+            (BlocoExperiencia.RESPONSABILIDADES, self.responsabilidades),
+            (BlocoExperiencia.REALIZACOES, tuple(conquista.texto for conquista in self.conquistas)),
+        ):
+            if itens:
+                linhas.append(f"{rotulo_do_bloco(bloco, idioma)}:")
+                linhas.extend(f"- {item}" for item in itens)
+        if self.skills:
+            linhas.append(f"{rotulo_do_bloco(BlocoExperiencia.SKILLS, idioma)}: {' | '.join(self.skills)}")
+        return "\n".join(linhas)
 
     def conquistas_parecidas_com(self, texto: str) -> tuple[Conquista, ...]:
         """Conquistas já guardadas que dizem praticamente o mesmo que o texto informado."""
@@ -168,3 +218,22 @@ class PerfilEstruturado:
         atualizada = replace(experiencia, conquistas=(*experiencia.conquistas, conquista))
         experiencias = (*self.experiencias[:indice], atualizada, *self.experiencias[indice + 1 :])
         return replace(self, experiencias=experiencias)
+
+    def tecnologias_ausentes(self) -> tuple[str, ...]:
+        """Skills das experiências que ainda não constam nas tecnologias gerais, sem repetição."""
+        conhecidas = {chave_de_tecnologia(tecnologia) for tecnologia in self.tecnologias}
+        ausentes: list[str] = []
+        for experiencia in self.experiencias:
+            for skill in experiencia.skills:
+                chave = chave_de_tecnologia(skill)
+                if chave not in conhecidas:
+                    conhecidas.add(chave)
+                    ausentes.append(skill)
+        return tuple(ausentes)
+
+    def com_tecnologias_das_experiencias(self) -> PerfilEstruturado:
+        """Perfil novo com as skills ausentes incluídas no fim das tecnologias gerais; nada é removido."""
+        ausentes = self.tecnologias_ausentes()
+        if not ausentes:
+            return self
+        return replace(self, tecnologias=(*self.tecnologias, *ausentes))

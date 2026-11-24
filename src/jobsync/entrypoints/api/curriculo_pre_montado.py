@@ -62,6 +62,9 @@ def experiencias_do_perfil(
             periodo=experiencia.periodo,
             descricao=experiencia.descricao,
             conquistas=tuple(conquista.texto for conquista in experiencia.conquistas),
+            contexto=experiencia.contexto,
+            responsabilidades=experiencia.responsabilidades,
+            skills=experiencia.skills,
         )
         for experiencia in perfil.experiencias
     )

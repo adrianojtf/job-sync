@@ -8,7 +8,7 @@ Uso: PYTHONPATH=src DATABASE_URL=<url do postgres> uvicorn jobsync.tests.e2e.app
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 
 from fastapi import Query
@@ -53,6 +53,11 @@ from jobsync.entrypoints.autenticacao_servicos import montar_servicos_autenticac
 from jobsync.entrypoints.dependencies import obter_pool_conexoes, obter_servicos_autenticacao
 from jobsync.perfil.adapters import PerfilRepositoryImpl
 from jobsync.perfil_estruturado.adapters import PerfilEstruturadoRepositoryImpl
+from jobsync.perfil_estruturado.domain.blocos_experiencia import BlocosExperiencia, ExperienciaParaCompletar
+from jobsync.perfil_estruturado.domain.completador_blocos_experiencia_port import (
+    CompletadorBlocosExperienciaPort,
+)
+from jobsync.perfil_estruturado.domain.estruturar_experiencia_service import EstruturarExperienciaService
 from jobsync.shared_kernel.domain.score_avaliacao import ResultadoDimensaoAvaliacao
 from jobsync.vaga import (
     AnaliseVaga,
@@ -122,8 +127,10 @@ class AjustadorExperienciaE2E(AjustadorExperienciaPort):
             cargo=experiencia.cargo,
             empresa=experiencia.empresa,
             periodo=experiencia.periodo,
-            conquistas=(experiencia.descricao,) if experiencia.descricao.strip() else (),
+            conquistas=(experiencia.descricao,) if experiencia.descricao.strip() else experiencia.conquistas,
             contexto=f"Contexto de {experiencia.empresa}.{trocas}",
+            responsabilidades=experiencia.responsabilidades,
+            skills=experiencia.skills,
         )
 
     def refinar(
@@ -159,6 +166,8 @@ class AjustadorExperienciaSugestaoE2E(AjustadorExperienciaPort):
             periodo=experiencia.periodo,
             conquistas=tuple(f"Sugestão com vaga: {conquista}" for conquista in experiencia.conquistas),
             contexto=f"Sugestão com vaga: {experiencia.contexto}",
+            responsabilidades=experiencia.responsabilidades,
+            skills=experiencia.skills,
         )
 
 
@@ -171,11 +180,18 @@ class MelhoradorTextoE2E(MelhoradorTextoCurriculoPort):
     def melhorar_experiencia(
         self, experiencia: ExperienciaParaAvaliacao, refino: PedidoRefino
     ) -> ExperienciaParaAvaliacao:
-        return ExperienciaParaAvaliacao(
-            cargo=experiencia.cargo,
-            empresa=experiencia.empresa,
-            periodo=experiencia.periodo,
-            descricao=f"Sugestão de escrita: {experiencia.descricao}",
+        return replace(experiencia, descricao=f"Sugestão de escrita: {experiencia.descricao}")
+
+
+class CompletadorBlocosExperienciaE2E(CompletadorBlocosExperienciaPort):
+    """Gera blocos determinísticos para o que faltar, sem chamar a IA."""
+
+    def completar(self, experiencia: ExperienciaParaCompletar, idioma: str | None = None) -> BlocosExperiencia:
+        return BlocosExperiencia(
+            contexto=f"Contexto gerado de {experiencia.empresa}.",
+            responsabilidades=(f"Responsabilidade gerada de {experiencia.empresa}.",),
+            realizacoes=(f"Realização gerada de {experiencia.empresa}.",),
+            skills=("Python", "Flyway"),
         )
 
 
@@ -251,6 +267,9 @@ app.dependency_overrides.update(
         dependencies.obter_service_avaliar_descricao_vaga: lambda: AvaliarDescricaoVaga(avaliador=AvaliadorDescricaoVagaE2E()),
         dependencies.obter_service_avaliar_experiencia: lambda: AvaliarExperiencia(avaliador=AvaliadorExperienciaE2E()),
         dependencies.obter_service_adaptar_curriculo: _adaptar,
+        dependencies.obter_estruturador_de_experiencia: lambda: EstruturarExperienciaService(
+            CompletadorBlocosExperienciaE2E()
+        ),
         dependencies.obter_service_sugerir_ajuste_secao_curriculo: lambda: SugerirAjusteSecaoCurriculo(
             ajustador_texto=AjustadorTextoSugestaoE2E(), melhorador=MelhoradorTextoE2E()
         ),

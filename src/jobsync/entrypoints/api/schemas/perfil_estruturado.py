@@ -78,10 +78,22 @@ class ExperienciaProfissionalRequest(BaseModel):
     empresa: str = Field(description="Nome da empresa onde o profissional trabalhou.")
     cargo: str = Field(description="Cargo ou função exercida na empresa.")
     periodo: str = Field(description="Período de atuação (texto livre, ex: 'Jan 2020 - Dez 2022').")
-    descricao: str = Field(description="Descrição das atividades e responsabilidades do cargo.")
+    descricao: str = Field(
+        default="",
+        description="Descrição em texto livre (legada); os blocos abaixo a substituem.",
+    )
+    contexto: str = Field(default="", description="Contexto: a empresa, a área e o papel (opcional).")
+    responsabilidades: list[str] = Field(
+        default_factory=list,
+        description="Principais responsabilidades da experiência (opcional).",
+    )
     conquistas: list[ConquistaRequest] = Field(
         default_factory=list,
-        description="Banco de conquistas da experiência (opcional).",
+        description="Principais realizações: o banco de conquistas da experiência (opcional).",
+    )
+    skills: list[str] = Field(
+        default_factory=list,
+        description="Skills e tecnologias usadas na experiência (opcional).",
     )
 
 
@@ -194,6 +206,9 @@ class PerfilEstruturadoRequest(BaseModel):
                     conquistas=tuple(
                         Conquista(texto=c.texto, origem=OrigemConquista[c.origem]) for c in exp.conquistas
                     ),
+                    contexto=exp.contexto,
+                    responsabilidades=tuple(exp.responsabilidades),
+                    skills=tuple(exp.skills),
                 )
                 for exp in self.experiencias
             ),
@@ -249,11 +264,14 @@ class ExperienciaProfissionalResponse(BaseModel):
     empresa: str = Field(description="Nome da empresa onde o profissional trabalhou.")
     cargo: str = Field(description="Cargo ou função exercida na empresa.")
     periodo: str = Field(description="Período de atuação (texto livre).")
-    descricao: str = Field(description="Descrição das atividades e responsabilidades do cargo.")
+    descricao: str = Field(description="Descrição em texto livre (legada).")
+    contexto: str = Field(default="", description="Contexto: a empresa, a área e o papel.")
+    responsabilidades: list[str] = Field(default_factory=list, description="Principais responsabilidades.")
     conquistas: list[ConquistaResponse] = Field(
         default_factory=list,
-        description="Banco de conquistas da experiência.",
+        description="Principais realizações: o banco de conquistas da experiência.",
     )
+    skills: list[str] = Field(default_factory=list, description="Skills e tecnologias da experiência.")
 
 
 class FormacaoAcademicaResponse(BaseModel):
@@ -305,10 +323,16 @@ class PerfilEstruturadoResponse(BaseModel):
     tecnologias: list[str] = Field(
         description="Lista de tecnologias dominadas pelo usuário.",
     )
+    tecnologias_incluidas: list[str] = Field(
+        default_factory=list,
+        description="Tecnologias que as skills das experiências acrescentaram às gerais ao salvar.",
+    )
 
     @classmethod
     def from_dto(
-        cls, dto: PerfilEstruturado | DadosPerfilExtraidos
+        cls,
+        dto: PerfilEstruturado | DadosPerfilExtraidos,
+        tecnologias_incluidas: tuple[str, ...] = (),
     ) -> PerfilEstruturadoResponse:
         return cls(
             perfil_identificador=getattr(dto, "perfil_identificador", None),
@@ -322,9 +346,12 @@ class PerfilEstruturadoResponse(BaseModel):
                     cargo=exp.cargo,
                     periodo=exp.periodo,
                     descricao=exp.descricao,
+                    contexto=exp.contexto,
+                    responsabilidades=list(exp.responsabilidades),
                     conquistas=[
                         ConquistaResponse(texto=c.texto, origem=c.origem.name) for c in exp.conquistas
                     ],
+                    skills=list(exp.skills),
                 )
                 for exp in dto.experiencias
             ],
@@ -352,4 +379,5 @@ class PerfilEstruturadoResponse(BaseModel):
                 for idi in dto.idiomas
             ],
             tecnologias=list(dto.tecnologias),
+            tecnologias_incluidas=list(tecnologias_incluidas),
         )

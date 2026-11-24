@@ -3,7 +3,11 @@ import {
   adicionarTags,
   categoriasDeTexto,
   categoriasParaTexto,
+  idDaCategoria,
+  idDaTag,
+  lerIdDoArrasto,
   separarTags,
+  soltarTag,
   virgulaAbreNovaTag,
 } from "./competencias";
 
@@ -113,5 +117,94 @@ describe("categoriasParaTexto", () => {
         { nome: "Ok", tags: ["Git"] },
       ]),
     ).toBe("Ok: Git");
+  });
+});
+
+describe("identificadores do arrastar e soltar", () => {
+  it("lê o identificador de categoria e de tag", () => {
+    expect(lerIdDoArrasto(idDaCategoria(2))).toEqual({ tipo: "categoria", categoria: 2 });
+    expect(lerIdDoArrasto(idDaTag(1, "C#"))).toEqual({ tipo: "tag", categoria: 1, tag: "C#" });
+  });
+
+  it("mantém os dois-pontos que fazem parte da tag", () => {
+    expect(lerIdDoArrasto(idDaTag(0, "Node: LTS"))).toEqual({
+      tipo: "tag",
+      categoria: 0,
+      tag: "Node: LTS",
+    });
+  });
+
+  it("devolve null para um identificador desconhecido", () => {
+    expect(lerIdDoArrasto("outra-coisa")).toBeNull();
+  });
+});
+
+describe("soltarTag", () => {
+  const categorias: CategoriaFormulario[] = [
+    { nome: "Linguagens", tags: ["Java", "Python", "Go"] },
+    { nome: "Bancos", tags: ["SQL"] },
+    { nome: "Vazia", tags: [] },
+  ];
+
+  it("reordena dentro da categoria, sobre outra tag", () => {
+    const resultado = soltarTag(categorias, idDaTag(0, "Go"), idDaTag(0, "Java"));
+
+    expect(resultado?.categorias[0]?.tags).toEqual(["Go", "Java", "Python"]);
+    expect(resultado).toMatchObject({ de: 0, para: 0, tag: "Go" });
+  });
+
+  it("solta no fim da própria categoria quando o alvo é a categoria", () => {
+    const resultado = soltarTag(categorias, idDaTag(0, "Java"), idDaCategoria(0));
+
+    expect(resultado?.categorias[0]?.tags).toEqual(["Python", "Go", "Java"]);
+  });
+
+  it("move para outra categoria na posição da tag alvo", () => {
+    const resultado = soltarTag(categorias, idDaTag(0, "Python"), idDaTag(1, "SQL"));
+
+    expect(resultado?.categorias.map((c) => c.tags)).toEqual([
+      ["Java", "Go"],
+      ["Python", "SQL"],
+      [],
+    ]);
+    expect(resultado).toMatchObject({ de: 0, para: 1, tag: "Python" });
+  });
+
+  it("move para o fim de uma categoria vazia", () => {
+    const resultado = soltarTag(categorias, idDaTag(1, "SQL"), idDaCategoria(2));
+
+    expect(resultado?.categorias.map((c) => c.tags)).toEqual([
+      ["Java", "Python", "Go"],
+      [],
+      ["SQL"],
+    ]);
+  });
+
+  it("não duplica a tag no destino, sem diferenciar a caixa: ela só sai da origem", () => {
+    const comRepetida = [
+      { nome: "A", tags: ["Java"] },
+      { nome: "B", tags: ["java", "SQL"] },
+    ];
+
+    const resultado = soltarTag(comRepetida, idDaTag(0, "Java"), idDaCategoria(1));
+
+    expect(resultado?.categorias.map((c) => c.tags)).toEqual([[], ["java", "SQL"]]);
+  });
+
+  it("não altera o valor original", () => {
+    soltarTag(categorias, idDaTag(0, "Go"), idDaCategoria(1));
+
+    expect(categorias[0]?.tags).toEqual(["Java", "Python", "Go"]);
+  });
+
+  it.each([
+    ["solta fora de qualquer alvo", idDaTag(0, "Java"), null],
+    ["solta na mesma posição", idDaTag(0, "Java"), idDaTag(0, "Java")],
+    ["solta no fim estando já no fim", idDaTag(0, "Go"), idDaCategoria(0)],
+    ["arrasta uma categoria", idDaCategoria(0), idDaCategoria(1)],
+    ["tag que não existe mais", idDaTag(0, "Rust"), idDaCategoria(1)],
+    ["categoria destino inexistente", idDaTag(0, "Java"), idDaCategoria(9)],
+  ])("devolve null quando %s", (_descricao, ativo, sobre) => {
+    expect(soltarTag(categorias, ativo, sobre)).toBeNull();
   });
 });

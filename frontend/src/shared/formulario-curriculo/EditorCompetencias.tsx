@@ -1,10 +1,22 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
 import { Panel } from "../ui/Panel";
 import { CATEGORIA_VAZIA, type CategoriaFormulario } from "./campos-curriculo";
-import { adicionarTags, separarTags, virgulaAbreNovaTag } from "./competencias";
-import estiloEditor from "./EditorCompetencias.module.css";
+import { anunciosDeTags, INSTRUCOES_DE_TAGS } from "./anuncios-de-tags";
+import { idDaCategoria, soltarTag } from "./competencias";
+import { EditorTags } from "./EditorTags";
 import estilos from "./FormularioCurriculo.module.css";
 
 interface Props {
@@ -37,27 +49,29 @@ export function EditorCompetencias({
     indiceParaFocar.current = null;
   }, [quantidade]);
 
+  const sensores = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const soltar = ({ active, over }: DragEndEvent) => {
+    const movimento = soltarTag(valor, String(active.id), over ? String(over.id) : null);
+    if (movimento === null) return;
+    aoMudar(movimento.categorias);
+    const origem = valor[movimento.de];
+    const destino = valor[movimento.para];
+    if (origem && destino) {
+      setAnuncio(
+        movimento.de === movimento.para
+          ? `Tag ${movimento.tag} reordenada em ${nomeDe(destino, movimento.para)}.`
+          : `Tag ${movimento.tag} movida de ${nomeDe(origem, movimento.de)} para ${nomeDe(destino, movimento.para)}.`,
+      );
+    }
+  };
+
   const alterar = (indice: number, categoria: CategoriaFormulario) =>
     aoMudar(valor.map((atual, posicao) => (posicao === indice ? categoria : atual)));
-
-  const criarTags = (indice: number, texto: string) => {
-    const categoria = valor[indice];
-    if (!categoria) return;
-    const novas = adicionarTags(categoria.tags, separarTags(texto));
-    const criadas = novas.slice(categoria.tags.length);
-    if (criadas.length === 0) return;
-    alterar(indice, { ...categoria, tags: novas });
-    setAnuncio(
-      `${criadas.length === 1 ? `Tag ${criadas[0]} adicionada` : `${criadas.length} tags adicionadas`} em ${nomeDe(categoria, indice)}.`,
-    );
-  };
-
-  const removerTag = (indice: number, tag: string) => {
-    const categoria = valor[indice];
-    if (!categoria) return;
-    alterar(indice, { ...categoria, tags: categoria.tags.filter((atual) => atual !== tag) });
-    setAnuncio(`Tag ${tag} removida de ${nomeDe(categoria, indice)}.`);
-  };
 
   const adicionarCategoria = () => {
     aoMudar([...valor, { ...CATEGORIA_VAZIA, tags: [] }]);
@@ -74,7 +88,7 @@ export function EditorCompetencias({
   return (
     <Panel
       titulo={titulo}
-      subtitulo="Agrupe as competências por categoria. Digite uma tag e tecle Enter ou vírgula."
+      subtitulo="Agrupe as competências por categoria. Digite uma tag e tecle Enter ou vírgula; arraste uma tag para reordená-la ou movê-la para outra categoria."
       acoes={
         <Button variante="text" onClick={adicionarCategoria}>
           Adicionar categoria
@@ -82,45 +96,44 @@ export function EditorCompetencias({
       }
     >
       {valor.length === 0 && <p className={estilos.vazio}>Nenhuma categoria adicionada.</p>}
-      {valor.map((categoria, indice) => (
-        <fieldset key={indice} className={estilos.item}>
-          <legend className={estilos.legenda}>{nomeDe(categoria, indice)}</legend>
-          <Field
-            ref={(elemento) => {
-              camposDeNome.current[indice] = elemento as HTMLInputElement | null;
-            }}
-            rotulo="Nome da categoria"
-            value={categoria.nome}
-            onChange={(evento) => alterar(indice, { ...categoria, nome: evento.target.value })}
-          />
-          {categoria.tags.length > 0 && (
-            <ul className={estiloEditor.tags} aria-label={`Tags de ${nomeDe(categoria, indice)}`}>
-              {categoria.tags.map((tag) => (
-                <li key={tag} className={estiloEditor.tag}>
-                  <span>{tag}</span>
-                  <button
-                    type="button"
-                    className={estiloEditor.removerTag}
-                    aria-label={`Remover ${tag}`}
-                    onClick={() => removerTag(indice, tag)}
-                  >
-                    <span aria-hidden="true">×</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <CampoNovaTag aoCriar={(texto) => criarTags(indice, texto)} />
-          <div className={estilos.acoesItem}>
-            <Button
-              aria-label={`Excluir categoria ${nomeDe(categoria, indice)}`}
-              onClick={() => excluirCategoria(indice)}
-            >
-              Excluir categoria
-            </Button>
-          </div>
-        </fieldset>
-      ))}
+      <DndContext
+        sensors={sensores}
+        collisionDetection={closestCenter}
+        onDragEnd={soltar}
+        accessibility={{
+          announcements: anunciosDeTags(() => valor),
+          screenReaderInstructions: INSTRUCOES_DE_TAGS,
+        }}
+      >
+        {valor.map((categoria, indice) => (
+          <fieldset key={indice} className={estilos.item}>
+            <legend className={estilos.legenda}>{nomeDe(categoria, indice)}</legend>
+            <Field
+              ref={(elemento) => {
+                camposDeNome.current[indice] = elemento as HTMLInputElement | null;
+              }}
+              rotulo="Nome da categoria"
+              value={categoria.nome}
+              onChange={(evento) => alterar(indice, { ...categoria, nome: evento.target.value })}
+            />
+            <EditorTags
+              tags={categoria.tags}
+              aoMudar={(tags) => alterar(indice, { ...categoria, tags })}
+              nome={nomeDe(categoria, indice)}
+              aoAnunciar={setAnuncio}
+              arrastavel={{ idLista: idDaCategoria(indice), indice }}
+            />
+            <div className={estilos.acoesItem}>
+              <Button
+                aria-label={`Excluir categoria ${nomeDe(categoria, indice)}`}
+                onClick={() => excluirCategoria(indice)}
+              >
+                Excluir categoria
+              </Button>
+            </div>
+          </fieldset>
+        ))}
+      </DndContext>
       {complemento}
       <p role="status" className="sr-only">
         {anuncio}
@@ -131,31 +144,4 @@ export function EditorCompetencias({
 
 function nomeDe(categoria: CategoriaFormulario, indice: number): string {
   return categoria.nome.trim() || `Categoria ${indice + 1}`;
-}
-
-function CampoNovaTag({ aoCriar }: { aoCriar: (texto: string) => void }) {
-  const [texto, setTexto] = useState("");
-
-  const confirmar = () => {
-    if (texto.trim() !== "") aoCriar(texto);
-    setTexto("");
-  };
-
-  const aoTeclar = (evento: KeyboardEvent<HTMLInputElement>) => {
-    if (evento.key === "Enter" || (evento.key === "," && virgulaAbreNovaTag(texto))) {
-      evento.preventDefault();
-      confirmar();
-    }
-  };
-
-  return (
-    <Field
-      rotulo="Nova tag"
-      placeholder="Digite e tecle Enter"
-      value={texto}
-      onChange={(evento) => setTexto(evento.target.value)}
-      onKeyDown={aoTeclar}
-      onBlur={confirmar}
-    />
-  );
 }

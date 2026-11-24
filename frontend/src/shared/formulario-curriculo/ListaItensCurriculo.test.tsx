@@ -33,6 +33,8 @@ const EXPERIENCIA: ExperienciaAdaptadaFormulario = {
   periodo: "2024",
   conquistas: "Criei APIs.\nReduzi custos.",
   contexto: "Empresa de pagamentos.",
+  responsabilidades: "",
+  skills: [],
 };
 
 describe("ListaItensCurriculo com conquistas e contexto", () => {
@@ -42,15 +44,17 @@ describe("ListaItensCurriculo com conquistas e contexto", () => {
     expect(screen.getByLabelText("Empresa")).toHaveValue("TechCorp");
     expect(screen.getByLabelText("Cargo")).toHaveValue("Dev");
     expect(screen.getByLabelText("Período")).toHaveValue("2024");
-    expect(screen.getByLabelText("Conquistas")).toHaveValue("Criei APIs.\nReduzi custos.");
+    expect(screen.getByLabelText("Principais realizações")).toHaveValue(
+      "Criei APIs.\nReduzi custos.",
+    );
     expect(screen.getByLabelText("Contexto")).toHaveValue("Empresa de pagamentos.");
   });
 
-  it("explica que cada conquista fica em uma linha", () => {
+  it("explica que cada realização fica em uma linha", () => {
     render(<Formulario valores={[EXPERIENCIA]} />);
 
-    expect(screen.getByLabelText("Conquistas")).toHaveAccessibleDescription(
-      "Uma conquista por linha.",
+    expect(screen.getByLabelText("Principais realizações")).toHaveAccessibleDescription(
+      "Uma realização por linha.",
     );
   });
 
@@ -68,6 +72,6 @@ describe("ListaItensCurriculo com conquistas e contexto", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Adicionar experiência" }));
 
-    expect(screen.getByLabelText("Conquistas")).toHaveValue("");
+    expect(screen.getByLabelText("Principais realizações")).toHaveValue("");
   });
 });

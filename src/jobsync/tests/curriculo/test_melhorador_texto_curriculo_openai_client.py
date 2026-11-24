@@ -91,3 +91,54 @@ class TestMelhoradorTextoCurriculoOpenAIClientRefino:
         usuario = cliente.solicitar_json.call_args.kwargs["prompt_usuario"]
         assert "Foco desta versão: ênfase técnica" in usuario
         assert "Não repita" not in usuario
+
+
+class TestMelhoradorTextoCurriculoOpenAIClientBlocos:
+    RESPOSTA = {
+        "contexto": "Na Starian, atuei em um ERP.",
+        "responsabilidades": ["Projetar telas.", "Testar entregas."],
+        "conquistas": ["Atendi 1.000 usuários."],
+        "skills": ["Java", "SQL"],
+    }
+
+    def _com_blocos(self) -> ExperienciaParaAvaliacao:
+        return ExperienciaParaAvaliacao(
+            cargo="Dev", empresa="Starian", periodo="2024", descricao="",
+            contexto="ERP.", responsabilidades=("Projetar",), conquistas=("Atendi usuários",), skills=("Java",),
+        )
+
+    def test_com_blocos_devolve_os_quatro_blocos_preservando_a_identificacao(self):
+        cliente = _cliente(self.RESPOSTA)
+
+        sugerida = MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_experiencia(
+            self._com_blocos(), PedidoRefino()
+        )
+
+        assert (sugerida.cargo, sugerida.empresa, sugerida.periodo) == ("Dev", "Starian", "2024")
+        assert sugerida.contexto == "Na Starian, atuei em um ERP."
+        assert sugerida.responsabilidades == ("Projetar telas.", "Testar entregas.")
+        assert sugerida.conquistas == ("Atendi 1.000 usuários.",)
+        assert sugerida.skills == ("Java", "SQL")
+
+    def test_o_prompt_traz_os_blocos_atuais_e_o_formato_dos_quatro_blocos(self):
+        cliente = _cliente(self.RESPOSTA)
+
+        MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_experiencia(self._com_blocos(), PedidoRefino())
+
+        argumentos = cliente.solicitar_json.call_args.kwargs
+        assert '"responsabilidades"' in argumentos["prompt_sistema"]
+        assert "Contexto: ERP." in argumentos["prompt_usuario"]
+        assert "Skills: Java" in argumentos["prompt_usuario"]
+
+    def test_sem_blocos_continua_melhorando_so_a_descricao(self):
+        cliente = _cliente({"texto_sugerido": "Descrição melhor."})
+
+        sugerida = MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_experiencia(_experiencia(), PedidoRefino())
+
+        assert sugerida.descricao == "Descrição melhor."
+
+    def test_resposta_dos_blocos_fora_do_formato_gera_erro(self):
+        cliente = _cliente({**self.RESPOSTA, "skills": "Java"})
+
+        with pytest.raises(ValueError, match="blocos"):
+            MelhoradorTextoCurriculoOpenAIClient(cliente).melhorar_experiencia(self._com_blocos(), PedidoRefino())

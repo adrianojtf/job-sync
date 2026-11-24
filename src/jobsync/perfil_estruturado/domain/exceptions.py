@@ -14,3 +14,10 @@ class ExperienciaNaoEncontrada(LookupError):
 
     def __init__(self) -> None:
         super().__init__("Experiência não encontrada no perfil.")
+
+
+class CompletarBlocosIndisponivel(RuntimeError):
+    """A IA não conseguiu completar os blocos de uma experiência."""
+
+    def __init__(self) -> None:
+        super().__init__("O serviço de IA para completar os blocos da experiência está indisponível.")

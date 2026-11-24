@@ -98,3 +98,14 @@ class TestEstiloCurriculoPdf:
         assert estilo.nome.fontName == "Helvetica-Bold"
         assert estilo.cargo.fontName == "Helvetica-Oblique"
         assert estilo.topico.bulletFontName == "Helvetica"
+
+
+class TestEstiloCurriculoPdfBlocos:
+    def test_rotulo_de_bloco_e_bold_e_fica_junto_da_lista(self):
+        estilo = _estilo()
+
+        assert estilo.rotulo_de_bloco.fontName == "Carlito-Bold"
+        assert estilo.rotulo_de_bloco.keepWithNext == 1
+
+    def test_skills_usam_o_corpo_regular(self):
+        assert _estilo().skills.fontName == _estilo().corpo.fontName

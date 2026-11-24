@@ -740,3 +740,33 @@ def test_layout_tecnologias_rotulo_do_usuario_com_dois_pontos_do_rotulo_tambem_e
     linha = next(l for l in pagina.extract_text_lines() if l["text"] == "Minhas Ferramentas: Git")
     dois_pontos = next(c for c in linha["chars"] if c["text"] == ":")
     assert dois_pontos["fontname"].endswith("Carlito-Bold")
+
+
+def test_experiencia_estruturada_desenha_os_quatro_blocos_na_ordem():
+    pagina = _pagina_de_experiencias(
+        "Starian 2024 - 2025\nDev\n"
+        "Context: ERP financeiro.\n"
+        "Key Responsibilities:\n- Projetar telas\n"
+        "Key Achievements:\n- Atendi 1.000 usuários\n"
+        "Technologies: Java | PostgreSQL"
+    )
+
+    linhas = _linhas_de_texto(pagina)
+    ordem = [
+        "Context: ERP financeiro.",
+        "Key Responsibilities:",
+        "● Projetar telas",
+        "Key Achievements:",
+        "● Atendi 1.000 usuários",
+        "Technologies: Java | PostgreSQL",
+    ]
+    assert [linhas.index(item) for item in ordem] == sorted(linhas.index(item) for item in ordem)
+
+
+def test_experiencia_estruturada_sem_um_bloco_nao_deixa_rotulo_solto():
+    pagina = _pagina_de_experiencias("Starian 2024 - 2025\nDev\nKey Achievements:\n- Atendi 1.000 usuários")
+
+    linhas = _linhas_de_texto(pagina)
+    assert "Key Achievements:" in linhas
+    assert not any(linha.startswith(("Key Responsibilities", "Technologies", "Context")) for linha in linhas)
+

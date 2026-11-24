@@ -75,3 +75,90 @@ export function categoriasParaTexto(categorias: CategoriaFormulario[]): string {
     .map((categoria) => `${categoria.nome.trim()}: ${categoria.tags.join(", ")}`)
     .join("\n");
 }
+
+/** Identificador do contêiner (a lista de tags) de uma categoria no arrastar e soltar. */
+export const idDaCategoria = (categoria: number) => `categoria:${categoria}`;
+
+/** Identificador de uma tag no arrastar e soltar; o da categoria evita colisão entre categorias. */
+export const idDaTag = (categoria: number, tag: string) => `tag:${categoria}:${tag}`;
+
+export type AlvoDoArrasto =
+  | { tipo: "categoria"; categoria: number }
+  | { tipo: "tag"; categoria: number; tag: string };
+
+/** Lê um identificador gerado por `idDaCategoria` ou `idDaTag`; devolve null para qualquer outro. */
+export function lerIdDoArrasto(id: string): AlvoDoArrasto | null {
+  const categoria = /^categoria:(\d+)$/.exec(id);
+  if (categoria) return { tipo: "categoria", categoria: Number(categoria[1]) };
+  const tag = /^tag:(\d+):([\s\S]+)$/.exec(id);
+  if (tag) return { tipo: "tag", categoria: Number(tag[1]), tag: tag[2]! };
+  return null;
+}
+
+export interface ResultadoDoMovimento {
+  categorias: CategoriaFormulario[];
+  /** De qual categoria para qual a tag foi, para o anúncio ao leitor de tela. */
+  de: number;
+  para: number;
+  tag: string;
+}
+
+/**
+ * Soltar uma tag sobre outra tag (entra na posição dela) ou sobre uma categoria (entra no fim).
+ * Reordena dentro da categoria e move entre categorias sem duplicar a tag no destino (sem
+ * diferenciar a caixa): se ela já existe lá, só sai da origem. Devolve null quando nada muda.
+ */
+export function soltarTag(
+  categorias: CategoriaFormulario[],
+  idAtivo: string,
+  idSobre: string | null,
+): ResultadoDoMovimento | null {
+  const ativo = lerIdDoArrasto(idAtivo);
+  const sobre = idSobre === null ? null : lerIdDoArrasto(idSobre);
+  if (ativo?.tipo !== "tag" || sobre === null) return null;
+  const origem = categorias[ativo.categoria];
+  const destino = categorias[sobre.categoria];
+  if (!origem || !destino) return null;
+  const posicaoOrigem = origem.tags.indexOf(ativo.tag);
+  if (posicaoOrigem < 0) return null;
+
+  if (ativo.categoria === sobre.categoria) {
+    const posicaoDestino =
+      sobre.tipo === "tag" ? origem.tags.indexOf(sobre.tag) : origem.tags.length - 1;
+    if (posicaoDestino < 0 || posicaoDestino === posicaoOrigem) return null;
+    const tags = [...origem.tags];
+    tags.splice(posicaoOrigem, 1);
+    tags.splice(posicaoDestino, 0, ativo.tag);
+    return resultado(categorias, ativo.categoria, { ...origem, tags }, ativo);
+  }
+
+  const semAOrigem = origem.tags.filter((tag) => tag !== ativo.tag);
+  const jaExisteNoDestino = destino.tags.some(
+    (tag) => tag.toLowerCase() === ativo.tag.toLowerCase(),
+  );
+  const tagsDoDestino = [...destino.tags];
+  if (!jaExisteNoDestino) {
+    const posicao = sobre.tipo === "tag" ? tagsDoDestino.indexOf(sobre.tag) : tagsDoDestino.length;
+    tagsDoDestino.splice(posicao < 0 ? tagsDoDestino.length : posicao, 0, ativo.tag);
+  }
+  const novas = categorias.map((categoria, indice) => {
+    if (indice === ativo.categoria) return { ...categoria, tags: semAOrigem };
+    if (indice === sobre.categoria) return { ...categoria, tags: tagsDoDestino };
+    return categoria;
+  });
+  return { categorias: novas, de: ativo.categoria, para: sobre.categoria, tag: ativo.tag };
+}
+
+function resultado(
+  categorias: CategoriaFormulario[],
+  indice: number,
+  nova: CategoriaFormulario,
+  ativo: { categoria: number; tag: string },
+): ResultadoDoMovimento {
+  return {
+    categorias: categorias.map((categoria, posicao) => (posicao === indice ? nova : categoria)),
+    de: ativo.categoria,
+    para: ativo.categoria,
+    tag: ativo.tag,
+  };
+}

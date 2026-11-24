@@ -212,6 +212,8 @@ class TestExperienciaAdaptadaSchema:
             "periodo": "2024",
             "conquistas": ["A.", "B."],
             "contexto": "C.",
+            "responsabilidades": [],
+            "skills": [],
         }
 
     def test_campo_desconhecido_e_rejeitado(self):

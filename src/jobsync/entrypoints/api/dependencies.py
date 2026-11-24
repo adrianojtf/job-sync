@@ -95,7 +95,12 @@ from jobsync.perfil_estruturado.service_layer.adicionar_conquista_a_experiencia 
     AdicionarConquistaAExperiencia,
 )
 from jobsync.perfil_estruturado.service_layer.buscar_perfil_estruturado.service import BuscarPerfilEstruturado
+from jobsync.perfil_estruturado.adapters.completador_blocos_experiencia_openai_client import (
+    CompletadorBlocosExperienciaOpenAIClient,
+)
+from jobsync.perfil_estruturado.domain.estruturar_experiencia_service import EstruturarExperienciaService
 from jobsync.perfil_estruturado.service_layer.importar_perfil_de_pdf.service import ImportarPerfilDePdf
+from jobsync.perfil_estruturado.service_layer.migrar_experiencias_do_perfil import MigrarExperienciasDoPerfil
 from jobsync.perfil_estruturado.adapters.extrator_perfil_estruturado_client import ExtratorPerfilEstruturadoClient
 from jobsync.perfil_estruturado.service_layer.salvar_perfil_estruturado.service import SalvarPerfilEstruturado
 from jobsync.perfil_estruturado.service_layer.verificar_conquistas_parecidas import VerificarConquistasParecidas
@@ -521,6 +526,20 @@ ServiceSalvarPerfilEstruturadoDep = Annotated[
 ]
 
 
+def obter_service_migrar_experiencias_do_perfil(
+    repositorio: Annotated[
+        PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
+    ],
+    estruturador: Annotated[EstruturarExperienciaService, Depends(obter_estruturador_de_experiencia)],
+) -> MigrarExperienciasDoPerfil:
+    return MigrarExperienciasDoPerfil(repositorio=repositorio, estruturador=estruturador)
+
+
+ServiceMigrarExperienciasDoPerfilDep = Annotated[
+    MigrarExperienciasDoPerfil, Depends(obter_service_migrar_experiencias_do_perfil)
+]
+
+
 def obter_service_adicionar_conquista_a_experiencia(
     repositorio: Annotated[
         PerfilEstruturadoRepository, Depends(obter_repositorio_perfil_estruturado)
@@ -582,8 +601,14 @@ ServiceRemoverCurriculoSalvoDep = Annotated[
 ]
 
 
-def obter_service_importar_perfil_de_pdf() -> ImportarPerfilDePdf:
-    return ImportarPerfilDePdf(extrator=ExtratorPerfilEstruturadoClient())
+def obter_estruturador_de_experiencia() -> EstruturarExperienciaService:
+    return EstruturarExperienciaService(CompletadorBlocosExperienciaOpenAIClient())
+
+
+def obter_service_importar_perfil_de_pdf(
+    estruturador: Annotated[EstruturarExperienciaService, Depends(obter_estruturador_de_experiencia)],
+) -> ImportarPerfilDePdf:
+    return ImportarPerfilDePdf(extrator=ExtratorPerfilEstruturadoClient(), estruturador=estruturador)
 
 
 ServiceImportarPerfilDePdfDep = Annotated[

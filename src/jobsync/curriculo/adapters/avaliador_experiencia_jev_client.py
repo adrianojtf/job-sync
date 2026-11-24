@@ -83,7 +83,7 @@ class AvaliadorExperienciaJevClient(AvaliadorExperienciaPort):
                 "cargo": experiencia.cargo,
                 "empresa": experiencia.empresa,
                 "periodo": experiencia.periodo,
-                "descricao": experiencia.descricao,
+                "descricao": experiencia.texto_completo,
             },
             "descricao_vaga": descricao_vaga,
         }

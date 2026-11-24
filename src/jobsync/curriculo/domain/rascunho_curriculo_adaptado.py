@@ -12,9 +12,9 @@ Quando a fonte é o perfil estruturado, as experiências ficam estruturadas
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from jobsync.curriculo.domain.competencias import CategoriaCompetencia, categorias_para_texto
+from jobsync.curriculo.domain.competencias import CATEGORIA_PADRAO, CategoriaCompetencia, categorias_para_texto
 from jobsync.curriculo.domain.curriculo import Curriculo, SecaoCurriculo, TipoSecao
 from jobsync.curriculo.domain.equivalencia_tecnologia import AjusteTecnologia
 from jobsync.curriculo.domain.experiencia_adaptada import ExperienciaAdaptada
@@ -23,8 +23,8 @@ from jobsync.curriculo.domain.rotulos_experiencia import rotulo_contexto
 TITULO_EXPERIENCIAS_PADRAO = "Experiências"
 TITULO_COMPETENCIAS_PADRAO = "Competências"
 
-ExperienciaEditada = tuple[str, str, str, Iterable[str], str]
-"""Experiência como o usuário a editou: cargo, empresa, período, conquistas e contexto."""
+ExperienciaEditada = tuple[str, str, str, Iterable[str], str, Iterable[str], Iterable[str]]
+"""Experiência como o usuário a editou: cargo, empresa, período, conquistas, contexto, responsabilidades e skills."""
 
 CategoriaEditada = tuple[str, Iterable[str]]
 """Categoria de competências como o usuário a editou: nome e tags."""
@@ -120,12 +120,39 @@ class RascunhoCurriculoAdaptado:
             titulo_competencias=titulo_competencias,
         )
 
+    def com_skills_nas_competencias(self) -> RascunhoCurriculoAdaptado:
+        """Rascunho novo com as skills das experiências que faltam nas competências, em "Tecnologias".
+
+        A comparação ignora a caixa e a categoria. Sem competências por categoria, nada muda.
+        """
+        if self.competencias is None:
+            return self
+        conhecidas = {
+            tag.strip().casefold() for categoria in self.competencias for tag in categoria.tags
+        }
+        ausentes: list[str] = []
+        for experiencia in self.experiencias or ():
+            for skill in experiencia.skills:
+                if skill.strip().casefold() not in conhecidas:
+                    conhecidas.add(skill.strip().casefold())
+                    ausentes.append(skill)
+        if not ausentes:
+            return self
+        padrao = next((c for c in self.competencias if c.nome == CATEGORIA_PADRAO), None)
+        if padrao is None:
+            categorias = (*self.competencias, CategoriaCompetencia(CATEGORIA_PADRAO, tuple(ausentes)))
+        else:
+            ampliada = CategoriaCompetencia(CATEGORIA_PADRAO, (*padrao.tags, *ausentes))
+            categorias = tuple(ampliada if c is padrao else c for c in self.competencias)
+        return replace(self, competencias=categorias)
+
     def para_curriculo(self, idioma_alvo: str) -> Curriculo:
         """Converte o rascunho no Curriculo consumido pela geração de PDF.
 
-        O idioma alvo define o rótulo da linha de contexto de cada experiência.
+        O idioma alvo define os rótulos dos blocos de cada experiência; um idioma não suportado
+        levanta ValueError, mesmo sem experiências estruturadas.
         """
-        rotulo = rotulo_contexto(idioma_alvo)
+        rotulo_contexto(idioma_alvo)
         secoes = self.secoes
         if self.experiencias:
             secoes = secoes + (
@@ -133,7 +160,7 @@ class RascunhoCurriculoAdaptado:
                     tipo=TipoSecao.EXPERIENCIAS,
                     titulo=self.titulo_experiencias,
                     conteudo="\n\n".join(
-                        experiencia.para_texto(rotulo) for experiencia in self.experiencias
+                        experiencia.para_texto(idioma_alvo) for experiencia in self.experiencias
                     ),
                 ),
             )

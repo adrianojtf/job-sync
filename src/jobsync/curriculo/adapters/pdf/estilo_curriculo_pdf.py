@@ -105,3 +105,14 @@ class EstiloCurriculoPdf:
             "Contexto", fontName=self.familia.italic, fontSize=_TAMANHO_CORPO,
             leading=_ENTRELINHA_CORPO, textColor=self.cor_secundaria, spaceBefore=2,
         )
+
+    @property
+    def rotulo_de_bloco(self) -> ParagraphStyle:
+        return ParagraphStyle(
+            "RotuloDeBloco", parent=self.corpo, fontName=self.familia.bold, spaceBefore=3, spaceAfter=2,
+            keepWithNext=1,
+        )
+
+    @property
+    def skills(self) -> ParagraphStyle:
+        return ParagraphStyle("Skills", parent=self.corpo, spaceBefore=3)

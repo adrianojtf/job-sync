@@ -1,4 +1,4 @@
-"""Caso de uso: sugerir, via IA, uma nova descrição para uma experiência profissional.
+"""Caso de uso: sugerir, via IA, uma nova versão para uma experiência profissional (descrição ou os quatro blocos).
 
 Usado na tela Meu perfil, onde não há vaga-alvo: a IA apenas melhora a escrita do texto
 livre. Cargo, empresa e período são sempre os recebidos. Nada é persistido.
@@ -35,10 +35,20 @@ class SugerirAjusteExperiencia:
         registrar_sugestao(
             "perfil",
             "EXPERIENCIA",
-            len(experiencia.descricao),
-            len(sugerida.descricao),
+            len(experiencia.texto_completo),
+            len(sugerida.texto_completo),
             inicio,
             refino,
             foco,
         )
-        return SugestaoRefinada(replace(experiencia, descricao=sugerida.descricao), foco)
+        return SugestaoRefinada(
+            replace(
+                experiencia,
+                descricao=sugerida.descricao,
+                contexto=sugerida.contexto,
+                responsabilidades=sugerida.responsabilidades,
+                conquistas=sugerida.conquistas,
+                skills=sugerida.skills,
+            ),
+            foco,
+        )

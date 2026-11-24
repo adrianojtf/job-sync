@@ -1,7 +1,7 @@
 """Testes da serialização do conteúdo do currículo adaptado em JSON."""
 import json
 
-from jobsync.curriculo import RascunhoCurriculoAdaptado, SecaoCurriculo, TipoSecao
+from jobsync.curriculo import ExperienciaAdaptada, RascunhoCurriculoAdaptado, SecaoCurriculo, TipoSecao
 from jobsync.curriculo_adaptado.adapters.serializador_conteudo import (
     VERSAO_DO_FORMATO,
     analise_de_json,
@@ -60,6 +60,48 @@ class TestRascunhoParaJson:
             assert "versão" in str(erro)
         else:
             raise AssertionError("era esperado ValueError")
+
+
+class TestRascunhoComQuatroBlocos:
+    def _com_blocos(self) -> RascunhoCurriculoAdaptado:
+        return RascunhoCurriculoAdaptado(
+            nome_completo="Ana Souza",
+            email="",
+            linkedin="",
+            secoes=(),
+            experiencias=(
+                ExperienciaAdaptada(
+                    cargo="Dev",
+                    empresa="Starian",
+                    periodo="2024",
+                    conquistas=("Atendi 1.000 usuários.",),
+                    contexto="ERP financeiro.",
+                    responsabilidades=("Projetar telas.",),
+                    skills=("Java", "SQL"),
+                ),
+            ),
+        )
+
+    def test_a_versao_atual_do_formato_e_a_2(self):
+        assert VERSAO_DO_FORMATO == 2
+
+    def test_ida_e_volta_preserva_responsabilidades_e_skills(self):
+        original = self._com_blocos()
+
+        assert rascunho_de_json(rascunho_para_json(original)) == original
+
+    def test_json_da_versao_1_e_lido_com_os_blocos_novos_vazios(self):
+        conteudo = rascunho_para_json(self._com_blocos())
+        conteudo["versao"] = 1
+        for experiencia in conteudo["experiencias"]:
+            del experiencia["responsabilidades"]
+            del experiencia["skills"]
+
+        recuperado = rascunho_de_json(conteudo)
+
+        experiencia = recuperado.experiencias[0]
+        assert experiencia.conquistas == ("Atendi 1.000 usuários.",)
+        assert (experiencia.responsabilidades, experiencia.skills) == ((), ())
 
 
 class TestAnaliseParaJson:

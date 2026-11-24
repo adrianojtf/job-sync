@@ -167,3 +167,61 @@ class TestInterpretadorExperiencias:
         texto = " ".join([bloco.empresa, bloco.periodo, bloco.cargo, *bloco.topicos, *bloco.descricao, bloco.contexto])
         for trecho in ("Dev", "Starian", "2024", "Criei APIs", "Texto solto aqui", "Empresa de telecom."):
             assert trecho in texto
+
+
+class TestInterpretadorExperienciasComBlocos:
+    def test_separa_os_quatro_blocos_do_formato_em_ingles(self):
+        bloco = _unico_bloco(
+            "Dev — Starian (2024 - Atual)\n"
+            "Context: ERP financeiro.\n"
+            "Key Responsibilities:\n- Projetar telas\n- Testar entregas\n"
+            "Key Achievements:\n- Atendi 1.000 usuários\n"
+            "Technologies: Java | PostgreSQL | React"
+        )
+
+        assert bloco.contexto == "Context: ERP financeiro."
+        assert bloco.responsabilidades == ("Projetar telas", "Testar entregas")
+        assert bloco.realizacoes == ("Atendi 1.000 usuários",)
+        assert bloco.skills == ("Java", "PostgreSQL", "React")
+        assert bloco.topicos == ()
+        assert bloco.rotulo_responsabilidades == "Key Responsibilities"
+        assert bloco.rotulo_realizacoes == "Key Achievements"
+        assert bloco.rotulo_skills == "Technologies"
+
+    def test_separa_os_blocos_em_portugues(self):
+        bloco = _unico_bloco(
+            "Dev — Starian (2024)\nContexto: ERP.\n"
+            "Principais responsabilidades:\n- Projetar\n"
+            "Principais realizações:\n- Reduzi custos\n"
+            "Tecnologias: Java | SQL"
+        )
+
+        assert bloco.responsabilidades == ("Projetar",)
+        assert bloco.realizacoes == ("Reduzi custos",)
+        assert bloco.skills == ("Java", "SQL")
+        assert bloco.rotulo_skills == "Tecnologias"
+
+    def test_topicos_sem_cabecalho_continuam_como_topicos(self):
+        bloco = _unico_bloco("Dev — Starian (2024)\n- Criei APIs\nContexto: ERP.")
+
+        assert bloco.topicos == ("Criei APIs",)
+        assert bloco.responsabilidades == ()
+        assert bloco.realizacoes == ()
+
+    def test_skills_separadas_por_virgula_tambem_sao_aceitas(self):
+        bloco = _unico_bloco("Dev — Starian (2024)\nSkills: Java, SQL")
+
+        assert bloco.skills == ("Java", "SQL")
+
+    def test_rotulo_dentro_de_bullet_nao_abre_bloco(self):
+        bloco = _unico_bloco("Dev — Starian (2024)\n- Technologies: Java")
+
+        assert bloco.topicos == ("Technologies: Java",)
+        assert bloco.skills == ()
+
+    def test_bloco_estruturado_sinaliza_o_layout_por_blocos(self):
+        estruturado = _unico_bloco("Dev — Starian (2024)\nKey Achievements:\n- Criei APIs")
+        legado = _unico_bloco("Dev — Starian (2024)\n- Criei APIs")
+
+        assert estruturado.estruturado is True
+        assert legado.estruturado is False

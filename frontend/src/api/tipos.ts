@@ -16,6 +16,7 @@ export type ConquistaRascunho = Esquemas["ConquistaRascunhoResponse"];
 export type ConquistasParecidas = Esquemas["ConquistasParecidasResponse"];
 export type ConquistaPerfil = Esquemas["ConquistaResponse"];
 export type AvaliarExperienciaEntrada = Esquemas["AvaliarExperienciaRequest"];
+export type ExperienciaParaIA = Esquemas["ExperienciaParaAvaliacaoRequest"];
 export type AvaliacaoExperiencia = Esquemas["AvaliacaoExperienciaResponse"];
 export type CurriculoSalvo = Esquemas["CurriculoSalvoResponse"];
 export type SalvarCurriculoEntrada = Esquemas["CurriculoSalvarRequest"];

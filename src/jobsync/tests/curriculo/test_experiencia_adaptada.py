@@ -37,7 +37,7 @@ class TestExperienciaAdaptada:
         assert experiencia.contexto == ""
 
     def test_para_texto_monta_cabecalho_bullets_e_contexto_com_rotulo(self):
-        texto = _experiencia().para_texto("Context")
+        texto = _experiencia().para_texto("en")
 
         assert texto == (
             "Software Engineer — SIPPulse (2022 - Atual)\n"
@@ -47,7 +47,7 @@ class TestExperienciaAdaptada:
         )
 
     def test_para_texto_sem_contexto_nao_deixa_rotulo_solto(self):
-        texto = _experiencia(contexto="  ").para_texto("Context")
+        texto = _experiencia(contexto="  ").para_texto("en")
 
         assert texto == (
             "Software Engineer — SIPPulse (2022 - Atual)\n"
@@ -56,7 +56,7 @@ class TestExperienciaAdaptada:
         )
 
     def test_para_texto_sem_conquistas_traz_cabecalho_e_contexto(self):
-        texto = _experiencia(conquistas=()).para_texto("Contexto")
+        texto = _experiencia(conquistas=()).para_texto("pt")
 
         assert texto == (
             "Software Engineer — SIPPulse (2022 - Atual)\n"
@@ -64,12 +64,12 @@ class TestExperienciaAdaptada:
         )
 
     def test_para_texto_sem_conquistas_e_sem_contexto_traz_so_o_cabecalho(self):
-        texto = _experiencia(conquistas=(), contexto="").para_texto("Contexto")
+        texto = _experiencia(conquistas=(), contexto="").para_texto("pt")
 
         assert texto == "Software Engineer — SIPPulse (2022 - Atual)"
 
     def test_para_texto_sem_periodo_omite_os_parenteses(self):
-        texto = _experiencia(periodo=" ", conquistas=(), contexto="").para_texto("Context")
+        texto = _experiencia(periodo=" ", conquistas=(), contexto="").para_texto("en")
 
         assert texto == "Software Engineer — SIPPulse"
 
@@ -159,3 +159,124 @@ class TestRotulosExperiencia:
 
     def test_rotulos_reconhecidos_cobrem_os_dois_idiomas_em_minusculas(self):
         assert ROTULOS_CONTEXTO_RECONHECIDOS == frozenset({"contexto", "context"})
+
+
+def _estruturada(**sobrescritas) -> ExperienciaAdaptada:
+    valores = {
+        "responsabilidades": ("Design and deliver features.", "Coordinate with Product and QA."),
+        "skills": ("Java", "PostgreSQL"),
+    }
+    valores.update(sobrescritas)
+    return _experiencia(**valores)
+
+
+class TestExperienciaAdaptadaComQuatroBlocos:
+    def test_responsabilidades_e_skills_sao_opcionais(self):
+        experiencia = _experiencia()
+
+        assert experiencia.responsabilidades == ()
+        assert experiencia.skills == ()
+
+    @pytest.mark.parametrize("campo", ["responsabilidades", "skills"])
+    def test_item_em_branco_gera_erro(self, campo):
+        with pytest.raises(ValueError, match=campo[:5]):
+            _estruturada(**{campo: ("Item.", "  ")})
+
+    def test_so_responsabilidades_ou_so_skills_ja_e_conteudo(self):
+        assert _experiencia(conquistas=(), contexto="", responsabilidades=("Projetar.",)).tem_conteudo
+        assert _experiencia(conquistas=(), contexto="", skills=("Java",)).tem_conteudo
+
+    def test_para_texto_em_ingles_traz_os_quatro_blocos_com_rotulos(self):
+        texto = _estruturada().para_texto("en")
+
+        assert texto == (
+            "Software Engineer — SIPPulse (2022 - Atual)\n"
+            "Context: Worked on the communications platform.\n"
+            "Key Responsibilities:\n"
+            "- Design and deliver features.\n"
+            "- Coordinate with Product and QA.\n"
+            "Key Achievements:\n"
+            "- Developed a VoIP billing system.\n"
+            "- Accelerated processing by 95%.\n"
+            "Technologies: Java | PostgreSQL"
+        )
+
+    def test_para_texto_em_portugues_traduz_os_rotulos(self):
+        texto = _estruturada().para_texto("pt")
+
+        assert "Contexto: Worked on" in texto
+        assert "Principais responsabilidades:" in texto
+        assert "Principais realizações:" in texto
+        assert "Tecnologias: Java | PostgreSQL" in texto
+
+    def test_para_texto_omite_o_bloco_vazio_sem_rotulo_solto(self):
+        texto = _estruturada(responsabilidades=(), conquistas=(), contexto="").para_texto("en")
+
+        assert texto == "Software Engineer — SIPPulse (2022 - Atual)\nTechnologies: Java | PostgreSQL"
+
+    def test_para_texto_com_so_skills_e_conquistas_ainda_usa_os_cabecalhos(self):
+        texto = _estruturada(responsabilidades=()).para_texto("en")
+
+        assert "Key Achievements:" in texto
+        assert "Key Responsibilities:" not in texto
+
+    def test_para_texto_idioma_invalido_gera_erro(self):
+        with pytest.raises(ValueError, match="idioma"):
+            _estruturada().para_texto("fr")
+
+    def test_para_avaliacao_considera_os_quatro_blocos(self):
+        avaliacao = _estruturada().para_avaliacao()
+
+        assert avaliacao.descricao == (
+            "- Design and deliver features.\n"
+            "- Coordinate with Product and QA.\n"
+            "- Developed a VoIP billing system.\n"
+            "- Accelerated processing by 95%.\n"
+            "Worked on the communications platform.\n"
+            "Java, PostgreSQL"
+        )
+
+    def test_como_descricao_considera_os_quatro_blocos(self):
+        assert _estruturada().como_descricao() == (
+            "Design and deliver features.\n"
+            "Coordinate with Product and QA.\n"
+            "Developed a VoIP billing system.\n"
+            "Accelerated processing by 95%.\n"
+            "Worked on the communications platform.\n"
+            "Java, PostgreSQL"
+        )
+
+    def test_revisada_apara_e_descarta_itens_em_branco_dos_novos_blocos(self):
+        experiencia = ExperienciaAdaptada.revisada(
+            cargo="Dev", empresa="TechCorp", periodo="2024", conquistas=("A.",), contexto="",
+            responsabilidades=(" Projetar ", ""), skills=(" Java ", "  "),
+        )
+
+        assert experiencia.responsabilidades == ("Projetar",)
+        assert experiencia.skills == ("Java",)
+
+    def test_revisada_com_so_um_bloco_novo_preenchido_nao_e_tratada_como_em_branco(self):
+        with pytest.raises(ValueError, match="cargo"):
+            ExperienciaAdaptada.revisada(
+                cargo="", empresa="", periodo="", conquistas=(), contexto="", skills=("Java",)
+            )
+
+
+class TestExperienciaParaAvaliacaoComBlocos:
+    def test_texto_completo_junta_descricao_e_os_blocos_um_item_por_linha(self):
+        experiencia = ExperienciaParaAvaliacao(
+            descricao="Backend.", cargo="Dev", contexto="ERP.", responsabilidades=("Projetar",),
+            conquistas=("Atendi 1.000 usuários",), skills=("Java", "SQL"),
+        )
+
+        assert experiencia.texto_completo == "Backend.\nProjetar\nAtendi 1.000 usuários\nERP.\nJava, SQL"
+
+    def test_so_com_descricao_o_texto_completo_e_a_descricao(self):
+        experiencia = ExperienciaParaAvaliacao(descricao="Backend.")
+
+        assert experiencia.texto_completo == "Backend."
+        assert experiencia.tem_blocos is False
+
+    def test_qualquer_bloco_conta_como_bloco(self):
+        assert ExperienciaParaAvaliacao(descricao="", skills=("Java",)).tem_blocos is True
+        assert ExperienciaParaAvaliacao(descricao="", contexto=" ERP ").tem_blocos is True

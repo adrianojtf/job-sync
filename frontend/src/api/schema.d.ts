@@ -497,7 +497,7 @@ export interface paths {
         put?: never;
         /**
          * Sugerir ajuste de uma experiência
-         * @description Sugere, via IA, uma nova descrição para uma experiência do perfil, melhorando a escrita sem vaga-alvo. Para adaptar à vaga, use POST /v1/experiencias-adaptadas/sugestoes. Cargo, empresa e período não são alterados, e nada é persistido.
+         * @description Sugere, via IA, uma nova descrição (ou os quatro blocos) para uma experiência do perfil, melhorando a escrita sem vaga-alvo. Para adaptar à vaga, use POST /v1/experiencias-adaptadas/sugestoes. Cargo, empresa e período não são alterados, e nada é persistido.
          */
         post: operations["sugerir_ajuste_experiencia_v1_experiencias_profissionais_sugestoes_post"];
         delete?: never;
@@ -517,7 +517,7 @@ export interface paths {
         put?: never;
         /**
          * Sugerir ajuste de uma experiência adaptada
-         * @description Sugere, via IA, conquistas e contexto novos para uma experiência do currículo adaptado, partindo dos textos atuais e orientado pela vaga. Cargo, empresa e período não são alterados, e nada é persistido.
+         * @description Sugere, via IA, os quatro blocos novos (contexto, responsabilidades, conquistas e skills) para uma experiência do currículo adaptado, partindo dos textos atuais e orientado pela vaga. Cargo, empresa e período não são alterados, e nada é persistido.
          */
         post: operations["sugerir_ajuste_experiencia_adaptada_v1_experiencias_adaptadas_sugestoes_post"];
         delete?: never;
@@ -880,6 +880,26 @@ export interface paths {
          * @description Guarda no banco de conquistas da experiência a conquista que o candidato aprovou ao responder uma pergunta sobre a vaga, com origem RESPOSTA_PERGUNTA. O resto do perfil não muda.
          */
         post: operations["adicionar_conquista_a_experiencia_v1_perfil_estruturado__perfil_identificador__experiencias__experiencia_indice__conquistas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/perfil-estruturado/{perfil_identificador}/migracoes-de-experiencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Migrar experiências do perfil para os quatro blocos
+         * @description Devolve o perfil com as experiências em texto livre separadas em contexto, responsabilidades, realizações e skills, reconhecendo o que já tem rótulo e gerando só o que falta. É um rascunho: nada é gravado até o usuário salvar o perfil.
+         */
+        post: operations["migrar_experiencias_do_perfil_v1_perfil_estruturado__perfil_identificador__migracoes_de_experiencias_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2134,6 +2154,16 @@ export interface components {
              * @default
              */
             contexto?: string;
+            /**
+             * Responsabilidades
+             * @description Principais responsabilidades da experiência, uma por item.
+             */
+            responsabilidades?: string[];
+            /**
+             * Skills
+             * @description Skills e tecnologias da experiência, uma por item.
+             */
+            skills?: string[];
         };
         /**
          * ExperienciaParaAvaliacaoRequest
@@ -2160,9 +2190,31 @@ export interface components {
             periodo?: string;
             /**
              * Descricao
-             * @description Texto individual da experiência profissional.
+             * @description Texto individual da experiência profissional (livre, quando não há blocos).
+             * @default
              */
-            descricao: string;
+            descricao?: string;
+            /**
+             * Contexto
+             * @description Contexto: a empresa, a área e o papel (opcional).
+             * @default
+             */
+            contexto?: string;
+            /**
+             * Responsabilidades
+             * @description Principais responsabilidades, uma por item (opcional).
+             */
+            responsabilidades?: string[];
+            /**
+             * Conquistas
+             * @description Principais realizações, uma por item (opcional).
+             */
+            conquistas?: string[];
+            /**
+             * Skills
+             * @description Skills e tecnologias da experiência (opcional).
+             */
+            skills?: string[];
         };
         /**
          * ExperienciaParaAvaliacaoResponse
@@ -2212,14 +2264,31 @@ export interface components {
             periodo: string;
             /**
              * Descricao
-             * @description Descrição das atividades e responsabilidades do cargo.
+             * @description Descrição em texto livre (legada); os blocos abaixo a substituem.
+             * @default
              */
-            descricao: string;
+            descricao?: string;
+            /**
+             * Contexto
+             * @description Contexto: a empresa, a área e o papel (opcional).
+             * @default
+             */
+            contexto?: string;
+            /**
+             * Responsabilidades
+             * @description Principais responsabilidades da experiência (opcional).
+             */
+            responsabilidades?: string[];
             /**
              * Conquistas
-             * @description Banco de conquistas da experiência (opcional).
+             * @description Principais realizações: o banco de conquistas da experiência (opcional).
              */
             conquistas?: components["schemas"]["ConquistaRequest"][];
+            /**
+             * Skills
+             * @description Skills e tecnologias usadas na experiência (opcional).
+             */
+            skills?: string[];
         };
         /**
          * ExperienciaProfissionalResponse
@@ -2243,14 +2312,30 @@ export interface components {
             periodo: string;
             /**
              * Descricao
-             * @description Descrição das atividades e responsabilidades do cargo.
+             * @description Descrição em texto livre (legada).
              */
             descricao: string;
             /**
+             * Contexto
+             * @description Contexto: a empresa, a área e o papel.
+             * @default
+             */
+            contexto?: string;
+            /**
+             * Responsabilidades
+             * @description Principais responsabilidades.
+             */
+            responsabilidades?: string[];
+            /**
              * Conquistas
-             * @description Banco de conquistas da experiência.
+             * @description Principais realizações: o banco de conquistas da experiência.
              */
             conquistas?: components["schemas"]["ConquistaResponse"][];
+            /**
+             * Skills
+             * @description Skills e tecnologias da experiência.
+             */
+            skills?: string[];
         };
         /**
          * FocoRefino
@@ -2693,6 +2778,11 @@ export interface components {
              * @description Lista de tecnologias dominadas pelo usuário.
              */
             tecnologias: string[];
+            /**
+             * Tecnologias Incluidas
+             * @description Tecnologias que as skills das experiências acrescentaram às gerais ao salvar.
+             */
+            tecnologias_incluidas?: string[];
         };
         /**
          * PerfilImportarPdfRequest
@@ -3029,7 +3119,7 @@ export interface components {
         };
         /**
          * SugerirAjusteExperienciaAdaptadaResponse
-         * @description Conquistas e contexto sugeridos; cargo, empresa e período não são alterados.
+         * @description Os quatro blocos sugeridos; cargo, empresa e período não são alterados.
          */
         SugerirAjusteExperienciaAdaptadaResponse: {
             /**
@@ -3042,6 +3132,16 @@ export interface components {
              * @description Contexto sugerido.
              */
             contexto: string;
+            /**
+             * Responsabilidades
+             * @description Responsabilidades sugeridas.
+             */
+            responsabilidades?: string[];
+            /**
+             * Skills
+             * @description Skills sugeridas.
+             */
+            skills?: string[];
             /** @description Foco usado nesta sugestão, em rodízio pela tentativa. */
             foco: components["schemas"]["FocoRefino"];
         };
@@ -3060,7 +3160,7 @@ export interface components {
         };
         /**
          * SugerirAjusteExperienciaResponse
-         * @description Descrição sugerida; cargo, empresa e período não são alterados.
+         * @description Descrição ou blocos sugeridos; cargo, empresa e período não são alterados.
          */
         SugerirAjusteExperienciaResponse: {
             /**
@@ -3068,6 +3168,27 @@ export interface components {
              * @description Nova versão da descrição da experiência.
              */
             descricao_sugerida: string;
+            /**
+             * Contexto
+             * @description Contexto sugerido, quando a experiência tem blocos.
+             * @default
+             */
+            contexto?: string;
+            /**
+             * Responsabilidades
+             * @description Responsabilidades sugeridas.
+             */
+            responsabilidades?: string[];
+            /**
+             * Conquistas
+             * @description Principais realizações sugeridas.
+             */
+            conquistas?: string[];
+            /**
+             * Skills
+             * @description Skills sugeridas.
+             */
+            skills?: string[];
             /** @description Foco usado nesta sugestão, em rodízio pela tentativa. */
             foco: components["schemas"]["FocoRefino"];
         };
@@ -5080,6 +5201,37 @@ export interface operations {
                 "application/json": components["schemas"]["ConquistaAprovadaRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilEstruturadoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    migrar_experiencias_do_perfil_v1_perfil_estruturado__perfil_identificador__migracoes_de_experiencias_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                perfil_identificador: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

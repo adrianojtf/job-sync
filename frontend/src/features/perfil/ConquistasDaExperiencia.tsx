@@ -57,7 +57,7 @@ export function ConquistasDaExperiencia({ form, indice }: Props) {
       aria-label={`Conquistas da experiência ${numeroExperiencia}`}
       className={estilos.conquistas}
     >
-      <h4 className={estilos.titulo}>Conquistas</h4>
+      <h4 className={estilos.titulo}>Principais realizações</h4>
       {fields.length === 0 && <p className={estilos.vazio}>Nenhuma conquista cadastrada.</p>}
       {fields.map((campo, posicao) => (
         <div key={campo.id} className={estilos.item}>

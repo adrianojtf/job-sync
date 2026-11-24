@@ -102,7 +102,7 @@ class AdaptarCurriculoParaVaga:
                 for conquista in experiencia.conquistas
             ),
         )
-        rascunho = self._montar_rascunho(curriculo_original, input_dto, contexto)
+        rascunho = self._montar_rascunho(curriculo_original, input_dto, contexto).com_skills_nas_competencias()
         avaliacoes_experiencias = self._avaliar_experiencias(
             tuple(experiencia.para_avaliacao() for experiencia in rascunho.experiencias or ()),
             input_dto.descricao_vaga,

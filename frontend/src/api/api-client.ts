@@ -69,6 +69,8 @@ export interface ApiClient {
   salvarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   atualizarPerfilEstruturado(dados: PerfilEstruturadoEntrada): Promise<PerfilEstruturado>;
   importarPerfilDePdf(pdfBase64: string): Promise<PerfilEstruturado>;
+  /** Separa as experiências em texto livre nos quatro blocos, como rascunho; não grava nada (JOB-0045). */
+  migrarExperienciasDoPerfil(perfil: string): Promise<PerfilEstruturado>;
   /** Conquistas da experiência que se parecem com o texto novo (JOB-0042); não altera o perfil salvo. */
   verificarConquistasParecidas(texto: string, conquistas: string[]): Promise<string[]>;
   /** Temas da vaga que o perfil não sustenta, com a pergunta de cada um (JOB-0043). */

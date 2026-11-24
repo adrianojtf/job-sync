@@ -138,6 +138,10 @@
 .tituloDoCartao {
   display: block;
   min-width: 0;
+}
+.botaoDoTitulo {
+  display: block;
+  max-width: 100%;
   border: 0;
   background: transparent;
   padding: 0;
@@ -145,7 +149,7 @@
   color: inherit;
   cursor: pointer;
 }
-.tituloDoCartao strong,
+.botaoDoTitulo strong,
 .tituloDoCartao small {
   display: block;
   overflow: hidden;

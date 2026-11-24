@@ -15,9 +15,9 @@ Valida no navegador a reordenação, o período inválido, os cartões lembrados
 
 ## Subtarefas
 
-- [ ] 9.1 Escrever o E2E das listas.
-- [ ] 9.2 Rodar a suíte completa e corrigir os ajustes de apoio.
-- [ ] 9.3 Registrar o resultado e as questões que restarem.
+- [x] 9.1 Escrever o E2E das listas.
+- [x] 9.2 Rodar a suíte completa e corrigir os ajustes de apoio.
+- [x] 9.3 Registrar o resultado e as questões que restarem.
 
 ## Detalhes de Implementação
 
@@ -32,7 +32,7 @@ Complexidade: medium. Dependências: 8.0.
 
 ## Testes da Tarefa
 
-- [ ] Playwright em `frontend/e2e`.
+- [x] Playwright em `frontend/e2e`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

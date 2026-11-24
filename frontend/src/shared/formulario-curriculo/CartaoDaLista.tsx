@@ -93,16 +93,18 @@ export function CartaoDaLista({
         <span className={estilos.avatar} aria-hidden="true">
           {(resumo.inicial ?? titulo).trim().charAt(0).toUpperCase() || "?"}
         </span>
-        <button
-          type="button"
-          className={estilos.tituloDoCartao}
-          aria-expanded={aberto}
-          aria-label={`Editar ${titulo}`}
-          onClick={aoAlternar}
-        >
-          <strong>{(resumo.titulo ?? "").trim() || `${rotuloItem} sem título`}</strong>
+        <div className={estilos.tituloDoCartao}>
+          <button
+            type="button"
+            className={estilos.botaoDoTitulo}
+            aria-expanded={aberto}
+            aria-label={`Editar ${titulo}`}
+            onClick={aoAlternar}
+          >
+            <strong>{(resumo.titulo ?? "").trim() || `${rotuloItem} sem título`}</strong>
+          </button>
           {resumo.subtitulo && <small>{resumo.subtitulo}</small>}
-        </button>
+        </div>
         {resumo.meta && <span className={estilos.metaDoCartao}>{resumo.meta}</span>}
         <div className={estilos.acoesDoCartao}>
           {reordenavel && (

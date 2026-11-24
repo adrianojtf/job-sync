@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { entrar, novoPerfil, semearPerfilCompleto } from "./apoio";
+import { abrirExperiencia, avisoDeStatus, entrar, novoPerfil, semearPerfilCompleto } from "./apoio";
 
 /** Arrasta com passos intermediários: o sensor do dnd-kit só ativa depois de alguns pixels. */
 async function arrastar(page: Page, origem: Locator, destino: Locator) {
@@ -21,7 +21,7 @@ test("perfil antigo: estruturar as experiências, salvar e ver as skills nas tec
   await entrar(page, perfil);
   await page.goto("/perfil");
 
-  const experiencia = page.getByRole("group", { name: "Experiência 1" });
+  const experiencia = await abrirExperiencia(page, 1);
   await expect(experiencia.getByLabel("Descrição")).toHaveValue("APIs em Python.");
   await page.getByRole("button", { name: "Estruturar experiências" }).click();
 
@@ -40,17 +40,18 @@ test("perfil antigo: estruturar as experiências, salvar e ver as skills nas tec
   await skills.getByLabel("Nova skill").fill("Kafka");
   await skills.getByLabel("Nova skill").press("Enter");
   await page.getByRole("button", { name: "Salvar perfil" }).click();
-  await expect(page.getByRole("status")).toHaveText(
+  await expect(avisoDeStatus(page)).toHaveText(
     "Perfil salvo. Tecnologias incluídas pelas skills: Flyway, Kafka.",
   );
 
   await page.reload();
-  await expect(
-    page.getByRole("group", { name: "Experiência 1" }).getByLabel("Contexto"),
-  ).toHaveValue("Contexto gerado de Olist.");
-  await expect(page.getByLabel("Tecnologias", { exact: true })).toHaveValue(
-    "Python, FastAPI, Flyway, Kafka",
-  );
+  const reaberta = await abrirExperiencia(page, 1);
+  await expect(reaberta.getByLabel("Contexto")).toHaveValue("Contexto gerado de Olist.");
+  for (const tecnologia of ["Python", "FastAPI", "Flyway", "Kafka"]) {
+    await expect(
+      page.getByRole("button", { name: `Remover ${tecnologia}`, exact: true }).last(),
+    ).toBeVisible();
+  }
   await expect(page.getByRole("button", { name: "Estruturar experiências" })).toHaveCount(0);
 });
 

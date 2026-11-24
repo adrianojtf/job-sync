@@ -20,6 +20,25 @@ class ExperienciaParaAvaliacao:
     responsabilidades: tuple[str, ...] = ()
     skills: tuple[str, ...] = ()
 
+    @property
+    def tem_blocos(self) -> bool:
+        """Indica se a experiência traz algum dos blocos além da descrição em texto livre."""
+        return bool(
+            self.contexto.strip() or self.responsabilidades or self.conquistas or self.skills
+        )
+
+    @property
+    def texto_completo(self) -> str:
+        """Descrição e os quatro blocos, um item por linha: o texto que a IA mede ou melhora."""
+        linhas = [
+            self.descricao.strip(),
+            *self.responsabilidades,
+            *self.conquistas,
+            self.contexto.strip(),
+            ", ".join(self.skills),
+        ]
+        return "\n".join(linha for linha in linhas if linha)
+
 
 @dataclass(frozen=True)
 class AvaliacaoExperiencia:

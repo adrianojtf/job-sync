@@ -88,6 +88,8 @@ class ServicoExperienciaAdaptadaFake:
                 periodo=experiencia.periodo,
                 conquistas=("Conquista sugerida.",),
                 contexto="Contexto sugerido.",
+                responsabilidades=("Responsabilidade sugerida.",),
+                skills=("Java",),
             ),
             FocoRefino.ADERENCIA_VAGA,
         )
@@ -191,7 +193,14 @@ class TestSugestaoDeExperienciaRouter:
         )
 
         assert response.status_code == 200
-        assert response.json() == {"descricao_sugerida": "Descrição sugerida.", "foco": "impacto"}
+        assert response.json() == {
+            "descricao_sugerida": "Descrição sugerida.",
+            "contexto": "",
+            "responsabilidades": [],
+            "conquistas": [],
+            "skills": [],
+            "foco": "impacto",
+        }
         assert perfil.chamadas[0].descricao == "Descrição atual."
         assert adaptada.chamadas == []
 
@@ -253,6 +262,8 @@ class TestSugestaoDeExperienciaAdaptadaRouter:
         assert response.json() == {
             "conquistas": ["Conquista sugerida."],
             "contexto": "Contexto sugerido.",
+            "responsabilidades": ["Responsabilidade sugerida."],
+            "skills": ["Java"],
             "foco": "aderencia_vaga",
         }
         experiencia, contexto = adaptada.chamadas[0]
@@ -408,3 +419,50 @@ class TestRefinoDasSugestoesRouter:
 
         assert response.status_code == 422
         assert servico.chamadas == []
+
+
+class TestSugestaoDeExperienciaComBlocosRouter:
+    def test_experiencia_so_com_blocos_e_aceita_e_chega_ao_servico(self, client: TestClient):
+        perfil, _ = _sobrescrever_servicos_de_experiencia()
+        corpo = {
+            "experiencia": {
+                "cargo": "Dev",
+                "empresa": "Starian",
+                "contexto": "ERP financeiro.",
+                "responsabilidades": ["Projetar telas", " "],
+                "conquistas": ["Atendi 1.000 usuários"],
+                "skills": ["Java"],
+            }
+        }
+
+        response = client.post("/v1/experiencias-profissionais/sugestoes", json=corpo)
+
+        assert response.status_code == 200
+        recebida = perfil.chamadas[0]
+        assert recebida.contexto == "ERP financeiro."
+        assert recebida.responsabilidades == ("Projetar telas",)
+        assert recebida.conquistas == ("Atendi 1.000 usuários",)
+        assert recebida.skills == ("Java",)
+
+    def test_experiencia_sem_descricao_nem_blocos_devolve_422(self, client: TestClient):
+        perfil, _ = _sobrescrever_servicos_de_experiencia()
+
+        response = client.post(
+            "/v1/experiencias-profissionais/sugestoes",
+            json={"experiencia": {"cargo": "Dev", "empresa": "Starian", "descricao": "  "}},
+        )
+
+        assert response.status_code == 422
+        assert perfil.chamadas == []
+
+    def test_a_experiencia_adaptada_repassa_responsabilidades_e_skills(self, client: TestClient):
+        _, adaptada = _sobrescrever_servicos_de_experiencia()
+        corpo = _corpo_experiencia_adaptada()
+        corpo["experiencia"]["responsabilidades"] = ["Projetar telas."]
+        corpo["experiencia"]["skills"] = ["Java", "SQL"]
+
+        client.post("/v1/experiencias-adaptadas/sugestoes", json=corpo)
+
+        experiencia, _ = adaptada.chamadas[0]
+        assert experiencia.responsabilidades == ("Projetar telas.",)
+        assert experiencia.skills == ("Java", "SQL")

@@ -14,6 +14,7 @@ from enum import Enum, auto
 from jobsync.perfil_estruturado.domain.blocos_experiencia import chave_de_tecnologia
 from jobsync.perfil_estruturado.domain.conquistas_parecidas import sao_parecidas
 from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada
+from jobsync.shared_kernel.domain.rotulos_blocos_experiencia import BlocoExperiencia, rotulo_do_bloco
 from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
 
@@ -102,6 +103,25 @@ class ExperienciaProfissional:
         return bool(self.descricao.strip()) and not (
             self.contexto or self.responsabilidades or self.conquistas or self.skills
         )
+
+    def para_texto(self, idioma: str = "pt") -> str:
+        """Texto da experiência: cabeçalho e, nos blocos, os rótulos do idioma; legada usa a descrição."""
+        cabecalho = f"{self.cargo} — {self.empresa} ({self.periodo})"
+        if self.eh_legada or not (self.contexto or self.responsabilidades or self.conquistas or self.skills):
+            return f"{cabecalho}\n{self.descricao}".strip()
+        linhas = [cabecalho]
+        if self.contexto:
+            linhas.append(f"{rotulo_do_bloco(BlocoExperiencia.CONTEXTO, idioma)}: {self.contexto}")
+        for bloco, itens in (
+            (BlocoExperiencia.RESPONSABILIDADES, self.responsabilidades),
+            (BlocoExperiencia.REALIZACOES, tuple(conquista.texto for conquista in self.conquistas)),
+        ):
+            if itens:
+                linhas.append(f"{rotulo_do_bloco(bloco, idioma)}:")
+                linhas.extend(f"- {item}" for item in itens)
+        if self.skills:
+            linhas.append(f"{rotulo_do_bloco(BlocoExperiencia.SKILLS, idioma)}: {' | '.join(self.skills)}")
+        return "\n".join(linhas)
 
     def conquistas_parecidas_com(self, texto: str) -> tuple[Conquista, ...]:
         """Conquistas já guardadas que dizem praticamente o mesmo que o texto informado."""

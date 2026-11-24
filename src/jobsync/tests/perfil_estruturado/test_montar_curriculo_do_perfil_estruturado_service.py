@@ -3,6 +3,7 @@
 from jobsync.curriculo import TipoSecao
 from jobsync.perfil_estruturado import (
     Certificacao,
+    Conquista,
     ExperienciaProfissional,
     FormacaoAcademica,
     Idioma,
@@ -73,3 +74,39 @@ class TestMontarCurriculoDoPerfilEstruturado:
         curriculo = MontarCurriculoDoPerfilEstruturado().executar(perfil)
 
         assert curriculo is None
+
+
+class TestMontarCurriculoComBlocos:
+    def test_experiencia_com_blocos_vira_texto_com_os_rotulos(self):
+        perfil = _perfil_vazio(
+            experiencias=(
+                ExperienciaProfissional(
+                    "Starian", "Dev", "2024 - Atual", "",
+                    contexto="ERP financeiro.",
+                    responsabilidades=("Projetar telas",),
+                    conquistas=(Conquista("Atendi 1.000 usuários"),),
+                    skills=("Java", "SQL"),
+                ),
+            )
+        )
+
+        curriculo = MontarCurriculoDoPerfilEstruturado().executar(perfil)
+
+        assert curriculo.obter_secao(TipoSecao.EXPERIENCIAS).conteudo == (
+            "Dev — Starian (2024 - Atual)\n"
+            "Contexto: ERP financeiro.\n"
+            "Principais responsabilidades:\n"
+            "- Projetar telas\n"
+            "Principais realizações:\n"
+            "- Atendi 1.000 usuários\n"
+            "Tecnologias: Java | SQL"
+        )
+
+    def test_experiencia_legada_continua_usando_a_descricao(self):
+        perfil = _perfil_vazio(
+            experiencias=(ExperienciaProfissional("TechCorp", "Eng.", "2020-2022", "Backend."),)
+        )
+
+        curriculo = MontarCurriculoDoPerfilEstruturado().executar(perfil)
+
+        assert curriculo.obter_secao(TipoSecao.EXPERIENCIAS).conteudo == "Eng. — TechCorp (2020-2022)\nBackend."

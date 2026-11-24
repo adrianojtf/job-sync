@@ -40,10 +40,7 @@ class MontarCurriculoDoPerfilEstruturado:
             )
 
         if perfil.experiencias:
-            conteudo = "\n\n".join(
-                f"{exp.cargo} — {exp.empresa} ({exp.periodo})\n{exp.descricao}".strip()
-                for exp in perfil.experiencias
-            )
+            conteudo = "\n\n".join(exp.para_texto() for exp in perfil.experiencias)
             secoes.append(SecaoCurriculo(TipoSecao.EXPERIENCIAS, _TITULOS[TipoSecao.EXPERIENCIAS], conteudo))
 
         if perfil.formacoes:

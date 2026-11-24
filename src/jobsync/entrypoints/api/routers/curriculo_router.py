@@ -541,8 +541,8 @@ def sugerir_ajuste_secao(
     status_code=status.HTTP_200_OK,
     summary="Sugerir ajuste de uma experiência",
     description=(
-        "Sugere, via IA, uma nova descrição para uma experiência do perfil, melhorando a "
-        "escrita sem vaga-alvo. Para adaptar à vaga, use POST /v1/experiencias-adaptadas/"
+        "Sugere, via IA, uma nova descrição (ou os quatro blocos) para uma experiência do perfil, "
+        "melhorando a escrita sem vaga-alvo. Para adaptar à vaga, use POST /v1/experiencias-adaptadas/"
         "sugestoes. Cargo, empresa e período não são alterados, e nada é persistido."
     ),
     responses=_RESPOSTAS_SUGESTAO,
@@ -560,7 +560,12 @@ def sugerir_ajuste_experiencia(
             detail=str(erro),
         )
     return SugerirAjusteExperienciaResponse(
-        descricao_sugerida=sugerida.valor.descricao, foco=sugerida.foco
+        descricao_sugerida=sugerida.valor.descricao,
+        contexto=sugerida.valor.contexto,
+        responsabilidades=list(sugerida.valor.responsabilidades),
+        conquistas=list(sugerida.valor.conquistas),
+        skills=list(sugerida.valor.skills),
+        foco=sugerida.foco,
     )
 
 
@@ -570,7 +575,8 @@ def sugerir_ajuste_experiencia(
     status_code=status.HTTP_200_OK,
     summary="Sugerir ajuste de uma experiência adaptada",
     description=(
-        "Sugere, via IA, conquistas e contexto novos para uma experiência do currículo adaptado, "
+        "Sugere, via IA, os quatro blocos novos (contexto, responsabilidades, conquistas e skills) para "
+        "uma experiência do currículo adaptado, "
         "partindo dos textos atuais e orientado pela vaga. Cargo, empresa e período não são "
         "alterados, e nada é persistido."
     ),
@@ -593,6 +599,8 @@ def sugerir_ajuste_experiencia_adaptada(
     return SugerirAjusteExperienciaAdaptadaResponse(
         conquistas=list(sugerida.valor.conquistas),
         contexto=sugerida.valor.contexto,
+        responsabilidades=list(sugerida.valor.responsabilidades),
+        skills=list(sugerida.valor.skills),
         foco=sugerida.foco,
     )
 

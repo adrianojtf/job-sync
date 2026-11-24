@@ -7,7 +7,7 @@ from jobsync.curriculo.service_layer.validacoes_sugestao import validar_refino, 
 class SugerirAjusteExperienciaInputValidator:
     @staticmethod
     def validar(experiencia: ExperienciaParaAvaliacao, refino: PedidoRefino) -> None:
-        if not experiencia.descricao or not experiencia.descricao.strip():
+        if not experiencia.texto_completo:
             raise ValueError("A descrição da experiência é obrigatória para pedir sugestões.")
-        validar_tamanho_do_texto(experiencia.descricao)
+        validar_tamanho_do_texto(experiencia.texto_completo)
         validar_refino(refino)

@@ -106,3 +106,25 @@ class TestAvaliarExperiencia:
                     descricao_vaga="Vaga backend.",
                 )
             )
+
+
+class TestAvaliarExperienciaComBlocos:
+    def test_experiencia_so_com_blocos_e_avaliada(self):
+        avaliador = AvaliadorExperienciaFake(resultado=_avaliacao())
+        experiencia = ExperienciaParaAvaliacao(descricao="", skills=("Java",), conquistas=("Atendi 1.000 usuários",))
+
+        AvaliarExperiencia(avaliador).executar(
+            AvaliarExperienciaInputDto(experiencia=experiencia, descricao_vaga="Vaga Java")
+        )
+
+        assert avaliador.experiencia_recebida == experiencia
+
+    def test_sem_descricao_nem_blocos_gera_erro(self):
+        servico = AvaliarExperiencia(AvaliadorExperienciaFake(resultado=_avaliacao()))
+
+        with pytest.raises(ValueError, match="obrigatório"):
+            servico.executar(
+                AvaliarExperienciaInputDto(
+                    experiencia=ExperienciaParaAvaliacao(descricao=" "), descricao_vaga="Vaga"
+                )
+            )

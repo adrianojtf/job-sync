@@ -145,3 +145,23 @@ class TestSugerirAjusteExperienciaAdaptadaRefino:
             )
 
         ajustador.refinar.assert_not_called()
+
+
+class TestSugerirAjusteExperienciaAdaptadaComQuatroBlocos:
+    def test_devolve_responsabilidades_e_skills_sugeridas_preservando_a_identificacao(self):
+        caso_de_uso, ajustador = _caso_de_uso()
+        ajustador.refinar.return_value = _experiencia(
+            cargo="Outro",
+            conquistas=("Sugestão A.",),
+            contexto="Contexto sugerido.",
+            responsabilidades=("Responsabilidade sugerida.",),
+            skills=("Java", "SQL"),
+        )
+
+        resultado = caso_de_uso.executar(
+            _experiencia(responsabilidades=("Projetar.",), skills=("Java",)), _contexto()
+        )
+
+        assert resultado.valor.cargo == "Dev"
+        assert resultado.valor.responsabilidades == ("Responsabilidade sugerida.",)
+        assert resultado.valor.skills == ("Java", "SQL")

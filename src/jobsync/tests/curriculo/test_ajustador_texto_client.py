@@ -114,14 +114,18 @@ def _prompt_da_secao(
     return cliente_fake.prompt_usuario
 
 
-def test_prompt_de_experiencias_pede_conquistas_em_bullets_e_linha_final_de_contexto() -> None:
+def test_prompt_de_experiencias_pede_os_quatro_blocos_com_os_rotulos_do_idioma() -> None:
     prompt = _prompt_da_secao(TipoSecao.EXPERIENCIAS, "pt")
 
     assert "um bloco por experiência" in prompt
     assert "primeira linha de identificação" in prompt
     assert 'iniciada por "- "' in prompt
-    assert "de 2 a 6 conquistas" in prompt
+    assert "de 3 a 5 conquistas" in prompt
+    assert "de 3 a 5 responsabilidades" in prompt
     assert '"Contexto: ..."' in prompt
+    assert '"Principais responsabilidades:"' in prompt
+    assert '"Principais realizações:"' in prompt
+    assert '"Tecnologias: a | b | c"' in prompt
     assert "de 1 a 3 frases" in prompt
 
 
@@ -129,6 +133,9 @@ def test_prompt_de_experiencias_usa_o_rotulo_de_contexto_do_idioma_alvo() -> Non
     prompt = _prompt_da_secao(TipoSecao.EXPERIENCIAS, "en")
 
     assert '"Context: ..."' in prompt
+    assert '"Key Responsibilities:"' in prompt
+    assert '"Key Achievements:"' in prompt
+    assert '"Technologies: a | b | c"' in prompt
     assert '"Contexto: ..."' not in prompt
 
 

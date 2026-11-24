@@ -1,4 +1,4 @@
-"""Caso de uso: sugerir, via IA, conquistas e contexto novos para uma experiência adaptada.
+"""Caso de uso: sugerir, via IA, os quatro blocos novos de uma experiência adaptada.
 
 Usado na revisão do currículo adaptado: a IA parte das conquistas e do contexto atuais do
 usuário e os reescreve para a vaga. Cargo, empresa e período são sempre os recebidos.
@@ -49,5 +49,12 @@ class SugerirAjusteExperienciaAdaptada:
             foco,
         )
         return SugestaoRefinada(
-            replace(experiencia, conquistas=sugerida.conquistas, contexto=sugerida.contexto), foco
+            replace(
+                experiencia,
+                conquistas=sugerida.conquistas,
+                contexto=sugerida.contexto,
+                responsabilidades=sugerida.responsabilidades,
+                skills=sugerida.skills,
+            ),
+            foco,
         )

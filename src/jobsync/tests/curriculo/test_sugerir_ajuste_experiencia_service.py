@@ -85,3 +85,31 @@ class TestSugerirAjusteExperienciaRefino:
             caso_de_uso.executar(_experiencia(), PedidoRefino(tentativa=2, sugestoes_anteriores=("a" * 5001,)))
 
         melhorador.melhorar_experiencia.assert_not_called()
+
+
+class TestSugerirAjusteExperienciaComBlocos:
+    def test_aceita_experiencia_so_com_blocos_e_devolve_os_blocos_sugeridos(self):
+        caso_de_uso, melhorador = _caso_de_uso()
+        entrada = ExperienciaParaAvaliacao(
+            cargo="Dev", empresa="TechCorp", periodo="2024", descricao="", skills=("Java",)
+        )
+        melhorador.melhorar_experiencia.return_value = ExperienciaParaAvaliacao(
+            cargo="Outro", empresa="Outra", periodo="1999", descricao="",
+            contexto="Contexto sugerido.", responsabilidades=("Projetar.",),
+            conquistas=("Atendi 1.000 usuários.",), skills=("Java", "SQL"),
+        )
+
+        resultado = caso_de_uso.executar(entrada)
+
+        valor = resultado.valor
+        assert (valor.cargo, valor.empresa, valor.periodo) == ("Dev", "TechCorp", "2024")
+        assert valor.contexto == "Contexto sugerido."
+        assert valor.responsabilidades == ("Projetar.",)
+        assert valor.conquistas == ("Atendi 1.000 usuários.",)
+        assert valor.skills == ("Java", "SQL")
+
+    def test_sem_descricao_e_sem_blocos_gera_erro(self):
+        caso_de_uso, _ = _caso_de_uso()
+
+        with pytest.raises(ValueError, match="obrigatória"):
+            caso_de_uso.executar(_experiencia(""))

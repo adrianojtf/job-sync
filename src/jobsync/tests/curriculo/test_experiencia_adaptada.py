@@ -260,3 +260,23 @@ class TestExperienciaAdaptadaComQuatroBlocos:
             ExperienciaAdaptada.revisada(
                 cargo="", empresa="", periodo="", conquistas=(), contexto="", skills=("Java",)
             )
+
+
+class TestExperienciaParaAvaliacaoComBlocos:
+    def test_texto_completo_junta_descricao_e_os_blocos_um_item_por_linha(self):
+        experiencia = ExperienciaParaAvaliacao(
+            descricao="Backend.", cargo="Dev", contexto="ERP.", responsabilidades=("Projetar",),
+            conquistas=("Atendi 1.000 usuários",), skills=("Java", "SQL"),
+        )
+
+        assert experiencia.texto_completo == "Backend.\nProjetar\nAtendi 1.000 usuários\nERP.\nJava, SQL"
+
+    def test_so_com_descricao_o_texto_completo_e_a_descricao(self):
+        experiencia = ExperienciaParaAvaliacao(descricao="Backend.")
+
+        assert experiencia.texto_completo == "Backend."
+        assert experiencia.tem_blocos is False
+
+    def test_qualquer_bloco_conta_como_bloco(self):
+        assert ExperienciaParaAvaliacao(descricao="", skills=("Java",)).tem_blocos is True
+        assert ExperienciaParaAvaliacao(descricao="", contexto=" ERP ").tem_blocos is True

@@ -18,11 +18,11 @@ A adaptação à vaga, as sugestões e a avaliação por experiência passam a t
 
 ## Subtarefas
 
-- [ ] 7.1 Escrever os testes do ajustador, dos services, dos routers e do montador (red).
-- [ ] 7.2 Implementar o prompt e o parser do ajustador (green).
-- [ ] 7.3 Ajustar services, DTOs, schemas e routers (green).
-- [ ] 7.4 Ajustar o `MontarCurriculoDoPerfilEstruturado` (green).
-- [ ] 7.5 Refatorar e rodar `tests/curriculo`, `tests/perfil_estruturado` e `tests/entrypoints/api`.
+- [x] 7.1 Escrever os testes do ajustador, dos services, dos routers e do montador (red).
+- [x] 7.2 Implementar o prompt e o parser do ajustador (green).
+- [x] 7.3 Ajustar services, DTOs, schemas e routers (green).
+- [x] 7.4 Ajustar o `MontarCurriculoDoPerfilEstruturado` (green).
+- [x] 7.5 Refatorar e rodar `tests/curriculo`, `tests/perfil_estruturado` e `tests/entrypoints/api`.
 
 ## Detalhes de Implementação
 
@@ -38,11 +38,11 @@ Complexidade: high. Dependências: 2.0, 6.0.
 
 ## Testes da Tarefa
 
-- [ ] Testes do `AjustadorExperienciaOpenAIClient` (formato, limites, refino).
-- [ ] Testes dos services de adaptação, sugestão e avaliação.
-- [ ] Testes dos routers e schemas.
-- [ ] Testes do `MontarCurriculoDoPerfilEstruturado`.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`, `src/jobsync/tests/perfil_estruturado/` e `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes do `AjustadorExperienciaOpenAIClient` (formato, limites, refino).
+- [x] Testes dos services de adaptação, sugestão e avaliação.
+- [x] Testes dos routers e schemas.
+- [x] Testes do `MontarCurriculoDoPerfilEstruturado`.
+- [x] Regressão: `src/jobsync/tests/curriculo/`, `src/jobsync/tests/perfil_estruturado/` e `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

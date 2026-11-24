@@ -19,7 +19,11 @@ from jobsync.curriculo.adapters.prompt_refino import bloco_refino
 from jobsync.curriculo.domain.ajustador_texto_port import AjustadorTextoPort
 from jobsync.curriculo.domain.equivalencia_tecnologia import EquivalenciaTecnologia
 from jobsync.curriculo.domain.refino import PedidoRefino
-from jobsync.curriculo.domain.rotulos_experiencia import ROTULO_CONTEXTO
+from jobsync.shared_kernel.domain.rotulos_blocos_experiencia import (
+    IDIOMAS_SUPORTADOS,
+    BlocoExperiencia,
+    rotulo_do_bloco,
+)
 from jobsync.vaga import TipoRequisitoTecnico
 from jobsync.curriculo import ContextoVaga, SecaoCurriculo, TipoSecao
 from jobsync.shared_kernel.adapters.cliente_openai_client import ClienteOpenAI
@@ -45,19 +49,33 @@ _INSTRUCOES_POR_TIPO: dict[TipoSecao, str] = {
     TipoSecao.IDIOMAS: "Apenas traduza/adapte o idioma, se necessário, sem alterar os fatos.",
 }
 
-def _instrucao_experiencias(rotulo_contexto: str) -> str:
-    """Padrão de conquistas e contexto para a seção de experiências vinda de um PDF.
+def _instrucao_experiencias(idioma_alvo: str) -> str:
+    """Padrão dos quatro blocos para a seção de experiências vinda de um PDF.
 
-    A linha final no formato "Rótulo: ..." é a convenção que o gerador de PDF reconhece.
+    As linhas no formato "Rótulo: ..." são a convenção que o gerador de PDF reconhece.
     """
+    idioma = idioma_alvo if idioma_alvo in IDIOMAS_SUPORTADOS else "pt"
+    contexto, responsabilidades, realizacoes, skills = (
+        rotulo_do_bloco(bloco, idioma)
+        for bloco in (
+            BlocoExperiencia.CONTEXTO,
+            BlocoExperiencia.RESPONSABILIDADES,
+            BlocoExperiencia.REALIZACOES,
+            BlocoExperiencia.SKILLS,
+        )
+    )
     return (
-        "Reescreva cada experiência no padrão de conquistas e contexto, com um bloco por experiência, "
+        "Reescreva cada experiência nos quatro blocos, com um bloco por experiência, "
         "separado do próximo por uma linha em branco. Em cada bloco: "
         "(1) mantenha a primeira linha de identificação (cargo, empresa e período) como no original; "
-        '(2) liste de 2 a 6 conquistas, uma por linha, cada uma iniciada por "- ", em frases curtas '
-        "que começam com verbo de ação e citam o resultado medido quando houver dado; "
-        f'(3) termine com uma única linha "{rotulo_contexto}: ..." com de 1 a 3 frases sobre a empresa, '
-        "a área e o papel, sem repetir as conquistas. "
+        f'(2) escreva uma única linha "{contexto}: ..." com de 1 a 3 frases sobre a empresa, '
+        "a área e o papel; "
+        f'(3) escreva a linha "{responsabilidades}:" e, abaixo, de 3 a 5 responsabilidades, '
+        'uma por linha, cada uma iniciada por "- ", em frases curtas que começam com verbo de ação; '
+        f'(4) escreva a linha "{realizacoes}:" e, abaixo, de 3 a 5 conquistas, uma por linha, '
+        'cada uma iniciada por "- ", em frases curtas que começam com verbo de ação e citam o resultado '
+        "medido quando houver dado, sem repetir as responsabilidades; "
+        f'(5) termine com uma única linha "{skills}: a | b | c" com as tecnologias e competências usadas. '
         "Preserve empresas, cargos e datas exatamente como no original. "
         "Prefira sempre os números do original; quando ele não trouxer número, você pode propor "
         "métricas e volumes plausíveis e conservadores. "
@@ -85,7 +103,7 @@ def _instrucao_da_secao(
 ) -> str:
     """Instrução específica do tipo de seção, com as trocas de tecnologia quando houver."""
     if tipo == TipoSecao.EXPERIENCIAS:
-        return _instrucao_experiencias(ROTULO_CONTEXTO.get(idioma_alvo, ROTULO_CONTEXTO["pt"]))
+        return _instrucao_experiencias(idioma_alvo)
     instrucao = _INSTRUCOES_POR_TIPO.get(tipo, "Traduza/adapte o idioma, mantendo os fatos originais.")
     if tipo == TipoSecao.TECNOLOGIAS:
         complementos = [

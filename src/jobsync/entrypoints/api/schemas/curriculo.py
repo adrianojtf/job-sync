@@ -6,7 +6,7 @@ import base64
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from jobsync.curriculo import (
     AvaliacaoExperiencia,
@@ -764,17 +764,26 @@ class ExperienciaParaAvaliacaoRequest(BaseModel):
         examples=["2022-2025"],
     )
     descricao: str = Field(
-        min_length=1,
-        description="Texto individual da experiência profissional.",
+        default="",
+        description="Texto individual da experiência profissional (livre, quando não há blocos).",
         examples=["Desenvolvi APIs internas e reduzi o tempo de processamento."],
     )
+    contexto: str = Field(default="", description="Contexto: a empresa, a área e o papel (opcional).")
+    responsabilidades: list[str] = Field(
+        default_factory=list, description="Principais responsabilidades, uma por item (opcional)."
+    )
+    conquistas: list[str] = Field(
+        default_factory=list, description="Principais realizações, uma por item (opcional)."
+    )
+    skills: list[str] = Field(
+        default_factory=list, description="Skills e tecnologias da experiência (opcional)."
+    )
 
-    @field_validator("descricao")
-    @classmethod
-    def validar_descricao_nao_vazia(cls, valor: str) -> str:
-        if not valor.strip():
+    @model_validator(mode="after")
+    def validar_ao_menos_um_conteudo(self) -> "ExperienciaParaAvaliacaoRequest":
+        if not self.to_domain().texto_completo:
             raise ValueError("O texto da experiência profissional é obrigatório.")
-        return valor
+        return self
 
     def to_domain(self) -> ExperienciaParaAvaliacao:
         return ExperienciaParaAvaliacao(
@@ -782,6 +791,10 @@ class ExperienciaParaAvaliacaoRequest(BaseModel):
             cargo=self.cargo,
             empresa=self.empresa,
             periodo=self.periodo,
+            conquistas=tuple(c.strip() for c in self.conquistas if c.strip()),
+            contexto=self.contexto,
+            responsabilidades=tuple(r.strip() for r in self.responsabilidades if r.strip()),
+            skills=tuple(skill.strip() for skill in self.skills if skill.strip()),
         )
 
 
@@ -916,9 +929,13 @@ class SugerirAjusteExperienciaRequest(BaseModel):
 
 
 class SugerirAjusteExperienciaResponse(BaseModel):
-    """Descrição sugerida; cargo, empresa e período não são alterados."""
+    """Descrição ou blocos sugeridos; cargo, empresa e período não são alterados."""
 
     descricao_sugerida: str = Field(description="Nova versão da descrição da experiência.")
+    contexto: str = Field(default="", description="Contexto sugerido, quando a experiência tem blocos.")
+    responsabilidades: list[str] = Field(default_factory=list, description="Responsabilidades sugeridas.")
+    conquistas: list[str] = Field(default_factory=list, description="Principais realizações sugeridas.")
+    skills: list[str] = Field(default_factory=list, description="Skills sugeridas.")
     foco: FocoRefino = _campo_foco()
 
 
@@ -935,8 +952,10 @@ class SugerirAjusteExperienciaAdaptadaRequest(BaseModel):
 
 
 class SugerirAjusteExperienciaAdaptadaResponse(BaseModel):
-    """Conquistas e contexto sugeridos; cargo, empresa e período não são alterados."""
+    """Os quatro blocos sugeridos; cargo, empresa e período não são alterados."""
 
     conquistas: list[str] = Field(description="Conquistas sugeridas, uma por item.")
     contexto: str = Field(description="Contexto sugerido.")
+    responsabilidades: list[str] = Field(default_factory=list, description="Responsabilidades sugeridas.")
+    skills: list[str] = Field(default_factory=list, description="Skills sugeridas.")
     foco: FocoRefino = _campo_foco()

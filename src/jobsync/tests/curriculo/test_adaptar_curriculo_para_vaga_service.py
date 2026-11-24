@@ -1069,3 +1069,35 @@ class TestConquistasDoHistorico:
         ).rascunho
 
         assert rascunho.lacunas_tecnologia == ("Python",)
+
+
+class AjustadorExperienciaComSkillsFake(AjustadorExperienciaFake):
+    def ajustar(self, experiencia, contexto, diretrizes):
+        base = super().ajustar(experiencia, contexto, diretrizes)
+        return ExperienciaAdaptada(
+            cargo=base.cargo,
+            empresa=base.empresa,
+            periodo=base.periodo,
+            conquistas=base.conquistas,
+            contexto=base.contexto,
+            responsabilidades=("Projetar telas.",),
+            skills=("Java", "Flyway"),
+        )
+
+
+class TestAdaptarCurriculoComSkillsDasExperiencias:
+    def test_skills_das_experiencias_ausentes_nas_competencias_entram_em_tecnologias(self):
+        ajustador_texto = AjustadorTextoDeTecnologiasFake("Linguagens: Java")
+
+        rascunho = _adaptar_vaga(
+            _curriculo_com_tecnologias("Linguagens: Java"),
+            ajustador_texto,
+            experiencias=_experiencias_exemplo(),
+            ajustador_experiencia=AjustadorExperienciaComSkillsFake(),
+        ).rascunho
+
+        assert rascunho.competencias == (
+            CategoriaCompetencia("Linguagens", ("Java",)),
+            CategoriaCompetencia("Tecnologias", ("Flyway",)),
+        )
+        assert rascunho.experiencias[0].responsabilidades == ("Projetar telas.",)

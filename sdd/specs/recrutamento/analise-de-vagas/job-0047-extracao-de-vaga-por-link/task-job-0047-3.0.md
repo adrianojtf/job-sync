@@ -18,11 +18,11 @@ Complexidade: medium. Dependências: 1.0, 2.0.
 
 ## Subtarefas
 
-- [ ] 3.1 Escrever os testes do extrator com `ClienteOpenAI` falso (JSON inválido, tipos errados, texto com instruções embutidas).
-- [ ] 3.2 Implementar `ExtratorDadosVagaIaClient`.
-- [ ] 3.3 Escrever os testes do leitor genérico (JSON-LD válido, inválido, fallback para IA, bloqueio).
-- [ ] 3.4 Implementar `LeitorVagaGenericoClient`.
-- [ ] 3.5 Exportar os adapters em `vaga/adapters/__init__.py`.
+- [x] 3.1 Escrever os testes do extrator com `ClienteOpenAI` falso (JSON inválido, tipos errados, texto com instruções embutidas).
+- [x] 3.2 Implementar `ExtratorDadosVagaIaClient`.
+- [x] 3.3 Escrever os testes do leitor genérico (JSON-LD válido, inválido, fallback para IA, bloqueio).
+- [x] 3.4 Implementar `LeitorVagaGenericoClient`.
+- [x] 3.5 Exportar os adapters em `vaga/adapters/__init__.py`.
 
 ## Detalhes de Implementação
 
@@ -35,7 +35,7 @@ Seguir o padrão de `vaga/adapters/job_description_analyzer_client.py` para prom
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `TestExtratorDadosVagaIaClient`, `TestLeitorVagaGenericoClient`.
+- [x] Testes de unidade: `TestExtratorDadosVagaIaClient`, `TestLeitorVagaGenericoClient`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

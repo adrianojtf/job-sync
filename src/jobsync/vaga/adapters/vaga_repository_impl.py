@@ -17,8 +17,9 @@ class VagaRepositoryImpl(VagaRepository):
         with self._pool.connection() as conexao:
             conexao.execute(
                 """
-                INSERT INTO vaga (id, perfil_identificador, texto_descricao, url_origem, data_captura, convertida_em_candidatura)
-                VALUES (%s, %s, %s, %s, %s, FALSE)
+                INSERT INTO vaga (id, perfil_identificador, texto_descricao, url_origem, data_captura, convertida_em_candidatura,
+                                  cargo, empresa, local)
+                VALUES (%s, %s, %s, %s, %s, FALSE, %s, %s, %s)
                 """,
                 (
                     vaga.id,
@@ -26,6 +27,9 @@ class VagaRepositoryImpl(VagaRepository):
                     vaga.texto_descricao,
                     vaga.url_origem,
                     vaga.data_captura,
+                    vaga.cargo,
+                    vaga.empresa,
+                    vaga.local,
                 ),
             )
         return vaga
@@ -34,7 +38,7 @@ class VagaRepositoryImpl(VagaRepository):
         with self._pool.connection() as conexao:
             linhas = conexao.execute(
                 """
-                SELECT id, perfil_identificador, texto_descricao, url_origem, data_captura
+                SELECT id, perfil_identificador, texto_descricao, url_origem, data_captura, cargo, empresa, local
                 FROM vaga
                 WHERE perfil_identificador = %s AND NOT convertida_em_candidatura
                 ORDER BY data_captura DESC, id COLLATE "C" ASC
@@ -52,11 +56,14 @@ class VagaRepositoryImpl(VagaRepository):
 
     @staticmethod
     def _linha_para_vaga(linha: tuple) -> Vaga:
-        id_, perfil_identificador, texto_descricao, url_origem, data_captura = linha
+        id_, perfil_identificador, texto_descricao, url_origem, data_captura, cargo, empresa, local = linha
         return Vaga(
             id=id_,
             perfil_identificador=perfil_identificador,
             texto_descricao=texto_descricao,
             url_origem=url_origem,
             data_captura=data_captura,
+            cargo=cargo,
+            empresa=empresa,
+            local=local,
         )

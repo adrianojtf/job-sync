@@ -42,3 +42,29 @@ class TestVaga:
     def test_texto_descricao_vazio_gera_erro(self):
         with pytest.raises(ValueError):
             _criar_vaga(texto_descricao="   ")
+
+    def test_dados_extraidos_sao_opcionais(self):
+        vaga = _criar_vaga()
+
+        assert vaga.cargo is None
+        assert vaga.empresa is None
+        assert vaga.local is None
+
+    def test_guarda_cargo_empresa_e_local(self):
+        vaga = _criar_vaga(cargo="Engenheiro de Software", empresa="Barte", local="Brasil")
+
+        assert vaga.cargo == "Engenheiro de Software"
+        assert vaga.empresa == "Barte"
+        assert vaga.local == "Brasil"
+
+    def test_remove_espacos_e_converte_campos_em_branco_para_none(self):
+        vaga = _criar_vaga(cargo="  Engenheiro  ", empresa="   ", local="")
+
+        assert vaga.cargo == "Engenheiro"
+        assert vaga.empresa is None
+        assert vaga.local is None
+
+    @pytest.mark.parametrize("campo", ["cargo", "empresa", "local"])
+    def test_campo_acima_do_limite_de_tamanho_gera_erro(self, campo):
+        with pytest.raises(ValueError):
+            _criar_vaga(**{campo: "a" * 201})

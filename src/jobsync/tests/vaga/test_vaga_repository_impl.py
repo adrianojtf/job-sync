@@ -62,3 +62,39 @@ class TestVagaRepositoryImpl:
         repositorio.salvar(mais_recente)
 
         assert repositorio.listar_nao_convertidas("matheus") == (mais_recente, mais_antiga)
+
+    def test_salva_e_lista_cargo_empresa_e_local(self, repositorio):
+        vaga = _criar_vaga(cargo="Engenheiro de Software", empresa="Barte", local="Brasil")
+
+        repositorio.salvar(vaga)
+
+        recuperada = repositorio.listar_nao_convertidas("matheus")[0]
+        assert recuperada == vaga
+        assert recuperada.cargo == "Engenheiro de Software"
+        assert recuperada.empresa == "Barte"
+        assert recuperada.local == "Brasil"
+
+    def test_vaga_sem_dados_extraidos_volta_com_none(self, repositorio):
+        repositorio.salvar(_criar_vaga())
+
+        recuperada = repositorio.listar_nao_convertidas("matheus")[0]
+
+        assert recuperada.cargo is None
+        assert recuperada.empresa is None
+        assert recuperada.local is None
+
+    def test_vaga_gravada_antes_da_migracao_continua_sendo_listada(self, repositorio, pool_postgres):
+        with pool_postgres.connection() as conexao:
+            conexao.execute(
+                """
+                INSERT INTO vaga (id, perfil_identificador, texto_descricao, url_origem, data_captura, convertida_em_candidatura)
+                VALUES ('vaga-antiga', 'matheus', 'Vaga antiga', NULL, '2026-01-01T00:00:00Z', FALSE)
+                """
+            )
+
+        recuperada = repositorio.listar_nao_convertidas("matheus")[0]
+
+        assert recuperada.id == "vaga-antiga"
+        assert recuperada.cargo is None
+        assert recuperada.empresa is None
+        assert recuperada.local is None

@@ -49,3 +49,35 @@ class TestCapturarVaga:
         )
 
         assert vaga.url_origem is None
+
+    def test_persiste_cargo_empresa_e_local_quando_informados(self):
+        repositorio = VagaRepositoryFake()
+        use_case = CapturarVaga(repositorio)
+
+        vaga = use_case.executar(
+            CapturarVagaInputDto(
+                perfil_identificador="matheus",
+                texto_descricao="Vaga para Engenheiro de Software",
+                url_origem="https://www.linkedin.com/jobs/view/4484559483/",
+                cargo="Engenheiro de Software",
+                empresa="Barte",
+                local="Brasil",
+            )
+        )
+
+        assert vaga.cargo == "Engenheiro de Software"
+        assert vaga.empresa == "Barte"
+        assert vaga.local == "Brasil"
+        assert repositorio.vagas_salvas == [vaga]
+
+    def test_cargo_empresa_e_local_sao_opcionais(self):
+        repositorio = VagaRepositoryFake()
+        use_case = CapturarVaga(repositorio)
+
+        vaga = use_case.executar(
+            CapturarVagaInputDto(perfil_identificador="matheus", texto_descricao="Vaga colada manualmente")
+        )
+
+        assert vaga.cargo is None
+        assert vaga.empresa is None
+        assert vaga.local is None

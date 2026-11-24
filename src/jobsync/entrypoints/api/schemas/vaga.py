@@ -46,12 +46,18 @@ class VagaCapturarRequest(BaseModel):
         default=None,
         description="URL de origem da vaga, quando disponível.",
     )
+    cargo: str | None = Field(default=None, max_length=200, description="Título da vaga, quando identificado.")
+    empresa: str | None = Field(default=None, max_length=200, description="Empresa que contrata, quando identificada.")
+    local: str | None = Field(default=None, max_length=200, description="Local ou modalidade, quando identificado.")
 
     def to_dto(self) -> CapturarVagaInputDto:
         return CapturarVagaInputDto(
             perfil_identificador=self.perfil_identificador,
             texto_descricao=self.texto_descricao,
             url_origem=self.url_origem,
+            cargo=self.cargo,
+            empresa=self.empresa,
+            local=self.local,
         )
 
 
@@ -66,6 +72,9 @@ class VagaResponse(BaseModel):
         default=None,
         description="URL de origem da vaga, quando disponível.",
     )
+    cargo: str | None = Field(default=None, description="Título da vaga, quando foi identificado.")
+    empresa: str | None = Field(default=None, description="Empresa que contrata, quando foi identificada.")
+    local: str | None = Field(default=None, description="Local ou modalidade, quando foi identificado.")
 
     @classmethod
     def from_dto(cls, dto: Vaga) -> VagaResponse:
@@ -75,6 +84,9 @@ class VagaResponse(BaseModel):
             texto_descricao=dto.texto_descricao,
             data_captura=dto.data_captura,
             url_origem=dto.url_origem,
+            cargo=dto.cargo,
+            empresa=dto.empresa,
+            local=dto.local,
         )
 
 

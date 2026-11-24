@@ -26,5 +26,8 @@ class CapturarVaga:
             texto_descricao=input_dto.texto_descricao,
             url_origem=input_dto.url_origem,
             data_captura=agora_utc(),
+            cargo=input_dto.cargo,
+            empresa=input_dto.empresa,
+            local=input_dto.local,
         )
         return self._repositorio_vaga.salvar(vaga)

@@ -13,7 +13,7 @@
 - [x] 4.0 Leitor do LinkedIn pela versão pública da vaga (complexidade: medium; dependências: 1.0, 2.0)
 - [x] 5.0 Limitador em memória e caso de uso `ExtrairDadosVaga` (complexidade: medium; dependências: 1.0, 3.0, 4.0)
 - [x] 6.0 Endpoint `POST /v1/vagas/extracoes`, handlers de erro, injeção e configuração (complexidade: medium; dependências: 5.0)
-- [ ] 7.0 Persistência de cargo, empresa e local na captura de vagas (complexidade: medium; dependências: 1.0)
+- [x] 7.0 Persistência de cargo, empresa e local na captura de vagas (complexidade: medium; dependências: 1.0)
 - [ ] 8.0 Frontend: campo "Link da vaga" em Ajustar Vaga e na captura (complexidade: high; dependências: 6.0, 7.0)
 - [ ] 9.0 Testes E2E com dublê do leitor de vagas (complexidade: medium; dependências: 8.0)
 - [ ] 10.0 Documentação e validação final (complexidade: low; dependências: 9.0)

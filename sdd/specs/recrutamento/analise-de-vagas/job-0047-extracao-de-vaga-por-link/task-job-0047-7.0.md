@@ -18,11 +18,11 @@ Complexidade: medium. Dependências: 1.0.
 
 ## Subtarefas
 
-- [ ] 7.1 Escrever os testes de repositório (gravação, leitura, nulos) e de captura com os novos campos.
-- [ ] 7.2 Criar a migração `0005`.
-- [ ] 7.3 Atualizar `Vaga`, repositórios, DTO, validador e serviço.
-- [ ] 7.4 Atualizar os schemas da API de forma aditiva.
-- [ ] 7.5 Confirmar que os testes de captura existentes continuam passando.
+- [x] 7.1 Escrever os testes de repositório (gravação, leitura, nulos) e de captura com os novos campos.
+- [x] 7.2 Criar a migração `0005`.
+- [x] 7.3 Atualizar `Vaga`, repositórios, DTO, validador e serviço.
+- [x] 7.4 Atualizar os schemas da API de forma aditiva.
+- [x] 7.5 Confirmar que os testes de captura existentes continuam passando.
 
 ## Detalhes de Implementação
 
@@ -35,7 +35,7 @@ Ver "Modelos de Dados" da techspec. Seguir o formato das migrações existentes 
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade e de repositório (com `TEST_DATABASE_URL`).
+- [x] Testes de unidade e de repositório (com `TEST_DATABASE_URL`).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

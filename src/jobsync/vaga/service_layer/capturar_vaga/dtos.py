@@ -12,3 +12,6 @@ class CapturarVagaInputDto:
     perfil_identificador: str
     texto_descricao: str
     url_origem: Optional[str] = None
+    cargo: Optional[str] = None
+    empresa: Optional[str] = None
+    local: Optional[str] = None

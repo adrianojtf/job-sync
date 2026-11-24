@@ -19,10 +19,10 @@ Complexidade: high. Dependências: nenhuma.
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes (IPs privados, loopback, metadados, redirecionamento para IP interno, limites, esquemas inválidos).
-- [ ] 2.2 Implementar a validação de endereço com resolvedor injetável.
-- [ ] 2.3 Implementar o cliente com limites e redirecionamento manual.
-- [ ] 2.4 Verificar e registrar o resultado do teste de SNI com IP fixo.
+- [x] 2.1 Escrever os testes (IPs privados, loopback, metadados, redirecionamento para IP interno, limites, esquemas inválidos).
+- [x] 2.2 Implementar a validação de endereço com resolvedor injetável.
+- [x] 2.3 Implementar o cliente com limites e redirecionamento manual.
+- [x] 2.4 Verificar e registrar o resultado do teste de SNI com IP fixo.
 
 ## Detalhes de Implementação
 
@@ -35,7 +35,7 @@ Ver "Pontos de Integração" e "Riscos Conhecidos" da techspec. Usar `httpx` (j�
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `TestClienteHttpSeguro`.
+- [x] Testes de unidade: `TestClienteHttpSeguro`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

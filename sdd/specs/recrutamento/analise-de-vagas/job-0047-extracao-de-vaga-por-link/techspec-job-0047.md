@@ -97,7 +97,7 @@ Contratos alterados, apenas de forma aditiva: `VagaCapturarRequest` e `VagaRespo
 - **LinkedIn (versão pública, sem login):** endpoint de visitante, não documentado e sem contrato. Uma única requisição por link, sem repetição após 429 ou desafio. O leitor interpreta o HTML pelas classes da seção da vaga (título, empresa, local, descrição, critérios). Se faltar título ou descrição, levanta `LeituraVagaIndisponivel`.
 - **Outros sites:** HTTP simples pelo cliente seguro. JSON-LD `JobPosting` primeiro. Na falta dele, texto da página para a LLM.
 - **OpenAI (`ClienteOpenAI`):** extração a partir de texto. O prompt trata o texto como dado, nunca como instrução, devolve só os campos pedidos em JSON e não inventa valores. O texto é truncado em 20.000 caracteres. A saída é validada em tipo e tamanho antes de virar `DadosVaga`.
-- **Cliente HTTP seguro:** para cada requisição e cada redirecionamento, resolve o DNS e recusa IPs de loopback, redes privadas, link-local e metadados de nuvem. Conecta no IP validado, com o nome original para SNI e cabeçalho `Host` (a ser confirmado com `httpx`). Limita redirecionamentos (5), tamanho (2 MB) e tempo (15 s). Aceita só `http` e `https`.
+- **Cliente HTTP seguro:** para cada requisição e cada redirecionamento, resolve o DNS e recusa IPs de loopback, redes privadas, link-local e metadados de nuvem. Conecta no IP validado, com o nome original para SNI (extensão `sni_hostname` do `httpx`) e cabeçalho `Host`. Limita redirecionamentos (5), tamanho (2 MB) e tempo (15 s). Aceita só `http` e `https`.
 
 Configuração por variáveis de ambiente (leitura na composição, em `dependencies.py`): `VAGA_LEITURA_LINKEDIN_HABILITADA` (padrão `true`), `VAGA_LEITURA_LIMITE_POR_MINUTO` (10), `VAGA_LEITURA_LIMITE_POR_DIA` (100), `VAGA_LEITURA_TIMEOUT_SEGUNDOS` (15).
 
@@ -170,7 +170,7 @@ A taxa de sucesso por fonte (PRD, questão 2) sai desses logs agrupados por `fon
 - **Bloqueio por IP de servidor (429 ou desafio).** O teste inicial foi de uma máquina residencial. Mitigação: falha clara, fallback de colar o texto, medição pelos logs e chave de desligamento.
 - **Termos de uso do LinkedIn proíbem acesso automatizado.** Risco aceito pelo responsável pelo produto e registrado no PRD. A fonte é marcada como experimental.
 - **Mudança no HTML do LinkedIn.** O interpretador fica isolado em uma classe, com fixture. Quebra vira `LeituraVagaIndisponivel`, não dado errado.
-- **SSRF e DNS rebinding.** Mitigação: conexão no IP já validado. Pendente validar o suporte do `httpx` a SNI com IP fixo. Se não houver, revalidar o IP imediatamente antes da conexão e documentar a janela residual.
+- **SSRF e DNS rebinding.** Mitigação: conexão no IP já validado. Validado em experimento local (task 2.0): com a extensão `sni_hostname`, o `httpx` valida o certificado contra o nome original; sem ela, a verificação falha ("IP address mismatch"). Se uma versão futura do `httpx` deixar de respeitar a extensão, a falha é fechada (erro de rede), nunca uma abertura.
 - **Injeção de instruções no texto da vaga.** Mitigação: prompt trata o texto como dado, sem ferramentas, com saída validada.
 - **Dados pessoais de terceiros na página.** O parser só lê os campos pedidos e não guarda o restante.
 

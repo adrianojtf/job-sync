@@ -8,7 +8,7 @@
 ## Tarefas
 
 - [x] 1.0 Domínio: `LinkVaga`, `DadosVaga`, exceções e portas (complexidade: medium; dependências: nenhuma)
-- [ ] 2.0 Cliente HTTP seguro com proteção contra SSRF (complexidade: high; dependências: nenhuma)
+- [x] 2.0 Cliente HTTP seguro com proteção contra SSRF (complexidade: high; dependências: nenhuma)
 - [ ] 3.0 Extrator por IA e leitor genérico de páginas de vaga (complexidade: medium; dependências: 1.0, 2.0)
 - [ ] 4.0 Leitor do LinkedIn pela versão pública da vaga (complexidade: medium; dependências: 1.0, 2.0)
 - [ ] 5.0 Limitador em memória e caso de uso `ExtrairDadosVaga` (complexidade: medium; dependências: 1.0, 3.0, 4.0)

@@ -4,6 +4,7 @@ from jobsync.vaga.adapters.extrator_dados_vaga_ia_client import ExtratorDadosVag
 from jobsync.vaga.adapters.job_description_analyzer_client import JobDescriptionAnalyzerClient
 from jobsync.vaga.adapters.leitor_vaga_generico_client import LeitorVagaGenericoClient
 from jobsync.vaga.adapters.leitor_vaga_linkedin_client import LeitorVagaLinkedInClient
+from jobsync.vaga.adapters.limitador_leitura_vaga_em_memoria import LimitadorLeituraVagaEmMemoria
 from jobsync.vaga.adapters.vaga_repository_fake import VagaRepositoryFake
 from jobsync.vaga.adapters.vaga_repository_impl import VagaRepositoryImpl
 
@@ -12,6 +13,7 @@ __all__ = [
     "JobDescriptionAnalyzerClient",
     "LeitorVagaGenericoClient",
     "LeitorVagaLinkedInClient",
+    "LimitadorLeituraVagaEmMemoria",
     "VagaRepositoryFake",
     "VagaRepositoryImpl",
 ]

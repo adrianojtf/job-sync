@@ -18,11 +18,11 @@ Complexidade: medium. Dependências: 1.0, 3.0, 4.0.
 
 ## Subtarefas
 
-- [ ] 5.1 Escrever os testes do limitador (minuto, dia, isolamento entre usuários, relógio injetável).
-- [ ] 5.2 Implementar o limitador.
-- [ ] 5.3 Criar DTOs e validador de entrada em `service_layer/extrair_dados_vaga/`.
-- [ ] 5.4 Escrever os testes do caso de uso com fakes das portas.
-- [ ] 5.5 Implementar `ExtrairDadosVaga`.
+- [x] 5.1 Escrever os testes do limitador (minuto, dia, isolamento entre usuários, relógio injetável).
+- [x] 5.2 Implementar o limitador.
+- [x] 5.3 Criar DTOs e validador de entrada em `service_layer/extrair_dados_vaga/`.
+- [x] 5.4 Escrever os testes do caso de uso com fakes das portas.
+- [x] 5.5 Implementar `ExtrairDadosVaga`.
 
 ## Detalhes de Implementação
 
@@ -35,7 +35,7 @@ Ver "Interfaces Principais" da techspec. Seguir a estrutura de `service_layer/ca
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `TestLimitadorLeituraVagaEmMemoria`, `TestExtrairDadosVaga`.
+- [x] Testes de unidade: `TestLimitadorLeituraVagaEmMemoria`, `TestExtrairDadosVaga`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

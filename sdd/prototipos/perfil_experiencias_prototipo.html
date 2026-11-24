@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meu perfil — Experiências (protótipo)</title>
+<title>Meu perfil — listas compactas e reordenáveis (protótipo)</title>
 <style>
-:root{--bg:#f7f8fa;--surface:#fff;--subtle:#f3f4f7;--ink:#182230;--muted:#758092;--line:#e8ebef;--line-strong:#d5dae1;--accent:#635bdb;--accent-soft:#f0efff;--green:#16865b;--green-soft:#eaf7f0;--amber:#a66a12;--amber-soft:#fff5e4;--red:#c2410c;--shadow:0 1px 2px rgba(16,24,40,.05);--shadow-lift:0 12px 28px rgba(16,24,40,.18)}
+:root{--bg:#f7f8fa;--surface:#fff;--subtle:#f3f4f7;--ink:#182230;--muted:#758092;--line:#e8ebef;--line-strong:#d5dae1;--accent:#635bdb;--accent-soft:#f0efff;--green:#16865b;--green-soft:#eaf7f0;--amber:#a66a12;--amber-soft:#fff5e4;--shadow:0 1px 2px rgba(16,24,40,.05);--shadow-lift:0 12px 28px rgba(16,24,40,.18)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-button,input,textarea{font:inherit;color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -16,8 +16,9 @@ button{cursor:pointer}
 .page{max-width:1180px;margin:0 auto;padding:28px 24px 120px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
 .crumb{grid-column:1/-1;color:var(--muted)} .crumb b{color:var(--ink)}
 h1{margin:4px 0 2px;font-size:24px} .lead{margin:0 0 16px;color:var(--muted)}
+main{display:grid;gap:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
-.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
 .panel-head h2{margin:0;font-size:16px} .panel-head p{margin:2px 0 0;color:var(--muted);font-size:13px}
 .tools{display:flex;flex-wrap:wrap;gap:8px}
 .btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:6px 12px;font-weight:600;font-size:13px}
@@ -28,25 +29,28 @@ h1{margin:4px 0 2px;font-size:24px} .lead{margin:0 0 16px;color:var(--muted)}
 .icon{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);font-size:15px;line-height:1}
 .icon:hover{background:var(--subtle);color:var(--ink)}
 
-/* Lista e cartões */
+/* Listas e cartões */
 .lista{list-style:none;margin:0;padding:12px;display:grid;gap:8px}
+.lista.densa{gap:6px}
 .card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px;transition:box-shadow .15s,border-color .15s}
 .card:hover{border-color:var(--line-strong)}
-.card.dragging{z-index:5;box-shadow:var(--shadow-lift);border-color:var(--accent);background:var(--surface);cursor:grabbing}
+.card.dragging{z-index:5;box-shadow:var(--shadow-lift);border-color:var(--accent);cursor:grabbing}
 .card.grabbed{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .card.moved{animation:moved .9s ease}
 @keyframes moved{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
-.row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 10px 10px 6px;min-height:60px}
+.row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 10px 10px 6px;min-height:58px}
+.sem-avatar .row{grid-template-columns:auto minmax(0,1fr) auto auto}
+.densa .row{min-height:46px;padding:5px 8px 5px 6px}
 .handle{display:grid;place-items:center;width:28px;height:36px;border:0;border-radius:6px;background:transparent;color:#a3acb9;cursor:grab;touch-action:none;font-size:16px;letter-spacing:-2px}
 .handle:hover{background:var(--subtle);color:var(--ink)}
 .avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-weight:700}
 .titulo{min-width:0}
 .titulo strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .titulo small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
-.periodo{color:var(--muted);font-size:12.5px;white-space:nowrap}
+.meta{color:var(--muted);font-size:12.5px;white-space:nowrap}
 .acoes{display:flex;align-items:center;gap:2px}
 .chevron{transition:transform .15s}
-.card[aria-expanded="true"] .chevron,.card.aberto .chevron{transform:rotate(180deg)}
+.card.aberto .chevron{transform:rotate(180deg)}
 .mover{display:flex;opacity:0;transition:opacity .12s}
 .card:hover .mover,.card:focus-within .mover{opacity:1}
 @media (hover:none){.mover{opacity:1}}
@@ -57,35 +61,48 @@ h1{margin:4px 0 2px;font-size:24px} .lead{margin:0 0 16px;color:var(--muted)}
 .chip.alerta{background:var(--amber-soft);color:var(--amber);font-weight:600}
 .chip.vazio{background:transparent;border:1px dashed var(--line-strong);color:var(--muted)}
 
-.corpo{display:none;border-top:1px solid var(--line);padding:14px 16px 16px 16px}
+.corpo{display:none;border-top:1px solid var(--line);padding:14px 16px 16px}
 .card.aberto .corpo{display:block}
 .arrastando .corpo{display:none!important}
-.arrastando .card{cursor:grabbing}
 .grade-id{display:grid;grid-template-columns:1fr 1fr 180px;gap:10px;margin-bottom:12px}
+.grade-3{display:grid;grid-template-columns:1fr 1fr 180px;gap:10px}
+.grade-dados{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
 .blocos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .bloco{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fcfcfd}
 .bloco h4{margin:0 0 2px;font-size:12.5px} .bloco p.dica{margin:0 0 6px;color:var(--muted);font-size:12px}
 label.campo{display:grid;gap:3px;font-size:12px;font-weight:600;color:#475467}
-input.in,textarea.in{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:6px 9px;background:#fff;font-weight:400;color:var(--ink)}
+input.in,textarea.in,select.in{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:6px 9px;background:#fff;font-weight:400;color:var(--ink)}
 textarea.in{resize:vertical;min-height:58px}
+.densa input.in,.densa select.in{padding:4px 8px}
 .realizacoes{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:4px}
 .realizacoes li{display:flex;gap:6px;align-items:flex-start;font-size:13px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 8px}
 .realizacoes li span{flex:1}
-.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-.tag{display:inline-flex;align-items:center;gap:2px;padding:1px 4px 1px 9px;border:1px solid var(--line-strong);border-radius:999px;background:#fff;font-size:12.5px}
-.tag button{border:0;background:transparent;color:var(--muted);width:20px;height:20px;border-radius:50%;line-height:1}
 .rodape-corpo{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;flex-wrap:wrap}
 .aviso-antigo{margin:0 0 10px;padding:8px 12px;border-radius:8px;background:var(--amber-soft);color:#7a4d0b;font-size:13px}
+.vazio-lista{padding:22px;text-align:center;color:var(--muted)}
 
-.vazio-lista{padding:28px;text-align:center;color:var(--muted)}
+/* Idiomas: linha única editável */
+.linha-idioma{display:grid;grid-template-columns:auto minmax(0,1fr) 170px auto;align-items:center;gap:8px;padding:5px 8px 5px 6px}
+
+/* Tecnologias: tags reordenáveis */
+.tags-area{padding:14px 18px 16px}
+.tags{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.tag{position:relative;display:inline-flex;align-items:center;gap:2px;padding:2px 4px 2px 4px;border:1px solid var(--line-strong);border-radius:999px;background:#fff;font-size:13px}
+.tag .alca{display:inline-block;width:auto;height:auto;letter-spacing:normal;font-size:13px;border:0;background:transparent;padding:2px 4px 2px 8px;cursor:grab;touch-action:none;color:var(--ink);border-radius:999px}
+.tag .alca:hover{background:transparent}
+.tag .alca:hover{color:var(--accent)}
+.tag button.x{border:0;background:transparent;color:var(--muted);width:20px;height:20px;border-radius:50%;line-height:1}
+.tag.dragging{z-index:5;box-shadow:var(--shadow-lift);border-color:var(--accent);cursor:grabbing}
+.tag.grabbed{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tag.moved{animation:moved .9s ease}
 
 /* Barra de alterações */
-.barra{position:fixed;left:0;right:0;bottom:0;display:none;justify-content:center;pointer-events:none;padding:0 16px 16px}
+.barra{position:fixed;left:0;right:0;bottom:0;display:none;justify-content:center;pointer-events:none;padding:0 16px 16px;z-index:20}
 .barra.visivel{display:flex}
 .barra-in{pointer-events:auto;display:flex;align-items:center;gap:12px;background:#182230;color:#fff;border-radius:12px;padding:10px 14px;box-shadow:var(--shadow-lift)}
 .barra-in .btn{border-color:#475467;background:transparent;color:#fff}
 .barra-in .btn.primary{background:var(--accent);border-color:var(--accent)}
-.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);display:none;align-items:center;gap:10px;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:8px 12px;box-shadow:var(--shadow-lift)}
+.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);display:none;align-items:center;gap:10px;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:8px 12px;box-shadow:var(--shadow-lift);z-index:21}
 .toast.visivel{display:flex}
 
 /* Notas */
@@ -95,14 +112,17 @@ textarea.in{resize:vertical;min-height:58px}
 .notas ol,.notas ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px}
 .notas .selo{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:0 6px;font-size:11px;font-weight:700;margin-bottom:6px}
 .leg{display:grid;gap:4px;font-size:12.5px;color:var(--muted)}
+table.pad{border-collapse:collapse;width:100%;font-size:12.5px}
+table.pad th,table.pad td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left}
 
 @media(max-width:980px){.page{grid-template-columns:1fr}.notas{position:static}}
 @media(max-width:640px){
   .page{padding:18px 12px 120px}
-  .row{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"h t a"}
-  .row .avatar,.row .periodo{display:none}
+  .row{grid-template-columns:auto minmax(0,1fr) auto}
+  .row .avatar,.row .meta{display:none}
   .chips{padding-left:12px}
-  .grade-id,.blocos{grid-template-columns:1fr}
+  .grade-id,.grade-3,.grade-dados,.blocos{grid-template-columns:1fr}
+  .linha-idioma{grid-template-columns:auto minmax(0,1fr) 120px auto}
 }
 </style>
 </head>
@@ -110,24 +130,18 @@ textarea.in{resize:vertical;min-height:58px}
 <div class="page">
   <div class="crumb">Workspace / <b>Meu perfil</b></div>
 
-  <main>
-    <h1>Meu perfil</h1>
-    <p class="lead">Seu currículo mestre: a base usada para adaptar currículos e analisar vagas.</p>
+  <main id="principal">
+    <div>
+      <h1>Meu perfil</h1>
+      <p class="lead">Seu currículo mestre: a base usada para adaptar currículos e analisar vagas.</p>
+    </div>
 
-    <section class="panel" aria-labelledby="titulo-exp">
-      <div class="panel-head">
-        <div>
-          <h2 id="titulo-exp">Experiências profissionais</h2>
-          <p>Arraste pela alça <span aria-hidden="true">⠿</span> para reordenar. A ordem daqui é a ordem do currículo.</p>
-        </div>
-        <div class="tools">
-          <button class="btn text" id="ordenar" type="button">Ordenar por período</button>
-          <button class="btn" id="alternar" type="button">Expandir todas</button>
-          <button class="btn primary" id="adicionar" type="button">+ Adicionar experiência</button>
-        </div>
-      </div>
-      <ul class="lista" id="lista" aria-label="Experiências profissionais"></ul>
-    </section>
+    <section class="panel" id="p-dados" aria-labelledby="t-dados"></section>
+    <section class="panel" id="p-experiencias" aria-labelledby="t-experiencias"></section>
+    <section class="panel" id="p-formacoes" aria-labelledby="t-formacoes"></section>
+    <section class="panel" id="p-certificacoes" aria-labelledby="t-certificacoes"></section>
+    <section class="panel" id="p-idiomas" aria-labelledby="t-idiomas"></section>
+    <section class="panel" id="p-tecnologias" aria-labelledby="t-tecnologias"></section>
   </main>
 
   <aside class="notas" aria-label="Notas do protótipo">
@@ -135,26 +149,39 @@ textarea.in{resize:vertical;min-height:58px}
       <span class="selo">PROTÓTIPO</span>
       <h3>Como testar</h3>
       <ul>
-        <li><b>Mouse ou toque:</b> arraste pela alça. Os cartões se recolhem durante o arrasto.</li>
-        <li><b>Teclado:</b> foque a alça, <kbd>Espaço</kbd> pega, <kbd>↑</kbd>/<kbd>↓</kbd> move, <kbd>Espaço</kbd> solta, <kbd>Esc</kbd> cancela.</li>
-        <li><b>Sem arrastar:</b> botões ↑ ↓ no cartão.</li>
-        <li><b>Editar:</b> clique no cartão para abrir os quatro blocos.</li>
+        <li><b>Mouse ou toque:</b> arraste pela alça <span aria-hidden="true">⠿</span> (nas tecnologias, pela própria tag). Nas listas com cartões, eles se recolhem durante o arrasto.</li>
+        <li><b>Teclado:</b> foque a alça, <kbd>Espaço</kbd> pega, <kbd>↑</kbd>/<kbd>↓</kbd> (ou <kbd>←</kbd>/<kbd>→</kbd> nas tags) move, <kbd>Espaço</kbd> solta, <kbd>Esc</kbd> cancela.</li>
+        <li><b>Sem arrastar:</b> botões ↑ ↓ em cada item.</li>
+        <li><b>Editar:</b> clique no cartão para abrir os campos.</li>
+        <li>Cada lista reordena só dentro dela mesma.</li>
       </ul>
+    </div>
+    <div class="panel">
+      <h3>Padrão por lista</h3>
+      <table class="pad">
+        <tr><th>Lista</th><th>Item</th><th>Abre?</th></tr>
+        <tr><td>Experiências</td><td>Cartão + resumo e chips</td><td>Sim</td></tr>
+        <tr><td>Formação</td><td>Cartão</td><td>Sim</td></tr>
+        <tr><td>Certificações</td><td>Cartão</td><td>Sim</td></tr>
+        <tr><td>Idiomas</td><td>Linha editável</td><td>Não</td></tr>
+        <tr><td>Tecnologias</td><td>Tag</td><td>Não</td></tr>
+      </table>
     </div>
     <div class="panel">
       <h3>Decisões para o PRD</h3>
       <ol>
-        <li><b>Ordem manual ou por período?</b> Proposta: manual, com o botão "Ordenar por período" como atalho (com desfazer).</li>
-        <li><b>Abertura dos cartões:</b> proposta: todos recolhidos ao abrir o perfil; experiência nova abre expandida; vários podem ficar abertos.</li>
-        <li><b>Resumo no cartão:</b> cargo, empresa, período, primeira linha do contexto e contagem dos quatro blocos; bloco vazio aparece tracejado.</li>
+        <li><b>Ordem manual ou por período?</b> Proposta: manual em todas, com "Ordenar por período" como atalho (experiências, formação, certificações), sempre com desfazer.</li>
+        <li><b>Abertura dos cartões:</b> proposta: todos recolhidos ao abrir; item novo abre expandido; vários podem ficar abertos.</li>
+        <li><b>Idiomas:</b> linha única editável, sem abrir. A ordem do perfil é a do currículo.</li>
+        <li><b>Tecnologias:</b> hoje é um campo de texto separado por vírgula. Proposta: tags que se criam, excluem e reordenam (a ordem vale no currículo). Exige decidir se a sincronia com as skills acrescenta no fim.</li>
         <li><b>Persistência:</b> a ordem é a da lista salva; sem campo novo na API. Só vale após <i>Salvar perfil</i>.</li>
-        <li><b>Atenção aos índices:</b> o endpoint que guarda conquista aprovada identifica a experiência pela posição. Reordenar sem salvar não pode deixar esse fluxo apontar para a experiência errada.</li>
-        <li><b>Currículo:</b> o PDF e a adaptação seguem a ordem salva do perfil.</li>
+        <li><b>Atenção aos índices:</b> o endpoint que guarda conquista aprovada identifica a experiência pela posição. Reordenar sem salvar não pode fazer esse fluxo apontar para a experiência errada.</li>
+        <li><b>Dados pessoais:</b> ficam como um cartão recolhível, sem reordenação.</li>
       </ol>
     </div>
     <div class="panel leg">
       <h3>Legenda dos selos</h3>
-      <div><span class="chip ok">✓ preenchido</span> bloco com conteúdo</div>
+      <div><span class="chip ok">3 skills</span> bloco com conteúdo</div>
       <div><span class="chip vazio">sem skills</span> bloco ainda vazio</div>
       <div><span class="chip alerta">Formato antigo</span> só descrição em texto livre</div>
     </div>
@@ -166,119 +193,61 @@ textarea.in{resize:vertical;min-height:58px}
 <div class="sr-only" id="anuncio" aria-live="assertive"></div>
 
 <script>
-const DADOS = [
-  { id:"e1", empresa:"Starian", cargo:"Software Engineer", periodo:"Mar 2026 - Atual",
-    contexto:"Uma das principais empresas de ERP para a construção civil do Brasil; atuo em módulos financeiros como Contas a Receber, em um time multifuncional de 10 pessoas.",
-    resp:["Ownership ponta a ponta de funcionalidades do ERP, com foco em Contas a Receber","Feature Lead: decisões técnicas com Produto e QA","Identificação de riscos técnicos e melhoria contínua da arquitetura"],
-    real:["Evolução das capacidades financeiras do ERP para mais de 1.000 usuários","Fluxos de desenvolvimento e testes funcionais assistidos por IA, reduzindo até 1 Story Point por tarefa"],
-    skills:["Java","PostgreSQL","SQL","REST APIs","React","JavaScript","JSP","WildFly","Flyway","SDD"] },
-  { id:"e2", empresa:"SIPPulse", cargo:"Software Engineer", periodo:"Nov 2022 - Mar 2026",
-    contexto:"Plataforma de comunicação VoIP de alta performance para operadoras.",
-    resp:["Sistema de tarifação VoIP","Integrações com provedores SIP","Suporte a produção"],
-    real:["Processamento 95% mais rápido no faturamento","Redução de 40% no tempo de resposta das APIs","Migração do legado para mensageria"],
-    skills:["Java","Kafka","PostgreSQL","Docker","AWS"] },
-  { id:"e3", empresa:"Neoway", cargo:"Desenvolvedor Java", periodo:"2020 - 2022",
-    contexto:"Empresa de dados e inteligência de mercado.",
-    resp:["Desenvolvimento de APIs de consulta","Pipelines de ingestão"],
-    real:["Redução de custo de infraestrutura em 18%"],
-    skills:["Java","Spring Boot","Elasticsearch"] },
-  { id:"e4", empresa:"Olist", cargo:"Backend", periodo:"2018 - 2020",
-    legado:true, descricao:"APIs em Python e FastAPI para o marketplace.", contexto:"", resp:[], real:[], skills:[] },
-  { id:"e5", empresa:"TechCorp", cargo:"Estagiário de TI", periodo:"2017 - 2018",
-    contexto:"", resp:["Suporte a sistemas internos"], real:[], skills:["SQL"] }
-];
+const DADOS = {
+  dados: { nome:"Adriano Teixeira", email:"adriano@email.com", linkedin:"linkedin.com/in/adriano", resumo:"Engenheiro de software backend com foco em ERP financeiro, APIs REST e fluxos assistidos por IA." },
+  experiencias: [
+    { id:"e1", empresa:"Starian", cargo:"Software Engineer", periodo:"Mar 2026 - Atual",
+      contexto:"Uma das principais empresas de ERP para a construção civil do Brasil; atuo em módulos financeiros como Contas a Receber, em um time multifuncional de 10 pessoas.",
+      resp:["Ownership ponta a ponta de funcionalidades do ERP, com foco em Contas a Receber","Feature Lead: decisões técnicas com Produto e QA","Identificação de riscos técnicos e melhoria contínua da arquitetura"],
+      real:["Evolução das capacidades financeiras do ERP para mais de 1.000 usuários","Fluxos de desenvolvimento e testes funcionais assistidos por IA, reduzindo até 1 Story Point por tarefa"],
+      skills:["Java","PostgreSQL","SQL","REST APIs","React","JavaScript","JSP","WildFly","Flyway","SDD"] },
+    { id:"e2", empresa:"SIPPulse", cargo:"Software Engineer", periodo:"Nov 2022 - Mar 2026",
+      contexto:"Plataforma de comunicação VoIP de alta performance para operadoras.",
+      resp:["Sistema de tarifação VoIP","Integrações com provedores SIP","Suporte a produção"],
+      real:["Processamento 95% mais rápido no faturamento","Redução de 40% no tempo de resposta das APIs","Migração do legado para mensageria"],
+      skills:["Java","Kafka","PostgreSQL","Docker","AWS"] },
+    { id:"e3", empresa:"Neoway", cargo:"Desenvolvedor Java", periodo:"2020 - 2022",
+      contexto:"Empresa de dados e inteligência de mercado.", resp:["Desenvolvimento de APIs de consulta","Pipelines de ingestão"],
+      real:["Redução de custo de infraestrutura em 18%"], skills:["Java","Spring Boot","Elasticsearch"] },
+    { id:"e4", empresa:"Olist", cargo:"Backend", periodo:"2018 - 2020", legado:true,
+      descricao:"APIs em Python e FastAPI para o marketplace.", contexto:"", resp:[], real:[], skills:[] },
+    { id:"e5", empresa:"TechCorp", cargo:"Estagiário de TI", periodo:"2017 - 2018",
+      contexto:"", resp:["Suporte a sistemas internos"], real:[], skills:["SQL"] }
+  ],
+  formacoes: [
+    { id:"f1", instituicao:"FIAP", curso:"MBA em Arquitetura de Software", periodo:"2022 - 2023" },
+    { id:"f2", instituicao:"Estácio", curso:"Análise e Desenvolvimento de Sistemas", periodo:"2016 - 2019" },
+    { id:"f3", instituicao:"ETEC", curso:"Técnico em Informática", periodo:"2013 - 2015" }
+  ],
+  certificacoes: [
+    { id:"c1", nome:"AWS Certified Solutions Architect – Associate", instituicao:"AWS", ano:"2023" },
+    { id:"c2", nome:"Oracle Certified Professional, Java SE 11", instituicao:"Oracle", ano:"2021" },
+    { id:"c3", nome:"Professional Scrum Master I", instituicao:"Scrum.org", ano:"2022" }
+  ],
+  idiomas: [
+    { id:"i1", idioma:"Português", nivel:"NATIVO" },
+    { id:"i2", idioma:"Inglês", nivel:"AVANCADO" },
+    { id:"i3", idioma:"Espanhol", nivel:"BASICO" }
+  ],
+  tecnologias: ["Java","PostgreSQL","SQL","REST APIs","React","JavaScript","Kafka","Docker","AWS","Flyway"].map((t,i)=>({id:"t"+i, texto:t}))
+};
+const NIVEIS = {BASICO:"Básico",INTERMEDIARIO:"Intermediário",AVANCADO:"Avançado",FLUENTE:"Fluente",NATIVO:"Nativo"};
 
 const $ = (s, r=document) => r.querySelector(s);
-const lista = $("#lista");
-let estado = structuredClone(DADOS);          // o que está na tela
-let salvo = structuredClone(DADOS);           // o que está "no servidor"
-let abertos = new Set();
-let instantaneo = null;                        // para "Desfazer"
-let temporizador = null;
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const inicial = t => (String(t).trim()[0] || "?").toUpperCase();
+const inicioAno = p => { if(/atual/i.test(p)) return 9999; const m = String(p).match(/\d{4}/); return m ? +m[0] : 0; };
+const fimAno = p => { if(/atual/i.test(p)) return 9999; const m = String(p).match(/\d{4}/g); return m ? +m[m.length-1] : 0; };
 
-const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const inicial = e => (e.empresa.trim()[0] || "?").toUpperCase();
+let estado = structuredClone(DADOS);
+let salvo = structuredClone(DADOS);
+let instantaneo = null, temporizador = null;
+const listas = {};
 
-function chips(e){
-  const f = (n, um, varios, vazio) => n ? `<span class="chip ok">${n} ${n===1?um:varios}</span>` : `<span class="chip vazio">${vazio}</span>`;
-  if (e.legado) return `<div class="chips"><span class="chip alerta">Formato antigo</span><span class="chip">só descrição</span></div>`;
-  return `<div class="chips">${e.contexto?`<span class="chip ok">contexto</span>`:`<span class="chip vazio">sem contexto</span>`}
-    ${f(e.resp.length,"responsabilidade","responsabilidades","sem responsabilidades")}
-    ${f(e.real.length,"realização","realizações","sem realizações")}
-    ${f(e.skills.length,"skill","skills","sem skills")}</div>`;
-}
-
-function corpo(e){
-  if (e.legado) return `<div class="corpo"><p class="aviso-antigo">Esta experiência ainda usa a descrição em texto livre. Use “Estruturar experiências” para separá-la nos quatro blocos.</p>
-    <label class="campo">Descrição<textarea class="in" rows="3">${esc(e.descricao)}</textarea></label></div>`;
-  return `<div class="corpo">
-    <div class="grade-id">
-      <label class="campo">Empresa<input class="in" value="${esc(e.empresa)}"></label>
-      <label class="campo">Cargo<input class="in" value="${esc(e.cargo)}"></label>
-      <label class="campo">Período<input class="in" value="${esc(e.periodo)}"></label>
-    </div>
-    <div class="blocos">
-      <div>
-        <div class="bloco"><h4>Contexto</h4><p class="dica">Empresa, área e seu papel, em poucas frases.</p><textarea class="in" rows="3">${esc(e.contexto)}</textarea></div>
-        <div class="bloco" style="margin-top:12px"><h4>Principais responsabilidades</h4><p class="dica">Uma por linha.</p><textarea class="in" rows="4">${esc(e.resp.join("\n"))}</textarea></div>
-      </div>
-      <div>
-        <div class="bloco"><h4>Principais realizações</h4><p class="dica">Seu banco de conquistas. A IA escolhe de 3 a 5 na adaptação.</p>
-          <ul class="realizacoes">${e.real.map(r=>`<li><span>${esc(r)}</span><button class="icon" type="button" aria-label="Remover realização" style="width:22px;height:22px">×</button></li>`).join("") || `<li style="color:var(--muted)">Nenhuma realização cadastrada.</li>`}</ul>
-          <input class="in" placeholder="Nova realização e tecle Enter">
-        </div>
-        <div class="bloco" style="margin-top:12px"><h4>Skills</h4><p class="dica">Entram nas tecnologias gerais ao salvar.</p>
-          <div class="tags">${e.skills.map(s=>`<span class="tag">${esc(s)}<button type="button" aria-label="Remover ${esc(s)}">×</button></span>`).join("")}</div>
-          <input class="in" placeholder="Nova skill e tecle Enter">
-        </div>
-      </div>
-    </div>
-    <div class="rodape-corpo"><button class="btn text" type="button" data-acao="remover">Remover experiência</button><button class="btn" type="button" data-acao="fechar">Concluir</button></div>
-  </div>`;
-}
-
-function cartao(e, i, total){
-  const li = document.createElement("li");
-  li.className = "card" + (abertos.has(e.id) ? " aberto" : "");
-  li.dataset.id = e.id;
-  const resumo = e.legado ? e.descricao : e.contexto;
-  li.innerHTML = `
-    <div class="row">
-      <button class="handle" type="button" aria-roledescription="item arrastável" aria-label="Mover ${esc(e.cargo)}, ${esc(e.empresa)}. Posição ${i+1} de ${total}" title="Arraste para reordenar">⠿</button>
-      <span class="avatar" aria-hidden="true">${esc(inicial(e))}</span>
-      <div class="titulo"><strong>${esc(e.cargo)} · ${esc(e.empresa)}</strong><small>${esc(resumo || "Sem contexto ainda")}</small></div>
-      <span class="periodo">${esc(e.periodo)}</span>
-      <div class="acoes">
-        <span class="mover"><button class="icon" type="button" data-acao="subir" aria-label="Mover para cima">↑</button><button class="icon" type="button" data-acao="descer" aria-label="Mover para baixo">↓</button></span>
-        <button class="icon chevron" type="button" data-acao="alternar" aria-expanded="${abertos.has(e.id)}" aria-label="Editar ${esc(e.cargo)}, ${esc(e.empresa)}">⌄</button>
-      </div>
-    </div>
-    ${chips(e)}
-    ${corpo(e)}`;
-  return li;
-}
-
-function renderizar(){
-  lista.innerHTML = "";
-  if (!estado.length){ lista.innerHTML = `<li class="vazio-lista">Nenhuma experiência. Adicione a primeira.</li>`; }
-  estado.forEach((e,i)=> lista.appendChild(cartao(e,i,estado.length)));
-  atualizarUI();
-}
-
-function atualizarRotulos(){
-  [...lista.querySelectorAll(".card")].forEach((li,i,tudo)=>{
-    const e = estado.find(x=>x.id===li.dataset.id);
-    li.querySelector(".handle").setAttribute("aria-label", `Mover ${e.cargo}, ${e.empresa}. Posição ${i+1} de ${tudo.length}`);
-  });
-}
-
-function sujo(){ return JSON.stringify(estado.map(e=>e.id)) !== JSON.stringify(salvo.map(e=>e.id)) || estado.length !== salvo.length; }
-function atualizarUI(){
-  $("#barra").classList.toggle("visivel", sujo());
-  const tudoAberto = estado.length && estado.every(e=>abertos.has(e.id));
-  $("#alternar").textContent = tudoAberto ? "Recolher todas" : "Expandir todas";
-  atualizarRotulos();
-}
+/* ---------- utilidades globais ---------- */
+const ordens = e => JSON.stringify(["experiencias","formacoes","certificacoes","idiomas","tecnologias"].map(k=>e[k].map(x=>x.id)));
+const sujo = () => ordens(estado) !== ordens(salvo);
+function atualizarBarra(){ $("#barra").classList.toggle("visivel", sujo()); Object.values(listas).forEach(l=>l.atualizarRotulos()); }
 function anunciar(t){ const a=$("#anuncio"); a.textContent=""; setTimeout(()=>a.textContent=t,30); }
 function toast(texto, desfazer){
   $("#toast-texto").textContent = texto;
@@ -288,185 +257,305 @@ function toast(texto, desfazer){
   clearTimeout(temporizador); temporizador = setTimeout(esconderToast, 6000);
 }
 function esconderToast(){ $("#toast").classList.remove("visivel"); }
-function lembrar(){ instantaneo = { estado: structuredClone(estado), abertos: new Set(abertos) }; }
-function restaurar(){ if(!instantaneo) return; estado = instantaneo.estado; abertos = instantaneo.abertos; renderizar(); }
-
-/* mover na lista (usado por teclado e botões) */
-function moverPara(id, novoIndice){
-  const de = estado.findIndex(e=>e.id===id);
-  novoIndice = Math.max(0, Math.min(estado.length-1, novoIndice));
-  if (de === novoIndice) return false;
-  const [e] = estado.splice(de,1); estado.splice(novoIndice,0,e);
-  const li = lista.querySelector(`[data-id="${id}"]`);
-  const ref = lista.children[novoIndice + (novoIndice > de ? 1 : 0)];
-  lista.insertBefore(li, ref || null);
-  atualizarUI();
-  return true;
+function lembrar(){ instantaneo = { estado: structuredClone(estado), abertos: Object.fromEntries(Object.entries(listas).map(([k,l])=>[k,[...l.abertos]])) }; }
+function restaurar(){
+  if(!instantaneo) return;
+  estado = structuredClone(instantaneo.estado);
+  Object.entries(listas).forEach(([k,l])=>{ l.abertos = new Set(instantaneo.abertos[k]); l.renderizar(); });
+  atualizarBarra();
 }
-function destacar(id){ const li=lista.querySelector(`[data-id="${id}"]`); li.classList.remove("moved"); void li.offsetWidth; li.classList.add("moved"); }
-function nome(id){ const e=estado.find(x=>x.id===id); return `${e.cargo} em ${e.empresa}`; }
 
-/* cliques */
-lista.addEventListener("click", ev=>{
-  const alvo = ev.target.closest("[data-acao]");
-  const li = ev.target.closest(".card"); if(!li) return;
-  const id = li.dataset.id;
-  const acao = alvo?.dataset.acao;
-  if (acao === "subir" || acao === "descer"){
-    lembrar();
-    const i = estado.findIndex(e=>e.id===id);
-    if (moverPara(id, i + (acao==="subir"?-1:1))){
-      const nova = estado.findIndex(e=>e.id===id);
-      anunciar(`${nome(id)} movida para a posição ${nova+1} de ${estado.length}.`);
-      destacar(id); li.querySelector(`[data-acao="${acao}"]`).focus();
-      toast("Ordem alterada.", restaurar);
+/* ---------- componente de lista reordenável ---------- */
+class ListaReordenavel {
+  /* cfg: chave, ul, horizontal, rotulo(item), linha(item,i,total) -> html, chips?(item), corpo?(item), novo(), foco?, avatar */
+  constructor(cfg){
+    Object.assign(this, cfg); this.abertos = new Set(); this.arr = null; this.pega = null; this.reordenando = false;
+    this.ul.addEventListener("click", e=>this.clique(e));
+    this.ul.addEventListener("pointerdown", e=>this.ponteiroBaixo(e));
+    this.ul.addEventListener("pointermove", e=>this.ponteiroMove(e));
+    this.ul.addEventListener("pointerup", ()=>this.terminar(false));
+    this.ul.addEventListener("pointercancel", ()=>this.terminar(true));
+    this.ul.addEventListener("keydown", e=>this.teclado(e));
+    this.ul.addEventListener("focusout", e=>this.sairFoco(e));
+    this.ul.addEventListener("input", e=>this.editar(e));
+    this.ul.addEventListener("change", e=>this.editar(e));
+  }
+  get itens(){ return estado[this.chave]; }
+  set itens(v){ estado[this.chave] = v; }
+  nome(id){ return this.rotulo(this.itens.find(x=>x.id===id)); }
+  renderizar(){
+    this.ul.innerHTML = "";
+    if (!this.itens.length) this.ul.innerHTML = `<li class="vazio-lista">${this.vazio}</li>`;
+    this.itens.forEach((it,i)=>this.ul.appendChild(this.cartao(it,i,this.itens.length)));
+    this.atualizarRotulos();
+    this.atualizarTopo?.();
+  }
+  cartao(it,i,total){
+    const li = document.createElement("li"); li.dataset.id = it.id;
+    if (this.horizontal){
+      li.className = "tag";
+      li.innerHTML = `<button class="alca handle" type="button" aria-roledescription="item arrastável" aria-label="" title="Arraste para reordenar">${esc(it.texto)}</button><button class="x" type="button" data-acao="remover" aria-label="Remover ${esc(it.texto)}">×</button>`;
+      return li;
     }
-    return;
+    const temCorpo = !!this.corpo;
+    li.className = "card" + (temCorpo && this.abertos.has(it.id) ? " aberto":"") + (this.avatar ? "" : " sem-avatar");
+    li.innerHTML = this.linha(it,i,total) + (this.chips ? this.chips(it) : "") + (temCorpo ? this.corpo(it) : "");
+    return li;
   }
-  if (acao === "remover"){
-    lembrar(); estado = estado.filter(e=>e.id!==id); abertos.delete(id); renderizar();
-    toast("Experiência removida.", restaurar); return;
+  atualizarRotulos(){
+    [...this.ul.children].forEach((li,i,tudo)=>{
+      if(!li.dataset.id) return;
+      const h = li.querySelector(".handle"); if(!h) return;
+      h.setAttribute("aria-label", `Mover ${this.nome(li.dataset.id)}. Posição ${i+1} de ${tudo.length}`);
+    });
   }
-  if (acao === "alternar" || acao === "fechar" || (!alvo && ev.target.closest(".row") && !ev.target.closest(".handle"))){
-    alternar(li, acao === "fechar" ? false : undefined);
+  editar(ev){
+    const li = ev.target.closest("[data-id]"); const campo = ev.target.dataset.campo; if(!li || !campo) return;
+    const it = this.itens.find(x=>x.id===li.dataset.id); if(!it) return;
+    it[campo] = ev.target.value;
   }
-});
-function alternar(li, forcar){
-  const id = li.dataset.id;
-  const abrir = forcar ?? !abertos.has(id);
-  abrir ? abertos.add(id) : abertos.delete(id);
-  li.classList.toggle("aberto", abrir);
-  li.querySelector(".chevron").setAttribute("aria-expanded", abrir);
-  atualizarUI();
-}
-
-/* arrastar com ponteiro (mouse e toque) */
-let arr = null;
-lista.addEventListener("pointerdown", ev=>{
-  const h = ev.target.closest(".handle"); if(!h || ev.button>0) return;
-  ev.preventDefault();
-  const card = h.closest(".card");
-  lembrar();
-  lista.classList.add("arrastando");
-  const r = card.getBoundingClientRect();
-  arr = { card, h, id:card.dataset.id, grab: ev.clientY - r.top, origem: estado.findIndex(e=>e.id===card.dataset.id), raf:0, y: ev.clientY };
-  card.classList.add("dragging");
-  // recolhimento muda a altura: recalcula o ponto de pegada
-  const r2 = card.getBoundingClientRect();
-  arr.grab = Math.min(Math.max(ev.clientY - r2.top, 8), r2.height - 8);
-  h.setPointerCapture(ev.pointerId);
-  anunciar(`${nome(arr.id)} pega. Posição ${arr.origem+1} de ${estado.length}.`);
-  rolar();
-});
-lista.addEventListener("pointermove", ev=>{
-  if(!arr) return;
-  arr.y = ev.clientY;
-  posicionar();
-});
-function posicionar(){
-  const { card } = arr;
-  card.style.transform = "none";
-  const irmaos = [...lista.children].filter(c=>c!==card);
-  let antes = null;
-  for (const s of irmaos){ const r = s.getBoundingClientRect(); if (arr.y < r.top + r.height/2){ antes = s; break; } }
-  if (antes !== card.nextElementSibling) lista.insertBefore(card, antes);
-  const r = card.getBoundingClientRect();
-  card.style.transform = `translateY(${arr.y - arr.grab - r.top}px)`;
-}
-function rolar(){
-  if(!arr) return;
-  const margem = 90;
-  if (arr.y < margem) window.scrollBy(0, -14); else if (arr.y > innerHeight - margem) window.scrollBy(0, 14);
-  posicionar();
-  arr.raf = requestAnimationFrame(rolar);
-}
-function terminar(cancelar){
-  if(!arr) return;
-  cancelAnimationFrame(arr.raf);
-  const { card, id, origem } = arr;
-  card.style.transition = "transform .15s"; card.style.transform = "none";
-  setTimeout(()=>{ card.style.transition=""; },160);
-  card.classList.remove("dragging"); lista.classList.remove("arrastando");
-  if (cancelar){ restaurar(); anunciar("Movimento cancelado."); }
-  else {
-    const ids = [...lista.children].map(c=>c.dataset.id);
-    estado = ids.map(i=>estado.find(e=>e.id===i));
-    const nova = ids.indexOf(id);
-    if (nova !== origem){ anunciar(`${nome(id)} solta na posição ${nova+1} de ${estado.length}.`); destacar(id); toast("Ordem alterada.", restaurar); }
-    else anunciar(`${nome(id)} solta na posição original.`);
-    atualizarUI();
-  }
-  arr = null;
-}
-lista.addEventListener("pointerup", ()=>terminar(false));
-lista.addEventListener("pointercancel", ()=>terminar(true));
-document.addEventListener("keydown", ev=>{ if(arr && ev.key==="Escape") terminar(true); });
-
-/* arrastar com teclado */
-let pega = null;
-let reordenando = false; // mover o nó no DOM tira o foco por um instante: não conta como sair da alça
-lista.addEventListener("keydown", ev=>{
-  const h = ev.target.closest(".handle"); if(!h) return;
-  const card = h.closest(".card"), id = card.dataset.id;
-  const i = () => estado.findIndex(e=>e.id===id);
-  if (!pega){
-    if (ev.key===" " || ev.key==="Enter"){
-      ev.preventDefault(); lembrar(); pega = { id, origem:i() }; card.classList.add("grabbed");
-      anunciar(`${nome(id)} pega. Posição ${i()+1} de ${estado.length}. Use as setas para mover, Espaço para soltar, Esc para cancelar.`);
+  /* --- cliques --- */
+  clique(ev){
+    const li = ev.target.closest("[data-id]"); if(!li) return;
+    const id = li.dataset.id, alvo = ev.target.closest("[data-acao]"), acao = alvo?.dataset.acao;
+    if (acao==="subir"||acao==="descer"){
+      lembrar(); const i = this.itens.findIndex(x=>x.id===id);
+      if (this.moverPara(id, i+(acao==="subir"?-1:1))){
+        anunciar(`${this.nome(id)} movido para a posição ${this.itens.findIndex(x=>x.id===id)+1} de ${this.itens.length}.`);
+        this.destacar(id); li.querySelector(`[data-acao="${acao}"]`)?.focus(); toast("Ordem alterada.", restaurar);
+      } return;
     }
-    return;
+    if (acao==="remover"){ lembrar(); this.itens = this.itens.filter(x=>x.id!==id); this.abertos.delete(id); this.renderizar(); atualizarBarra(); toast("Item removido.", restaurar); return; }
+    if (!this.corpo) return;
+    if (acao==="alternar" || acao==="fechar" || (!alvo && ev.target.closest(".row") && !ev.target.closest(".handle"))) this.alternar(li, acao==="fechar"?false:undefined);
   }
-  if (ev.key==="ArrowUp" || ev.key==="ArrowDown"){
+  alternar(li, forcar){
+    const id = li.dataset.id, abrir = forcar ?? !this.abertos.has(id);
+    abrir ? this.abertos.add(id) : this.abertos.delete(id);
+    li.classList.toggle("aberto", abrir); li.querySelector(".chevron")?.setAttribute("aria-expanded", abrir);
+    this.atualizarTopo?.();
+  }
+  expandirTodas(abrir){
+    this.abertos = abrir ? new Set(this.itens.map(x=>x.id)) : new Set();
+    [...this.ul.children].forEach(li=>{ const a=this.abertos.has(li.dataset.id); li.classList.toggle("aberto",a); li.querySelector(".chevron")?.setAttribute("aria-expanded",a); });
+    this.atualizarTopo?.();
+  }
+  /* --- mover (teclado e botões) --- */
+  moverPara(id, novo){
+    const de = this.itens.findIndex(x=>x.id===id); novo = Math.max(0, Math.min(this.itens.length-1, novo));
+    if (de===novo) return false;
+    const [it] = this.itens.splice(de,1); this.itens.splice(novo,0,it);
+    const li = this.ul.querySelector(`[data-id="${id}"]`);
+    this.ul.insertBefore(li, this.ul.children[novo + (novo>de?1:0)] || null);
+    atualizarBarra(); return true;
+  }
+  destacar(id){ const li=this.ul.querySelector(`[data-id="${id}"]`); li.classList.remove("moved"); void li.offsetWidth; li.classList.add("moved"); }
+  /* --- ponteiro --- */
+  ponteiroBaixo(ev){
+    const h = ev.target.closest(".handle"); if(!h || ev.button>0) return;
     ev.preventDefault();
-    reordenando = true;
-    if (moverPara(id, i() + (ev.key==="ArrowUp"?-1:1))){ h.focus(); anunciar(`Posição ${i()+1} de ${estado.length}.`); }
-    reordenando = false;
-  } else if (ev.key===" " || ev.key==="Enter"){
-    ev.preventDefault(); card.classList.remove("grabbed");
-    const mudou = i() !== pega.origem; pega = null;
-    anunciar(mudou ? `${nome(id)} solta na posição ${i()+1} de ${estado.length}.` : `${nome(id)} solta na posição original.`);
-    if (mudou){ destacar(id); toast("Ordem alterada.", restaurar); }
-  } else if (ev.key==="Escape"){
-    ev.preventDefault(); pega = null; restaurar(); anunciar("Movimento cancelado.");
-    lista.querySelector(`[data-id="${id}"] .handle`)?.focus();
+    const li = h.closest("[data-id]"); lembrar();
+    this.ul.classList.add("arrastando"); li.classList.add("dragging");
+    const r = li.getBoundingClientRect();
+    this.arr = { li, id:li.dataset.id, gx:ev.clientX-r.left, gy:Math.min(Math.max(ev.clientY-r.top,8),r.height-8), x:ev.clientX, y:ev.clientY, origem:this.itens.findIndex(x=>x.id===li.dataset.id), raf:0 };
+    h.setPointerCapture(ev.pointerId);
+    anunciar(`${this.nome(this.arr.id)} pego. Posição ${this.arr.origem+1} de ${this.itens.length}.`);
+    this.rolar();
   }
-});
-lista.addEventListener("focusout", ev=>{
-  if (pega && !reordenando && ev.target.closest(".handle") && !ev.relatedTarget?.closest?.(".handle")){
-    lista.querySelector(`[data-id="${pega.id}"]`)?.classList.remove("grabbed"); pega = null; anunciar("Movimento encerrado ao sair da alça.");
+  ponteiroMove(ev){ if(!this.arr) return; this.arr.x=ev.clientX; this.arr.y=ev.clientY; this.posicionar(); }
+  posicionar(){
+    const { li } = this.arr; li.style.transform = "none";
+    const irmaos = [...this.ul.children].filter(c=>c!==li && c.dataset.id);
+    let antes = null;
+    for (const s of irmaos){
+      const r = s.getBoundingClientRect();
+      const vem = this.horizontal ? (this.arr.y < r.top || (this.arr.y <= r.bottom && this.arr.x < r.left + r.width/2)) : (this.arr.y < r.top + r.height/2);
+      if (vem){ antes = s; break; }
+    }
+    if (antes !== li.nextElementSibling) this.ul.insertBefore(li, antes);
+    const r = li.getBoundingClientRect();
+    li.style.transform = `translate(${this.arr.x-this.arr.gx-r.left}px, ${this.arr.y-this.arr.gy-r.top}px)`;
   }
-});
+  rolar(){
+    if(!this.arr) return;
+    if (this.arr.y < 90) window.scrollBy(0,-14); else if (this.arr.y > innerHeight-90) window.scrollBy(0,14);
+    this.posicionar(); this.arr.raf = requestAnimationFrame(()=>this.rolar());
+  }
+  terminar(cancelar){
+    if(!this.arr) return;
+    cancelAnimationFrame(this.arr.raf);
+    const { li, id, origem } = this.arr;
+    li.style.transition = "transform .15s"; li.style.transform = "none"; setTimeout(()=>li.style.transition="",160);
+    li.classList.remove("dragging"); this.ul.classList.remove("arrastando");
+    if (cancelar){ restaurar(); anunciar("Movimento cancelado."); }
+    else {
+      const ids = [...this.ul.children].map(c=>c.dataset.id).filter(Boolean);
+      this.itens = ids.map(i=>this.itens.find(x=>x.id===i));
+      const nova = ids.indexOf(id);
+      if (nova!==origem){ anunciar(`${this.nome(id)} solto na posição ${nova+1} de ${this.itens.length}.`); this.destacar(id); toast("Ordem alterada.", restaurar); }
+      else anunciar(`${this.nome(id)} solto na posição original.`);
+      atualizarBarra();
+    }
+    this.arr = null;
+  }
+  /* --- teclado --- */
+  teclado(ev){
+    if (this.arr && ev.key==="Escape"){ this.terminar(true); return; }
+    const h = ev.target.closest(".handle"); if(!h) return;
+    const li = h.closest("[data-id]"), id = li.dataset.id, i = () => this.itens.findIndex(x=>x.id===id);
+    const ant = this.horizontal ? "ArrowLeft":"ArrowUp", prox = this.horizontal ? "ArrowRight":"ArrowDown";
+    if (!this.pega){
+      if (ev.key===" "||ev.key==="Enter"){
+        ev.preventDefault(); lembrar(); this.pega = { id, origem:i() }; li.classList.add("grabbed");
+        anunciar(`${this.nome(id)} pego. Posição ${i()+1} de ${this.itens.length}. Use as setas para mover, Espaço para soltar, Esc para cancelar.`);
+      } return;
+    }
+    if (ev.key===ant||ev.key===prox){
+      ev.preventDefault(); this.reordenando = true;
+      if (this.moverPara(id, i()+(ev.key===ant?-1:1))){ h.focus(); anunciar(`Posição ${i()+1} de ${this.itens.length}.`); }
+      this.reordenando = false;
+    } else if (ev.key===" "||ev.key==="Enter"){
+      ev.preventDefault(); li.classList.remove("grabbed");
+      const mudou = i()!==this.pega.origem; this.pega = null;
+      anunciar(mudou ? `${this.nome(id)} solto na posição ${i()+1} de ${this.itens.length}.` : `${this.nome(id)} solto na posição original.`);
+      if (mudou){ this.destacar(id); toast("Ordem alterada.", restaurar); }
+    } else if (ev.key==="Escape"){
+      ev.preventDefault(); this.pega = null; restaurar(); anunciar("Movimento cancelado.");
+      this.ul.querySelector(`[data-id="${id}"] .handle`)?.focus();
+    }
+  }
+  sairFoco(ev){
+    if (this.pega && !this.reordenando && ev.target.closest(".handle") && !ev.relatedTarget?.closest?.(".handle")){
+      this.ul.querySelector(`[data-id="${this.pega.id}"]`)?.classList.remove("grabbed"); this.pega = null; anunciar("Movimento encerrado ao sair da alça.");
+    }
+  }
+}
 
-/* barra superior do painel */
-$("#alternar").onclick = ()=>{
-  const tudo = estado.every(e=>abertos.has(e.id));
-  abertos = tudo ? new Set() : new Set(estado.map(e=>e.id));
-  [...lista.querySelectorAll(".card")].forEach(li=>{
-    const a = abertos.has(li.dataset.id); li.classList.toggle("aberto", a); li.querySelector(".chevron").setAttribute("aria-expanded", a);
+/* ---------- peças de HTML ---------- */
+const handle = () => `<button class="handle" type="button" aria-roledescription="item arrastável" aria-label="" title="Arraste para reordenar">⠿</button>`;
+const mover = () => `<span class="mover"><button class="icon" type="button" data-acao="subir" aria-label="Mover para cima">↑</button><button class="icon" type="button" data-acao="descer" aria-label="Mover para baixo">↓</button></span>`;
+const chevron = nome => `<button class="icon chevron" type="button" data-acao="alternar" aria-expanded="false" aria-label="Editar ${esc(nome)}">⌄</button>`;
+const cabecalho = (id, titulo, dica, botoes) => `<div class="panel-head"><div><h2 id="t-${id}">${titulo}</h2><p>${dica}</p></div><div class="tools">${botoes}</div></div>`;
+const campo = (rot, campo, v) => `<label class="campo">${rot}<input class="in" data-campo="${campo}" value="${esc(v)}"></label>`;
+const rodapeCorpo = `<div class="rodape-corpo"><button class="btn text" type="button" data-acao="remover">Remover</button><button class="btn" type="button" data-acao="fechar">Concluir</button></div>`;
+
+/* ---------- montagem das seções ---------- */
+function montarDados(){
+  const d = estado.dados, el = $("#p-dados");
+  el.innerHTML = `<div class="panel-head"><div><h2 id="t-dados">Dados pessoais e resumo</h2><p>${esc(d.nome)} · ${esc(d.email)}</p></div><button class="btn" id="dados-alt" type="button" aria-expanded="false">Editar</button></div>
+  <div class="corpo" id="dados-corpo" style="padding:14px 18px 16px"><div class="grade-dados">${campo("Nome completo","nome",d.nome)}${campo("E-mail","email",d.email)}${campo("LinkedIn","linkedin",d.linkedin)}</div>
+  <label class="campo">Resumo profissional<textarea class="in" rows="3">${esc(d.resumo)}</textarea></label></div>`;
+  $("#dados-alt").onclick = ev => { const c=$("#dados-corpo"); const a=c.style.display!=="block"; c.style.display=a?"block":"none"; ev.target.textContent=a?"Concluir":"Editar"; ev.target.setAttribute("aria-expanded",a); };
+}
+
+function montarSecao(cfg){
+  const el = $("#p-"+cfg.chave);
+  const botoes = [
+    cfg.ordenar ? `<button class="btn text" data-top="ordenar" type="button">Ordenar por ${cfg.ordenar.rotulo}</button>` : "",
+    cfg.corpo ? `<button class="btn" data-top="alternar" type="button">Expandir todas</button>` : "",
+    `<button class="btn primary" data-top="adicionar" type="button">+ Adicionar ${cfg.singular}</button>`
+  ].join("");
+  el.innerHTML = cabecalho(cfg.chave, cfg.titulo, cfg.dica, botoes) + (cfg.horizontal ? `<div class="tags-area"><ul class="tags" aria-label="${cfg.titulo}"></ul><label class="campo" style="max-width:360px">Nova tecnologia<input class="in" id="nova-tec" placeholder="Digite e tecle Enter ou vírgula"></label></div>` : `<ul class="lista ${cfg.densa?"densa":""}" aria-label="${cfg.titulo}"></ul>`);
+  const lista = new ListaReordenavel({ ...cfg, ul: el.querySelector("ul") });
+  lista.atualizarTopo = () => {
+    const b = el.querySelector('[data-top="alternar"]'); if(b) b.textContent = lista.itens.length && lista.itens.every(x=>lista.abertos.has(x.id)) ? "Recolher todas" : "Expandir todas";
+  };
+  listas[cfg.chave] = lista;
+  el.querySelector('[data-top="alternar"]')?.addEventListener("click", ()=>lista.expandirTodas(!lista.itens.every(x=>lista.abertos.has(x.id))));
+  el.querySelector('[data-top="ordenar"]')?.addEventListener("click", ()=>{
+    lembrar(); const antes = lista.itens.map(x=>x.id).join();
+    lista.itens = [...lista.itens].sort((a,b)=>cfg.ordenar.chave(b)-cfg.ordenar.chave(a));
+    lista.renderizar(); atualizarBarra();
+    if (antes !== lista.itens.map(x=>x.id).join()){ anunciar(`${cfg.titulo} ordenadas da mais recente para a mais antiga.`); toast("Ordenado da mais recente para a mais antiga.", restaurar); }
+    else toast("Já estava ordenado.");
   });
-  atualizarUI();
-};
-$("#adicionar").onclick = ()=>{
-  lembrar();
-  const e = { id:"n"+Date.now(), empresa:"Nova empresa", cargo:"Cargo", periodo:"", contexto:"", resp:[], real:[], skills:[] };
-  estado.unshift(e); abertos.add(e.id); renderizar();
-  lista.firstElementChild.scrollIntoView({block:"center", behavior:"smooth"});
-  lista.firstElementChild.querySelector("input").focus();
-  toast("Experiência adicionada no topo.", restaurar);
-};
-const inicio = p => { if(/atual/i.test(p)) return 9999; const m = String(p).match(/\d{4}/); return m ? +m[0] : 0; };
-$("#ordenar").onclick = ()=>{
-  lembrar();
-  const antes = estado.map(e=>e.id).join();
-  estado = [...estado].sort((a,b)=>inicio(b.periodo)-inicio(a.periodo));
-  renderizar();
-  if (antes !== estado.map(e=>e.id).join()){ anunciar("Experiências ordenadas da mais recente para a mais antiga."); toast("Ordenado da mais recente para a mais antiga.", restaurar); }
-  else toast("Já estava ordenado por período.");
-};
-$("#descartar").onclick = ()=>{ estado = structuredClone(salvo); renderizar(); toast("Alterações descartadas."); };
-$("#salvar").onclick = ()=>{ salvo = structuredClone(estado); atualizarUI(); toast("Perfil salvo."); };
+  el.querySelector('[data-top="adicionar"]')?.addEventListener("click", ()=>{
+    if (cfg.horizontal){ $("#nova-tec").focus(); return; }
+    lembrar(); const it = cfg.novo(); lista.itens.unshift(it); if (cfg.corpo) lista.abertos.add(it.id);
+    lista.renderizar(); atualizarBarra();
+    const li = lista.ul.firstElementChild; li.scrollIntoView({block:"center",behavior:"smooth"}); li.querySelector("input")?.focus();
+    toast(`${cfg.singularCap} adicionad${cfg.genero} no topo.`, restaurar);
+  });
+  lista.renderizar();
+  return lista;
+}
 
-renderizar();
+/* ---------- configuração das cinco listas ---------- */
+montarDados();
+
+montarSecao({ chave:"experiencias", titulo:"Experiências profissionais", singular:"experiência", singularCap:"Experiência", genero:"a", avatar:true,
+  dica:"Arraste pela alça ⠿ para reordenar. A ordem daqui é a ordem do currículo.", vazio:"Nenhuma experiência. Adicione a primeira.",
+  ordenar:{ rotulo:"período", chave:e=>inicioAno(e.periodo) },
+  rotulo:e=>`${e.cargo} em ${e.empresa}`,
+  novo:()=>({ id:"n"+Date.now(), empresa:"Nova empresa", cargo:"Cargo", periodo:"", contexto:"", resp:[], real:[], skills:[] }),
+  linha:e=>`<div class="row">${handle()}<span class="avatar" aria-hidden="true">${esc(inicial(e.empresa))}</span>
+    <div class="titulo"><strong>${esc(e.cargo)} · ${esc(e.empresa)}</strong><small>${esc((e.legado?e.descricao:e.contexto)||"Sem contexto ainda")}</small></div>
+    <span class="meta">${esc(e.periodo)}</span><div class="acoes">${mover()}${chevron(e.cargo+", "+e.empresa)}</div></div>`,
+  chips:e=>{
+    if (e.legado) return `<div class="chips"><span class="chip alerta">Formato antigo</span><span class="chip">só descrição</span></div>`;
+    const f=(n,um,varios,vazio)=>n?`<span class="chip ok">${n} ${n===1?um:varios}</span>`:`<span class="chip vazio">${vazio}</span>`;
+    return `<div class="chips">${e.contexto?`<span class="chip ok">contexto</span>`:`<span class="chip vazio">sem contexto</span>`}${f(e.resp.length,"responsabilidade","responsabilidades","sem responsabilidades")}${f(e.real.length,"realização","realizações","sem realizações")}${f(e.skills.length,"skill","skills","sem skills")}</div>`;
+  },
+  corpo:e=> e.legado ? `<div class="corpo"><p class="aviso-antigo">Esta experiência ainda usa a descrição em texto livre. Use “Estruturar experiências” para separá-la nos quatro blocos.</p><label class="campo">Descrição<textarea class="in" rows="3" data-campo="descricao">${esc(e.descricao)}</textarea></label></div>` :
+  `<div class="corpo"><div class="grade-id">${campo("Empresa","empresa",e.empresa)}${campo("Cargo","cargo",e.cargo)}${campo("Período","periodo",e.periodo)}</div>
+    <div class="blocos"><div>
+      <div class="bloco"><h4>Contexto</h4><p class="dica">Empresa, área e seu papel, em poucas frases.</p><textarea class="in" rows="3">${esc(e.contexto)}</textarea></div>
+      <div class="bloco" style="margin-top:12px"><h4>Principais responsabilidades</h4><p class="dica">Uma por linha.</p><textarea class="in" rows="4">${esc(e.resp.join("\n"))}</textarea></div></div>
+      <div><div class="bloco"><h4>Principais realizações</h4><p class="dica">Seu banco de conquistas. A IA escolhe de 3 a 5 na adaptação.</p>
+        <ul class="realizacoes">${e.real.map(r=>`<li><span>${esc(r)}</span><button class="icon" type="button" aria-label="Remover realização" style="width:22px;height:22px">×</button></li>`).join("")||`<li style="color:var(--muted)">Nenhuma realização cadastrada.</li>`}</ul><input class="in" placeholder="Nova realização e tecle Enter"></div>
+      <div class="bloco" style="margin-top:12px"><h4>Skills</h4><p class="dica">Entram nas tecnologias gerais ao salvar.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${e.skills.map(s=>`<span class="chip" style="background:#fff;border:1px solid var(--line-strong)">${esc(s)} ×</span>`).join("")}</div><input class="in" placeholder="Nova skill e tecle Enter"></div></div></div>
+    ${rodapeCorpo}</div>`
+});
+
+montarSecao({ chave:"formacoes", titulo:"Formação acadêmica", singular:"formação", singularCap:"Formação", genero:"a", avatar:true, densa:true,
+  dica:"Arraste pela alça ⠿ para reordenar. A ordem daqui é a ordem do currículo.", vazio:"Nenhuma formação adicionada.",
+  ordenar:{ rotulo:"período", chave:f=>fimAno(f.periodo) },
+  rotulo:f=>`${f.curso} em ${f.instituicao}`,
+  novo:()=>({ id:"n"+Date.now(), instituicao:"", curso:"", periodo:"" }),
+  linha:f=>`<div class="row">${handle()}<span class="avatar" aria-hidden="true">${esc(inicial(f.instituicao||"?"))}</span>
+    <div class="titulo"><strong>${esc(f.curso||"Curso")}</strong><small>${esc(f.instituicao||"Instituição")}</small></div>
+    <span class="meta">${esc(f.periodo)}</span><div class="acoes">${mover()}${chevron(f.curso)}</div></div>`,
+  corpo:f=>`<div class="corpo"><div class="grade-3">${campo("Instituição","instituicao",f.instituicao)}${campo("Curso","curso",f.curso)}${campo("Período","periodo",f.periodo)}</div>${rodapeCorpo}</div>`
+});
+
+montarSecao({ chave:"certificacoes", titulo:"Certificações", singular:"certificação", singularCap:"Certificação", genero:"a", avatar:true, densa:true,
+  dica:"Arraste pela alça ⠿ para reordenar. A ordem daqui é a ordem do currículo.", vazio:"Nenhuma certificação adicionada.",
+  ordenar:{ rotulo:"ano", chave:c=>+c.ano||0 },
+  rotulo:c=>c.nome,
+  novo:()=>({ id:"n"+Date.now(), nome:"", instituicao:"", ano:"" }),
+  linha:c=>`<div class="row">${handle()}<span class="avatar" aria-hidden="true">${esc(inicial(c.instituicao||c.nome||"?"))}</span>
+    <div class="titulo"><strong>${esc(c.nome||"Certificação")}</strong><small>${esc(c.instituicao||"Instituição")}</small></div>
+    <span class="meta">${esc(c.ano)}</span><div class="acoes">${mover()}${chevron(c.nome)}</div></div>`,
+  corpo:c=>`<div class="corpo"><div class="grade-3">${campo("Nome","nome",c.nome)}${campo("Instituição","instituicao",c.instituicao)}${campo("Ano","ano",c.ano)}</div>${rodapeCorpo}</div>`
+});
+
+montarSecao({ chave:"idiomas", titulo:"Idiomas", singular:"idioma", singularCap:"Idioma", genero:"o", densa:true,
+  dica:"Arraste pela alça ⠿ para reordenar. A ordem daqui é a ordem do currículo.", vazio:"Nenhum idioma adicionado.",
+  rotulo:i=>i.idioma||"idioma",
+  novo:()=>({ id:"n"+Date.now(), idioma:"", nivel:"INTERMEDIARIO" }),
+  linha:i=>`<div class="linha-idioma">${handle()}<input class="in" data-campo="idioma" aria-label="Idioma" placeholder="Idioma" value="${esc(i.idioma)}">
+    <select class="in" data-campo="nivel" aria-label="Nível">${Object.entries(NIVEIS).map(([v,r])=>`<option value="${v}" ${v===i.nivel?"selected":""}>${r}</option>`).join("")}</select>
+    <div class="acoes">${mover()}<button class="icon" type="button" data-acao="remover" aria-label="Remover idioma">×</button></div></div>`
+});
+
+const tec = montarSecao({ chave:"tecnologias", titulo:"Tecnologias e ferramentas", singular:"tecnologia", singularCap:"Tecnologia", genero:"a", horizontal:true,
+  dica:"Arraste as tags para reordenar. A ordem daqui é a ordem do currículo.", vazio:"",
+  rotulo:t=>t.texto, novo:()=>null });
+$("#nova-tec").addEventListener("keydown", ev=>{
+  if (ev.key!=="Enter" && ev.key!==",") return;
+  ev.preventDefault();
+  const valores = ev.target.value.split(",").map(s=>s.trim()).filter(Boolean);
+  if(!valores.length) return;
+  lembrar();
+  valores.forEach(v=>{ if(!estado.tecnologias.some(t=>t.texto.toLowerCase()===v.toLowerCase())) estado.tecnologias.push({id:"t"+Date.now()+Math.random(), texto:v}); });
+  ev.target.value=""; tec.renderizar(); atualizarBarra(); toast("Tecnologia adicionada no fim.", restaurar);
+});
+
+/* ---------- barra de alterações ---------- */
+$("#descartar").onclick = ()=>{ estado = structuredClone(salvo); Object.values(listas).forEach(l=>l.renderizar()); atualizarBarra(); toast("Alterações descartadas."); };
+$("#salvar").onclick = ()=>{ salvo = structuredClone(estado); atualizarBarra(); toast("Perfil salvo."); };
+atualizarBarra();
 </script>
 </body>
 </html>

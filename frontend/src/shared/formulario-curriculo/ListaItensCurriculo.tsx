@@ -112,13 +112,21 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
   const rotuloMinusculo = rotuloItem.toLowerCase();
   const noLimite = limite !== undefined && fields.length >= limite;
   const idsDosCampos = fields.map((campoLista) => campoLista.id);
-  const { abertos, alternar, abrir, definir } = useCartoesAbertos({
+  // Entre adicionar um item e o formulário publicar os valores dele, o item vazio completa o que falta.
+  const valoresDoItem = (indice: number) => {
+    const publicados = Object.entries((valores ?? [])[indice] ?? {}).filter(
+      ([, valor]) => valor !== undefined,
+    );
+    return { ...(itemVazio as object), ...Object.fromEntries(publicados) } as unknown as FieldArray<
+      T,
+      N
+    >;
+  };
+  const { abertos, alternar, abrir, abrirVarios, definir } = useCartoesAbertos({
     chaveDeArmazenamento: emCartao ? armazenamento?.chave : undefined,
     ids: idsDosCampos,
     chavesDosItens: fields.map((_, indice) =>
-      emCartao && armazenamento
-        ? armazenamento.chaveDoItem(((valores ?? [])[indice] ?? {}) as FieldArray<T, N>)
-        : "",
+      emCartao && armazenamento ? armazenamento.chaveDoItem(valoresDoItem(indice)) : "",
     ),
   });
 
@@ -127,6 +135,23 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+
+  // Um cartão recolhido com campo inválido abre sozinho depois de um envio com erro.
+  const idsAtuais = useRef(idsDosCampos);
+  useEffect(() => {
+    idsAtuais.current = idsDosCampos;
+  });
+  useEffect(() => {
+    if (!emCartao) return;
+    return form.subscribe({
+      formState: { errors: true },
+      callback: ({ errors }) => {
+        const doItem = get(errors, nome);
+        if (Array.isArray(doItem))
+          abrirVarios(idsAtuais.current.filter((_, indice) => doItem[indice]));
+      },
+    });
+  }, [form, nome, emCartao, abrirVarios]);
 
   useEffect(() => {
     if (!abrirNovo.current || fields.length === 0) return;
@@ -163,10 +188,10 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
   }, [fields]);
 
   const resumos = (): ResumoDoItem[] =>
-    fields.map(
-      (_, indice) =>
-        resumoDoItem?.(((valores ?? [])[indice] ?? {}) as FieldArray<T, N>) ?? { titulo: "" },
-    );
+    fields.map((_, indice) => {
+      const resumo = resumoDoItem?.(valoresDoItem(indice));
+      return { ...resumo, titulo: resumo?.titulo ?? "" };
+    });
   const tituloDe = (indice: number) =>
     resumos()[indice]?.titulo.trim() || `${rotuloItem} ${indice + 1}`;
   const comDesfazer = historico

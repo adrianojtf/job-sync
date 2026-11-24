@@ -43,6 +43,13 @@ export const CAMPO_PERIODO_VALIDADO: CampoItem = {
   validar: validarPeriodo,
 };
 
+/** Identificação da experiência no perfil, com o período validado; os blocos ficam por conta de quem usa. */
+export const CAMPOS_EXPERIENCIA_PERFIL: CampoItem[] = [
+  CAMPO_EMPRESA,
+  CAMPO_CARGO,
+  CAMPO_PERIODO_VALIDADO,
+];
+
 /** Identificação da experiência; os blocos de conteúdo ficam por conta de quem usa. */
 export const CAMPOS_IDENTIFICACAO_EXPERIENCIA: CampoItem[] = [
   CAMPO_EMPRESA,

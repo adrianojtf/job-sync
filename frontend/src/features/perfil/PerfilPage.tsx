@@ -3,7 +3,13 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import type { ExperienciaParaIA, PerfilEstruturado } from "../../api/tipos";
 import { CabecalhoPagina } from "../../app/CabecalhoPagina";
 import { usePerfilAtivo } from "../../shared/sessao/use-perfil-ativo";
-import { CAMPOS_IDENTIFICACAO_EXPERIENCIA } from "../../shared/formulario-curriculo/campos-curriculo";
+import {
+  CAMPO_PERIODO_VALIDADO,
+  CAMPOS_EXPERIENCIA_PERFIL,
+} from "../../shared/formulario-curriculo/campos-curriculo";
+import { AvisoAlteracoesNaoSalvas } from "../../shared/formulario-curriculo/AvisoAlteracoesNaoSalvas";
+import { LIMITE_DE_ITENS } from "../../shared/formulario-curriculo/limites";
+import { chaveDeAno, chaveDePeriodo, validarAno } from "../../shared/formulario-curriculo/periodo";
 import estilos from "../../shared/formulario-curriculo/FormularioCurriculo.module.css";
 import { ListaItensCurriculo } from "../../shared/formulario-curriculo/ListaItensCurriculo";
 import { ListaDeTecnologias } from "../../shared/formulario-curriculo/ListaDeTecnologias";
@@ -14,6 +20,14 @@ import { Aviso } from "../../shared/ui/Aviso";
 import { Button } from "../../shared/ui/Button";
 import { useToast } from "../../shared/ui/use-toast";
 import { AvaliarExperienciaModal } from "./AvaliarExperienciaModal";
+import {
+  chaveDaCertificacao,
+  chaveDaExperiencia,
+  chaveDaFormacao,
+  resumoDaCertificacao,
+  resumoDaExperiencia,
+  resumoDaFormacao,
+} from "./resumos-do-perfil";
 import { BlocosDaExperiencia } from "./BlocosDaExperiencia";
 import {
   CERTIFICACAO_VAZIA,
@@ -74,6 +88,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
   const [experienciaAvaliada, setExperienciaAvaliada] = useState<ExperienciaParaIA | null>(null);
   const [revisarEstimativas, setRevisarEstimativas] = useState(false);
   const historico = useHistoricoDoFormulario(form);
+  const chaveDeCartoes = (lista: string) => `jobsync:perfil:cartoes:${perfil}:${lista}`;
   const migrar = useMigrarExperiencias();
   const experiencias = useWatch({ control: form.control, name: "experiencias" });
   const { isDirty } = form.formState;
@@ -118,6 +133,15 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
       onError: (erro) => notificar(erro.message, "erro"),
     });
 
+  const descartar = () => {
+    historico.registrar();
+    form.reset(perfilParaFormulario(perfilSalvo));
+    setRevisarEstimativas(false);
+    notificar("Alterações descartadas.", "info", {
+      acao: { rotulo: "Desfazer", aoClicar: historico.desfazer },
+    });
+  };
+
   const temExperienciaLegada = (experiencias ?? []).some(ehLegada) && perfilSalvo !== null;
 
   return (
@@ -157,17 +181,32 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
         </Aviso>
       )}
 
+      <AvisoAlteracoesNaoSalvas alterado={isDirty} />
       <form onSubmit={enviar} noValidate className={estilos.secoes}>
-        <PainelDadosPessoais form={form} sugerirResumo={sugestoes.secao("PERFIL", "Perfil")} />
+        <PainelDadosPessoais
+          form={form}
+          sugerirResumo={sugestoes.secao("PERFIL", "Perfil")}
+          recolhivel={{
+            chaveDeArmazenamento: chaveDeCartoes("dados"),
+            abertoPorPadrao: perfilSalvo === null,
+          }}
+        />
 
         <ListaItensCurriculo
           form={form}
           nome="experiencias"
           titulo="Experiências profissionais"
-          subtitulo="Da mais recente para a mais antiga"
+          subtitulo="Arraste pela alça para reordenar. A ordem daqui é a ordem do currículo."
           rotuloItem="Experiência"
           itemVazio={EXPERIENCIA_PERFIL_VAZIA}
-          campos={CAMPOS_IDENTIFICACAO_EXPERIENCIA}
+          campos={CAMPOS_EXPERIENCIA_PERFIL}
+          modo="cartao"
+          reordenavel
+          limite={LIMITE_DE_ITENS}
+          historico={historico}
+          resumoDoItem={resumoDaExperiencia}
+          ordenarPor={{ rotulo: "período", chave: (e) => chaveDePeriodo(e.periodo) }}
+          armazenamento={{ chave: chaveDeCartoes("experiencias"), chaveDoItem: chaveDaExperiencia }}
           complementoItem={(indice) => <BlocosDaExperiencia form={form} indice={indice} />}
           acoesItem={(indice) => (
             <Button
@@ -186,12 +225,20 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           nome="formacoes"
           titulo="Formação acadêmica"
           rotuloItem="Formação"
+          subtitulo="Arraste pela alça para reordenar. A ordem daqui é a ordem do currículo."
           itemVazio={FORMACAO_VAZIA}
           campos={[
             { chave: "instituicao", rotulo: "Instituição", obrigatorio: "Informe a instituição." },
             { chave: "curso", rotulo: "Curso", obrigatorio: "Informe o curso." },
-            { chave: "periodo", rotulo: "Período" },
+            CAMPO_PERIODO_VALIDADO,
           ]}
+          modo="cartao"
+          reordenavel
+          limite={LIMITE_DE_ITENS}
+          historico={historico}
+          resumoDoItem={resumoDaFormacao}
+          ordenarPor={{ rotulo: "período", chave: (f) => chaveDePeriodo(f.periodo) }}
+          armazenamento={{ chave: chaveDeCartoes("formacoes"), chaveDoItem: chaveDaFormacao }}
         />
 
         <ListaItensCurriculo
@@ -199,12 +246,23 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           nome="certificacoes"
           titulo="Certificações"
           rotuloItem="Certificação"
+          subtitulo="Arraste pela alça para reordenar. A ordem daqui é a ordem do currículo."
           itemVazio={CERTIFICACAO_VAZIA}
           campos={[
             { chave: "nome", rotulo: "Nome", obrigatorio: "Informe o nome da certificação." },
             { chave: "instituicao", rotulo: "Instituição" },
-            { chave: "ano", rotulo: "Ano" },
+            { chave: "ano", rotulo: "Ano", ajuda: "Ex.: 2023.", validar: validarAno },
           ]}
+          modo="cartao"
+          reordenavel
+          limite={LIMITE_DE_ITENS}
+          historico={historico}
+          resumoDoItem={resumoDaCertificacao}
+          ordenarPor={{ rotulo: "ano", chave: (c) => chaveDeAno(c.ano) }}
+          armazenamento={{
+            chave: chaveDeCartoes("certificacoes"),
+            chaveDoItem: chaveDaCertificacao,
+          }}
         />
 
         <ListaItensCurriculo
@@ -212,11 +270,17 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
           nome="idiomas"
           titulo="Idiomas"
           rotuloItem="Idioma"
+          subtitulo="Arraste pela alça para reordenar. A ordem daqui é a ordem do currículo."
           itemVazio={IDIOMA_VAZIO}
           campos={[
             { chave: "idioma", rotulo: "Idioma", obrigatorio: "Informe o idioma." },
             { chave: "nivel", rotulo: "Nível", tipoCampo: "select", opcoes: NIVEIS_IDIOMA },
           ]}
+          modo="linha"
+          reordenavel
+          limite={LIMITE_DE_ITENS}
+          historico={historico}
+          resumoDoItem={(idioma) => ({ titulo: idioma.idioma })}
         />
 
         <Controller
@@ -233,6 +297,7 @@ function FormularioPerfilEstruturado({ perfilSalvo }: { perfilSalvo: PerfilEstru
 
         <div className={estilos.rodape}>
           {isDirty && <span className={estilos.pendente}>Alterações não salvas</span>}
+          {isDirty && <Button onClick={descartar}>Descartar</Button>}
           <Button type="submit" variante="primary" carregando={salvar.isPending}>
             {salvar.isPending ? "Salvando…" : "Salvar perfil"}
           </Button>

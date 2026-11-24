@@ -9,7 +9,7 @@
 - [x] 5.0 Cartões abertos lembrados e modo linha única para idiomas
 - [x] 6.0 Tecnologias como tags reordenáveis
 - [x] 7.0 Aviso ao sair: hook, componente e aplicação nas telas do escopo
-- [ ] 8.0 Integração em Meu perfil: as cinco listas, validações e aviso ao sair
+- [x] 8.0 Integração em Meu perfil: as cinco listas, validações e aviso ao sair
 - [ ] 9.0 E2E das listas reordenáveis e acessibilidade
 
 ## Dependências

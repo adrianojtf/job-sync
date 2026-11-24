@@ -18,11 +18,11 @@ Meu perfil usa os novos modos em experiências, formação, certificações, idi
 
 ## Subtarefas
 
-- [ ] 8.1 Atualizar os testes de `PerfilPage` e escrever os novos (red).
-- [ ] 8.2 Ligar as listas aos novos modos e ao resumo do cartão (green).
-- [ ] 8.3 Ligar as validações, os limites e as mensagens do 422 (green).
-- [ ] 8.4 Ligar o aviso ao sair e o desfazer (green).
-- [ ] 8.5 Refatorar e rodar `npm test`.
+- [x] 8.1 Atualizar os testes de `PerfilPage` e escrever os novos (red).
+- [x] 8.2 Ligar as listas aos novos modos e ao resumo do cartão (green).
+- [x] 8.3 Ligar as validações, os limites e as mensagens do 422 (green).
+- [x] 8.4 Ligar o aviso ao sair e o desfazer (green).
+- [x] 8.5 Refatorar e rodar `npm test`.
 
 ## Detalhes de Implementação
 
@@ -38,8 +38,8 @@ Complexidade: high. Dependências: 1.0, 4.0, 5.0, 6.0, 7.0.
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `PerfilPage` e `formulario-perfil`.
-- [ ] Regressão: `npm test`, `tsc`, ESLint e Prettier.
+- [x] Vitest de `PerfilPage` e `formulario-perfil`.
+- [x] Regressão: `npm test`, `tsc`, ESLint e Prettier.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

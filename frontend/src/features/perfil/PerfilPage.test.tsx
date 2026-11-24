@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import type { PerfilEstruturado } from "../../api/tipos";
@@ -25,6 +25,18 @@ const PERFIL: PerfilEstruturado = {
   idiomas: [],
   tecnologias: ["Java"],
 };
+
+const CARTOES_ABERTOS = [
+  ["experiencias", ["Neoway|Dev Java|2020-2024", "Starian|Dev|2024 - Atual"]],
+  ["dados", ["dados"]],
+] as const;
+
+beforeEach(() => {
+  CARTOES_ABERTOS.forEach(([lista, chaves]) =>
+    window.localStorage.setItem(`jobsync:perfil:cartoes:adriano:${lista}`, JSON.stringify(chaves)),
+  );
+});
+afterEach(() => window.localStorage.clear());
 
 const NAO_ENCONTRADO = HttpResponse.json(
   {
@@ -854,5 +866,341 @@ describe("PerfilPage — migração de perfil antigo", () => {
       await screen.findByText(/A IA pode ter estimado métricas e contextos/),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Contexto")).toHaveValue("Empresa de dados.");
+  });
+});
+
+const PERFIL_VARIOS: PerfilEstruturado = {
+  ...PERFIL,
+  experiencias: [
+    {
+      empresa: "Alfa",
+      cargo: "Dev",
+      periodo: "2018 - 2020",
+      descricao: "",
+      contexto: "Primeira linha.\nSegunda.",
+      responsabilidades: ["Projetar"],
+      conquistas: [],
+      skills: ["Java", "SQL"],
+    },
+    {
+      empresa: "Beta",
+      cargo: "Líder",
+      periodo: "2020 - 2022",
+      descricao: "",
+      contexto: "",
+      responsabilidades: [],
+      conquistas: [],
+      skills: [],
+    },
+    {
+      empresa: "Gama",
+      cargo: "Arquiteta",
+      periodo: "Mar 2022 - Atual",
+      descricao: "Texto antigo da Gama.",
+      contexto: "",
+      responsabilidades: [],
+      conquistas: [],
+      skills: [],
+    },
+  ],
+  formacoes: [
+    { instituicao: "USP", curso: "Computação", periodo: "2012 - 2016" },
+    { instituicao: "FIAP", curso: "MBA em Arquitetura", periodo: "2019 - 2020" },
+  ],
+  certificacoes: [
+    { nome: "AWS SAA", instituicao: "AWS", ano: "2021" },
+    { nome: "Scrum PSM I", instituicao: "Scrum.org", ano: "2023" },
+  ],
+  idiomas: [
+    { idioma: "Português", nivel: "NATIVO" },
+    { idioma: "Inglês", nivel: "AVANCADO" },
+  ],
+};
+
+const cartoesDa = (lista: string) =>
+  within(screen.getByRole("region", { name: lista }))
+    .getAllByRole("group")
+    .filter((g) => g.hasAttribute("data-item-id"));
+const titulosDa = (lista: string) =>
+  cartoesDa(lista).map(
+    (cartao) =>
+      within(cartao)
+        .getByRole("button", { name: /^Editar / })
+        .getAttribute("aria-label")
+        ?.replace(/^Editar /, "") ?? "",
+  );
+const navegar = (router: ReturnType<typeof renderizarApp>["router"], para: string) =>
+  act(async () => {
+    void router.navigate(para);
+  });
+
+describe("PerfilPage — listas compactas e reordenáveis", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("abre com os cartões recolhidos, com resumo e chips dos quatro blocos", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    const experiencias = await screen.findByRole("region", { name: "Experiências profissionais" });
+    const [alfa, beta, gama] = cartoesDa("Experiências profissionais");
+
+    expect(within(alfa!).getByText("Dev · Alfa")).toBeInTheDocument();
+    expect(within(alfa!).getByText("Primeira linha.")).toBeInTheDocument();
+    expect(within(alfa!).getByText("2018 - 2020")).toBeInTheDocument();
+    expect(within(alfa!).getByText("contexto")).toBeInTheDocument();
+    expect(within(alfa!).getByText("1 responsabilidade")).toBeInTheDocument();
+    expect(within(alfa!).getByText("sem realizações")).toBeInTheDocument();
+    expect(within(alfa!).getByText("2 skills")).toBeInTheDocument();
+    expect(within(beta!).getByText("sem contexto")).toBeInTheDocument();
+    expect(within(gama!).getByText("Formato antigo")).toBeInTheDocument();
+    expect(within(gama!).getByText("Texto antigo da Gama.")).toBeInTheDocument();
+    expect(within(alfa!).getByLabelText("Empresa")).not.toBeVisible();
+    expect(experiencias).toBeInTheDocument();
+  });
+
+  it("os dados pessoais ficam num cartão recolhido com nome e e-mail", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    const dados = await screen.findByRole("region", { name: "Dados pessoais e resumo" });
+
+    expect(within(dados).getByText("Adriano Teixeira · adriano@email.com")).toBeInTheDocument();
+    expect(within(dados).getByLabelText("Nome completo")).not.toBeVisible();
+    await userEvent.click(within(dados).getByRole("button", { name: "Editar" }));
+    expect(within(dados).getByLabelText("Nome completo")).toBeVisible();
+  });
+
+  it("um perfil novo abre os dados pessoais, para o primeiro preenchimento", async () => {
+    servirPerfil(null);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    expect(await screen.findByLabelText("Nome completo")).toBeVisible();
+  });
+
+  it("reordena uma experiência pelo botão e envia a nova ordem ao salvar", async () => {
+    const { envios } = servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Experiências profissionais" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Mover Dev · Alfa para baixo" }));
+    expect(screen.getByText("Alterações não salvas")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+    const empresas = (envios[0]!.corpo as { experiencias: { empresa: string }[] }).experiencias.map(
+      (e) => e.empresa,
+    );
+    expect(empresas).toEqual(["Beta", "Alfa", "Gama"]);
+  });
+
+  it("ordena as experiências por período, com o período em andamento primeiro", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    const painel = within(
+      await screen.findByRole("region", { name: "Experiências profissionais" }),
+    );
+
+    await userEvent.click(painel.getByRole("button", { name: "Ordenar por período" }));
+
+    expect(titulosDa("Experiências profissionais")).toEqual([
+      "Arquiteta · Gama",
+      "Líder · Beta",
+      "Dev · Alfa",
+    ]);
+    await userEvent.click(screen.getByRole("button", { name: "Desfazer" }));
+    expect(titulosDa("Experiências profissionais")).toEqual([
+      "Dev · Alfa",
+      "Líder · Beta",
+      "Arquiteta · Gama",
+    ]);
+  });
+
+  it("ordena as certificações por ano e as formações por período", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Certificações" });
+
+    await userEvent.click(
+      within(screen.getByRole("region", { name: "Certificações" })).getByRole("button", {
+        name: "Ordenar por ano",
+      }),
+    );
+    await userEvent.click(
+      within(screen.getByRole("region", { name: "Formação acadêmica" })).getByRole("button", {
+        name: "Ordenar por período",
+      }),
+    );
+
+    expect(titulosDa("Certificações")).toEqual(["Scrum PSM I", "AWS SAA"]);
+    expect(titulosDa("Formação acadêmica")).toEqual(["MBA em Arquitetura", "Computação"]);
+  });
+
+  it("reordena os idiomas pela linha e envia a nova ordem", async () => {
+    const { envios } = servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Idiomas" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Mover Português para baixo" }));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+    const idiomas = (envios[0]!.corpo as { idiomas: { idioma: string }[] }).idiomas.map(
+      (i) => i.idioma,
+    );
+    expect(idiomas).toEqual(["Inglês", "Português"]);
+  });
+
+  it("período fora do formato bloqueia o salvar, mostra o erro e abre o cartão", async () => {
+    const { envios } = servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Experiências profissionais" });
+    const [alfa] = cartoesDa("Experiências profissionais");
+    await userEvent.click(within(alfa!).getByRole("button", { name: "Editar Dev · Alfa" }));
+    const periodo = within(alfa!).getByLabelText("Período");
+    await userEvent.clear(periodo);
+    await userEvent.type(periodo, "ontem");
+    await userEvent.click(within(alfa!).getByRole("button", { name: "Concluir" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    expect(
+      await within(alfa!).findByText("Use o formato Mar 2024 - Atual ou 2020 - 2022."),
+    ).toBeInTheDocument();
+    expect(within(alfa!).getByLabelText("Período")).toBeVisible();
+    expect(envios).toHaveLength(0);
+  });
+
+  it("ano de certificação inválido bloqueia o salvar", async () => {
+    const { envios } = servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Certificações" });
+    const [aws] = cartoesDa("Certificações");
+    await userEvent.click(within(aws!).getByRole("button", { name: "Editar AWS SAA" }));
+    const ano = within(aws!).getByLabelText("Ano");
+    await userEvent.clear(ano);
+    await userEvent.type(ano, "23");
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    expect(
+      await within(aws!).findByText("Use um ano com quatro dígitos, como 2023."),
+    ).toBeInTheDocument();
+    expect(envios).toHaveLength(0);
+  });
+
+  it("período vazio é aceito", async () => {
+    const { envios } = servirPerfil({
+      ...PERFIL_VARIOS,
+      formacoes: [{ instituicao: "USP", curso: "Computação", periodo: "" }],
+    });
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Formação acadêmica" });
+    await userEvent.type(screen.getByLabelText("Resumo profissional"), " Mais.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+  });
+
+  it("no limite de 15 itens o botão de adicionar fica desabilitado", async () => {
+    servirPerfil({
+      ...PERFIL_VARIOS,
+      formacoes: Array.from({ length: 15 }, (_, n) => ({
+        instituicao: `Inst ${n}`,
+        curso: `Curso ${n}`,
+        periodo: "",
+      })),
+    });
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    const painel = within(await screen.findByRole("region", { name: "Formação acadêmica" }));
+
+    expect(painel.getByRole("button", { name: "Adicionar formação" })).toBeDisabled();
+    expect(painel.getByRole("note")).toHaveTextContent("limite de 15 itens");
+    expect(
+      within(screen.getByRole("region", { name: "Certificações" })).getByRole("button", {
+        name: "Adicionar certificação",
+      }),
+    ).toBeEnabled();
+  });
+
+  it("mostra a mensagem de validação que a API devolver (422)", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    servidorApi.use(
+      http.put(`${API_TESTE}/v1/perfil-estruturado/:perfil`, () =>
+        HttpResponse.json(
+          {
+            type: "t",
+            title: "Inválido",
+            status: 422,
+            detail:
+              "Experiência 1: período inválido. Use o formato Mar 2024 - Atual ou 2020 - 2022.",
+            instance: "i",
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await userEvent.type(await screen.findByLabelText("Resumo profissional"), " Mais.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    expect(await screen.findByText(/Experiência 1: período inválido/)).toBeInTheDocument();
+  });
+
+  it("pergunta antes de sair com alterações não salvas e não pergunta depois de salvar", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    const { router } = renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Mover Dev · Alfa para baixo" }),
+    );
+
+    await navegar(router, "/curriculos");
+    expect(await screen.findByRole("dialog", { name: "Sair sem salvar?" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(router.state.location.pathname).toBe("/perfil");
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+    await screen.findByText("Perfil salvo.");
+    await navegar(router, "/curriculos");
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/curriculos"));
+  });
+
+  it("Descartar restaura a ordem salva e oferece desfazer", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Mover Dev · Alfa para baixo" }),
+    );
+    expect(titulosDa("Experiências profissionais")[0]).toBe("Líder · Beta");
+
+    await userEvent.click(screen.getByRole("button", { name: "Descartar" }));
+
+    expect(titulosDa("Experiências profissionais")).toEqual([
+      "Dev · Alfa",
+      "Líder · Beta",
+      "Arquiteta · Gama",
+    ]);
+    expect(screen.queryByText("Alterações não salvas")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Desfazer" }));
+    expect(titulosDa("Experiências profissionais")[0]).toBe("Líder · Beta");
+  });
+
+  it("lembra os cartões abertos ao voltar para o perfil", async () => {
+    servirPerfil(PERFIL_VARIOS);
+    const primeira = renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Experiências profissionais" });
+    const [alfa] = cartoesDa("Experiências profissionais");
+    await userEvent.click(within(alfa!).getByRole("button", { name: "Editar Dev · Alfa" }));
+    primeira.router.dispose();
+    cleanup();
+
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByRole("region", { name: "Experiências profissionais" });
+
+    const [alfaDeNovo, betaDeNovo] = cartoesDa("Experiências profissionais");
+    await waitFor(() => expect(within(alfaDeNovo!).getByLabelText("Empresa")).toBeVisible());
+    expect(within(betaDeNovo!).getByLabelText("Empresa")).not.toBeVisible();
   });
 });

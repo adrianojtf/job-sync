@@ -66,9 +66,14 @@ export function ListaItensCurriculo<T extends FieldValues, N extends ArrayPath<T
               const caminho = `${nome}.${indice}.${campo.chave}` as Path<T>;
               const erro = get(form.formState.errors, caminho)?.message as string | undefined;
               const registro = form.register(caminho, {
-                validate: campo.obrigatorio
-                  ? (valor) => String(valor ?? "").trim() !== "" || campo.obrigatorio
-                  : undefined,
+                validate:
+                  campo.obrigatorio || campo.validar
+                    ? (valor) => {
+                        const texto = String(valor ?? "");
+                        if (campo.obrigatorio && texto.trim() === "") return campo.obrigatorio;
+                        return campo.validar?.(texto) ?? true;
+                      }
+                    : undefined,
               });
               return (
                 <div

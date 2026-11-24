@@ -1,4 +1,5 @@
 /** Campos de formulário de currículo compartilhados entre o cadastro e a revisão. */
+import { validarPeriodo } from "./periodo";
 
 export interface CampoItem {
   chave: string;
@@ -9,6 +10,8 @@ export interface CampoItem {
   larguraTotal?: boolean;
   /** Texto de apoio associado ao campo (aria-describedby). */
   ajuda?: string;
+  /** Validação do formato de um campo preenchido: devolve a mensagem de erro, ou `undefined` se válido. */
+  validar?: (valor: string) => string | undefined;
 }
 
 export interface ExperienciaFormulario {
@@ -32,6 +35,13 @@ const CAMPO_EMPRESA: CampoItem = {
 };
 const CAMPO_CARGO: CampoItem = { chave: "cargo", rotulo: "Cargo", obrigatorio: "Informe o cargo." };
 const CAMPO_PERIODO: CampoItem = { chave: "periodo", rotulo: "Período", larguraTotal: true };
+
+/** Período do perfil: formato validado (JOB-0046). A revisão do adaptado mantém o texto livre. */
+export const CAMPO_PERIODO_VALIDADO: CampoItem = {
+  ...CAMPO_PERIODO,
+  ajuda: "Ex.: Mar 2024 - Atual ou 2020 - 2022.",
+  validar: validarPeriodo,
+};
 
 /** Identificação da experiência; os blocos de conteúdo ficam por conta de quem usa. */
 export const CAMPOS_IDENTIFICACAO_EXPERIENCIA: CampoItem[] = [

@@ -12,7 +12,12 @@
     { "texto": "Fev 2019 - Ago 2021", "valido": true, "inicio": [2019, 2], "fim": [2021, 8] },
     { "texto": "Feb 2019 - Aug 2021", "valido": true, "inicio": [2019, 2], "fim": [2021, 8] },
     { "texto": "Out 2018 - Set 2019", "valido": true, "inicio": [2018, 10], "fim": [2019, 9] },
-    { "texto": "Março 2018 - Dezembro 2019", "valido": true, "inicio": [2018, 3], "fim": [2019, 12] },
+    {
+      "texto": "Março 2018 - Dezembro 2019",
+      "valido": true,
+      "inicio": [2018, 3],
+      "fim": [2019, 12]
+    },
     { "texto": "01/2020 - 12/2022", "valido": true, "inicio": [2020, 1], "fim": [2022, 12] },
     { "texto": "03/2024 - Presente", "valido": true, "inicio": [2024, 3], "fim": null },
     { "texto": "2023 - Atual", "valido": true, "inicio": [2023, null], "fim": null },

@@ -16,9 +16,9 @@ Espelha no frontend a validação e a ordenação do período, a constante do li
 
 ## Subtarefas
 
-- [ ] 2.1 Escrever os testes de `periodo.ts` com a tabela compartilhada (red).
-- [ ] 2.2 Implementar `periodo.ts`, `limites.ts` e `CampoItem.validar` (green).
-- [ ] 2.3 Refatorar e rodar `npm test`.
+- [x] 2.1 Escrever os testes de `periodo.ts` com a tabela compartilhada (red).
+- [x] 2.2 Implementar `periodo.ts`, `limites.ts` e `CampoItem.validar` (green).
+- [x] 2.3 Refatorar e rodar `npm test`.
 
 ## Detalhes de Implementação
 
@@ -33,8 +33,8 @@ Complexidade: low. Dependências: 1.0.
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `periodo.ts`.
-- [ ] Regressão: `npm test` em `frontend/`.
+- [x] Vitest de `periodo.ts`.
+- [x] Regressão: `npm test` em `frontend/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

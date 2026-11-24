@@ -58,7 +58,7 @@ test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover 
   const experiencia = page.getByRole("group", { name: "Experiência 1" });
   await experiencia.getByLabel("Empresa").fill("Olist");
   await experiencia.getByLabel("Cargo").fill("Backend");
-  await experiencia.getByLabel("Descrição").fill("APIs em Python e FastAPI.");
+  await experiencia.getByLabel("Principais responsabilidades").fill("APIs em Python e FastAPI.");
   await page.getByRole("button", { name: "Salvar perfil" }).click();
   await expect(page.getByRole("status")).toHaveText("Perfil salvo.");
 
@@ -94,7 +94,7 @@ test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover 
   await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeHidden();
   const revisada = page.getByRole("group", { name: "Experiência 1" });
   await expect(page.getByText(/A IA pode ter estimado métricas e volumes/)).toBeVisible();
-  await expect(revisada.getByLabel("Principais realizações")).toHaveValue(
+  await expect(revisada.getByLabel("Principais responsabilidades")).toHaveValue(
     "APIs em Python e FastAPI.",
   );
   await expect(revisada.getByLabel("Contexto")).toHaveValue("Contexto de Olist.");

@@ -64,6 +64,27 @@ test.describe("leitura de vaga por link", () => {
     await expect(page.getByLabel("Empresa", { exact: true })).toHaveValue("Empresa do texto E2E");
   });
 
+  test("Menu: o modal Ajustar para uma vaga lê o link e leva à análise", async ({ page }) => {
+    await entrar(page, perfil);
+    await page.getByRole("button", { name: "Ajustar para uma vaga" }).click();
+    const modal = page.getByRole("dialog", { name: "Ajustar currículo para uma vaga" });
+
+    await modal.getByLabel("Link da vaga").fill(LINK_COM_RASTREAMENTO);
+    await modal.getByRole("button", { name: "Ler vaga" }).click();
+
+    await expect(modal.getByText(AVISO_LEITURA)).toBeVisible();
+    await expect(modal.getByLabel("Título da vaga")).toHaveValue("Engenheiro de Software Sênior");
+    await expect(modal.getByLabel("Empresa", { exact: true })).toHaveValue("Empresa E2E");
+    expect(await violacoesGraves(page)).toEqual([]);
+
+    await modal.getByRole("button", { name: "Analisar vaga" }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Ajustar para uma vaga" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Título da vaga")).toHaveValue("Engenheiro de Software Sênior");
+    await expect(page.getByRole("meter", { name: "Relevância" })).toBeVisible();
+  });
+
   test("Captura: lê o link, confere o rascunho e salva com a URL normalizada", async ({ page }) => {
     await entrar(page, perfil);
     await page.goto("/vagas-salvas");

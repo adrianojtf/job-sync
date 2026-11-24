@@ -18,10 +18,10 @@
 
 ## Subtarefas
 
-- [ ] 4.1 Escrever os testes do componente nos três cenários (mock do `DndContext`, botões, limite, ordenar, desfazer) (red).
-- [ ] 4.2 Implementar `CartaoDaLista` e os anúncios (green).
-- [ ] 4.3 Implementar a reordenação, o limite e a ordenação em `ListaItensCurriculo` (green).
-- [ ] 4.4 Refatorar e rodar `npm test`.
+- [x] 4.1 Escrever os testes do componente nos três cenários (mock do `DndContext`, botões, limite, ordenar, desfazer) (red).
+- [x] 4.2 Implementar `CartaoDaLista` e os anúncios (green).
+- [x] 4.3 Implementar a reordenação, o limite e a ordenação em `ListaItensCurriculo` (green).
+- [x] 4.4 Refatorar e rodar `npm test`.
 
 ## Detalhes de Implementação
 
@@ -36,9 +36,9 @@ Complexidade: high. Dependências: 2.0, 3.0.
 
 ## Testes da Tarefa
 
-- [ ] Vitest de `ListaItensCurriculo` e `CartaoDaLista`.
-- [ ] Vitest dos anúncios.
-- [ ] Regressão: `npm test`.
+- [x] Vitest de `ListaItensCurriculo` e `CartaoDaLista`.
+- [x] Vitest dos anúncios.
+- [x] Regressão: `npm test`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -48,6 +48,30 @@
   font-weight: 650;
   font-size: 13px;
 }
+.linha {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  min-width: 0;
+}
+.camposDaLinha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  align-items: center;
+}
+.campoDaLinha > * {
+  margin: 0;
+}
+.campoDaLinha input,
+.campoDaLinha select {
+  padding: 6px 10px;
+}
 .acoesDaLista {
   display: flex;
   flex-wrap: wrap;

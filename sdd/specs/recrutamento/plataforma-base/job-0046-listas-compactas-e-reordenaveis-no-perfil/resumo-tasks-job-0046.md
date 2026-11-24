@@ -6,7 +6,7 @@
 - [x] 2.0 Frontend: periodo.ts, limites.ts e validação por campo
 - [x] 3.0 Toast com ação e duração, e histórico do formulário (desfazer)
 - [x] 4.0 ListaItensCurriculo em modo cartão com reordenação, limite e ordenar por período
-- [ ] 5.0 Cartões abertos lembrados e modo linha única para idiomas
+- [x] 5.0 Cartões abertos lembrados e modo linha única para idiomas
 - [ ] 6.0 Tecnologias como tags reordenáveis
 - [ ] 7.0 Aviso ao sair: hook, componente e aplicação nas telas do escopo
 - [ ] 8.0 Integração em Meu perfil: as cinco listas, validações e aviso ao sair

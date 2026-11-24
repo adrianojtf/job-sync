@@ -13,6 +13,8 @@ interface Comum {
   rotulo: string;
   ajuda?: string;
   erro?: string;
+  /** Esconde o rótulo só visualmente (ele continua associado, para leitores de tela). */
+  rotuloOculto?: boolean;
 }
 
 type PropsInput = Comum & { tipoCampo?: "input" } & InputHTMLAttributes<HTMLInputElement>;
@@ -34,7 +36,7 @@ type ElementoCampo = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
  */
 export const Field = forwardRef<ElementoCampo, FieldProps>(function Field(props, ref) {
   const idGerado = useId();
-  const { rotulo, ajuda, erro, id = idGerado, className } = props;
+  const { rotulo, ajuda, erro, rotuloOculto, id = idGerado, className } = props;
   const idAjuda = ajuda ? `${id}-ajuda` : undefined;
   const idErro = erro ? `${id}-erro` : undefined;
   const acessibilidade = {
@@ -46,7 +48,10 @@ export const Field = forwardRef<ElementoCampo, FieldProps>(function Field(props,
 
   return (
     <div className={estilos.campo}>
-      <label className={estilos.rotulo} htmlFor={id}>
+      <label
+        className={[estilos.rotulo, rotuloOculto && "sr-only"].filter(Boolean).join(" ")}
+        htmlFor={id}
+      >
         {rotulo}
       </label>
       {renderizarControle(props, acessibilidade, ref)}
@@ -70,13 +75,21 @@ function renderizarControle(
   ref: Ref<ElementoCampo>,
 ): ReactNode {
   if (props.tipoCampo === "textarea") {
-    const { rotulo: _r, ajuda: _a, erro: _e, tipoCampo: _t, ...nativos } = props;
-    void [_r, _a, _e, _t];
+    const { rotulo: _r, ajuda: _a, erro: _e, rotuloOculto: _o, tipoCampo: _t, ...nativos } = props;
+    void [_r, _a, _e, _o, _t];
     return <textarea {...nativos} {...acessibilidade} ref={ref as Ref<HTMLTextAreaElement>} />;
   }
   if (props.tipoCampo === "select") {
-    const { rotulo: _r, ajuda: _a, erro: _e, tipoCampo: _t, opcoes, ...nativos } = props;
-    void [_r, _a, _e, _t];
+    const {
+      rotulo: _r,
+      ajuda: _a,
+      erro: _e,
+      rotuloOculto: _o,
+      tipoCampo: _t,
+      opcoes,
+      ...nativos
+    } = props;
+    void [_r, _a, _e, _o, _t];
     return (
       <select {...nativos} {...acessibilidade} ref={ref as Ref<HTMLSelectElement>}>
         {opcoes.map((opcao) => (
@@ -87,7 +100,7 @@ function renderizarControle(
       </select>
     );
   }
-  const { rotulo: _r, ajuda: _a, erro: _e, tipoCampo: _t, ...nativos } = props;
-  void [_r, _a, _e, _t];
+  const { rotulo: _r, ajuda: _a, erro: _e, rotuloOculto: _o, tipoCampo: _t, ...nativos } = props;
+  void [_r, _a, _e, _o, _t];
   return <input {...nativos} {...acessibilidade} ref={ref as Ref<HTMLInputElement>} />;
 }

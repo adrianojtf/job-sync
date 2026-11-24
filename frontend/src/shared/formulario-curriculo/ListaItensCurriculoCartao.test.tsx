@@ -25,6 +25,8 @@ interface Item {
   periodo: string;
 }
 
+const CHAVE_ARMAZENAMENTO = "jobsync:teste:cartoes";
+
 const CAMPOS: CampoItem[] = [
   { chave: "empresa", rotulo: "Empresa", obrigatorio: "Informe a empresa." },
   { chave: "periodo", rotulo: "Período" },
@@ -41,11 +43,15 @@ function Lista({
   limite,
   ordenar = false,
   reordenavel = true,
+  modo = "cartao",
+  armazenar = false,
 }: {
   itens?: Item[];
   limite?: number;
   ordenar?: boolean;
   reordenavel?: boolean;
+  modo?: "cartao" | "linha";
+  armazenar?: boolean;
 }) {
   const form = useForm<{ itens: Item[] }>({ defaultValues: { itens } });
   const historico = useHistoricoDoFormulario(form);
@@ -57,7 +63,15 @@ function Lista({
       rotuloItem="Experiência"
       itemVazio={{ empresa: "", periodo: "" }}
       campos={CAMPOS}
-      modo="cartao"
+      modo={modo}
+      armazenamento={
+        armazenar
+          ? {
+              chave: CHAVE_ARMAZENAMENTO,
+              chaveDoItem: (valores) => `${valores.empresa}|${valores.periodo}`,
+            }
+          : undefined
+      }
       resumoDoItem={(valores) => ({
         titulo: valores.empresa,
         subtitulo: "Resumo",
@@ -350,5 +364,114 @@ describe("ListaItensCurriculo em modo cartão: ordenar por período", () => {
     renderizar();
 
     expect(screen.queryByRole("button", { name: /^Ordenar por/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("ListaItensCurriculo em modo cartão: cartões lembrados", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("lembra os cartões abertos ao montar a lista de novo", async () => {
+    const primeira = renderizar({ armazenar: true });
+    await userEvent.click(within(cartoes()[1]!).getByRole("button", { name: "Editar Beta" }));
+    primeira.unmount();
+
+    renderizar({ armazenar: true });
+
+    expect(within(cartoes()[1]!).getByLabelText("Empresa")).toBeVisible();
+    expect(within(cartoes()[0]!).getByLabelText("Empresa")).not.toBeVisible();
+  });
+
+  it("guarda as chaves pelo conteúdo do item", async () => {
+    renderizar({ armazenar: true });
+
+    await userEvent.click(within(cartoes()[1]!).getByRole("button", { name: "Editar Beta" }));
+
+    expect(JSON.parse(window.localStorage.getItem(CHAVE_ARMAZENAMENTO)!)).toEqual([
+      "Beta|2020 - 2022",
+    ]);
+  });
+
+  it("editar o título de um cartão aberto não o fecha", async () => {
+    renderizar({ armazenar: true });
+    const beta = within(cartoes()[1]!);
+    await userEvent.click(beta.getByRole("button", { name: "Editar Beta" }));
+
+    await userEvent.type(beta.getByLabelText("Empresa"), " Novo");
+
+    expect(beta.getByLabelText("Empresa")).toBeVisible();
+  });
+
+  it("sem armazenamento nada é lembrado", async () => {
+    const primeira = renderizar();
+    await userEvent.click(within(cartoes()[1]!).getByRole("button", { name: "Editar Beta" }));
+    primeira.unmount();
+
+    renderizar();
+
+    expect(within(cartoes()[1]!).getByLabelText("Empresa")).not.toBeVisible();
+    expect(window.localStorage.length).toBe(0);
+  });
+
+  it("o item novo abre expandido e recebe o foco no primeiro campo", async () => {
+    renderizar({ armazenar: true });
+
+    await userEvent.click(screen.getByRole("button", { name: "Adicionar experiência" }));
+
+    expect(within(cartoes()[0]!).getByLabelText("Empresa")).toHaveFocus();
+  });
+});
+
+describe("ListaItensCurriculo em modo linha", () => {
+  it("mostra os campos de cada item na própria linha, sem abrir", () => {
+    renderizar({ modo: "linha" });
+
+    const primeira = within(cartoes()[0]!);
+    expect(primeira.getByLabelText("Empresa")).toBeVisible();
+    expect(primeira.getByLabelText("Período")).toHaveValue("2018 - 2020");
+    expect(screen.queryByRole("button", { name: "Expandir todas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Concluir" })).not.toBeInTheDocument();
+  });
+
+  it("reordena pelos botões e permite desfazer", async () => {
+    renderizar({ modo: "linha" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Mover Alfa para baixo" }));
+    expect(empresas()).toEqual(["Beta", "Alfa", "Gama"]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Desfazer" }));
+    expect(empresas()).toEqual(["Alfa", "Beta", "Gama"]);
+  });
+
+  it("reordena por arrasto", async () => {
+    renderizar({ modo: "linha" });
+
+    await soltar(idDe(2), idDe(0));
+
+    expect(empresas()).toEqual(["Gama", "Alfa", "Beta"]);
+  });
+
+  it("remove pelo botão da linha, avisa e permite desfazer", async () => {
+    renderizar({ modo: "linha" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Remover experiência 2" }));
+
+    expect(empresas()).toEqual(["Alfa", "Gama"]);
+    await userEvent.click(screen.getByRole("button", { name: "Desfazer" }));
+    expect(empresas()).toEqual(["Alfa", "Beta", "Gama"]);
+  });
+
+  it("adiciona no topo e foca o primeiro campo", async () => {
+    renderizar({ modo: "linha" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Adicionar experiência" }));
+
+    expect(empresas()).toEqual(["", "Alfa", "Beta", "Gama"]);
+    expect(within(cartoes()[0]!).getByLabelText("Empresa")).toHaveFocus();
+  });
+
+  it("respeita o limite de itens", () => {
+    renderizar({ modo: "linha", limite: 3 });
+
+    expect(screen.getByRole("button", { name: "Adicionar experiência" })).toBeDisabled();
   });
 });

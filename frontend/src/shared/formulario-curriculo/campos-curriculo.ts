@@ -33,11 +33,11 @@ const CAMPO_EMPRESA: CampoItem = {
 const CAMPO_CARGO: CampoItem = { chave: "cargo", rotulo: "Cargo", obrigatorio: "Informe o cargo." };
 const CAMPO_PERIODO: CampoItem = { chave: "periodo", rotulo: "Período", larguraTotal: true };
 
-export const CAMPOS_EXPERIENCIA: CampoItem[] = [
+/** Identificação da experiência; os blocos de conteúdo ficam por conta de quem usa. */
+export const CAMPOS_IDENTIFICACAO_EXPERIENCIA: CampoItem[] = [
   CAMPO_EMPRESA,
   CAMPO_CARGO,
   CAMPO_PERIODO,
-  { chave: "descricao", rotulo: "Descrição", tipoCampo: "textarea", larguraTotal: true },
 ];
 
 /**

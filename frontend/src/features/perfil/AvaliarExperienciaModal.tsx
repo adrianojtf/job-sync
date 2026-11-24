@@ -3,12 +3,22 @@ import { Button } from "../../shared/ui/Button";
 import { Field } from "../../shared/ui/Field";
 import { Modal } from "../../shared/ui/Modal";
 import { ScoreDimensions } from "../../shared/ui/ScoreDimensions";
-import type { ExperienciaFormulario } from "../../shared/formulario-curriculo/campos-curriculo";
+import type { ExperienciaParaIA } from "../../api/tipos";
 import { useAvaliarExperiencia } from "./use-perfil-estruturado";
 
 interface Props {
-  experiencia: ExperienciaFormulario | null;
+  experiencia: ExperienciaParaIA | null;
   aoFechar: () => void;
+}
+
+function temConteudo(experiencia: ExperienciaParaIA): boolean {
+  return (
+    (experiencia.descricao ?? "").trim() !== "" ||
+    (experiencia.contexto ?? "").trim() !== "" ||
+    (experiencia.responsabilidades ?? []).length > 0 ||
+    (experiencia.conquistas ?? []).length > 0 ||
+    (experiencia.skills ?? []).length > 0
+  );
 }
 
 const ID_FORMULARIO = "form-avaliar-experiencia";
@@ -29,7 +39,7 @@ export function AvaliarExperienciaModal({ experiencia, aoFechar }: Props) {
   const avaliar = (evento: FormEvent) => {
     evento.preventDefault();
     if (!experiencia) return;
-    const problema = !experiencia.descricao.trim()
+    const problema = !temConteudo(experiencia)
       ? "Preencha a descrição da experiência para avaliá-la."
       : !descricaoVaga.trim()
         ? "Cole a descrição da vaga."

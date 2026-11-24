@@ -177,6 +177,14 @@ export class HttpApiClient implements ApiClient {
     });
   }
 
+  migrarExperienciasDoPerfil(perfil: string): Promise<PerfilEstruturado> {
+    return this.requisitar(
+      "POST",
+      caminho`/v1/perfil-estruturado/${perfil}/migracoes-de-experiencias`,
+      { ia: true },
+    );
+  }
+
   async verificarConquistasParecidas(texto: string, conquistas: string[]): Promise<string[]> {
     const resposta = await this.requisitar<ConquistasParecidas>(
       "POST",

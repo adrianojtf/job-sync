@@ -18,11 +18,11 @@ A tela do perfil edita os quatro blocos por experiência, com skills em tags, e 
 
 ## Subtarefas
 
-- [ ] 8.1 Escrever os testes do formulário, do `EditorTags` e da página (red).
-- [ ] 8.2 Extrair o `EditorTags` e adaptar o `EditorCompetencias` (green).
-- [ ] 8.3 Implementar os campos, a migração e a importação (green).
-- [ ] 8.4 Atualizar os tipos e o cliente HTTP (green).
-- [ ] 8.5 Refatorar e rodar o Vitest.
+- [x] 8.1 Escrever os testes do formulário, do `EditorTags` e da página (red).
+- [x] 8.2 Extrair o `EditorTags` e adaptar o `EditorCompetencias` (green).
+- [x] 8.3 Implementar os campos, a migração e a importação (green).
+- [x] 8.4 Atualizar os tipos e o cliente HTTP (green).
+- [x] 8.5 Refatorar e rodar o Vitest.
 
 ## Detalhes de Implementação
 
@@ -38,9 +38,9 @@ Complexidade: high. Dependências: 3.0, 5.0.
 
 ## Testes da Tarefa
 
-- [ ] Vitest: `formulario-perfil`, `EditorTags`, `EditorCompetencias` (regressão) e `PerfilPage`.
-- [ ] Vitest do `http-api-client`.
-- [ ] Regressão: `npm test` em `frontend/`.
+- [x] Vitest: `formulario-perfil`, `EditorTags`, `EditorCompetencias` (regressão) e `PerfilPage`.
+- [x] Vitest do `http-api-client`.
+- [x] Regressão: `npm test` em `frontend/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

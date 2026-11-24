@@ -46,6 +46,13 @@ export function useImportarPerfil() {
   });
 }
 
+/** Separa as experiências em texto livre nos quatro blocos, como rascunho; nada é gravado (JOB-0045). */
+export function useMigrarExperiencias() {
+  const api = useApiClient();
+  const perfil = usePerfilAtivo();
+  return useMutation({ mutationFn: () => api.migrarExperienciasDoPerfil(perfil) });
+}
+
 export function useAvaliarExperiencia() {
   const api = useApiClient();
   return useMutation({

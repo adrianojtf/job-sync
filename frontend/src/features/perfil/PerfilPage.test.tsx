@@ -121,7 +121,16 @@ describe("PerfilPage", () => {
           linkedin: "",
           resumo_profissional: "",
           experiencias: [
-            { empresa: "Olist", cargo: "Backend", periodo: "", descricao: "", conquistas: [] },
+            {
+              empresa: "Olist",
+              cargo: "Backend",
+              periodo: "",
+              descricao: "",
+              contexto: "",
+              responsabilidades: [],
+              conquistas: [],
+              skills: [],
+            },
           ],
           formacoes: [],
           certificacoes: [],
@@ -260,6 +269,10 @@ describe("PerfilPage", () => {
         cargo: "Dev Java",
         periodo: "2020-2024",
         descricao: "APIs em Java.",
+        contexto: "",
+        responsabilidades: [],
+        conquistas: [],
+        skills: [],
       },
       descricao_vaga: "Vaga Java sênior",
     });
@@ -588,5 +601,256 @@ describe("PerfilPage — banco de conquistas", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Falha interna");
     expect(within(grupo).queryByLabelText("Conquista 1")).not.toBeInTheDocument();
+  });
+});
+
+const PERFIL_COM_BLOCOS: PerfilEstruturado = {
+  ...PERFIL,
+  experiencias: [
+    {
+      empresa: "Starian",
+      cargo: "Dev",
+      periodo: "2024 - Atual",
+      descricao: "",
+      contexto: "ERP financeiro.",
+      responsabilidades: ["Projetar telas", "Testar entregas"],
+      conquistas: [{ texto: "Atendi 1.000 usuários.", origem: "MANUAL" }],
+      skills: ["Java", "SQL"],
+    },
+  ],
+};
+
+function experiencia1() {
+  return screen.getByRole("group", { name: "Experiência 1" });
+}
+
+describe("PerfilPage — quatro blocos por experiência", () => {
+  it("mostra contexto, responsabilidades, realizações e skills da experiência", async () => {
+    servirPerfil(PERFIL_COM_BLOCOS);
+
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    const grupo = within(experiencia1());
+    expect(grupo.getByLabelText("Contexto")).toHaveValue("ERP financeiro.");
+    expect(grupo.getByLabelText("Principais responsabilidades")).toHaveValue(
+      "Projetar telas\nTestar entregas",
+    );
+    expect(grupo.getByRole("heading", { name: "Principais realizações" })).toBeInTheDocument();
+    expect(grupo.getByLabelText("Conquista 1")).toHaveValue("Atendi 1.000 usuários.");
+    expect(
+      within(screen.getByRole("group", { name: "Skills da experiência 1" })).getByText("Java"),
+    ).toBeInTheDocument();
+    expect(grupo.queryByLabelText("Descrição")).not.toBeInTheDocument();
+  });
+
+  it("cria e remove skills como tags e envia as skills no salvamento", async () => {
+    const { envios } = servirPerfil(PERFIL_COM_BLOCOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByLabelText("Nome completo");
+    const skills = within(screen.getByRole("group", { name: "Skills da experiência 1" }));
+
+    await userEvent.type(skills.getByLabelText("Nova skill"), "Flyway{Enter}");
+    await userEvent.click(skills.getByRole("button", { name: "Remover SQL" }));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+    expect(envios[0]).toMatchObject({
+      metodo: "PUT",
+      corpo: {
+        experiencias: [
+          {
+            contexto: "ERP financeiro.",
+            responsabilidades: ["Projetar telas", "Testar entregas"],
+            skills: ["Java", "Flyway"],
+          },
+        ],
+      },
+    });
+  });
+
+  it("edita as responsabilidades uma por linha e envia como lista", async () => {
+    const { envios } = servirPerfil(PERFIL_COM_BLOCOS);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    const campo = await screen.findByLabelText("Principais responsabilidades");
+
+    await userEvent.clear(campo);
+    await userEvent.type(campo, "Revisar código{Enter}{Enter}Mentorar o time");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    await waitFor(() => expect(envios).toHaveLength(1));
+    expect(envios[0]).toMatchObject({
+      corpo: { experiencias: [{ responsabilidades: ["Revisar código", "Mentorar o time"] }] },
+    });
+  });
+
+  it("informa as tecnologias que as skills acrescentaram ao salvar", async () => {
+    servirPerfil(PERFIL_COM_BLOCOS);
+    servidorApi.use(
+      http.put(`${API_TESTE}/v1/perfil-estruturado/:perfil`, async ({ request }) => {
+        const corpo = (await request.json()) as PerfilEstruturado;
+        return HttpResponse.json({
+          ...corpo,
+          tecnologias: ["Java", "SQL"],
+          tecnologias_incluidas: ["SQL"],
+        });
+      }),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    const nome = await screen.findByLabelText("Nome completo");
+    await userEvent.type(nome, " Jr");
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar perfil" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Perfil salvo. Tecnologias incluídas pelas skills: SQL.",
+    );
+    expect(screen.getByLabelText("Tecnologias")).toHaveValue("Java, SQL");
+  });
+
+  it("aplica a sugestão de IA nos quatro blocos de uma vez", async () => {
+    servirPerfil(PERFIL_COM_BLOCOS);
+    const pedidos: unknown[] = [];
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/experiencias-profissionais/sugestoes`, async ({ request }) => {
+        pedidos.push(await request.json());
+        return HttpResponse.json({
+          descricao_sugerida: "",
+          contexto: "Plataforma financeira.",
+          responsabilidades: ["Projetar telas do contas a receber"],
+          conquistas: ["Atendi 1.000 usuários.", "Reduzi o fechamento em 30%."],
+          skills: ["Java", "Flyway"],
+          foco: "impacto",
+        });
+      }),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Sugestões de IA para experiência 1" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Aplicar sugestão em experiência 1" }),
+    );
+
+    expect(pedidos[0]).toMatchObject({
+      experiencia: {
+        contexto: "ERP financeiro.",
+        responsabilidades: ["Projetar telas", "Testar entregas"],
+        conquistas: ["Atendi 1.000 usuários."],
+        skills: ["Java", "SQL"],
+      },
+    });
+    const grupo = within(experiencia1());
+    expect(grupo.getByLabelText("Contexto")).toHaveValue("Plataforma financeira.");
+    expect(grupo.getByLabelText("Principais responsabilidades")).toHaveValue(
+      "Projetar telas do contas a receber",
+    );
+    expect(grupo.getByLabelText("Conquista 2")).toHaveValue("Reduzi o fechamento em 30%.");
+    expect(
+      within(screen.getByRole("group", { name: "Skills da experiência 1" })).getByText("Flyway"),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("PerfilPage — migração de perfil antigo", () => {
+  const RASCUNHO: PerfilEstruturado = {
+    ...PERFIL,
+    experiencias: [
+      {
+        empresa: "Neoway",
+        cargo: "Dev Java",
+        periodo: "2020-2024",
+        descricao: "",
+        contexto: "Empresa de dados.",
+        responsabilidades: ["Desenvolver APIs"],
+        conquistas: [{ texto: "Reduzi o tempo de resposta.", origem: "MANUAL" }],
+        skills: ["Java"],
+      },
+    ],
+  };
+
+  it("oferece estruturar as experiências antigas e mostra o rascunho sem salvar", async () => {
+    const { envios } = servirPerfil(PERFIL);
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/perfil-estruturado/adriano/migracoes-de-experiencias`, () =>
+        HttpResponse.json(RASCUNHO),
+      ),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    expect(await screen.findByLabelText("Descrição")).toHaveValue("APIs em Java.");
+
+    await userEvent.click(screen.getByRole("button", { name: "Estruturar experiências" }));
+
+    expect(await screen.findByLabelText("Contexto")).toHaveValue("Empresa de dados.");
+    expect(screen.getByLabelText("Principais responsabilidades")).toHaveValue("Desenvolver APIs");
+    expect(screen.queryByLabelText("Descrição")).not.toBeInTheDocument();
+    expect(screen.getByText(/A IA pode ter estimado métricas e contextos/)).toBeInTheDocument();
+    expect(screen.getByText("Alterações não salvas")).toBeInTheDocument();
+    expect(envios).toHaveLength(0);
+  });
+
+  it("não oferece estruturar quando nenhuma experiência é antiga", async () => {
+    servirPerfil(PERFIL_COM_BLOCOS);
+
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+
+    await screen.findByLabelText("Nome completo");
+    expect(
+      screen.queryByRole("button", { name: "Estruturar experiências" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("com alterações não salvas, o botão de estruturar fica desabilitado", async () => {
+    servirPerfil(PERFIL);
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    const resumo = await screen.findByLabelText("Resumo profissional");
+
+    await userEvent.type(resumo, " Mais.");
+
+    expect(screen.getByRole("button", { name: "Estruturar experiências" })).toBeDisabled();
+  });
+
+  it("mostra o erro da migração e mantém o formulário", async () => {
+    servirPerfil(PERFIL);
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/perfil-estruturado/adriano/migracoes-de-experiencias`, () =>
+        HttpResponse.json(
+          { type: "t", title: "IA", status: 502, detail: "A IA está indisponível.", instance: "i" },
+          { status: 502 },
+        ),
+      ),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await screen.findByLabelText("Descrição");
+
+    await userEvent.click(screen.getByRole("button", { name: "Estruturar experiências" }));
+
+    expect(await screen.findByText("A IA está indisponível.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Descrição")).toHaveValue("APIs em Java.");
+  });
+
+  it("o perfil importado de PDF também pede para conferir as estimativas da IA", async () => {
+    servirPerfil(null);
+    servidorApi.use(
+      http.post(`${API_TESTE}/v1/perfil-estruturado/importacoes`, () =>
+        HttpResponse.json(RASCUNHO),
+      ),
+    );
+    renderizarApp({ caminho: "/perfil", perfil: "adriano" });
+    await userEvent.click(await screen.findByRole("button", { name: "Importar de PDF" }));
+    const dialogo = screen.getByRole("dialog");
+    await userEvent.upload(
+      within(dialogo).getByLabelText("Arquivo PDF"),
+      new File(["%PDF-1.4"], "curriculo.pdf", { type: "application/pdf" }),
+    );
+    await userEvent.click(
+      within(dialogo).getByRole("button", { name: "Importar e pré-preencher" }),
+    );
+
+    expect(
+      await screen.findByText(/A IA pode ter estimado métricas e contextos/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Contexto")).toHaveValue("Empresa de dados.");
   });
 });

@@ -6,6 +6,7 @@ import type {
   ExperienciaFormulario,
 } from "../../shared/formulario-curriculo/campos-curriculo";
 import { categoriasDeTexto } from "../../shared/formulario-curriculo/competencias";
+import { linhasParaTexto, textoParaLinhas } from "../../shared/formulario-curriculo/linhas";
 
 type SecaoRascunho = RascunhoCurriculoAdaptado["secoes"][number];
 export type TipoSecao = SecaoRascunho["tipo"];
@@ -113,16 +114,9 @@ function secaoPerfil(rascunho: RascunhoCurriculoAdaptado): SecaoRascunho | undef
 }
 
 /** Cada linha do texto é uma conquista; linhas em branco e espaços nas pontas são ignorados. */
-export function linhasParaConquistas(texto: string): string[] {
-  return texto
-    .split("\n")
-    .map((linha) => linha.trim())
-    .filter((linha) => linha !== "");
-}
+export const linhasParaConquistas = textoParaLinhas;
 
-export function conquistasParaLinhas(conquistas: string[]): string {
-  return conquistas.join("\n");
-}
+export const conquistasParaLinhas = linhasParaTexto;
 
 /** Leva uma experiência da API para o formulário, com as conquistas em linhas de texto. */
 export function experienciaAdaptadaParaFormulario(

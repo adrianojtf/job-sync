@@ -281,19 +281,47 @@ class GeradorPdfClient(GeradorPdfPort):
         return elementos
 
     def _montar_bloco_de_experiencia(self, bloco: BlocoExperiencia) -> list:
-        """Empresa e período, cargo, tópicos, texto solto e contexto, nesta ordem (também para formação)."""
+        """Empresa e período, cargo e o conteúdo da experiência (também para formação).
+
+        Com cabeçalhos de bloco: contexto, responsabilidades, realizações e skills. Sem eles,
+        o layout anterior: tópicos, texto solto e contexto.
+        """
         itens = []
         if bloco.cargo:
             itens.append(Paragraph(self._escape_text(bloco.cargo), self._estilo.cargo))
-        itens.extend(
-            Paragraph(self._escape_text(topico), self._estilo.topico, bulletText=_MARCADOR_DA_LISTA)
-            for topico in bloco.topicos
-        )
-        itens.extend(Paragraph(self._escape_text(linha), self._estilo.corpo) for linha in bloco.descricao)
-        if bloco.contexto:
-            itens.append(Paragraph(self._escape_text(bloco.contexto), self._estilo.contexto))
+        if bloco.estruturado:
+            itens.extend(self._itens_por_blocos(bloco))
+        else:
+            itens.extend(self._topicos(bloco.topicos))
+            itens.extend(Paragraph(self._escape_text(linha), self._estilo.corpo) for linha in bloco.descricao)
+            if bloco.contexto:
+                itens.append(Paragraph(self._escape_text(bloco.contexto), self._estilo.contexto))
 
         return [self._linha_de_empresa_e_periodo(bloco), *itens]
+
+    def _itens_por_blocos(self, bloco: BlocoExperiencia) -> list:
+        itens = []
+        if bloco.contexto:
+            itens.append(Paragraph(self._escape_text(bloco.contexto), self._estilo.contexto))
+        itens.extend(Paragraph(self._escape_text(linha), self._estilo.corpo) for linha in bloco.descricao)
+        itens.extend(self._lista_com_rotulo(bloco.rotulo_responsabilidades, bloco.responsabilidades))
+        itens.extend(self._lista_com_rotulo(bloco.rotulo_realizacoes, bloco.realizacoes))
+        itens.extend(self._topicos(bloco.topicos))
+        if bloco.skills:
+            linha = f"{bloco.rotulo_skills}: {' | '.join(bloco.skills)}"
+            itens.append(Paragraph(self._escape_text(linha), self._estilo.skills))
+        return itens
+
+    def _lista_com_rotulo(self, rotulo: str, itens: tuple[str, ...]) -> list:
+        if not itens:
+            return []
+        return [Paragraph(self._escape_text(f"{rotulo}:"), self._estilo.rotulo_de_bloco), *self._topicos(itens)]
+
+    def _topicos(self, topicos: tuple[str, ...]) -> list:
+        return [
+            Paragraph(self._escape_text(topico), self._estilo.topico, bulletText=_MARCADOR_DA_LISTA)
+            for topico in topicos
+        ]
 
     def _linha_de_empresa_e_periodo(self, bloco: BlocoExperiencia):
         empresa = Paragraph(self._escape_text(bloco.empresa), self._estilo.empresa)

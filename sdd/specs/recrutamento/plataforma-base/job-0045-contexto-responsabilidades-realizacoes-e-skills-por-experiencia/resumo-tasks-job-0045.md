@@ -2,7 +2,7 @@
 
 ## Tarefas
 
-- [ ] 1.0 Rótulos dos quatro blocos no shared_kernel e convenção de texto do PDF
+- [x] 1.0 Rótulos dos quatro blocos no shared_kernel e convenção de texto do PDF
 - [ ] 2.0 Domínio do perfil: quatro blocos por experiência e sincronia de skills
 - [ ] 3.0 Persistência tolerante, SalvarPerfilEstruturado e contratos da API do perfil
 - [ ] 4.0 Reconhecedor de blocos, porta de IA, cliente OpenAI e EstruturarExperienciaService

@@ -18,10 +18,10 @@ Cria a fonte única dos rótulos dos quatro blocos (pt e en, com apelidos reconh
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes dos rótulos e do `InterpretadorExperiencias` (red).
-- [ ] 1.2 Implementar `rotulos_blocos_experiencia` e adaptar `rotulos_experiencia` (green).
-- [ ] 1.3 Estender o interpretador e o estilo do PDF para os quatro blocos (green).
-- [ ] 1.4 Refatorar e rodar `tests/curriculo`.
+- [x] 1.1 Escrever os testes dos rótulos e do `InterpretadorExperiencias` (red).
+- [x] 1.2 Implementar `rotulos_blocos_experiencia` e adaptar `rotulos_experiencia` (green).
+- [x] 1.3 Estender o interpretador e o estilo do PDF para os quatro blocos (green).
+- [x] 1.4 Refatorar e rodar `tests/curriculo`.
 
 ## Detalhes de Implementação
 
@@ -36,10 +36,10 @@ Complexidade: medium. Dependências: nenhuma.
 
 ## Testes da Tarefa
 
-- [ ] Testes de `TestRotulosBlocosExperiencia` (pt, en, apelidos, caixa).
-- [ ] Testes de `TestInterpretadorExperiencias` (blocos, bullets sem cabeçalho, bloco vazio).
-- [ ] Testes de `TestEstiloCurriculoPdf`.
-- [ ] Regressão: `src/jobsync/tests/curriculo/`.
+- [x] Testes de `TestRotulosBlocosExperiencia` (pt, en, apelidos, caixa).
+- [x] Testes de `TestInterpretadorExperiencias` (blocos, bullets sem cabeçalho, bloco vazio).
+- [x] Testes de `TestEstiloCurriculoPdf`.
+- [x] Regressão: `src/jobsync/tests/curriculo/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

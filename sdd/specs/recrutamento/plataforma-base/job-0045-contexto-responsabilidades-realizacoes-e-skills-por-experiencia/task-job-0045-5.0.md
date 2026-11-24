@@ -17,10 +17,10 @@ A importação do currículo inicial e a migração de perfis antigos devolvem e
 
 ## Subtarefas
 
-- [ ] 5.1 Escrever os testes dos dois services e do router (red).
-- [ ] 5.2 Ajustar o prompt do extrator e o `ImportarPerfilDePdf` (green).
-- [ ] 5.3 Implementar `MigrarExperienciasDoPerfil` e o endpoint (green).
-- [ ] 5.4 Refatorar e rodar `tests/perfil_estruturado` e `tests/entrypoints/api`.
+- [x] 5.1 Escrever os testes dos dois services e do router (red).
+- [x] 5.2 Ajustar o prompt do extrator e o `ImportarPerfilDePdf` (green).
+- [x] 5.3 Implementar `MigrarExperienciasDoPerfil` e o endpoint (green).
+- [x] 5.4 Refatorar e rodar `tests/perfil_estruturado` e `tests/entrypoints/api`.
 
 ## Detalhes de Implementação
 
@@ -36,10 +36,10 @@ Complexidade: medium. Dependências: 3.0, 4.0.
 
 ## Testes da Tarefa
 
-- [ ] Testes de `ImportarPerfilDePdf` (blocos reconhecidos e completados, falha da IA).
-- [ ] Testes de `MigrarExperienciasDoPerfil` (legada, estruturada, perfil inexistente).
-- [ ] Testes do router (`404`, contrato).
-- [ ] Regressão: `src/jobsync/tests/perfil_estruturado/` e `src/jobsync/tests/entrypoints/api/`.
+- [x] Testes de `ImportarPerfilDePdf` (blocos reconhecidos e completados, falha da IA).
+- [x] Testes de `MigrarExperienciasDoPerfil` (legada, estruturada, perfil inexistente).
+- [x] Testes do router (`404`, contrato).
+- [x] Regressão: `src/jobsync/tests/perfil_estruturado/` e `src/jobsync/tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

@@ -12,6 +12,7 @@ from jobsync.entrypoints.api.dependencies import (
     ServiceAdicionarConquistaAExperienciaDep,
     ServiceBuscarPerfilEstruturadoDep,
     ServiceImportarPerfilDePdfDep,
+    ServiceMigrarExperienciasDoPerfilDep,
     ServiceSalvarPerfilEstruturadoDep,
     ServiceVerificarConquistasParecidasDep,
 )
@@ -25,6 +26,9 @@ from jobsync.entrypoints.api.schemas.perfil_estruturado import (
 )
 
 from jobsync.perfil_estruturado.domain.exceptions import ExperienciaNaoEncontrada, PerfilEstruturadoNaoEncontrado
+from jobsync.perfil_estruturado.service_layer.migrar_experiencias_do_perfil import (
+    MigrarExperienciasDoPerfilInputDto,
+)
 from jobsync.perfil_estruturado.service_layer.adicionar_conquista_a_experiencia import (
     AdicionarConquistaAExperienciaInputDto,
 )
@@ -176,3 +180,28 @@ def adicionar_conquista_a_experiencia(
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro))
     return PerfilEstruturadoResponse.from_dto(perfil)
+
+
+@router.post(
+    "/perfil-estruturado/{perfil_identificador}/migracoes-de-experiencias",
+    response_model=PerfilEstruturadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Migrar experiências do perfil para os quatro blocos",
+    description=(
+        "Devolve o perfil com as experiências em texto livre separadas em contexto, responsabilidades, "
+        "realizações e skills, reconhecendo o que já tem rótulo e gerando só o que falta. "
+        "É um rascunho: nada é gravado até o usuário salvar o perfil."
+    ),
+)
+def migrar_experiencias_do_perfil(
+    perfil_identificador: str,
+    service: ServiceMigrarExperienciasDoPerfilDep,
+) -> PerfilEstruturadoResponse:
+    """Estrutura as experiências legadas do perfil, sem persistir."""
+    try:
+        rascunho = service.executar(MigrarExperienciasDoPerfilInputDto(perfil_identificador=perfil_identificador))
+    except PerfilEstruturadoNaoEncontrado as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro))
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro))
+    return PerfilEstruturadoResponse.from_dto(rascunho)

@@ -103,3 +103,23 @@ class TestExtratorPerfilEstruturadoClient:
 
         assert isinstance(dados.nome_completo, str)
         assert "Python" in dados.tecnologias
+
+
+class TestExtratorPerfilEstruturadoClientPrompt:
+    def test_o_prompt_pede_a_descricao_literal_com_os_rotulos_preservados(self):
+        prompts = []
+
+        class ClienteQueGuarda(ClienteOpenAIFake):
+            def solicitar_json(self, prompt_sistema: str, prompt_usuario: str) -> dict:
+                prompts.append(prompt_sistema)
+                return super().solicitar_json(prompt_sistema, prompt_usuario)
+
+        extrator = ExtratorPerfilEstruturadoClient(
+            extrator_texto=ExtratorTextoFake(),
+            cliente_openai=ClienteQueGuarda({"nome_completo": "Fulano", "experiencias": []}),
+        )
+
+        extrator.extrair(b"%PDF-fake")
+
+        assert "exatamente como está no currículo" in prompts[0]
+        assert "Key Achievements" in prompts[0]

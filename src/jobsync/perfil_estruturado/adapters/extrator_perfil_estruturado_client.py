@@ -32,7 +32,7 @@ Responda ESTRITAMENTE em JSON no seguinte formato:
   "linkedin": "string (vazio se não encontrado)",
   "resumo_profissional": "string (resumo/perfil profissional, vazio se não existir)",
   "experiencias": [
-    {"empresa": "string", "cargo": "string", "periodo": "string, ex: 'Jan 2020 - Dez 2022' ou '2023 - Atual'", "descricao": "string"}
+    {"empresa": "string", "cargo": "string", "periodo": "string, ex: 'Jan 2020 - Dez 2022' ou '2023 - Atual'", "descricao": "string, o texto da experiência exatamente como está no currículo"}
   ],
   "formacoes": [
     {"instituicao": "string", "curso": "string", "periodo": "string"}
@@ -48,6 +48,9 @@ Responda ESTRITAMENTE em JSON no seguinte formato:
 
 Regras:
 - Preserve o texto original o máximo possível (não parafraseie).
+- Na descrição de cada experiência, copie o texto exatamente como está no currículo, em linhas separadas, mantendo os
+  rótulos originais dos blocos (ex.: "Context:", "Key Responsibilities:", "Key Achievements:", "Technologies:",
+  "Contexto:", "Principais realizações:", "Tecnologias:") e os marcadores das listas.
 - Se uma lista não existir no currículo, retorne lista vazia para ela.
 - Não invente informações que não estão no texto original.
 """

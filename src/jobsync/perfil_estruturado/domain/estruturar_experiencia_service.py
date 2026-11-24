@@ -6,6 +6,8 @@ reconhecido, ou já está nos campos da experiência, nunca é reescrito.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
 from jobsync.perfil_estruturado.domain.blocos_experiencia import (
@@ -22,6 +24,8 @@ from jobsync.perfil_estruturado.domain.perfil_estruturado import Conquista, Expe
 from jobsync.shared_kernel.domain.texto_normalizado import normalizar_texto
 
 logger = logging.getLogger(__name__)
+
+_MAXIMO_DE_CHAMADAS_EM_PARALELO = 4
 
 
 class EstruturarExperienciaService:
@@ -60,6 +64,15 @@ class EstruturarExperienciaService:
             conquistas=experiencia.conquistas or self._conquistas(blocos.realizacoes),
             skills=blocos.skills,
         )
+
+    def executar_varias(
+        self, experiencias: Sequence[ExperienciaProfissional], idioma: str | None = None
+    ) -> tuple[ExperienciaProfissional, ...]:
+        """Estrutura as experiências em paralelo (no máximo 4 chamadas de IA ao mesmo tempo), na ordem original."""
+        if len(experiencias) <= 1:
+            return tuple(self.executar(experiencia, idioma) for experiencia in experiencias)
+        with ThreadPoolExecutor(max_workers=_MAXIMO_DE_CHAMADAS_EM_PARALELO) as executor:
+            return tuple(executor.map(lambda experiencia: self.executar(experiencia, idioma), experiencias))
 
     def _gerar_ausentes(
         self,

@@ -18,13 +18,11 @@ interface Props {
 
 const descreverSugestao = (sugestao: SugestaoExperiencia) =>
   [
-    ...(sugestao.contexto ?? "")
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((c) => `Contexto: ${c}`),
-    ...(sugestao.responsabilidades ?? []).map((item) => `- ${item}`),
-    ...(sugestao.conquistas ?? []).map((item) => `+ ${item}`),
+    ...(sugestao.conquistas ?? []).map((conquista) => `- ${conquista}`),
+    ...((sugestao.contexto ?? "").trim() === "" ? [] : [`Contexto: ${sugestao.contexto?.trim()}`]),
+    ...((sugestao.responsabilidades ?? []).length > 0
+      ? [`Responsabilidades: ${(sugestao.responsabilidades ?? []).join("; ")}`]
+      : []),
     ...((sugestao.skills ?? []).length > 0
       ? [`Skills: ${(sugestao.skills ?? []).join(", ")}`]
       : []),

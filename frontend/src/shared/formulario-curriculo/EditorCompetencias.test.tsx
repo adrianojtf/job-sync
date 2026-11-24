@@ -1,8 +1,31 @@
-import { render, screen, within } from "@testing-library/react";
+import type { DndContextProps, DragEndEvent } from "@dnd-kit/core";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { CategoriaFormulario } from "./campos-curriculo";
+import { idDaCategoria, idDaTag } from "./competencias";
 import { EditorCompetencias } from "./EditorCompetencias";
+
+const dnd = vi.hoisted(() => ({ props: null as DndContextProps | null }));
+vi.mock("@dnd-kit/core", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@dnd-kit/core")>();
+  return {
+    ...real,
+    DndContext: (props: DndContextProps) => {
+      dnd.props = props;
+      return <real.DndContext {...props} />;
+    },
+  };
+});
+
+async function soltar(ativo: string, sobre: string | null) {
+  await act(async () => {
+    dnd.props!.onDragEnd!({
+      active: { id: ativo },
+      over: sobre ? { id: sobre } : null,
+    } as DragEndEvent);
+  });
+}
 
 const INICIAL: CategoriaFormulario[] = [
   { nome: "Linguagens", tags: ["Java", "Python"] },
@@ -177,10 +200,10 @@ describe("EditorCompetencias", () => {
       within(grupo("Linguagens")).getByRole("textbox", { name: "Nova tag" }),
       "Go{Enter}",
     );
-    expect(screen.getByRole("status")).toHaveTextContent("Tag Go adicionada em Linguagens.");
+    expect(screen.getByText("Tag Go adicionada em Linguagens.")).toBeInTheDocument();
 
     await userEvent.click(within(grupo("Linguagens")).getByRole("button", { name: "Remover Go" }));
-    expect(screen.getByRole("status")).toHaveTextContent("Tag Go removida de Linguagens.");
+    expect(screen.getByText("Tag Go removida de Linguagens.")).toBeInTheDocument();
   });
 
   it("não envia o formulário ao teclar Enter no campo de tag", async () => {
@@ -197,5 +220,79 @@ describe("EditorCompetencias", () => {
     );
 
     expect(aoEnviar).not.toHaveBeenCalled();
+  });
+});
+
+describe("EditorCompetencias — arrastar e soltar", () => {
+  it("move uma tag para outra categoria e anuncia o movimento", async () => {
+    const aoMudar = vi.fn();
+    render(<Hospedeiro aoMudar={aoMudar} />);
+
+    await soltar(idDaTag(0, "Python"), idDaTag(1, "SQL"));
+
+    expect(aoMudar).toHaveBeenLastCalledWith([
+      { nome: "Linguagens", tags: ["Java"] },
+      { nome: "Bancos de Dados", tags: ["Python", "SQL"] },
+    ]);
+    expect(within(grupo("Bancos de Dados")).getByText("Python")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tag Python movida de Linguagens para Bancos de Dados."),
+    ).toBeInTheDocument();
+  });
+
+  it("reordena as tags dentro da categoria e anuncia", async () => {
+    const aoMudar = vi.fn();
+    render(<Hospedeiro aoMudar={aoMudar} />);
+
+    await soltar(idDaTag(0, "Python"), idDaTag(0, "Java"));
+
+    expect(aoMudar).toHaveBeenLastCalledWith([
+      { nome: "Linguagens", tags: ["Python", "Java"] },
+      { nome: "Bancos de Dados", tags: ["SQL"] },
+    ]);
+    expect(screen.getByText("Tag Python reordenada em Linguagens.")).toBeInTheDocument();
+  });
+
+  it("solta uma tag numa categoria sem tags", async () => {
+    const aoMudar = vi.fn();
+    render(
+      <Hospedeiro
+        inicial={[
+          { nome: "Linguagens", tags: ["Java"] },
+          { nome: "Novas", tags: [] },
+        ]}
+        aoMudar={aoMudar}
+      />,
+    );
+
+    await soltar(idDaTag(0, "Java"), idDaCategoria(1));
+
+    expect(aoMudar).toHaveBeenLastCalledWith([
+      { nome: "Linguagens", tags: [] },
+      { nome: "Novas", tags: ["Java"] },
+    ]);
+  });
+
+  it("soltar fora de qualquer categoria não altera nada", async () => {
+    const aoMudar = vi.fn();
+    render(<Hospedeiro aoMudar={aoMudar} />);
+
+    await soltar(idDaTag(0, "Java"), null);
+
+    expect(aoMudar).not.toHaveBeenCalled();
+  });
+
+  it("cada tag tem uma alça com o nome acessível e o botão de remover continua à parte", () => {
+    render(<Hospedeiro />);
+
+    const linguagens = within(grupo("Linguagens"));
+    expect(linguagens.getByLabelText("Mover Java")).toBeInTheDocument();
+    expect(linguagens.getByRole("button", { name: "Remover Java" })).toBeInTheDocument();
+  });
+
+  it("as instruções para leitor de tela explicam como mover uma tag pelo teclado", () => {
+    render(<Hospedeiro />);
+
+    expect(dnd.props?.accessibility?.screenReaderInstructions?.draggable).toMatch(/Espaço.*setas/);
   });
 });

@@ -18,11 +18,11 @@ A tela de revisão do currículo adaptado edita os quatro blocos, e as tags de c
 
 ## Subtarefas
 
-- [ ] 9.1 Escrever os testes de `competencias.ts`, do editor e da revisão (red).
-- [ ] 9.2 Implementar as regras de movimento em `competencias.ts` (green).
-- [ ] 9.3 Implementar o arrastar e soltar no `EditorCompetencias` (green).
-- [ ] 9.4 Adaptar a revisão, o formulário e a sugestão por experiência (green).
-- [ ] 9.5 Refatorar e rodar o Vitest.
+- [x] 9.1 Escrever os testes de `competencias.ts`, do editor e da revisão (red).
+- [x] 9.2 Implementar as regras de movimento em `competencias.ts` (green).
+- [x] 9.3 Implementar o arrastar e soltar no `EditorCompetencias` (green).
+- [x] 9.4 Adaptar a revisão, o formulário e a sugestão por experiência (green).
+- [x] 9.5 Refatorar e rodar o Vitest.
 
 ## Detalhes de Implementação
 
@@ -37,8 +37,8 @@ Complexidade: high. Dependências: 6.0, 7.0.
 
 ## Testes da Tarefa
 
-- [ ] Vitest: `competencias.test.ts`, `EditorCompetencias.test.tsx`, `formulario-revisao.test.ts` e `RevisaoCurriculoAdaptado.test.tsx`.
-- [ ] Regressão: `npm test` em `frontend/`.
+- [x] Vitest: `competencias.test.ts`, `EditorCompetencias.test.tsx`, `formulario-revisao.test.ts` e `RevisaoCurriculoAdaptado.test.tsx`.
+- [x] Regressão: `npm test` em `frontend/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

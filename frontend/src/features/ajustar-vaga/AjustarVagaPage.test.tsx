@@ -36,6 +36,8 @@ const RASCUNHO = {
       periodo: "2020-2024",
       conquistas: ["APIs em Java."],
       contexto: "Empresa de dados.",
+      responsabilidades: [],
+      skills: [],
     },
   ],
   titulo_experiencias: "Experiências",

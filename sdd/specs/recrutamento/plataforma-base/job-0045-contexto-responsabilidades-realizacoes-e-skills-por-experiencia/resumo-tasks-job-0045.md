@@ -10,7 +10,7 @@
 - [x] 6.0 ExperienciaAdaptada com os quatro blocos, rascunho e serializador na versão 2
 - [x] 7.0 Ajustador de IA com os quatro blocos, serviços e API de adaptação, e currículo do perfil
 - [x] 8.0 Frontend: perfil, importação e migração com skills em tags
-- [ ] 9.0 Frontend: revisão do adaptado e EditorTags com arrastar e soltar entre categorias
+- [x] 9.0 Frontend: revisão do adaptado e EditorTags com arrastar e soltar entre categorias
 - [ ] 10.0 E2E e avaliação manual com o exemplo da Starian
 
 ## Dependências

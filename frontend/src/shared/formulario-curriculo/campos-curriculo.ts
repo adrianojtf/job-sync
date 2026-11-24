@@ -41,42 +41,52 @@ export const CAMPOS_IDENTIFICACAO_EXPERIENCIA: CampoItem[] = [
 ];
 
 /**
- * Experiência da revisão do currículo adaptado (JOB-0035): conquistas e contexto no lugar da
- * descrição. As conquistas ficam em um texto, uma por linha.
+ * Experiência da revisão do currículo adaptado (JOB-0035 e JOB-0045): os quatro blocos. As
+ * responsabilidades e as conquistas (as principais realizações) ficam em um texto, um item por
+ * linha; as skills ficam em tags.
  */
 export interface ExperienciaAdaptadaFormulario {
   empresa: string;
   cargo: string;
   periodo: string;
-  conquistas: string;
   contexto: string;
+  responsabilidades: string;
+  conquistas: string;
+  skills: string[];
 }
 
 export const EXPERIENCIA_ADAPTADA_VAZIA: ExperienciaAdaptadaFormulario = {
   empresa: "",
   cargo: "",
   periodo: "",
-  conquistas: "",
   contexto: "",
+  responsabilidades: "",
+  conquistas: "",
+  skills: [],
 };
 
 export const CAMPOS_EXPERIENCIA_ADAPTADA: CampoItem[] = [
-  CAMPO_EMPRESA,
-  CAMPO_CARGO,
-  CAMPO_PERIODO,
-  {
-    chave: "conquistas",
-    rotulo: "Conquistas",
-    tipoCampo: "textarea",
-    larguraTotal: true,
-    ajuda: "Uma conquista por linha.",
-  },
+  ...CAMPOS_IDENTIFICACAO_EXPERIENCIA,
   {
     chave: "contexto",
     rotulo: "Contexto",
     tipoCampo: "textarea",
     larguraTotal: true,
     ajuda: "Empresa, área e seu papel, em poucas frases.",
+  },
+  {
+    chave: "responsabilidades",
+    rotulo: "Principais responsabilidades",
+    tipoCampo: "textarea",
+    larguraTotal: true,
+    ajuda: "Uma responsabilidade por linha.",
+  },
+  {
+    chave: "conquistas",
+    rotulo: "Principais realizações",
+    tipoCampo: "textarea",
+    larguraTotal: true,
+    ajuda: "Uma realização por linha.",
   },
 ];
 

@@ -94,9 +94,11 @@ test("ajustar para uma vaga, revisar, baixar o PDF, criar a candidatura e mover 
   await expect(page.getByRole("button", { name: "Baixar PDF" })).toBeHidden();
   const revisada = page.getByRole("group", { name: "Experiência 1" });
   await expect(page.getByText(/A IA pode ter estimado métricas e volumes/)).toBeVisible();
-  await expect(revisada.getByLabel("Conquistas")).toHaveValue("APIs em Python e FastAPI.");
+  await expect(revisada.getByLabel("Principais realizações")).toHaveValue(
+    "APIs em Python e FastAPI.",
+  );
   await expect(revisada.getByLabel("Contexto")).toHaveValue("Contexto de Olist.");
-  await revisada.getByLabel("Conquistas").fill("APIs em Python, FastAPI e Kafka.");
+  await revisada.getByLabel("Principais realizações").fill("APIs em Python, FastAPI e Kafka.");
   await page.getByRole("button", { name: "Confirmar e gerar PDF" }).click();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
@@ -212,20 +214,22 @@ test("revisão do currículo adaptado: pede, aplica uma sugestão de IA e gera o
   await expect(page.getByRole("heading", { name: "Revise o currículo adaptado" })).toBeVisible();
 
   const experiencia = page.getByRole("group", { name: "Experiência 1" });
-  await experiencia.getByLabel("Conquistas").fill("APIs em Python e Kafka.");
+  await experiencia.getByLabel("Principais realizações").fill("APIs em Python e Kafka.");
   await page.getByRole("button", { name: "Sugestões de IA para experiência 1" }).click();
   const sugestao = page.getByRole("region", { name: "Sugestão da IA para experiência 1" });
   await expect(sugestao).toContainText("- Sugestão com vaga: APIs em Python e Kafka.");
   await expect(sugestao).toContainText("Contexto: Sugestão com vaga: Contexto de Olist.");
-  await expect(experiencia.getByLabel("Conquistas")).toHaveValue("APIs em Python e Kafka.");
+  await expect(experiencia.getByLabel("Principais realizações")).toHaveValue(
+    "APIs em Python e Kafka.",
+  );
   await page.getByRole("button", { name: "Aplicar sugestão em experiência 1" }).click();
-  await expect(experiencia.getByLabel("Conquistas")).toHaveValue(
+  await expect(experiencia.getByLabel("Principais realizações")).toHaveValue(
     "Sugestão com vaga: APIs em Python e Kafka.",
   );
   await expect(experiencia.getByLabel("Contexto")).toHaveValue(
     "Sugestão com vaga: Contexto de Olist.",
   );
-  await expect(experiencia.getByLabel("Conquistas")).toBeFocused();
+  await expect(experiencia.getByLabel("Principais realizações")).toBeFocused();
 
   const [download] = await Promise.all([
     page.waitForEvent("download"),

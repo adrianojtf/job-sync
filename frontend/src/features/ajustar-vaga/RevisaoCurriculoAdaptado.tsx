@@ -25,6 +25,7 @@ import { Panel } from "../../shared/ui/Panel";
 import { AvaliarExperienciaModal } from "../perfil/AvaliarExperienciaModal";
 import { AjusteTecnologiaLista } from "./AjusteTecnologiaLista";
 import { LacunasTecnologiaAviso } from "./LacunasTecnologiaAviso";
+import { SkillsDaExperiencia } from "./SkillsDaExperiencia";
 import { SugestaoExperienciaAdaptada } from "./SugestaoExperienciaAdaptada";
 import {
   experienciaAdaptadaParaAvaliacao,
@@ -139,11 +140,14 @@ export function RevisaoCurriculoAdaptado({
             itemVazio={EXPERIENCIA_ADAPTADA_VAZIA}
             campos={CAMPOS_EXPERIENCIA_ADAPTADA}
             complementoItem={(indice) => (
-              <SugestaoExperienciaAdaptada
-                form={form}
-                indice={indice}
-                contextoVaga={contextoVaga}
-              />
+              <>
+                <SkillsDaExperiencia form={form} indice={indice} />
+                <SugestaoExperienciaAdaptada
+                  form={form}
+                  indice={indice}
+                  contextoVaga={contextoVaga}
+                />
+              </>
             )}
             acoesItem={(indice) => (
               <Button

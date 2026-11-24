@@ -1,6 +1,9 @@
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, horizontalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useState, type KeyboardEvent } from "react";
 import { Field } from "../ui/Field";
-import { adicionarTags, separarTags, virgulaAbreNovaTag } from "./competencias";
+import { adicionarTags, idDaTag, separarTags, virgulaAbreNovaTag } from "./competencias";
 import estilos from "./EditorCompetencias.module.css";
 
 interface Props {
@@ -12,6 +15,11 @@ interface Props {
   aoAnunciar?: (mensagem: string) => void;
   rotuloNovaTag?: string;
   ajuda?: string;
+  /**
+   * Habilita arrastar as tags (JOB-0045). Exige um `DndContext` acima: quem o fornece decide o que
+   * fazer ao soltar. `idLista` identifica esta lista como destino e `indice` a prefixa nas tags.
+   */
+  arrastavel?: { idLista: string; indice: number };
 }
 
 /**
@@ -26,6 +34,7 @@ export function EditorTags({
   aoAnunciar,
   rotuloNovaTag = "Nova tag",
   ajuda,
+  arrastavel,
 }: Props) {
   const criar = (texto: string) => {
     const novas = adicionarTags(tags, separarTags(texto));
@@ -44,22 +53,25 @@ export function EditorTags({
 
   return (
     <>
-      {tags.length > 0 && (
-        <ul className={estilos.tags} aria-label={`Tags de ${nome}`}>
-          {tags.map((tag) => (
-            <li key={tag} className={estilos.tag}>
-              <span>{tag}</span>
-              <button
-                type="button"
-                className={estilos.removerTag}
-                aria-label={`Remover ${tag}`}
-                onClick={() => remover(tag)}
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+      {arrastavel ? (
+        <ListaArrastavel
+          tags={tags}
+          nome={nome}
+          idLista={arrastavel.idLista}
+          indice={arrastavel.indice}
+          aoRemover={remover}
+        />
+      ) : (
+        tags.length > 0 && (
+          <ul className={estilos.tags} aria-label={`Tags de ${nome}`}>
+            {tags.map((tag) => (
+              <li key={tag} className={estilos.tag}>
+                <span>{tag}</span>
+                <BotaoRemover tag={tag} aoRemover={remover} />
+              </li>
+            ))}
+          </ul>
+        )
       )}
       <CampoNovaTag rotulo={rotuloNovaTag} ajuda={ajuda} aoCriar={criar} />
     </>
@@ -99,5 +111,87 @@ function CampoNovaTag({
       onKeyDown={aoTeclar}
       onBlur={confirmar}
     />
+  );
+}
+
+function BotaoRemover({ tag, aoRemover }: { tag: string; aoRemover: (tag: string) => void }) {
+  return (
+    <button
+      type="button"
+      className={estilos.removerTag}
+      aria-label={`Remover ${tag}`}
+      onClick={() => aoRemover(tag)}
+    >
+      <span aria-hidden="true">×</span>
+    </button>
+  );
+}
+
+interface PropsListaArrastavel {
+  tags: string[];
+  nome: string;
+  idLista: string;
+  indice: number;
+  aoRemover: (tag: string) => void;
+}
+
+/** Lista que também é destino de soltura: existe mesmo sem tags, para receber uma tag arrastada. */
+function ListaArrastavel({ tags, nome, idLista, indice, aoRemover }: PropsListaArrastavel) {
+  const { setNodeRef, isOver } = useDroppable({ id: idLista });
+  return (
+    <SortableContext
+      items={tags.map((tag) => idDaTag(indice, tag))}
+      strategy={horizontalListSortingStrategy}
+    >
+      <ul
+        ref={setNodeRef}
+        className={[estilos.tags, estilos.areaDeSoltura, isOver && estilos.areaSobre]
+          .filter(Boolean)
+          .join(" ")}
+        aria-label={`Tags de ${nome}`}
+      >
+        {tags.map((tag) => (
+          <TagArrastavel key={tag} id={idDaTag(indice, tag)} tag={tag} aoRemover={aoRemover} />
+        ))}
+      </ul>
+    </SortableContext>
+  );
+}
+
+function TagArrastavel({
+  id,
+  tag,
+  aoRemover,
+}: {
+  id: string;
+  tag: string;
+  aoRemover: (tag: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, attributes: { roleDescription: "tag arrastável" } });
+  return (
+    <li
+      ref={setNodeRef}
+      className={[estilos.tag, isDragging && estilos.tagOrigem].filter(Boolean).join(" ")}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <span
+        ref={setActivatorNodeRef}
+        className={estilos.alca}
+        aria-label={`Mover ${tag}`}
+        {...attributes}
+        {...listeners}
+      >
+        {tag}
+      </span>
+      <BotaoRemover tag={tag} aoRemover={aoRemover} />
+    </li>
   );
 }

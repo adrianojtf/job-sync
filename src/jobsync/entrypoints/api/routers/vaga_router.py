@@ -8,12 +8,16 @@ from jobsync.entrypoints.api.autorizacao import exigir_perfil_da_requisicao
 from jobsync.entrypoints.api.dependencies import (
     ServiceAvaliarDescricaoVagaDep,
     ServiceCapturarVagaDep,
+    ServiceExtrairDadosVagaDep,
     ServiceListarVagasCapturadasDep,
+    UsuarioAutenticadoDep,
 )
 from jobsync.entrypoints.api.schemas.erro import ProblemaResponse
 from jobsync.entrypoints.api.schemas.vaga import (
     AvaliacaoDescricaoVagaResponse,
     AvaliarDescricaoVagaRequest,
+    DadosVagaResponse,
+    ExtracaoVagaRequest,
     VagaCapturarRequest,
     VagaResponse,
     VagasListagemResponse,
@@ -84,3 +88,38 @@ def capturar_vaga(
     vaga = service.executar(body.to_dto())
     response.headers["Location"] = f"{request.url.path}/{vaga.id}"
     return VagaResponse.from_dto(vaga)
+
+
+@router.post(
+    "/vagas/extracoes",
+    response_model=DadosVagaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Extrair dados de vaga",
+    description=(
+        "Lê cargo, empresa, local e descrição de uma vaga a partir do link ou do texto e devolve "
+        "um rascunho para revisão. Nada é salvo. Quando link e texto são informados juntos, o texto "
+        "tem prioridade. Se o link não puder ser lido, a resposta orienta a colar o texto da vaga."
+    ),
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ProblemaResponse,
+            "description": "Link inválido, fonte não suportada ou nenhum dado informado.",
+        },
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "model": ProblemaResponse,
+            "description": "Limite de leituras atingido; veja o cabeçalho `Retry-After`.",
+        },
+        status.HTTP_502_BAD_GATEWAY: {
+            "model": ProblemaResponse,
+            "description": "O site da vaga bloqueou a leitura, a vaga não existe ou não foi possível acessá-la.",
+        },
+    },
+)
+def extrair_dados_vaga(
+    body: ExtracaoVagaRequest,
+    service: ServiceExtrairDadosVagaDep,
+    usuario: UsuarioAutenticadoDep,
+) -> DadosVagaResponse:
+    """Devolve o rascunho dos dados da vaga lida do link ou do texto."""
+    dados = service.executar(body.to_dto(usuario_id=usuario.perfil_identificador))
+    return DadosVagaResponse.from_domain(dados)

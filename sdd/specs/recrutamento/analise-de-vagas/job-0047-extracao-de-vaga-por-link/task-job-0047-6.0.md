@@ -19,12 +19,12 @@ Complexidade: medium. Dependências: 5.0.
 
 ## Subtarefas
 
-- [ ] 6.1 Escrever os testes do roteador (200, 422, 429, 502, 401).
-- [ ] 6.2 Criar os schemas `ExtracaoVagaRequest` e `DadosVagaResponse`.
-- [ ] 6.3 Adicionar a rota em `vaga_router.py`.
-- [ ] 6.4 Registrar os handlers em `exceptions.py`.
-- [ ] 6.5 Compor o serviço, os leitores e o limitador em `dependencies.py`.
-- [ ] 6.6 Adicionar as variáveis em `.env.example`.
+- [x] 6.1 Escrever os testes do roteador (200, 422, 429, 502, 401).
+- [x] 6.2 Criar os schemas `ExtracaoVagaRequest` e `DadosVagaResponse`.
+- [x] 6.3 Adicionar a rota em `vaga_router.py`.
+- [x] 6.4 Registrar os handlers em `exceptions.py`.
+- [x] 6.5 Compor o serviço, os leitores e o limitador em `dependencies.py`.
+- [x] 6.6 Adicionar as variáveis em `.env.example`.
 
 ## Detalhes de Implementação
 
@@ -37,7 +37,7 @@ Ver "Endpoints de API" da techspec. Seguir os padrões de `/vagas/avaliacoes` e 
 
 ## Testes da Tarefa
 
-- [ ] Testes de API em `tests/entrypoints/api/`.
+- [x] Testes de API em `tests/entrypoints/api/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

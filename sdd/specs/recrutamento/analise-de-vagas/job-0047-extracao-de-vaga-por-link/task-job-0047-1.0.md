@@ -19,12 +19,12 @@ Complexidade: medium. Dependências: nenhuma.
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de `LinkVaga` (normalização, rastreamento, ids do LinkedIn, esquemas inválidos).
-- [ ] 1.2 Implementar `LinkVaga` e `FonteVaga`.
-- [ ] 1.3 Escrever os testes e implementar `DadosVaga`.
-- [ ] 1.4 Criar as exceções do domínio.
-- [ ] 1.5 Criar as três portas.
-- [ ] 1.6 Exportar os tipos em `vaga/__init__.py` e rodar `lint-imports`.
+- [x] 1.1 Escrever os testes de `LinkVaga` (normalização, rastreamento, ids do LinkedIn, esquemas inválidos).
+- [x] 1.2 Implementar `LinkVaga` e `FonteVaga`.
+- [x] 1.3 Escrever os testes e implementar `DadosVaga`.
+- [x] 1.4 Criar as exceções do domínio.
+- [x] 1.5 Criar as três portas.
+- [x] 1.6 Exportar os tipos em `vaga/__init__.py` e rodar `lint-imports`.
 
 ## Detalhes de Implementação
 
@@ -37,7 +37,7 @@ Ver "Componentes" e "Modelos de Dados" da techspec. Seguir o estilo de `vaga/dom
 
 ## Testes da Tarefa
 
-- [ ] Testes de unidade: `TestLinkVaga`, `TestDadosVaga`.
+- [x] Testes de unidade: `TestLinkVaga`, `TestDadosVaga`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

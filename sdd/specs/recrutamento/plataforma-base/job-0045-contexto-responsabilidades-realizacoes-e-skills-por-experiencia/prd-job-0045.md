@@ -22,8 +22,6 @@ Na leitura do currículo inicial, o sistema tenta reconhecer os blocos no texto.
 
 Este PRD estende a JOB-0035 (conquistas e contexto só no adaptado) e muda uma de suas decisões: o perfil passa a guardar os blocos.
 
-Analogia: hoje a experiência é uma anotação solta. Com a mudança, ela vira uma ficha com quatro gavetas fixas, e todas as telas e o PDF abrem as mesmas gavetas.
-
 Exemplo de referência (idioma inglês):
 
 ```
@@ -113,7 +111,7 @@ Requisitos funcionais:
 
 16. Ao salvar o perfil, o sistema deve comparar as skills de todas as experiências com as tecnologias gerais.
 17. A comparação deve ignorar maiúsculas, minúsculas e espaços extras.
-18. Toda skill de experiência ausente nas tecnologias gerais deve ser incluída nelas, na categoria mais adequada (a IA sugere quando não houver correspondência).
+18. Toda skill de experiência ausente nas tecnologias gerais deve ser incluída no fim da lista de tecnologias do perfil, que é uma lista simples, sem categorias e sem IA.
 19. O usuário deve ver, após salvar, quais tecnologias foram incluídas.
 20. Excluir uma skill de uma experiência não remove a tecnologia geral.
 
@@ -124,7 +122,7 @@ Requisitos funcionais:
 21. O currículo gerado a partir do perfil deve trazer os quatro blocos de cada experiência.
 22. Na adaptação a uma vaga, a IA pode reescrever os quatro blocos para aderência à vaga, com as regras de fidelidade e limites das JOB-0040, JOB-0042 e JOB-0043.
 23. A tela de revisão do adaptado deve mostrar e permitir editar os quatro blocos, com skills em tags.
-24. As skills do adaptado devem passar pela mesma sincronia do item 16 ao 19 no currículo adaptado salvo (JOB-0041).
+24. No currículo adaptado, as skills das experiências ausentes nas competências devem entrar na categoria "Tecnologias", e o usuário as reorganiza.
 25. A ação "Avaliar" de cada experiência deve considerar os quatro blocos.
 
 ### 6. PDF e idioma
@@ -136,6 +134,15 @@ Requisitos funcionais:
 28. Os rótulos devem ser traduzidos conforme o idioma do currículo: em inglês "Context", "Key Responsibilities", "Key Achievements" e "Technologies"; em português "Contexto", "Principais responsabilidades", "Principais realizações" e "Tecnologias".
 29. Bloco vazio não deve deixar rótulo solto nem linha vazia.
 30. Currículos vindos de PDF direto (sem experiências estruturadas) devem receber o mesmo padrão no texto das experiências.
+
+### 7. Organização das competências por arrastar e soltar
+
+Requisitos funcionais:
+
+31. Na revisão do currículo adaptado, o usuário deve poder arrastar uma tag para reordená-la dentro da categoria e movê-la para outra categoria.
+32. Mover uma tag não deve duplicar a tag na categoria de destino (ignorando maiúsculas e minúsculas).
+33. Categoria que ficar sem tags deve ser descartada ao salvar, como hoje.
+34. A mesma ação deve funcionar pelo teclado, com anúncio do movimento para leitores de tela.
 
 ## Experiência do Usuário
 
@@ -149,8 +156,6 @@ Requisitos de UI/UX:
 
 - Mesmos componentes e mensagens de erro do cadastro de perfil e da revisão do adaptado.
 - Tags de skills com o mesmo comportamento das tecnologias gerais.
-- Itens gerados pela IA ficam identificáveis na revisão (ex.: "Gerado pela IA") até o usuário confirmar.
-- Texto de ajuda nos campos de lista ("Um item por linha").
 
 Acessibilidade:
 
@@ -171,6 +176,7 @@ Acessibilidade:
 ## Fora de Escopo
 
 - Marcar por item o que a IA estimou ou gerou no PDF.
+- Dividir as tecnologias gerais do perfil em categorias.
 - Remover tecnologias gerais automaticamente quando a skill some das experiências.
 - Editor com formatação (negrito, itálico) ou subitens nas listas.
 - Idiomas além de português e inglês.
@@ -182,5 +188,5 @@ Acessibilidade:
 1. **Realizações e banco de conquistas (JOB-0042):** o banco já guarda conquistas por experiência no perfil. Proposta: as "Principais realizações" e o banco são a mesma lista, sem duplicar dado. Confirma?
 2. **Limite "mesmos do achievements":** interpretei como 3 a 5 itens (JOB-0042) para responsabilidades e realizações, e 1 a 3 frases para o contexto (JOB-0035). Está correto?
 3. **Números estimados:** esta JOB amplia a geração de métricas e contextos pela IA, por decisão do produto. O aviso na revisão é a única proteção. Convém sinalizar por item em outra JOB?
-4. **Categoria das skills novas:** quando a skill não casa com nenhuma categoria das tecnologias gerais, a IA sugere a categoria. Se falhar, vai para "Outras"?
+4. **Resolvida:** a skill nova entra no fim da lista simples do perfil e, no adaptado, na categoria "Tecnologias". Sem sugestão de categoria pela IA.
 5. **Migração de perfis antigos:** o usuário que nunca abrir o perfil continua com a descrição livre. Os fluxos de adaptação devem migrar na hora ou exigir a confirmação antes?

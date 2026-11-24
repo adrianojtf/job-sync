@@ -141,3 +141,23 @@ class TestPerfilEstruturadoRepositoryImpl:
         experiencia = repositorio.buscar_por_perfil("matheus").experiencias[0]
 
         assert (experiencia.contexto, experiencia.responsabilidades, experiencia.skills) == ("", (), ())
+
+
+    def test_buscar_perfil_salvo_com_periodo_e_mais_itens_fora_das_regras_novas_continua_legivel(
+        self, repositorio, pool_postgres
+    ):
+        experiencias = ", ".join(
+            f'{{"empresa": "E{n}", "cargo": "Dev", "periodo": "uns anos atrás", "descricao": ""}}' for n in range(20)
+        )
+        with pool_postgres.connection() as conexao:
+            conexao.execute(
+                f"""
+                INSERT INTO perfil_estruturado (perfil_identificador, nome_completo, email, experiencias_json)
+                VALUES ('matheus', 'Matheus', 'm@example.com', '[{experiencias}]')
+                """
+            )
+
+        perfil = repositorio.buscar_por_perfil("matheus")
+
+        assert len(perfil.experiencias) == 20
+        assert perfil.experiencias[0].periodo == "uns anos atrás"

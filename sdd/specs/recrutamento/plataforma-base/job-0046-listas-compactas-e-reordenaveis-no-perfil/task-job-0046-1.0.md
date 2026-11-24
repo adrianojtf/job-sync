@@ -18,10 +18,10 @@ Valida o formato do período e do ano e o limite de 15 itens na entrada do salva
 
 ## Subtarefas
 
-- [ ] 1.1 Escrever os testes de `Periodo`, do validator, do router e do repositório (red).
-- [ ] 1.2 Implementar `Periodo`, `validar_ano` e a constante (green).
-- [ ] 1.3 Implementar a validação no validator (green).
-- [ ] 1.4 Refatorar e rodar `tests/perfil_estruturado`, `tests/shared_kernel` e `tests/entrypoints`.
+- [x] 1.1 Escrever os testes de `Periodo`, do validator, do router e do repositório (red).
+- [x] 1.2 Implementar `Periodo`, `validar_ano` e a constante (green).
+- [x] 1.3 Implementar a validação no validator (green).
+- [x] 1.4 Refatorar e rodar `tests/perfil_estruturado`, `tests/shared_kernel` e `tests/entrypoints`.
 
 ## Detalhes de Implementação
 
@@ -37,11 +37,11 @@ Complexidade: medium. Dependências: nenhuma.
 
 ## Testes da Tarefa
 
-- [ ] Testes de `TestPeriodo` (tabela de casos).
-- [ ] Testes do `SalvarPerfilEstruturadoInputValidator` (período, ano, 16 itens, tecnologias acima de 15, vazio aceito).
-- [ ] Teste do repositório lendo período livre.
-- [ ] Testes do router (422).
-- [ ] Regressão: `src/jobsync/tests/`.
+- [x] Testes de `TestPeriodo` (tabela de casos).
+- [x] Testes do `SalvarPerfilEstruturadoInputValidator` (período, ano, 16 itens, tecnologias acima de 15, vazio aceito).
+- [x] Teste do repositório lendo período livre.
+- [x] Testes do router (422).
+- [x] Regressão: `src/jobsync/tests/`.
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

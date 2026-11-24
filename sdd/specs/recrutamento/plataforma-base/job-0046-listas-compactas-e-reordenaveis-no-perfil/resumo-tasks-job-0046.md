@@ -2,7 +2,7 @@
 
 ## Tarefas
 
-- [ ] 1.0 Backend: Periodo, limite de itens e validação no SalvarPerfilEstruturadoInputValidator
+- [x] 1.0 Backend: Periodo, limite de itens e validação no SalvarPerfilEstruturadoInputValidator
 - [ ] 2.0 Frontend: periodo.ts, limites.ts e validação por campo
 - [ ] 3.0 Toast com ação e duração, e histórico do formulário (desfazer)
 - [ ] 4.0 ListaItensCurriculo em modo cartão com reordenação, limite e ordenar por período

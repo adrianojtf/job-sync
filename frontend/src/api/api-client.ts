@@ -22,7 +22,9 @@ import type {
   CurriculoConteudo,
   CurriculoRevisado,
   CurriculoSalvo,
+  DadosVaga,
   DescobrirVagasEntrada,
+  ExtracaoVagaEntrada,
   GerarCartaEntrada,
   GerarPdfCurriculoRevisadoEntrada,
   Lacunas,
@@ -121,6 +123,8 @@ export interface ApiClient {
 
   listarVagas(perfil: string): Promise<Vaga[]>;
   capturarVaga(dados: CapturarVagaEntrada): Promise<Vaga>;
+  /** Lê cargo, empresa, local e descrição de um link ou texto de vaga, sem salvar nada (JOB-0047). */
+  extrairDadosVaga(dados: ExtracaoVagaEntrada): Promise<DadosVaga>;
   descobrirVagas(dados: DescobrirVagasEntrada): Promise<VagaDescoberta[]>;
   candidatarVagaExterna(dados: CandidatarVagaExternaEntrada): Promise<CandidaturaExterna>;
 

@@ -20,11 +20,11 @@ Complexidade: high. Dependências: 6.0, 7.0.
 
 ## Subtarefas
 
-- [ ] 8.1 Escrever os testes de `CampoLinkVaga` e do hook (MSW).
-- [ ] 8.2 Implementar `CampoLinkVaga`, o hook e o cliente de API.
-- [ ] 8.3 Integrar em `AjustarVagaPage.tsx`, com testes.
-- [ ] 8.4 Integrar em `ColarVagaModal.tsx`, com testes.
-- [ ] 8.5 Regenerar `schema.d.ts` e rodar lint, testes e build.
+- [x] 8.1 Escrever os testes de `CampoLinkVaga` e do hook (MSW).
+- [x] 8.2 Implementar `CampoLinkVaga`, o hook e o cliente de API.
+- [x] 8.3 Integrar em `AjustarVagaPage.tsx`, com testes.
+- [x] 8.4 Integrar em `ColarVagaModal.tsx`, com testes.
+- [x] 8.5 Regenerar `schema.d.ts` e rodar lint, testes e build.
 
 ## Detalhes de Implementação
 
@@ -37,7 +37,7 @@ Ver "Componentes" e "Testes de Serviço" da techspec. Reutilizar os componentes 
 
 ## Testes da Tarefa
 
-- [ ] Testes de componente (Vitest, Testing Library e MSW).
+- [x] Testes de componente (Vitest, Testing Library e MSW).
 
 <critical>SEMPRE EXECUTE OS TESTES DA TAREFA ANTES DE CONSIDERÁ-LA FINALIZADA</critical>
 

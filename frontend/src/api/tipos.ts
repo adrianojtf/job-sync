@@ -51,6 +51,9 @@ export type GerarCartaEntrada = Esquemas["GerarCartaApresentacaoRequest"];
 export type CartaApresentacao = Esquemas["CartaApresentacaoResponse"];
 export type Vaga = Esquemas["VagaResponse"];
 export type CapturarVagaEntrada = Esquemas["VagaCapturarRequest"];
+/** Rascunho dos dados da vaga lidos de um link ou de um texto (JOB-0047). */
+export type DadosVaga = Esquemas["DadosVagaResponse"];
+export type ExtracaoVagaEntrada = Esquemas["ExtracaoVagaRequest"];
 export type DescobrirVagasEntrada = Esquemas["DescobrirVagasRequest"];
 export type VagaDescoberta = Esquemas["VagaDescobertaResponse"];
 export type CandidatarVagaExternaEntrada = Esquemas["CandidatarVagaExternaRequest"];
